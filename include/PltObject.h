@@ -59,17 +59,7 @@ struct FileObject
   FILE* fp;
   bool open;
 };
-enum GenratorState
-{
-  SUSPENDED,
-  STOPPED,
-  RUNNING
-};
-struct Generator
-{
-  int start;//start index of it's code in bytecode
-  enum GeneratorState state;
-};
+
 struct PltObject
 {
     union
