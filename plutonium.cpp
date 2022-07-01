@@ -85,7 +85,7 @@ int main(int argc, char** argv)
         Parser parser;
         parser.init(&fnReferenced,&num_of_constants);
         Node* ast = parser.parse(tokens);
-      //  printAST(ast);
+       // printAST(ast);
       //  return 0;
         Compiler compiler;
         compiler.init(3,&vm,&fnReferenced,&num_of_constants);
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 
     //Code for writing the bytecode to a file
 
-    /*FILE* f = fopen("program.pltb","wb");
+   /* FILE* f = fopen("program.pltb","wb");
     //write line number table
     int total = LineNumberTable.size();
     fwrite(&total,sizeof(int),1,f);
@@ -140,8 +140,8 @@ int main(int argc, char** argv)
       arr[k] = bytecode[k];
     }
     fwrite(arr,sizeof(unsigned char),bytecode.size(),f);
-    fclose(f);*/
-
+    fclose(f);
+*/
     //return 0;
     int k = 2;
     PltList l;
