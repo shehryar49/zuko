@@ -887,9 +887,11 @@ public:
   }
   vector<string> klasses;
   bool inConstructor = false;
+  bool inGen = false;
   vector<unsigned char> compile(Node* ast, bool infunc,bool inclass=false)
   {
       vector<unsigned char> program;
+      bool isGen = false;
       while (ast->val != "EOP" && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
       {
       //    printf("ast->val = %s\n",ast->val.c_str());
@@ -2010,16 +2012,24 @@ public:
 
 
           }
-          else if (substr(0, 4, ast->val) == "func " )
+          else if (substr(0, 4, ast->val) == "func " || (isGen = substr(0,3,ast->val) == "gen "))
           {
+            //  printf("here\n");
               if(infunc)
               {
                 line_num = atoi(ast->childs[0]->val.substr(5).c_str());
                 compileError("SyntaxError","Error function within function not allowed!",false);
               }
-              string name = ast->val.substr(5);
+              string name;
+              if(isGen)
+              {
+               name = ast->val.substr(4);
+              }
+              else
+                name = ast->val.substr(5);
               if(std::find(fnReferenced->begin(),fnReferenced->end(),name)!=fnReferenced->end() || inclass)
               {
+
                 if (name.find('.') != std::string::npos)
                 {
                   compileError("NameError", "Error invalid function name!", false);
@@ -2030,13 +2040,16 @@ public:
                 }
                 if(!inclass)
                 {
-                if(scope==0)
-                  globals.emplace(name,STACK_SIZE);
-                else
-                  locals.back().emplace(name,STACK_SIZE);
-                STACK_SIZE+=1;
+                  if(scope==0)
+                    globals.emplace(name,STACK_SIZE);
+                  else
+                    locals.back().emplace(name,STACK_SIZE);
+                  STACK_SIZE+=1;
                 }
-                program.push_back(LOAD_FUNC);
+                if(isGen)
+                  program.push_back(LOAD_GEN);
+                else
+                  program.push_back(LOAD_FUNC);
                 FOO.x = bytes_done+2+JUMPOFFSet_Size+JUMPOFFSet_Size+JUMPOFFSet_Size+1;
                 program.push_back(FOO.bytes[0]);
                 program.push_back(FOO.bytes[1]);
@@ -2086,26 +2099,45 @@ public:
                   STACK_SIZE+=1;
                 }
                 scope += 1;
-
-                vector<unsigned char> funcBody = compile(ast->childs[2], true);
+                inGen = isGen;
+                vector<unsigned char> funcBody = compile(ast->childs[2], true,false);
                 //  printf("function body.size = %ld\n",funcBody.size());
                 scope -= 1;
                 inConstructor = false;
+                inGen = false;
                 locals.pop_back();
                 STACK_SIZE = before;
                 if(name!="__construct__")
                 {
                   if (funcBody.size() == 0)
                   {
-                    funcBody.push_back(RETURN_NIL);
-                    bytes_done += 1;
+                        FOO.x = 0;
+                        funcBody.push_back(LOAD_CONST);
+                        funcBody.push_back(FOO.bytes[0]);
+                        funcBody.push_back(FOO.bytes[1]);
+                        funcBody.push_back(FOO.bytes[2]);
+                        funcBody.push_back(FOO.bytes[3]);
+                        if(isGen)
+                          funcBody.push_back(GEN_STOP);
+                        else
+                          funcBody.push_back(RETURN);
+                        bytes_done +=6;
                   }
                   else
                   {
                     if (funcBody[funcBody.size() - 1] != RETURN)
                     {
-                        funcBody.push_back(RETURN_NIL);
-                        bytes_done += 1;
+                        FOO.x = 0;
+                        funcBody.push_back(LOAD_CONST);
+                        funcBody.push_back(FOO.bytes[0]);
+                        funcBody.push_back(FOO.bytes[1]);
+                        funcBody.push_back(FOO.bytes[2]);
+                        funcBody.push_back(FOO.bytes[3]); 
+                        if(isGen)
+                          funcBody.push_back(GEN_STOP);
+                        else
+                          funcBody.push_back(RETURN);
+                        bytes_done +=6;
                     }
                   }
                 }
@@ -2126,7 +2158,7 @@ public:
             }
             else
             {
-            //  printf("not compiling function %s because it is not fnReferenced\n",name.c_str());
+             // printf("not compiling function %s because it is not fnReferenced\n",name.c_str());
             }
           }
           else if(ast->val=="class" || ast->val=="extclass")
@@ -2238,7 +2270,22 @@ public:
               program.insert(program.end(), val.begin(), val.end());
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable.emplace(bytes_done, tmp);
-              program.push_back(RETURN);
+              if(inGen)
+                program.push_back(GEN_STOP);
+              else
+                program.push_back(RETURN);
+              bytes_done += 1;
+          }
+          else if (ast->val == "yield")
+          {
+              if(inConstructor)
+                compileError("SyntaxError","Error class constructor can not be generators!",false);
+              char t;
+              vector<unsigned char> val = exprByteCode(ast->childs[1], t, infunc);
+              program.insert(program.end(), val.begin(), val.end());              
+              ByteSrc tmp = { fileTOP,line_num };
+              LineNumberTable.emplace(bytes_done, tmp);
+              program.push_back(YIELD);
               bytes_done += 1;
           }
           else if (ast->val == "break")

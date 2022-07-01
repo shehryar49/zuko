@@ -31,6 +31,8 @@ typedef void(*Function)(PltObject*,int,PltObject*);
 #define PLT_BOOL 'b'
 #define PLT_POINTER 'p' //just a pointer that means something only to c++ code,the interpreter just stores it
 #define PLT_FUNC 'w' //plutonium code function
+#define PLT_GENERATOR 'g'
+#define PLT_GENERATOR_OBJ 'z'
 size_t hashList(void*);
 size_t hashDict(void*);
 //
@@ -59,7 +61,18 @@ struct FileObject
   FILE* fp;
   bool open;
 };
-
+enum GenState
+{
+  SUSPENDED,
+  RUNNING,
+  STOPPED,
+};
+struct Generator
+{
+  int curr;//index from where to start the generator
+  PltList locals;
+  GenState state;
+};
 struct PltObject
 {
     union
@@ -120,9 +133,9 @@ struct PltObject
         {
           return ptr==other.ptr;
         }
-        else if(type=='q')
+        else if(type=='q' || type=='z')
         {
-          return false;
+          return ptr==other.ptr;;
         }
         else if(type=='a')
         {

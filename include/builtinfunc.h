@@ -169,7 +169,7 @@ PltObject println(const vector<PltObject>& args)
     int k = 0;
     while(k<args.size())
     {
-            printf("%s",PltObjectToStr(args[k]).c_str());
+        printf("%s",PltObjectToStr(args[k]).c_str());
         k+=1;
     }
     printf("\n");

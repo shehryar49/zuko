@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <cstdint>
 #ifdef BUILD_FOR_LINUX
 #include <dlfcn.h>
 #include <unistd.h>

@@ -8,7 +8,7 @@ extern string filename;
 extern vector<string> files;
 extern vector<string> sources;
 
-const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw"};//23 keywords right now
+const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield"};//23 keywords right now
 bool isKeyword(string s)
 {
   for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)

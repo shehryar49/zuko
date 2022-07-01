@@ -295,6 +295,7 @@ private:
   //block of each udf function
   size_t line_num = 1;
   int* num_of_constants;
+  bool foundYield = false;
 public:
   std::unordered_map<string,vector<string>> fntable;//to store list of functions referenced in
   void init(vector<string>* fnr,int* p)
@@ -386,6 +387,7 @@ public:
        }
        parseError("SyntaxError","Invalid Syntax",false);
     }
+    
     
     /////////
     int k = tokens.size()-1;
@@ -1314,7 +1316,19 @@ public:
           Node* ast = NewNode("return");
           vector<Token> t = {tokens.begin()+1,tokens.end()};
           if(t.size()==0)
-            parseError("SyntaxError","Error expected expression after return ",false);
+            parseError("SyntaxError","Error expected expression after return keyword",false);
+          Node* n = NewNode("line "+to_string(tokens[0].ln));
+          ast->childs.push_back(n);
+          ast->childs.push_back(parseExpr(t));
+          return ast;
+      }
+      if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
+      {
+          foundYield = true;
+          Node* ast = NewNode("yield");
+          vector<Token> t = {tokens.begin()+1,tokens.end()};
+          if(t.size()==0)
+            parseError("SyntaxError","Error expected expression after yield keyword",false);
           Node* n = NewNode("line "+to_string(tokens[0].ln));
           ast->childs.push_back(n);
           ast->childs.push_back(parseExpr(t));
@@ -1786,8 +1800,10 @@ public:
                  block.push_back(newlinetok);
                  size_t before = fnReferenced->size();
                  fntable.emplace(ast->val.substr(5),vector<string>{});
+                 foundYield = false;
                  ast->childs.push_back(parse(block,inwhile,true));
-                 
+                 if(foundYield)
+                   ast->val = "gen "+ast->val.substr(5);
               //   printf("dependencies: ");
                  size_t increase = fnReferenced->size()-before;
                  for(int i=1;i<=increase;i+=1)

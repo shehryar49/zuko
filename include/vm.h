@@ -6,19 +6,14 @@ using namespace std;
 struct ByteSrc
 {
   short fileIndex;//index of filename in files vector
-  //short is sufficient here because we won't we be even compiling 100 files so 65535 is too much
   size_t ln;
 };// source of byte i.e it's filename and line number
 extern std::unordered_map<size_t,ByteSrc> LineNumberTable;
-extern size_t line_num;
+//extern size_t line_num;
 extern string source_code;
 extern string filename;
 extern vector<string> files;
 extern vector<string> sources;
-size_t orgk = 0;
-class VM;
-extern VM vm;
-
 inline bool isNumeric(char t)
 {
     if(t=='i' || t=='f' || t=='l')
@@ -106,6 +101,10 @@ string fullform(char t)
       return "Native Pointer";
     else if(t=='e')
       return "Error Object";
+    else if(t=='g')
+      return "Generator";
+    else if(t=='z')
+      return "Generator Object";
     else
         return "Unknown";
 }
@@ -121,7 +120,7 @@ struct MemInfo
   char type;
   bool isMarked;
 };
-#define GC_THRESHHOLD 1024
+#define GC_THRESHHOLD 4196
 const char* ErrNames[] = {"TypeError","ValueError","MathError","NameError","IndexError","ArgumentError","UnknownError","FileIOError","KeyError","OverflowError","FileOpenError","FileSeekError","ImportError","ThrowError","MaxRecursionError","AccessError"};
 
 PltList* duplicateList(PltList);
@@ -152,8 +151,9 @@ private:
     Dictionary* pd_ptr1;
     unsigned char* k;
     vector<size_t> tryStackCleanup;
-    vector<int> Limits = {0};//stores the stack index from which each stack frame starts
-
+    vector<int> Limits = {0};
+    size_t orgk = 0;
+    
 public:
   vector<PltObject> STACK;
   vector<func> nativeFunctions;//addresses of native functions
@@ -167,6 +167,7 @@ public:
   size_t allocated = 0;
   vector<unsigned char*> except_targ;
   vector<size_t> tryLimitCleanup;
+  //int Gc_Cycles = 0;
   void load(vector<unsigned char> b)
   {
       program = new unsigned char[b.size()];
@@ -178,7 +179,7 @@ public:
   }
   void spitErr(ErrCode e,string msg,bool resolveLineNum)//used to show a runtime error
 {
-     if(vm.except_targ.size()!=0)
+     if(except_targ.size()!=0)
      {
        size_t T = STACK.size() - tryStackCleanup.back();
        STACK.erase(STACK.end()-T,STACK.end());
@@ -263,6 +264,21 @@ public:
     memory.emplace((void*)p,m);
     return p;
   }
+  Generator* allocGen()
+  {
+    Generator* p = new Generator;
+    if(!p)
+    {
+      printf("error allocating memory!\n");
+      exit(0);
+    }
+    allocated+=sizeof(Generator);
+    MemInfo m;
+    m.type = 'z';
+    m.isMarked = false;
+    memory.emplace((void*)p,m);
+    return p;
+  }
   FileObject* allocFileObject()
   {
   //  printf("list allocation requested.\n");
@@ -300,7 +316,7 @@ public:
   void markObject(PltObject obj)
   {
 
-    if(obj.type=='a' || obj.type=='o' || obj.type=='v' || obj.type=='c' || obj.type=='q')
+    if(obj.type=='a' || obj.type=='o' || obj.type=='v' || obj.type=='c' || obj.type=='q' )
     {
       if(!memory[obj.ptr].isMarked)
       {
@@ -325,6 +341,13 @@ public:
          }
       }
     }
+    else if(obj.type=='z')
+    {
+      memory[obj.ptr].isMarked = true;
+      Generator* g = (Generator*)obj.ptr;
+      for(auto e: g->locals)
+        markObject(e);
+    }
     else if( obj.type=='u')
       memory[obj.ptr].isMarked = true;
   }
@@ -338,7 +361,7 @@ public:
   void collectGarbage()
   {
    // printf("collecting garbage\n");
-
+   // Gc_Cycles+=1;
     vector<void*> toFree;
     for(auto e: memory)
     {
@@ -369,6 +392,8 @@ public:
       {
          delete (FileObject*)e;
       }
+      else if(type=='z')
+        delete (Generator*)e;
       else if(type=='c')
       {
       //  printf("gc handling object exposed from module\n");
@@ -459,9 +484,7 @@ public:
            k+=1;
            memcpy(&i1,k,4);
            k+=3;
-           c1 = STACK[i1].type;
-        //   printf("FOO.x = %d\n",FOO.x);
-        //   STACK.pop_back();
+           c1 = STACK[i1].type;;
            if(c1=='i')
            {
              if(STACK[i1].i==INT_MAX)
@@ -501,18 +524,14 @@ public:
          {
              orgk = k - program;
              k+=1;
-             c1 = *k;//type of value to load
+             c1 = *k;
+            // printf("loading %c\n",t);
              k+=1;
              if(c1=='j')
              {
-                FOO.bytes[0] = *k;
-                k+=1;
-                FOO.bytes[1] = *k;
-                k+=1;
-                FOO.bytes[2] = *k;
-                k+=1;
-                FOO.bytes[3] = *k;
-                int listSize = FOO.x;
+                int listSize;
+                memcpy(&listSize,k,sizeof(int));
+                k+=3;
                 PltList list;
                 if(listSize!=0)
                 {
@@ -530,16 +549,9 @@ public:
              }
              else if(c1=='a')
              {
-//                 printf("here\n");
-
-                FOO.bytes[0] = *k;
-                k+=1;
-                FOO.bytes[1] = *k;
-                k+=1;
-                FOO.bytes[2] = *k;
-                k+=1;
-                FOO.bytes[3] = *k;
-                int DictSize = FOO.x;
+                int DictSize;
+                memcpy(&DictSize,k,sizeof(int));
+                k+=3;
   //              printf("dictsize = %d\n",DictSize);
     //            printf("STACK.size = %ld\n",STACK.size());
                 Dictionary dict;
@@ -598,14 +610,9 @@ public:
              }
              else if(c1=='v')
              {
-               FOO.bytes[0] = *k;
-               k+=1;
-               FOO.bytes[1] = *k;
-               k+=1;
-               FOO.bytes[2] = *k;
-               k+=1;
-               FOO.bytes[3] = *k;
-               STACK.push_back(STACK[Limits.back()+FOO.x]);
+               memcpy(&i1,k,sizeof(int));
+               k+=3;
+               STACK.push_back(STACK[Limits.back()+i1]);
              }
 
              break;
@@ -886,6 +893,50 @@ public:
                 k = program + p4.i;
                 continue;
              }
+             else if(p1.type=='z')
+             {
+               Generator* g= (Generator*)p1.ptr;
+               if(method_name=="isAlive")
+               {
+                PltObject isAlive;
+                isAlive.type = 'b';
+                isAlive.i = (g->state!=STOPPED);
+                STACK.push_back(isAlive);
+                k++;
+                continue;
+               }
+               if(method_name!="resume")
+               {
+                   spitErr(NAME_ERROR,"Error generator has no member "+method_name,true);
+                   continue;
+               }
+
+               if(g->state==STOPPED)
+               {
+                spitErr(VALUE_ERROR,"Error the generator has terminated cannot resume it!",true);
+                continue;
+               }
+               
+               if(g->state==RUNNING)
+               {
+                spitErr(VALUE_ERROR,"Error the generator already running cannot resume it!",true);
+                continue;
+               }
+                callstack.push_back(k+1);
+                if(callstack.size()>=1000)
+                {
+                    spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
+                    continue;
+                }
+                executing.push_back(p1.s);
+                STACK.push_back(p1);
+                Limits.push_back(STACK.size());
+                STACK.insert(STACK.end(),g->locals.begin(),g->locals.end());
+               // printf("resuming to %d\n",g->curr);
+               g->state = RUNNING;
+                k = program + g->curr;
+                continue;
+             }
              else
              {
                spitErr(TYPE_ERROR,"Error member operator '.' not supported for type "+fullform(p1.type),true);
@@ -1006,9 +1057,8 @@ public:
          }
          case RETURN:
          {
-             k = callstack[callstack.size()-1]-1;
-        //     printf("returning to %d\n",k+1);
-             callstack.pop_back();
+            k = callstack[callstack.size()-1]-1;
+            callstack.pop_back();
             executing.pop_back();
             PltObject val = STACK[STACK.size()-1];
             while(STACK.size()!=Limits.back())
@@ -1016,10 +1066,51 @@ public:
               STACK.pop_back();
             }
             Limits.pop_back();
-        //    printf("returning object of type %c\n",val.type);
-          //  printf("addr = %x\n",val.ptr);
-        //    printf("isValid = %d\n",(memory.find(val.ptr)!=memory.end()));
             STACK.push_back(val);
+             break;
+         }
+         case YIELD:
+         {
+            executing.pop_back();
+            PltObject val = STACK[STACK.size()-1];
+            STACK.pop_back();
+            PltList locals = {STACK.end()-(STACK.size()-Limits.back()),STACK.end()};
+      //      printf("storing locals: ");
+      //      for(auto e: locals)
+        //      printf("%s  ",PltObjectToStr(e).c_str());
+            STACK.erase(STACK.end()-(STACK.size()-Limits.back()),STACK.end());
+            PltObject genObj = STACK.back();
+            STACK.pop_back();
+            Generator* g = (Generator*)genObj.ptr;
+            g->locals = locals;
+            g->curr = k - program+1;
+            g->state = SUSPENDED;
+            Limits.pop_back();
+            STACK.push_back(val);
+            k = callstack[callstack.size()-1]-1;
+            callstack.pop_back();
+             break;
+         }
+         case GEN_STOP:
+         {
+            executing.pop_back();
+            PltObject val = STACK[STACK.size()-1];
+            STACK.pop_back();
+            PltList locals = {STACK.end()-(STACK.size()-Limits.back()),STACK.end()};
+      //      printf("storing locals: ");
+      //      for(auto e: locals)
+        //      printf("%s  ",PltObjectToStr(e).c_str());
+            STACK.erase(STACK.end()-(STACK.size()-Limits.back()),STACK.end());
+            PltObject genObj = STACK.back();
+            STACK.pop_back();
+            Generator* g = (Generator*)genObj.ptr;
+            g->locals = locals;
+            g->curr = k - program+1;
+            g->state = STOPPED;
+            Limits.pop_back();
+            STACK.push_back(val);
+            k = callstack[callstack.size()-1]-1;
+            callstack.pop_back();
              break;
          }
          case POP_STACK:
@@ -1034,18 +1125,6 @@ public:
            k+=3;
            STACK.erase(STACK.end()-i1,STACK.end());
            break;
-         }
-         case RETURN_NIL:
-         {
-              k = callstack[callstack.size()-1]-1;
-             callstack.pop_back();
-              executing.pop_back();
-              //Clean up
-              STACK.erase(STACK.begin()+Limits.back(),STACK.end());
-            p1.type = 'n';
-            STACK.push_back(p1);
-            Limits.pop_back();
-              break;
          }
          case GOTO_CALLSTACK:
          {
@@ -2024,13 +2103,13 @@ public:
                   }
                   executing.push_back(val.s+".__index__");
                   Limits.push_back(STACK.size());
-                  STACK.push_back(val);
                   STACK.push_back(i);
+                                    STACK.push_back(val);
                   k = program + p3.i;
                   continue;
                 }
                }
-                                orgk = k - program;
+                orgk = k - program;
                 spitErr(TYPE_ERROR,"Error operator '[]' unsupported for types "+fullform(val.type)+" and "+fullform(i.type),true);
                 continue;
              }
@@ -2317,11 +2396,9 @@ public:
              PltObject a = STACK[STACK.size()-1];
              STACK.pop_back();
              k+=1;
-             FOO.bytes[0] = *(k++);
-             FOO.bytes[1] = *(k++);
-             FOO.bytes[2] = *(k++);
-             FOO.bytes[3] = *k;
-             string mname = nameTable[FOO.x];
+             memcpy(&i1,k,sizeof(int));
+             k+=3;
+             string mname = nameTable[i1];
           //   printf("%c\n",a.type);
              if(a.type!='c' && a.type!='o' && a.type!='q' && a.type!='e')
              {
@@ -2367,14 +2444,10 @@ public:
                if(a.type=='o')
                {
                  reg.s = "@"+mname;
-                 //printf("reg.s = %s\n",reg.s.c_str());
                  if(d.find(reg)!=d.end())
-                 {
-                   //private member
-                   //printf("found private member\n");
+                 {;
                    string A = executing.back();
                    A = A.substr(0,A.find('.'));
-                //   printf("A = %s\n",A.c_str());
                    if(a.s!=A)
                    {
                      spitErr(ACCESS_ERROR,"Error cannot access private member "+mname+" of class "+a.s+"'s object!",true);
@@ -2401,47 +2474,48 @@ public:
          case LOAD_FUNC:
          {
            k+=1;
-           FOO.bytes[0] = *k;
-           k+=1;
-           FOO.bytes[1] = *k;
-           k+=1;
-           FOO.bytes[2] = *k;
-           k+=1;
-           FOO.bytes[3] = *k;
-           k+=1;
-           int  p= FOO.x;
-           FOO.bytes[0] = *k;
-           k+=1;
-           FOO.bytes[1] = *k;
-           k+=1;
-           FOO.bytes[2] = *k;
-           k+=1;
-           FOO.bytes[3] = *k;
-           k+=1;
+           int p;
+           mempcpy(&p,k,sizeof(int));
+           k+=4;
+           int idx;
+           memcpy(&idx,k,sizeof(int));
+           k+=4;
            PltObject fn;
            fn.type='w';
-           fn.s = nameTable[FOO.x];
+           fn.s = nameTable[idx];
            fn.i = p;
            fn.extra = *k;
            STACK.push_back(fn);
           // printf("loaded function %s onto the stack\n",fn.s.c_str());
            break;
          }
+         case LOAD_GEN:
+         {
+           k+=1;
+           int p;
+           mempcpy(&p,k,sizeof(int));
+           k+=4;
+           int idx;
+           memcpy(&idx,k,sizeof(int));
+           k+=4;
+           PltObject gen;
+           gen.type='g';
+           gen.s = nameTable[idx];
+           gen.i = p;
+           gen.extra = *k;
+           STACK.push_back(gen);
+           break;
+         }
          case BUILD_CLASS:
          {
            k+=1;
-           FOO.bytes[0] = *(k++);
-           FOO.bytes[1] = *(k++);
-           FOO.bytes[2] = *(k++);
-           FOO.bytes[3] = *(k++);
-           int N = FOO.x;
-           FOO.bytes[0] = *(k++);
-           FOO.bytes[1] = *(k++);
-           FOO.bytes[2] = *(k++);
-           FOO.bytes[3] = *(k);
-           string name = nameTable[FOO.x];
-        //   printf("building class %s\n",name.c_str());
-        //   printf("total members = %d\n",N);
+           int N;
+           memcpy(&N,k,sizeof(int));
+           k+=4;
+           int idx;
+           memcpy(&idx,k,sizeof(int));
+           k+=3;
+           string name = nameTable[idx];
            PltObject klass;
            klass.type = 'v';
            klass.s = name;
@@ -2465,26 +2539,18 @@ public:
            klass.ptr = (void*)d;
            //
            STACK.push_back(klass);
-        //   klass.type = 'a';
-        //   printf("%s\n",PltObjectToStr(klass).c_str());
            break;
          }
          case BUILD_DERIVED_CLASS:
          {
            orgk = k - program;
            k+=1;
-           FOO.bytes[0] = *(k++);
-           FOO.bytes[1] = *(k++);
-           FOO.bytes[2] = *(k++);
-           FOO.bytes[3] = *(k++);
-           int N = FOO.x;
-           FOO.bytes[0] = *(k++);
-           FOO.bytes[1] = *(k++);
-           FOO.bytes[2] = *(k++);
-           FOO.bytes[3] = *(k);
-           string name = nameTable[FOO.x];
-        //   printf("building class %s\n",name.c_str());
-        //   printf("total members = %d\n",N);
+           memcpy(&i1,k,sizeof(int));
+           k+=4;
+           int N;
+           memcpy(&N,k,sizeof(int));
+           k+=3;
+           string name = nameTable[i1];
            PltObject klass;
            klass.type = 'v';
            klass.s = name;
@@ -2526,21 +2592,16 @@ public:
              }
            }
            klass.ptr = (void*)d;
-           //
            STACK.push_back(klass);
-      //     klass.type = 'a';
-      //     printf("%s\n",PltObjectToStr(klass).c_str());
            break;
          }
          case LOAD_NAME:
          {
            k+=1;
-           FOO.bytes[0] = *(k++);
-                      FOO.bytes[1] = *(k++);
-                                 FOO.bytes[2] = *(k++);
-                                            FOO.bytes[3] = *(k);
+           memcpy(&i1,k,sizeof(int));
+           k+=3;
            PltObject ret;
-           ret.s = nameTable[FOO.x];
+           ret.s = nameTable[i1];
            ret.type = 's';
            STACK.push_back(ret);
            break;
@@ -2549,7 +2610,7 @@ public:
          {
            orgk = k - program;
            PltObject fn = STACK.back();
-           if(fn.type!='v' && fn.type!='w')
+           if(fn.type!='v' && fn.type!='w' && fn.type!='g')
            {
              spitErr(TYPE_ERROR,"Error type "+fullform(fn.type)+" not callable!",true);
              continue;
@@ -2618,6 +2679,25 @@ public:
             r.ptr = (void*)obj;
             r.s = fn.s;
             STACK.push_back(r);
+          }
+          else
+          {
+            if(N!=fn.extra)
+            {
+              spitErr(ARGUMENT_ERROR,"Error generator "+fn.s+" takes "+to_string(fn.extra)+" arguments,"+to_string(N)+" given!",true);
+              continue;
+            }
+            Generator* g = allocGen();
+            g->curr = fn.i;
+            g->state = SUSPENDED;
+            vector<PltObject> locals = {STACK.end()-N,STACK.end()};
+            STACK.erase(STACK.end()-N,STACK.end());
+            g->locals = locals;
+            PltObject T;
+            T.type='z';
+            T.ptr = g;
+            STACK.push_back(T);
+            DoThreshholdBusiness();
           }
           break;
          }
@@ -2728,42 +2808,36 @@ public:
          {
            orgk = k - program;
            k+=1;
-           FOO.bytes[0] = *k;
-           k+=1;
-           FOO.bytes[1] = *k;
-           k+=1;
-           FOO.bytes[2] = *k;
-           k+=1;
-           FOO.bytes[3] = *k;
-           char t = STACK[Limits.back()+FOO.x].type;
-          // printf("incrementing STACK value at index %d",FOO.x);
+           memcpy(&i1,k,sizeof(int));
+           k+=3;
+           char t = STACK[Limits.back()+i1].type;
           if(t=='i')
           {
-            if(STACK[Limits.back()+FOO.x].i==INT_MAX)
+            if(STACK[Limits.back()+i1].i==INT_MAX)
             {
-                STACK[Limits.back()+FOO.x].l = (long long int)INT_MAX+1;
-                STACK[Limits.back()+FOO.x].type = 'l';
+                STACK[Limits.back()+i1].l = (long long int)INT_MAX+1;
+                STACK[Limits.back()+i1].type = 'l';
             }
             else
-              STACK[Limits.back()+FOO.x].i+=1;
+              STACK[Limits.back()+i1].i+=1;
           }
           else if(t=='l')
           {
-            if(STACK[Limits.back()+FOO.x].l==LLONG_MAX)
+            if(STACK[Limits.back()+i1].l==LLONG_MAX)
             {
               spitErr(OVERFLOW_ERROR,"Error numeric overflow",true);
               continue;
             }
-            STACK[Limits.back()+FOO.x].l+=1;
+            STACK[Limits.back()+i1].l+=1;
           }
           else if(t=='f')
           {
-            if(STACK[Limits.back()+FOO.x].f==FLT_MAX)
+            if(STACK[Limits.back()+i1].f==FLT_MAX)
             {
               spitErr(OVERFLOW_ERROR,"Error numeric overflow",true);
               continue;
             }
-            STACK[Limits.back()+FOO.x].f+=1;
+            STACK[Limits.back()+i1].f+=1;
           }
          else
          {
@@ -3004,59 +3078,35 @@ public:
          }
          case JMP:
          {
-                k+=1;
-             FOO.bytes[0] = *k;
              k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-
-             int where = k-program+FOO.x+1;
+             memcpy(&i1,k,sizeof(int));
+             k+=3;
+             int where = k-program+i1+1;
              k = program+where-1;
              break;
          }
          case JMPNPOPSTACK:
          {
-                k+=1;
-             FOO.bytes[0] = *k;
              k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int N = FOO.x;
+             int N;
+             memcpy(&N,k,sizeof(int));
+             k+=4;
              STACK.erase(STACK.end()-N,STACK.end());
-             k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int where = k-program+FOO.x;
-
+             memcpy(&i1,k,sizeof(int));
+             k+=3;
+             int where = k-program+i1;
              k = program+where;
              break;
          }
          case JMPIF:
          {
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-
-             int where = k-program+FOO.x+1;
-             PltObject cond = STACK[STACK.size()-1];
+             memcpy(&i1,k,sizeof(int));
+             k+=3;
+             int where = k-program+i1+1;
+             p1 = STACK[STACK.size()-1];
              STACK.pop_back();
-             if(cond.i)
+             if(p1.i)
                 k = program+where-1;
              else
                 break;
@@ -3111,157 +3161,75 @@ public:
 
          case GOTO:
          {
-            // int orgk = k - program;
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             k = program + FOO.x-1;
+             memcpy(&i1,k,sizeof(int));
+             k = program + i1-1;
              break;
          }
          case BREAK:
          {
-             int orgk = k - program;
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             k+=1;
-             int  p= FOO.x;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             while(FOO.x!=0)
-             {
-               //locals.pop_back();
-               STACK.pop_back();
-               FOO.x-=1;
-             }
+             memcpy(&i1,k,sizeof(int));
+             k+=4;
+             int  p = i1;
+             memcpy(&i1,k,sizeof(int));
+             STACK.erase(STACK.end()-i1,STACK.end());
              k = program+p;
-             PltObject n;
-             n.type = 'n';
-             STACK.push_back(n);
+             p1.type = 'n';
+             STACK.push_back(p1);
              continue;
          }
          case CONT:
          {
-        //     printf("breaking\n");
-             int orgk = k - program;
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             k+=1;
-             int  p= FOO.x;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             while(FOO.x!=0)
-             {
-               //locals.pop_back();
-               STACK.pop_back();
-               FOO.x-=1;
-             }
+             int p;
+             memcpy(&p,k,sizeof(int));
+             k+=4;
+             memcpy(&i1,k,sizeof(int));
+             STACK.erase(STACK.end()-i1,STACK.end());
              k = program+p;
-
              continue;
          }
          case BACKJMP:
          {
              orgk = k - program;
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int where = orgk-FOO.x;
-             k = program+where;
+             memcpy(&i1,k,sizeof(int));
+             i1 = orgk-i1;
+             k = program+i1;
              continue;
          }
          case GOTONPSTACK:
          {
-           orgk = k - program;
-                k+=1;
-             FOO.bytes[0] = *k;
              k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int N = FOO.x;
-             STACK.erase(STACK.end()-N,STACK.end());
-             k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int where = FOO.x;
-             k = program+where;
+             memcpy(&i1,k,sizeof(int));
+             k+=4;
+             STACK.erase(STACK.end()-i1,STACK.end());
+             memcpy(&i1,k,sizeof(int));
+             k = program+i1;
              continue;
          }
          case JMPIFFALSE:
          {
-             int orgk = k - program;
              k+=1;
-             FOO.bytes[0] = *k;
-             k+=1;
-             FOO.bytes[1] = *k;
-             k+=1;
-             FOO.bytes[2] = *k;
-             k+=1;
-             FOO.bytes[3] = *k;
-             int where = k-program+FOO.x+1;
-
-             PltObject cond = STACK[STACK.size()-1];
+             memcpy(&i1,k,sizeof(int));
+             k+=3;
+             i1 = k-program+i1+1;
+             p1 = STACK[STACK.size()-1];
              STACK.pop_back();
-             if(cond.type=='n')
+             if(p1.type=='n')
              {
-               k=program+where;
+               k=program+i1;
                continue;
              }
-           //  printf("*(bool*)cond.ptr = %d\n",*(bool*)cond.ptr);
-
-             if(cond.i==0)
-                k = program+where-1;
-             else
-             {
-                break;
-             }
-         // printf("k = %d\n",k);
-          //  exit(0);
-            break;
+             if(p1.i==0)
+                k = program+i1-1;
+             break;
          }
          default:
          {
              printf("An InternalError occurred.Error Code: 14\n");
-             printf("k = %ld\n",k - program);
+           //  printf("k = %ld\n",k - program);
              exit(0);
              break;
          }

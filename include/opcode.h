@@ -31,7 +31,7 @@ enum OPCODE
     GOTO=27,
     POP_STACK = 28,
     LOAD_CONST = 29,
-    RETURN_NIL = 30,
+    GEN_STOP = 30, //stops a generator
     SMOREQ = 31,
     GROREQ = 32,
     NEG = 33,
@@ -61,6 +61,8 @@ enum OPCODE
     IS = 57,
     ONERR_GOTO = 58,
     POP_EXCEP_TARG = 59,
-    THROW = 60
+    THROW = 60,
+    LOAD_GEN = 61,
+    YIELD = 62
 };
 #endif
