@@ -116,6 +116,14 @@ string PltObjectToStr(const PltObject& a)
             string s = buff;
             return s;
         }
+        else if(a.type=='z')
+        {
+          return "Coroutine Object";
+        }
+        else if(a.type=='g')
+        {
+          return "Coroutine";
+        }
         else if(a.type=='j')
         {
 

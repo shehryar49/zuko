@@ -1004,6 +1004,18 @@ public:
         tokens[1].content = "@"+tokens[1].content;
       ast->childs.push_back(NewNode("id: "+tokens[1].content));
       vector<Token> expr = {tokens.begin()+3,tokens.end()};
+      if(expr[0].type==KEYWORD_TOKEN && expr[0].content == "yield")
+      {
+         foundYield = true;
+         expr = {expr.begin()+1,expr.end()};
+         ast->childs.push_back(NewNode("yield"));
+         if(expr.size()==0)
+            parseError("SyntaxError","Error expected expression after return keyword",false);
+          Node* n = NewNode("line "+to_string(tokens[0].ln));
+          ast->childs.back()->childs.push_back(n);
+          ast->childs.back()->childs.push_back(parseExpr(expr));
+        return ast;
+      }
       ast->childs.push_back(parseExpr(expr));
       return ast;
     }
@@ -1402,34 +1414,43 @@ public:
           }
           if(tokens[k].content=="=")
           {
-              Node* ast = NewNode(tokens[k].content);
-              vector<Token> left = {tokens.begin(),tokens.begin()+k};
-                     // line_num  = tokens[k].ln;
-          if(left.size()==0)
+            Node* ast = NewNode(tokens[k].content);
+            vector<Token> left = {tokens.begin(),tokens.begin()+k};
+            if(left.size()==0)
               parseError("SyntaxError","Invalid Syntax",false);
-                          Node* n = NewNode("line "+to_string(tokens[k].ln));
-          ast->childs.push_back(n);
-              ast->childs.push_back(parseExpr(left));
-           //   printf("left node: %s\n",ast->left->val.c_to_string());
-              vector<Token> right = {tokens.begin()+k+1,tokens.end()};
-          if(right.size()==0)
+            Node* n = NewNode("line "+to_string(tokens[k].ln));
+            ast->childs.push_back(n);
+            ast->childs.push_back(parseExpr(left));
+            vector<Token> right = {tokens.begin()+k+1,tokens.end()};
+            if(right.size()==0)
               parseError("SyntaxError","Invalid Syntax",false);
-              ast->childs.push_back(parseExpr(right));
+            if(right[0].type==KEYWORD_TOKEN && right[0].content=="yield")
+            {
+              right = {right.begin()+1,right.end()};
+              ast->childs.push_back(NewNode("yield"));
+              if(right.size()==0)
+                parseError("SyntaxError","Error expected expression after return keyword",false);
+              Node* n = NewNode("line "+to_string(tokens[k+1].ln));
+              ast->childs.back()->childs.push_back(n);
+              ast->childs.back()->childs.push_back(parseExpr(right));
+              foundYield = true;
               return ast;
+            }
+            ast->childs.push_back(parseExpr(right));
+            return ast;
           }
-          else if(tokens[k].content=="+=" || tokens[k].content=="-=" || tokens[k].content=="/=" || tokens[k].content=="*=" || tokens[k].content=="^=" || tokens[k].content=="%=" || tokens[k].content=="|=" || tokens[k].content=="&=" || tokens[k].content=="~=")
+          else if(tokens[k].content=="+=" || tokens[k].content=="-=" || tokens[k].content=="/=" || tokens[k].content=="*=" || tokens[k].content=="^=" || tokens[k].content=="%=" || tokens[k].content=="|=" || tokens[k].content=="&=" || tokens[k].content=="<<=" || tokens[k].content==">>=")
           {
              Node* ast = NewNode("=");
              vector<Token> left = {tokens.begin(),tokens.begin()+k};
              //line_num  = tokens[k].ln;
-             if(left.size()==0)
+             if(left.size()==0 )
                parseError("SyntaxError","Invalid Syntax",false);
              Node* n = new Node;
              n->val = "line ";
              n->val+=to_string(tokens[k].ln);
              ast->childs.push_back(n);
              ast->childs.push_back(parseExpr(left));
-           //   printf("left node: %s\n",ast->left->val.c_to_string());
              Token o;
              o.type = OP_TOKEN;
              o.content+=tokens[k].content[0];
@@ -1437,9 +1458,10 @@ public:
              vector<Token> right = {tokens.begin()+k+1,tokens.end()};
              if(right.size()==0)
                parseError("SyntaxError","Invalid Syntax",false);
+             
              right.insert(right.begin(),left.begin(),left.end());
              ast->childs.push_back(parseExpr(right));
-               return ast;
+             return ast;
           }
           k+=1;
       }

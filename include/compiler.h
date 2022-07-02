@@ -779,6 +779,19 @@ public:
               return bytes;
           }
       }
+      if (ast->val == "yield")
+      {
+        if(inConstructor)
+          compileError("SyntaxError","Error class constructor can not be generators!",false);
+        char t;
+        vector<unsigned char> val = exprByteCode(ast->childs[1], t, infunc);
+        bytes.insert(bytes.end(), val.begin(), val.end());              
+        ByteSrc tmp = { fileTOP,line_num };
+        LineNumberTable.emplace(bytes_done, tmp);
+        bytes.push_back(YIELD_AND_EXPECTVAL);
+        bytes_done += 1;
+        return bytes;
+      }  
       compileError("SyntaxError", "Invalid syntax in expression", false);
       exit(0);
       return bytes;
@@ -2047,7 +2060,7 @@ public:
                   STACK_SIZE+=1;
                 }
                 if(isGen)
-                  program.push_back(LOAD_GEN);
+                  program.push_back(LOAD_CO);
                 else
                   program.push_back(LOAD_FUNC);
                 FOO.x = bytes_done+2+JUMPOFFSet_Size+JUMPOFFSet_Size+JUMPOFFSet_Size+1;
@@ -2118,7 +2131,7 @@ public:
                         funcBody.push_back(FOO.bytes[2]);
                         funcBody.push_back(FOO.bytes[3]);
                         if(isGen)
-                          funcBody.push_back(GEN_STOP);
+                          funcBody.push_back(CO_STOP);
                         else
                           funcBody.push_back(RETURN);
                         bytes_done +=6;
@@ -2134,7 +2147,7 @@ public:
                         funcBody.push_back(FOO.bytes[2]);
                         funcBody.push_back(FOO.bytes[3]); 
                         if(isGen)
-                          funcBody.push_back(GEN_STOP);
+                          funcBody.push_back(CO_STOP);
                         else
                           funcBody.push_back(RETURN);
                         bytes_done +=6;
@@ -2271,7 +2284,7 @@ public:
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable.emplace(bytes_done, tmp);
               if(inGen)
-                program.push_back(GEN_STOP);
+                program.push_back(CO_STOP);
               else
                 program.push_back(RETURN);
               bytes_done += 1;

@@ -31,7 +31,7 @@ enum OPCODE
     GOTO=27,
     POP_STACK = 28,
     LOAD_CONST = 29,
-    GEN_STOP = 30, //stops a generator
+    CO_STOP = 30, //stops a co routine
     SMOREQ = 31,
     GROREQ = 32,
     NEG = 33,
@@ -62,7 +62,8 @@ enum OPCODE
     ONERR_GOTO = 58,
     POP_EXCEP_TARG = 59,
     THROW = 60,
-    LOAD_GEN = 61,
-    YIELD = 62
+    LOAD_CO = 61,
+    YIELD = 62,
+    YIELD_AND_EXPECTVAL = 63
 };
 #endif

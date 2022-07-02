@@ -1973,7 +1973,7 @@ void initFunctions()
   funcs.emplace("atan",&ATAN);
   funcs.emplace("fseek",&FSEEK);
   funcs.emplace("bytes",&BYTES);
-  funcs.emplace("ListFromBytes",makeList);
+  funcs.emplace("ListFromBytes",&makeList);
   funcs.emplace("ByteToInt",&ByteToInt);
   funcs.emplace("str",&STR);
   funcs.emplace("IntToByte",&IntToByte);

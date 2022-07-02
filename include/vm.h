@@ -102,19 +102,14 @@ string fullform(char t)
     else if(t=='e')
       return "Error Object";
     else if(t=='g')
-      return "Generator";
+      return "Coroutine";
     else if(t=='z')
-      return "Generator Object";
+      return "Coroutine Object";
     else
         return "Unknown";
 }
 
-     #ifdef BUILD_FOR_WINDOWS
-     vector<HINSTANCE> moduleHandles;//for freeing later
-     #endif // BUILD_FOR_WINDOWS
-     #ifdef BUILD_FOR_LINUX
-     vector<void*> moduleHandles;
-     #endif
+
 struct MemInfo
 {
   char type;
@@ -153,7 +148,18 @@ private:
     vector<size_t> tryStackCleanup;
     vector<int> Limits = {0};
     size_t orgk = 0;
-    
+    std::unordered_map<void*,MemInfo> memory;
+    size_t allocated = 0;
+    vector<unsigned char*> except_targ;
+    vector<size_t> tryLimitCleanup;
+    //int Gc_Cycles = 0;
+     #ifdef BUILD_FOR_WINDOWS
+     vector<HINSTANCE> moduleHandles;
+     #endif // BUILD_FOR_WINDOWS
+     #ifdef BUILD_FOR_LINUX
+     vector<void*> moduleHandles;
+     #endif
+     vector<string> executing = {""};
 public:
   vector<PltObject> STACK;
   vector<func> nativeFunctions;//addresses of native functions
@@ -163,11 +169,6 @@ public:
   vector<string> nameTable;
   PltObject* constants;
   int total_constants;//total constants stored in the array constants
-  std::unordered_map<void*,MemInfo> memory;
-  size_t allocated = 0;
-  vector<unsigned char*> except_targ;
-  vector<size_t> tryLimitCleanup;
-  //int Gc_Cycles = 0;
   void load(vector<unsigned char> b)
   {
       program = new unsigned char[b.size()];
@@ -264,15 +265,15 @@ public:
     memory.emplace((void*)p,m);
     return p;
   }
-  Generator* allocGen()
+  Coroutine* allocCoroutine()
   {
-    Generator* p = new Generator;
+    Coroutine* p = new Coroutine;
     if(!p)
     {
       printf("error allocating memory!\n");
       exit(0);
     }
-    allocated+=sizeof(Generator);
+    allocated+=sizeof(Coroutine);
     MemInfo m;
     m.type = 'z';
     m.isMarked = false;
@@ -344,7 +345,7 @@ public:
     else if(obj.type=='z')
     {
       memory[obj.ptr].isMarked = true;
-      Generator* g = (Generator*)obj.ptr;
+      Coroutine* g = (Coroutine*)obj.ptr;
       for(auto e: g->locals)
         markObject(e);
     }
@@ -393,7 +394,7 @@ public:
          delete (FileObject*)e;
       }
       else if(type=='z')
-        delete (Generator*)e;
+        delete (Coroutine*)e;
       else if(type=='c')
       {
       //  printf("gc handling object exposed from module\n");
@@ -457,13 +458,37 @@ public:
       }
     }
   }
+  bool invokeOperator(string meth,PltObject obj,int args,string op)  //check if the object has the specified operator overloaded and prepares to call it by updating callstack and Limits
+  {
+    pd_ptr1 = (Dictionary*)obj.ptr;
+    p3.type = 's';
+    p3.s = meth;
+    auto it = pd_ptr1->find(p3);
+    if(it!=pd_ptr1->end())
+    {
+      p3 = it->second;
+      if(p3.type=='w' && p3.extra==args)
+      {
+        callstack.push_back(k+1);
+        if(callstack.size()>=1000)
+        {
+            spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
+            return false;
+        }
+        executing.push_back(p1.s+"."+meth);
+        Limits.push_back(STACK.size());
+        k = program + p3.i;
+        return true;
+      }
+    }
+    spitErr(TYPE_ERROR,"Error operator '"+op+"' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
+    return false;
+  }
   void interpret()
   {
      srand(time(0));
      k = program;
      unsigned char inst;
-     vector<string> executing = {""};
-
      while(*k!=OP_EXIT)
      {
          inst = *k;
@@ -895,7 +920,7 @@ public:
              }
              else if(p1.type=='z')
              {
-               Generator* g= (Generator*)p1.ptr;
+               Coroutine* g= (Coroutine*)p1.ptr;
                if(method_name=="isAlive")
                {
                 PltObject isAlive;
@@ -907,7 +932,7 @@ public:
                }
                if(method_name!="resume")
                {
-                   spitErr(NAME_ERROR,"Error generator has no member "+method_name,true);
+                   spitErr(NAME_ERROR,"Error couroutine object has no member "+method_name,true);
                    continue;
                }
 
@@ -919,8 +944,26 @@ public:
                
                if(g->state==RUNNING)
                {
-                spitErr(VALUE_ERROR,"Error the generator already running cannot resume it!",true);
+                spitErr(VALUE_ERROR,"Error the coroutine already running cannot resume it!",true);
                 continue;
+               }
+               bool push = false;
+               if(g->giveValOnResume)
+               {
+                 if(pl1.size()!=1)
+                 {
+                  spitErr(VALUE_ERROR,"Error the coroutine expects one value to be resumed!",true);
+                  continue;
+                 }
+                 push = true;
+               }
+               else
+               {
+                if(pl1.size()!=0)
+                {
+                  spitErr(VALUE_ERROR,"Error the coroutine does not expect any value to resume it!",true);
+                  continue;
+                }
                }
                 callstack.push_back(k+1);
                 if(callstack.size()>=1000)
@@ -932,8 +975,11 @@ public:
                 STACK.push_back(p1);
                 Limits.push_back(STACK.size());
                 STACK.insert(STACK.end(),g->locals.begin(),g->locals.end());
+                if(push)
+                STACK.push_back(pl1[0]);
                // printf("resuming to %d\n",g->curr);
                g->state = RUNNING;
+               g->giveValOnResume = false;
                 k = program + g->curr;
                 continue;
              }
@@ -1081,17 +1127,18 @@ public:
             STACK.erase(STACK.end()-(STACK.size()-Limits.back()),STACK.end());
             PltObject genObj = STACK.back();
             STACK.pop_back();
-            Generator* g = (Generator*)genObj.ptr;
+            Coroutine* g = (Coroutine*)genObj.ptr;
             g->locals = locals;
             g->curr = k - program+1;
             g->state = SUSPENDED;
+            g->giveValOnResume = false;
             Limits.pop_back();
             STACK.push_back(val);
             k = callstack[callstack.size()-1]-1;
             callstack.pop_back();
              break;
          }
-         case GEN_STOP:
+         case YIELD_AND_EXPECTVAL:
          {
             executing.pop_back();
             PltObject val = STACK[STACK.size()-1];
@@ -1103,7 +1150,30 @@ public:
             STACK.erase(STACK.end()-(STACK.size()-Limits.back()),STACK.end());
             PltObject genObj = STACK.back();
             STACK.pop_back();
-            Generator* g = (Generator*)genObj.ptr;
+            Coroutine* g = (Coroutine*)genObj.ptr;
+            g->locals = locals;
+            g->curr = k - program+1;
+            g->state = SUSPENDED;
+            g->giveValOnResume = true;
+            Limits.pop_back();
+            STACK.push_back(val);
+            k = callstack[callstack.size()-1]-1;
+            callstack.pop_back();
+             break;
+         }
+         case CO_STOP:
+         {
+            executing.pop_back();
+            PltObject val = STACK[STACK.size()-1];
+            STACK.pop_back();
+            PltList locals = {STACK.end()-(STACK.size()-Limits.back()),STACK.end()};
+      //      printf("storing locals: ");
+      //      for(auto e: locals)
+        //      printf("%s  ",PltObjectToStr(e).c_str());
+            STACK.erase(STACK.end()-(STACK.size()-Limits.back()),STACK.end());
+            PltObject genObj = STACK.back();
+            STACK.pop_back();
+            Coroutine* g = (Coroutine*)genObj.ptr;
             g->locals = locals;
             g->curr = k - program+1;
             g->state = STOPPED;
@@ -1480,31 +1550,12 @@ public:
              STACK.pop_back();
              if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__add__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__add__",p1,2,"+"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(p1.s+".__add__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(p2);
-                  STACK.push_back(p1);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(p2);
+                STACK.push_back(p1);
                }
-                spitErr(TYPE_ERROR,"Error operator '+' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                continue;
+               continue;
              }
              if(isNumeric(p1.type) && isNumeric(p2.type))
              {
@@ -1614,31 +1665,12 @@ public:
              }
              else if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__smallerthan__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__smallerthan__",p1,2,"<"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                callstack.push_back(k+1);
-                if(callstack.size()>=1000)
-                {
-                    spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                    continue;
-                }
-                executing.push_back(p1.s+".__smallerthan__");
-                Limits.push_back(STACK.size());
                 STACK.push_back(p2);
                 STACK.push_back(p1);
-                k = program + p3.i;
-                continue;
-                }
                }
-                spitErr(TYPE_ERROR,"Error operator '<' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                 continue;
+               continue;
              }
              else
              {
@@ -1675,31 +1707,12 @@ public:
              }
              else if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__greaterthan__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__greaterthan__",p1,2,">"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                callstack.push_back(k+1);
-                if(callstack.size()>=1000)
-                {
-                    spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                    continue;
-                }
-                executing.push_back(p1.s+".__greaterthan__");
-                Limits.push_back(STACK.size());
                 STACK.push_back(p2);
                 STACK.push_back(p1);
-                k = program + p3.i;
-                continue;
-                }
                }
-                spitErr(TYPE_ERROR,"Error operator '>' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                 continue;
+               continue;
              }
              else
              {
@@ -1737,33 +1750,12 @@ public:
              }
              else if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__smallerthaneq__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__smallerthaneq__",p1,2,"<="))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                callstack.push_back(k+1);
-                if(callstack.size()>=1000)
-                {
-                                   orgk = k - program;
-                    spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                    continue;
-                }
-                executing.push_back(p1.s+".__smallerthaneq__");
-                Limits.push_back(STACK.size());
                 STACK.push_back(p2);
                 STACK.push_back(p1);
-                k = program + p3.i;
-                continue;
-                }
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '<=' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                 continue;
+               continue;
              }
              else
              {
@@ -1800,33 +1792,12 @@ public:
              }
              else if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__greaterthaneq__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__greaterthaneq__",p1,2,">="))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                callstack.push_back(k+1);
-                if(callstack.size()>=1000)
-                {
-                                   orgk = k - program;
-                    spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                    continue;
-                }
-                executing.push_back(p1.s+".__greaterthaneq__");
-                Limits.push_back(STACK.size());
                 STACK.push_back(p2);
                 STACK.push_back(p1);
-                k = program + p3.i;
-                continue;
-                }
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '>=' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                 continue;
+               continue;
              }
              else
              {
@@ -1857,29 +1828,13 @@ public:
                 PromoteType(p2,'l');
              if(p1.type=='o' && p2.type!='n')
              {
-               pd_ptr1 = (Dictionary*)p1.ptr;
-               p3.type = 's';
-               p3.s = "__eq__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__eq__",p1,2,"=="))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(p1.s+".__eq__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(p2);
-                  STACK.push_back(p1);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(p2);
+                STACK.push_back(p1);
                }
+               continue;
+             
              }
              p3.type = 'b';
              p3.i = (bool)(p1==p2);
@@ -1891,34 +1846,13 @@ public:
          {
              PltObject a = STACK[STACK.size()-1];
              STACK.pop_back();
-             if(a.type=='o')
+             if(p1.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__not__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__not__",a,1,"!"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==1)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__not__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '!' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                continue;
+               continue;
              }
              if(a.type!='b')
              {
@@ -1939,32 +1873,11 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__neg__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__neg__",a,1,"-"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==1)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(p1.s+".__neg__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '-' unsupported for types "+fullform(p1.type)+" and "+fullform(p2.type),true);
-                continue;
+               continue;
              }
              if(!isNumeric(a.type))
              {
@@ -2085,33 +1998,12 @@ public:
              }
              else if(val.type=='o')
              {
-               pd_ptr1 = (Dictionary*)val.ptr;
-               p3.type = 's';
-               p3.s = "__index__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__index__",val,2,"[]"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(val.s+".__index__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(i);
-                                    STACK.push_back(val);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(i);
+                STACK.push_back(val);
                }
-                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '[]' unsupported for types "+fullform(val.type)+" and "+fullform(i.type),true);
-                continue;
+               continue;
              }
              else
              {
@@ -2131,31 +2023,13 @@ public:
 
              if(a.type=='o' && b.type!='n')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__noteq__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__noteq__",a,2,"!="))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__noteq__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-
+               continue;
+             
              }
              PltObject c;
              c.type = 'b';
@@ -2177,33 +2051,12 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__and__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__and__",a,2,"and"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__and__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator 'or' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
              }
              PltObject c;
              if(a.type!='b' || b.type!='b')
@@ -2246,33 +2099,13 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__or__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__or__",a,2,"or"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(p1.s+".__or__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator 'or' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
+             
              }
              if(a.type!='b' || b.type!='b')
              {
@@ -2296,33 +2129,13 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__mul__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__mul__",a,2,"*"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(p1.s+".__mul__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '*' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
+             
              }
              PltObject c;
              char t;
@@ -2489,7 +2302,7 @@ public:
           // printf("loaded function %s onto the stack\n",fn.s.c_str());
            break;
          }
-         case LOAD_GEN:
+         case LOAD_CO:
          {
            k+=1;
            int p;
@@ -2498,12 +2311,12 @@ public:
            int idx;
            memcpy(&idx,k,sizeof(int));
            k+=4;
-           PltObject gen;
-           gen.type='g';
-           gen.s = nameTable[idx];
-           gen.i = p;
-           gen.extra = *k;
-           STACK.push_back(gen);
+           PltObject co;
+           co.type='g';
+           co.s = nameTable[idx];
+           co.i = p;
+           co.extra = *k;
+           STACK.push_back(co);
            break;
          }
          case BUILD_CLASS:
@@ -2680,19 +2493,20 @@ public:
             r.s = fn.s;
             STACK.push_back(r);
           }
-          else
+          else if(fn.type=='g')
           {
             if(N!=fn.extra)
             {
-              spitErr(ARGUMENT_ERROR,"Error generator "+fn.s+" takes "+to_string(fn.extra)+" arguments,"+to_string(N)+" given!",true);
+              spitErr(ARGUMENT_ERROR,"Error coroutine "+fn.s+" takes "+to_string(fn.extra)+" arguments,"+to_string(N)+" given!",true);
               continue;
             }
-            Generator* g = allocGen();
+            Coroutine* g = allocCoroutine();
             g->curr = fn.i;
             g->state = SUSPENDED;
             vector<PltObject> locals = {STACK.end()-N,STACK.end()};
             STACK.erase(STACK.end()-N,STACK.end());
             g->locals = locals;
+            g->giveValOnResume = false;
             PltObject T;
             T.type='z';
             T.ptr = g;
@@ -2708,35 +2522,15 @@ public:
              STACK.pop_back();
              PltObject a = STACK[STACK.size()-1];
              STACK.pop_back();
-             if(a.type=='o')
+            if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__mod__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__mod__",a,2,"%"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__mod__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '%' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
+             
              }
              PltObject c;
              char t;
@@ -2855,33 +2649,13 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__sub__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__sub__",a,2,"-"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__sub__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '-' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
+             
              }
              PltObject c;
              char t;
@@ -2958,33 +2732,13 @@ public:
              STACK.pop_back();
              if(a.type=='o')
              {
-               pd_ptr1 = (Dictionary*)a.ptr;
-               p3.type = 's';
-               p3.s = "__div__";
-               auto it = pd_ptr1->find(p3);
-               if(it!=pd_ptr1->end())
+               if(invokeOperator("__div__",a,2,"/"))
                {
-                p3 = it->second;
-                if(p3.type=='w' && p3.extra==2)
-                {
-                  callstack.push_back(k+1);
-                  if(callstack.size()>=1000)
-                  {
-                                     orgk = k - program;
-                      spitErr(MAX_RECURSION_ERROR,"Error max recursion limit 1000 reached.",true);
-                      continue;
-                  }
-                  executing.push_back(a.s+".__div__");
-                  Limits.push_back(STACK.size());
-                  STACK.push_back(b);
-                  STACK.push_back(a);
-                  k = program + p3.i;
-                  continue;
-                }
+                STACK.push_back(b);
+                STACK.push_back(a);
                }
-                                orgk = k - program;
-                spitErr(TYPE_ERROR,"Error operator '/' unsupported for types "+fullform(a.type)+" and "+fullform(b.type),true);
-                continue;
+               continue;
+             
              }
              PltObject c;
              //printf("a = %s\nb = %s\n",PltObjectPltObjectToStr(a).c_str(),PltObjectPltObjectToStr(b).c_str());

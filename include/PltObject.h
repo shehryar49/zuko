@@ -61,17 +61,18 @@ struct FileObject
   FILE* fp;
   bool open;
 };
-enum GenState
+enum CoState
 {
   SUSPENDED,
   RUNNING,
   STOPPED,
 };
-struct Generator
+struct Coroutine
 {
-  int curr;//index from where to start the generator
+  int curr;//index from where to start the co routine
   PltList locals;
-  GenState state;
+  CoState state;
+  bool giveValOnResume;
 };
 struct PltObject
 {
