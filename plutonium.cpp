@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 
     //Code for writing the bytecode to a file
 
-   /* FILE* f = fopen("program.pltb","wb");
+   /*FILE* f = fopen("program.pltb","wb");
     //write line number table
     int total = LineNumberTable.size();
     fwrite(&total,sizeof(int),1,f);
