@@ -2358,10 +2358,10 @@ public:
          {
            orgk = k - program;
            k+=1;
-           memcpy(&i1,k,sizeof(int));
-           k+=4;
            int N;
            memcpy(&N,k,sizeof(int));
+           k+=4;
+           memcpy(&i1,k,sizeof(int));
            k+=3;
            string name = nameTable[i1];
            PltObject klass;
@@ -2384,6 +2384,7 @@ public:
            STACK.pop_back();
            if(baseClass.type!='v')
            {
+             printf("%c\n",baseClass.type);
              spitErr(TYPE_ERROR,"Error class can not be derived from object of non class type!",true);
              continue;
            }
