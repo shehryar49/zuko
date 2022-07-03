@@ -1465,7 +1465,8 @@ public:
           }
           k+=1;
       }
-      if(tokens[0].type== TokenType::ID_TOKEN && tokens.size()>=5)
+       
+      /*if(tokens[0].type== TokenType::ID_TOKEN && tokens.size()>=5)
       {
          if(tokens[1].type== TokenType::OP_TOKEN && tokens[1].content==".")
          {
@@ -1474,7 +1475,7 @@ public:
            ast->childs.insert(ast->childs.begin(),line);
            return ast;
          }
-      }
+      }*/
       if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="try")
       {
            Node* line = NewNode("line "+to_string(tokens[0].ln));
@@ -1498,7 +1499,45 @@ public:
         ast->childs.push_back(parseExpr(vector<Token>{tokens[3]}));
         return ast;
       }
-
+    k = tokens.size()-1;
+    while(k>=0)
+    {
+      if(tokens[k].type==TokenType::RParen_TOKEN)
+      {
+        int i = matchRPRight(k,tokens);
+        if(i==-1)
+          parseError("SyntaxError","Invalid Syntax",false);
+        k = i;
+      }
+      else if(tokens[k].type== TokenType::END_LIST_TOKEN)
+      {
+         int i = findBeginList(k,tokens);
+         if(i==-1)
+           parseError("SyntaxError","Invalid Syntax",false);
+         k=i;
+      }
+      else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
+      {
+        int i = findLCBRight(k,tokens);
+        if(i==-1)
+          parseError("SyntaxError","Invalid Syntax",false);
+        k=i;
+      }
+      else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="."))
+      {
+        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
+        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
+        if(lhs.size()==0 || rhs.size()==0)
+          parseError("SyntaxError","Invalid Syntax",false);
+        Node* ast = NewNode(tokens[k].content);
+        Node* line = NewNode("line "+to_string(tokens[0].ln));
+        ast->childs.push_back(line);
+        ast->childs.push_back(parseExpr(lhs));
+        ast->childs.push_back(parseExpr(rhs));
+        return ast;
+      }
+      k-=1;
+    }
     parseError("SyntaxError","Unknown statement",false);
     return nullptr;//to avoid compiler warning otherwise the parseError function exits after printing error message
 
