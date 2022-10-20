@@ -22,8 +22,7 @@ enum TokenType
   NEWLINE_TOKEN,
   BYTE_TOKEN,
   BOOL_TOKEN,
-  EOP_TOKEN,//end of program
-  Ellipsis_TOKEN,
+  EOP_TOKEN//end of program
 };
 struct Token
 {

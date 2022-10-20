@@ -10,7 +10,7 @@ extern vector<string> sources;
 extern short fileTOP;
 extern std::unordered_map<string,func> funcs;
 extern std::unordered_map<size_t, ByteSrc> LineNumberTable;
-
+extern VM vm;
 
 class Compiler
 {
@@ -23,20 +23,17 @@ private:
   vector<int> indexOfLastWhileLocals;
   vector<string>* fnReferenced;
   vector<std::unordered_map<string,int>> locals;
-  VM* vm;//target VM we are compiling for so that we can populate it's constant table
   vector<string> prefixes;
   int* num_of_constants;
 public:
   std::unordered_map<string,int> globals;
   size_t bytes_done = 0;
-  void init(int stSize,VM* p,vector<string>* fnR,int* e)
+  void init(vector<string>* fnR,int* e)
   {
-    STACK_SIZE = stSize;
-    vm = p;
     fnReferenced = fnR;
     num_of_constants = e;
   }
-  void compileError(string type,string msg,bool dummy)
+  void compileError(string type,string msg)
   {
     printf("\nFile %s\n",filename.c_str());
     printf("%s at line %ld\n",type.c_str(),line_num);
@@ -64,9 +61,9 @@ public:
   }
   int isDuplicateConstant(PltObject x)
   {
-      for (int k = 0; k < vm->total_constants; k += 1)
+      for (int k = 0; k < vm.total_constants; k += 1)
       {
-          if (vm->constants[k] == x)
+          if (vm.constants[k] == x)
               return k;
       }
       return -1;
@@ -90,10 +87,10 @@ public:
                       FOO.x = e;
                   else
                   {
-                      FOO.x = vm->total_constants;
+                      FOO.x = vm.total_constants;
                       reg.type = 'i';
                       reg.i = Int(n);
-                      vm->constants[vm->total_constants++] = reg;
+                      vm.constants[vm.total_constants++] = reg;
                   }
                   bytes.push_back(LOAD_CONST);
                   bytes.push_back(FOO.bytes[0]);
@@ -112,10 +109,10 @@ public:
                       FOO.x = e;
                   else
                   {
-                      FOO.x = vm->total_constants;
+                      FOO.x = vm.total_constants;
                       reg.type = 'l';
                       reg.l = toInt64(n);
-                      vm->constants[vm->total_constants++] = reg;
+                      vm.constants[vm.total_constants++] = reg;
                   }
                   bytes.push_back(LOAD_CONST);
                   bytes.push_back(FOO.bytes[0]);
@@ -127,7 +124,7 @@ public:
               }
               else
               {
-                  compileError("OverflowError", "Error integer "+n+" causes overflow!", false);
+                  compileError("OverflowError", "Error integer "+n+" causes overflow!");
               }
               return bytes;
           }
@@ -153,9 +150,9 @@ public:
                   FOO.x = e;
               else
               {
-                  FOO.x = vm->total_constants;
+                  FOO.x = vm.total_constants;
 
-                  vm->constants[vm->total_constants++] = reg;
+                  vm.constants[vm.total_constants++] = reg;
               }
               bytes.push_back(LOAD_CONST);
               bytes.push_back(FOO.bytes[0]);
@@ -178,8 +175,8 @@ public:
                   FOO.x = e;
               else
               {
-                  FOO.x = vm->total_constants;
-                  vm->constants[vm->total_constants++] = reg;
+                  FOO.x = vm.total_constants;
+                  vm.constants[vm.total_constants++] = reg;
               }
               type = 'b';
               bytes.push_back(FOO.bytes[0]);
@@ -191,31 +188,27 @@ public:
           }
           else if (ast->val.substr(0, 8) == "string: ")
           {
-              bytes.push_back(LOAD_CONST);
+              bytes.push_back(LOAD_STR);
               string n = ast->val.substr(ast->val.find(':') + 2);
-              
-              reg.type = 's';
-              reg.s = n;
-              int e = isDuplicateConstant(reg);
-              if (e != -1)
-                  FOO.x = e;
-              else
+              auto it = std::find(vm.strings.begin(),vm.strings.end(),n);
+              if(it==vm.strings.end())
               {
-                  FOO.x = vm->total_constants;
-                  vm->constants[vm->total_constants++] = reg;
+                 vm.strings.push_back(n);
+                 FOO.x = vm.strings.size()-1;
               }
+              else
+                FOO.x = it - vm.strings.begin();
               bytes.push_back(FOO.bytes[0]);
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
               bytes.push_back(FOO.bytes[3]);
-              type = 's';
               bytes_done += 5;
               return bytes;
           }
           else if (substr(0, 8, ast->val) == "keyword: ")
           {
               if (ast->val.substr(9) != "nil")
-                  compileError("SyntaxError", "Invalid Syntax", false);
+                  compileError("SyntaxError", "Invalid Syntax");
               bytes.push_back(LOAD_CONST);
               PltObject ret;
               FOO.x = 0;
@@ -270,8 +263,8 @@ public:
                   FOO.x = e;
               else
               {
-                  FOO.x = vm->total_constants;
-                  vm->constants[vm->total_constants++] = reg;
+                  FOO.x = vm.total_constants;
+                  vm.constants[vm.total_constants++] = reg;
               }
               bytes.push_back(FOO.bytes[0]);
               bytes.push_back(FOO.bytes[1]);
@@ -482,16 +475,15 @@ public:
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable.emplace(bytes_done, tmp);
               string memberName = callnode->childs[1]->val;
-              if(memberName=="__construct__")
-                compileError("SyntaxError","You can't call the construcor explicitly!",false);
-              auto it = std::find(vm->nameTable.begin(),vm->nameTable.end(),memberName);
-              if(it==vm->nameTable.end())
+
+              auto it = std::find(vm.strings.begin(),vm.strings.end(),memberName);
+              if(it==vm.strings.end())
               {
-                 vm->nameTable.push_back(memberName);
-                 FOO.x = vm->nameTable.size()-1;
+                 vm.strings.push_back(memberName);
+                 FOO.x = vm.strings.size()-1;
               }
               else
-                FOO.x = it - vm->nameTable.begin();
+                FOO.x = it - vm.strings.begin();
               bytes.push_back(FOO.bytes[0]);
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
@@ -511,19 +503,18 @@ public:
               bytes.push_back(MEMB);
               //printf("ast->childs[1]->val = %s\n",ast->childs[1]->val.c_str());
               if (substr(0, 3, ast->childs[1]->val) != "id: ")
-                  compileError("SyntaxError", "Invalid Syntax", false);
+                  compileError("SyntaxError", "Invalid Syntax");
               string name = ast->childs[1]->val;
               name = name.substr(4);
-              if(name=="__construct__")
-                compileError("SyntaxError","Stop fooling around with the constructor!",false);
-              auto it = std::find(vm->nameTable.begin(),vm->nameTable.end(),name);
-              if(it==vm->nameTable.end())
+          
+              auto it = std::find(vm.strings.begin(),vm.strings.end(),name);
+              if(it==vm.strings.end())
               {
-                 vm->nameTable.push_back(name);
-                 FOO.x = vm->nameTable.size()-1;
+                 vm.strings.push_back(name);
+                 FOO.x = vm.strings.size()-1;
               }
               else
-                FOO.x = it - vm->nameTable.begin();
+                FOO.x = it - vm.strings.begin();
               bytes.push_back(FOO.bytes[0]);
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
@@ -536,8 +527,17 @@ public:
       if (ast->val == "and")
       {
           char t;
+
           vector<unsigned char> a = exprByteCode(ast->childs[0], t, infunc);
           bytes.insert(bytes.end(), a.begin(), a.end());
+          bytes.push_back(DUP);
+          bytes.push_back(JMPIFFALSE);
+          int I = bytes.size();
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes_done+=6;
           vector<unsigned char> b = exprByteCode(ast->childs[1], t, infunc);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(AND);
@@ -545,6 +545,11 @@ public:
           bytes_done += 1;
           ByteSrc tmp = { fileTOP,line_num };
           LineNumberTable.emplace(bytes_done - 1, tmp);
+          FOO.x = b.size()+1;
+          bytes[I] = FOO.bytes[0];
+          bytes[I+1] = FOO.bytes[1];        
+          bytes[I+2] = FOO.bytes[2];
+          bytes[I+3] = FOO.bytes[3];
           return bytes;
       }
       if (ast->val == "is")
@@ -566,6 +571,14 @@ public:
           char t;
           vector<unsigned char> a = exprByteCode(ast->childs[0], t, infunc);
           bytes.insert(bytes.end(), a.begin(), a.end());
+          bytes.push_back(DUP);
+          bytes.push_back(JMPIF);
+          int I = bytes.size();
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes.push_back(0);
+          bytes_done+=6;
           vector<unsigned char> b = exprByteCode(ast->childs[1], t, infunc);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(OR);
@@ -573,6 +586,11 @@ public:
           bytes_done += 1;
           ByteSrc tmp = { fileTOP,line_num };
           LineNumberTable.emplace(bytes_done - 1, tmp);
+          FOO.x = b.size()+1;
+          bytes[I] = FOO.bytes[0];
+          bytes[I+1] = FOO.bytes[1];        
+          bytes[I+2] = FOO.bytes[2];
+          bytes[I+3] = FOO.bytes[3];
           return bytes;
       }
       if (ast->val == "<")
@@ -755,9 +773,9 @@ public:
               bytes.push_back(CALLFORVAL);
               bool add = true;
               int index = 0;
-              for(index = 0;index < vm->nativeFunctions.size();index+=1)
+              for(index = 0;index < vm.nativeFunctions.size();index+=1)
               {
-                if(vm->nativeFunctions[index]==funcs[name])
+                if(vm.nativeFunctions[index]==funcs[name])
                 {
                   add = false;
                   break;
@@ -765,8 +783,8 @@ public:
               }
               if(add)
               {
-                vm->nativeFunctions.push_back(funcs[name]);
-                FOO.x = vm->nativeFunctions.size()-1;
+                vm.nativeFunctions.push_back(funcs[name]);
+                FOO.x = vm.nativeFunctions.size()-1;
               }
               else
                 FOO.x = index;
@@ -782,7 +800,7 @@ public:
       if (ast->val == "yield")
       {
         if(inConstructor)
-          compileError("SyntaxError","Error class constructor can not be generators!",false);
+          compileError("SyntaxError","Error class constructor can not be generators!");
         char t;
         vector<unsigned char> val = exprByteCode(ast->childs[1], t, infunc);
         bytes.insert(bytes.end(), val.begin(), val.end());              
@@ -792,7 +810,7 @@ public:
         bytes_done += 1;
         return bytes;
       }  
-      compileError("SyntaxError", "Invalid syntax in expression", false);
+      compileError("SyntaxError", "Invalid syntax in expression");
       exit(0);
       return bytes;
   }
@@ -803,7 +821,7 @@ public:
       return getLastMemberName(ast->childs[1]);
   //  printf("ast->childs[1]->val = %s\n",ast->childs[1]->val.c_str());
     if(substr(0,3,ast->childs[1]->val)!="id: ")
-      compileError("SyntaxError","Invalid Syntax",false);
+      compileError("SyntaxError","Invalid Syntax");
     return ast;
   }
   Node* getLastFnName(Node* ast)
@@ -814,7 +832,7 @@ public:
     if(ast->val!="call")
     {
     //  printf("ast->val is %s\n",ast->val.c_str());
-      compileError("SyntaxError","Invalid Syntax",false);
+      compileError("SyntaxError","Invalid Syntax");
     }
     return ast;
   }
@@ -833,7 +851,7 @@ public:
         if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
         {
           line_num = atoi(ast->childs[0]->val.substr(5).c_str());
-          compileError("NameError","Error redeclaration of "+n+".",false);
+          compileError("NameError","Error redeclaration of "+n+".");
         }
         names.push_back(ast->childs[1]->val.substr(4));
       }
@@ -846,18 +864,21 @@ public:
         if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
         {
           line_num = atoi(ast->childs[0]->val.substr(5).c_str());
-          compileError("NameError","Error redeclaration of "+n+".",false);
+          compileError("NameError","Error redeclaration of "+n+".");
         }
-        //if(std::find(fnReferenced->begin(),fnReferenced->end(),n)!=fnReferenced->end())
-        //{
-          names.push_back(ast->val.substr(5));
-        //}
+        names.push_back(ast->val.substr(5));
       }
+      else if(substr(0,3,ast->val)=="gen ") //generator function or coroutine
+      {
+          line_num = atoi(ast->childs[0]->val.substr(5).c_str());
+          compileError("NameError","Error coroutine inside class not allowed.");
+      }
+      
       else if(ast->val=="class" && ast!=org)
       {
         line_num = atoi(ast->childs[0]->val.substr(5).c_str());
-        compileError("SyntaxError","Error classes within a class not supported yet.",false);
-      //  names.push_back(ast->childs[1]->val);
+        compileError("SyntaxError","Error classes within a class not supported yet.");
+      
       }
       ast = ast->childs.back();
     }
@@ -868,10 +889,10 @@ public:
     if(ast->childs[1]->val=="index")
       return getLastMemberName(ast->childs[1]);
     if(substr(0,3,ast->childs[1]->val)!="id: ")
-      compileError("SyntaxError","Invalid Syntax",false);
+      compileError("SyntaxError","Invalid Syntax");
     return ast;
   }
-  int resolveName(string name,bool& isGlobal)
+  int resolveName(string name,bool& isGlobal,bool blowUp=true)
   {
     bool found = false;
     for(int i=locals.size()-1;i>=0;i-=1)
@@ -895,10 +916,10 @@ public:
         return globals[name];
     }
     else
-          compileError("NameError","Error name "+name+" is not defined!",false);
+      if(blowUp)
+          compileError("NameError","Error name "+name+" is not defined!");
     return -1;
   }
-  vector<string> klasses;
   bool inConstructor = false;
   bool inGen = false;
   vector<unsigned char> compile(Node* ast, bool infunc,bool inclass=false)
@@ -923,7 +944,7 @@ public:
               {
                   if (globals.find(name) != globals.end())
                   {
-                    compileError("NameError", "Error redeclaration of variable " + name, false);
+                    compileError("NameError", "Error redeclaration of variable " + name);
                   }
                   FOO.x = STACK_SIZE;
                   if(!inclass)
@@ -934,7 +955,7 @@ public:
               else
               {
                   if(locals.back().find(name)!=locals.back().end())
-                      compileError("NameError", "Error redeclaration of variable " + name, false);
+                      compileError("NameError", "Error redeclaration of variable " + name);
                   FOO.x = STACK_SIZE;
                 //  printf("emplaced variable %s at %ld of locals\n",name.c_str(),FOO.x);
                   if(!inclass)
@@ -943,41 +964,32 @@ public:
               }
 
           }
-          else if (ast->val == "import")
+          else if (ast->val == "import" || ast->val=="importas")
           {
               string name = ast->childs[1]->val;
-              bool loadFile = false;
-              if (substr(0, 7, name) == "string: ")
+              name = name.substr(4);// id:
+              string vname = (ast->val=="importas") ? ast->childs[2]->val.substr(4) : name;
+              bool f;
+              if(resolveName(vname,f,false)!=-1)
               {
-                  loadFile = true;
-                  name = name.substr(8);
+                compileError("NameError","Error redeclaration of name "+name);
               }
-              else if (name.substr(0, 4) == "id: ")
-              {
-                  name = name.substr(4);// id:
-              }
-              if (!loadFile)
-              {
-                  ByteSrc tmp = { fileTOP,line_num };
-                  LineNumberTable.emplace(bytes_done, tmp);
-                  program.push_back(IMPORT);
-                  for (auto e : name)
-                      program.push_back(e);
-                  program.push_back(0);
-                  bytes_done += 2 + name.length();
-                  //locals.back().emplace(name,STACK_SIZE);
-                  //modules.emplace(name,nullptr);
-                  if(scope==0)
-                    globals.emplace(name,STACK_SIZE);
-                  else
-                    locals.back().emplace(name,STACK_SIZE);
-                  STACK_SIZE+=1;
-              }
+              ByteSrc tmp = { fileTOP,line_num };
+              LineNumberTable.emplace(bytes_done, tmp);
+              program.push_back(IMPORT);
+              FOO.x = (int)vm.strings.size();
+              vm.strings.push_back(name);
+              
+              program.push_back(FOO.bytes[0]);
+              program.push_back(FOO.bytes[1]);
+              program.push_back(FOO.bytes[2]);
+              program.push_back(FOO.bytes[3]);
+              bytes_done += 5;
+              if(scope==0)
+                globals.emplace(vname,STACK_SIZE);
               else
-              {
-
-              }
-
+                locals.back().emplace(vname,STACK_SIZE);
+              STACK_SIZE+=1;
           }
           else if (ast->val == "=")
           {
@@ -1045,7 +1057,7 @@ public:
                           }
                           else
                           {
-                                compileError("NameError","Name "+name+ " is not defined!",false);
+                                compileError("NameError","Name "+name+ " is not defined!");
                           }
                           doit = false;
                         }
@@ -1091,7 +1103,7 @@ public:
                            program.push_back(ASSIGN_GLOBAL);
                         }
                         else
-                          compileError("NameError","Undefined variable "+name,false);
+                          compileError("NameError","Undefined variable "+name);
                         }
                           program.push_back(FOO.bytes[0]);
                           program.push_back(FOO.bytes[1]);
@@ -1122,7 +1134,7 @@ public:
                   vector<unsigned char> lhs = exprByteCode(ast->childs[1]->childs[0],t,infunc);
                   program.insert(program.end(),lhs.begin(),lhs.end());
                   if(ast->childs[1]->childs[1]->val.substr(0,4)!="id: ")
-                    compileError("SyntaxError","Invalid Syntax",false);
+                    compileError("SyntaxError","Invalid Syntax");
                     string mname = ast->childs[1]->childs[1]->val.substr(4);
                     vector<unsigned char> val = exprByteCode(ast->childs[2], t, infunc);
                     program.insert(program.end(), val.begin(), val.end());
@@ -1440,9 +1452,9 @@ public:
               bool add = true;
               int index = 0;
               int fnIdx = 0;
-              for(index = 0;index < vm->nativeFunctions.size();index+=1)
+              for(index = 0;index < vm.nativeFunctions.size();index+=1)
               {
-                if(vm->nativeFunctions[index]==funcs["len"])
+                if(vm.nativeFunctions[index]==funcs["len"])
                 {
                   add = false;
                   break;
@@ -1450,8 +1462,8 @@ public:
               }
               if(add)
               {
-                vm->nativeFunctions.push_back(funcs["len"]);
-                fnIdx = vm->nativeFunctions.size()-1;
+                vm.nativeFunctions.push_back(funcs["len"]);
+                fnIdx = vm.nativeFunctions.size()-1;
               }
               else
                 fnIdx = index;
@@ -1577,6 +1589,10 @@ public:
           }
           else if(ast->val == "namespace")
           {
+            if(infunc)
+            {
+              compileError("SyntaxError","Namespace declartion inside function!");
+            }
             string name = ast->childs[1]->val;
           string prefix;
           for(auto e: prefixes)
@@ -1591,6 +1607,14 @@ public:
           {
               char t;
               vector<unsigned char> cond = exprByteCode(ast->childs[1]->childs[0], t, infunc);
+              if(ast->childs[2]->val=="endif")
+              {
+                program.insert(program.end(),cond.begin(),cond.end());
+                program.push_back(POP_STACK);
+                bytes_done+=1;
+                ast = ast->childs.back();
+                continue;
+              }
               bytes_done += 1 + JUMPOFFSet_Size;
               scope += 1;
               int before = STACK_SIZE;
@@ -2027,11 +2051,11 @@ public:
           }
           else if (substr(0, 4, ast->val) == "func " || (isGen = substr(0,3,ast->val) == "gen "))
           {
-            //  printf("here\n");
+              int selfIdx= 0;
               if(infunc)
               {
                 line_num = atoi(ast->childs[0]->val.substr(5).c_str());
-                compileError("SyntaxError","Error function within function not allowed!",false);
+                compileError("SyntaxError","Error function within function not allowed!");
               }
               string name;
               if(isGen)
@@ -2043,13 +2067,9 @@ public:
               if(std::find(fnReferenced->begin(),fnReferenced->end(),name)!=fnReferenced->end() || inclass)
               {
 
-                if (name.find('.') != std::string::npos)
-                {
-                  compileError("NameError", "Error invalid function name!", false);
-                }
                 if(funcs.find(name)!=funcs.end() && !inclass)
                 {
-                  compileError("NameError","Error a builtin function with same name already exists!",false);
+                  compileError("NameError","Error a builtin function with same name already exists!");
                 }
                 if(!inclass)
                 {
@@ -2068,14 +2088,14 @@ public:
                 program.push_back(FOO.bytes[1]);
                 program.push_back(FOO.bytes[2]);
                 program.push_back(FOO.bytes[3]);
-                auto it = std::find(vm->nameTable.begin(),vm->nameTable.end(),name);
-                if(it==vm->nameTable.end())
+                auto it = std::find(vm.strings.begin(),vm.strings.end(),name);
+                if(it==vm.strings.end())
                 {
-                   vm->nameTable.push_back(name);
-                   FOO.x = vm->nameTable.size()-1;
+                   vm.strings.push_back(name);
+                   FOO.x = vm.strings.size()-1;
                 }
                 else
-                  FOO.x = it - vm->nameTable.begin();
+                  FOO.x = it - vm.strings.begin();
                 program.push_back(FOO.bytes[0]);
                 program.push_back(FOO.bytes[1]);
                 program.push_back(FOO.bytes[2]);
@@ -2107,6 +2127,7 @@ public:
                 if(inclass)
                 {
                   locals.back().emplace("self",STACK_SIZE);
+                  selfIdx = STACK_SIZE;
                   if(name=="__construct__")
                     inConstructor = true;
                   STACK_SIZE+=1;
@@ -2156,8 +2177,15 @@ public:
                 }
                 else
                 {
-                  funcBody.push_back(GOTO_CALLSTACK);
-                  bytes_done+=1;
+                  funcBody.push_back(LOAD);
+                  funcBody.push_back('v');
+                  FOO.x = selfIdx;
+                  funcBody.push_back(FOO.bytes[0]);
+                  funcBody.push_back(FOO.bytes[1]);
+                  funcBody.push_back(FOO.bytes[2]);
+                  funcBody.push_back(FOO.bytes[3]); 
+                  funcBody.push_back(RETURN);
+                  bytes_done+=7;
                 }
                 program.push_back(JMP);
                 FOO.x = paraBytes.size() + funcBody.size();
@@ -2167,19 +2195,22 @@ public:
                 program.push_back(FOO.bytes[3]);
                 program.insert(program.end(), paraBytes.begin(), paraBytes.end());
                 program.insert(program.end(), funcBody.begin(), funcBody.end());
-
             }
             else
             {
              // printf("not compiling function %s because it is not fnReferenced\n",name.c_str());
             }
+            isGen = false;
           }
           else if(ast->val=="class" || ast->val=="extclass")
           {
+            if(infunc)
+            {
+              compileError("SyntaxError","Class declaration inside function!");
+            }
             bool extendedClass = false;
             if(ast->val=="extclass")
             {
-          //    printf("compiling extended class\n");
               extendedClass = true;
             }
             string name = ast->childs[1]->val;
@@ -2187,17 +2218,16 @@ public:
                         if(scope==0)
                         {
                           if(globals.find(name)!=globals.end())
-                            compileError("NameError","Redeclaration of name "+name,false);
+                            compileError("NameError","Redeclaration of name "+name);
                           globals.emplace(name,STACK_SIZE);
                         }
                         else
                         {
                           if(locals.back().find(name)!=locals.back().end())
-                            compileError("NameError","Redeclaration of name "+name,false);
+                            compileError("NameError","Redeclaration of name "+name);
                           locals.back().emplace(name,STACK_SIZE);
                         }
                         STACK_SIZE+=1;
-          //              printf("C = %ld\n",C);
             vector<string> names = scanClass(ast->childs[2]);
             if(extendedClass)
             {
@@ -2205,49 +2235,42 @@ public:
               vector<unsigned char> baseClass = exprByteCode(ast->childs[ast->childs.size()-2],t,infunc);
               program.insert(program.end(),baseClass.begin(),baseClass.end());
             }
-        //    printf("class has members\n");
             for(auto e: names)
             {
-              auto it = std::find(vm->nameTable.begin(),vm->nameTable.end(),e);
-
-              if(it==vm->nameTable.end())
+              auto it = std::find(vm.strings.begin(),vm.strings.end(),e);
+              if(e=="super")
               {
-                FOO.x = vm->nameTable.size();
-                vm->nameTable.push_back(e);
+                compileError("NameError","Error class not allowed to have members named \"super\"");
+              }
+              if(it==vm.strings.end())
+              {
+                FOO.x = vm.strings.size();
+                vm.strings.push_back(e);
               }
               else
-                FOO.x = it - vm->nameTable.begin();
-              program.push_back(LOAD_NAME);
+                FOO.x = it - vm.strings.begin();
+              program.push_back(LOAD_STR);
               program.push_back(FOO.bytes[0]);
               program.push_back(FOO.bytes[1]);
               program.push_back(FOO.bytes[2]);
               program.push_back(FOO.bytes[3]);
               bytes_done+=5;
-          //    printf("%s\n",e.c_str());
             }
-
-///exit(0);
-
             std::unordered_map<string,int> M;
             locals.push_back(M);
             int before = STACK_SIZE;
             scope+=1;
-            klasses.push_back(name);
-
             vector<unsigned char> block = compile(ast->childs[2],false,true);
             scope-=1;
-            klasses.pop_back();
+
             locals.pop_back();
-        //    printf("before = %d\nnow = %d\n",before,STACK_SIZE);
             int totalMembers = names.size();
-      //      printf("total members predicted at compile time  = %d\n",totalMembers);
             STACK_SIZE = before;
 
             program.insert(program.end(),block.begin(),block.end());
             if(extendedClass)
             {
               program.push_back(BUILD_DERIVED_CLASS);
-            //  printf("bdc is at pos %ld\n",bytes_done);
               ByteSrc tmp = { fileTOP,C };
               LineNumberTable.emplace(bytes_done, tmp);
             }
@@ -2258,14 +2281,14 @@ public:
             program.push_back(FOO.bytes[1]);
             program.push_back(FOO.bytes[2]);
             program.push_back(FOO.bytes[3]);
-            auto it = std::find(vm->nameTable.begin(),vm->nameTable.end(),name);
-            if(it==vm->nameTable.end())
+            auto it = std::find(vm.strings.begin(),vm.strings.end(),name);
+            if(it==vm.strings.end())
             {
-               vm->nameTable.push_back(name);
-               FOO.x = vm->nameTable.size()-1;
+               vm.strings.push_back(name);
+               FOO.x = vm.strings.size()-1;
             }
             else
-              FOO.x = it - vm->nameTable.begin();
+              FOO.x = it - vm.strings.begin();
             program.push_back(FOO.bytes[0]);
             program.push_back(FOO.bytes[1]);
             program.push_back(FOO.bytes[2]);
@@ -2277,7 +2300,7 @@ public:
           else if (ast->val == "return")
           {
               if(inConstructor)
-                compileError("SyntaxError","Error class constructors should not return anything!",false);
+                compileError("SyntaxError","Error class constructors should not return anything!");
               char t;
               vector<unsigned char> val = exprByteCode(ast->childs[1], t, infunc);
               program.insert(program.end(), val.begin(), val.end());
@@ -2292,7 +2315,7 @@ public:
           else if (ast->val == "yield")
           {
               if(inConstructor)
-                compileError("SyntaxError","Error class constructor can not be generators!",false);
+                compileError("SyntaxError","Error class constructor can not be generators!");
               char t;
               vector<unsigned char> val = exprByteCode(ast->childs[1], t, infunc);
               program.insert(program.end(), val.begin(), val.end());              
@@ -2303,7 +2326,6 @@ public:
           }
           else if (ast->val == "break")
           {
-            //  printf("will break to %ld\n",breakTargets.back());
 
               program.push_back(BREAK);
               FOO.x = breakTargets.back();
@@ -2315,13 +2337,17 @@ public:
               FOO.x = 0;
               for(int i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
                 FOO.x += locals[i].size();
-            //  printf("variables in foreach loop = %d\n",FOO.x);
-  //            FOO.x = locals[indexOfLastWhileLocals].size();
+
               program.push_back(FOO.bytes[0]);
               program.push_back(FOO.bytes[1]);
               program.push_back(FOO.bytes[2]);
               program.push_back(FOO.bytes[3]);
               bytes_done += 9;
+          }
+          else if(ast->val=="gc")
+          {
+            program.push_back(GC);
+            bytes_done+=1;
           }
           else if (ast->val == "continue")
           {
@@ -2386,9 +2412,9 @@ public:
                   bytes_done += 1;
                   int index = 0;
                   bool add = true;
-                  for(index = 0;index < vm->nativeFunctions.size();index+=1)
+                  for(index = 0;index < vm.nativeFunctions.size();index+=1)
                   {
-                    if(vm->nativeFunctions[index]==funcs[name])
+                    if(vm.nativeFunctions[index]==funcs[name])
                     {
                       add = false;
                       break;
@@ -2396,8 +2422,8 @@ public:
                   }
                   if(add)
                   {
-                    vm->nativeFunctions.push_back(funcs[name]);
-                    FOO.x = vm->nativeFunctions.size()-1;
+                    vm.nativeFunctions.push_back(funcs[name]);
+                    FOO.x = vm.nativeFunctions.size()-1;
                   }
                   else
                     FOO.x = index;
@@ -2412,6 +2438,11 @@ public:
           }
           else if(ast->val == "file")
           {
+            if(infunc)
+              compileError("SyntaxError","Error file import inside function!");
+            if(inclass)
+              compileError("SyntaxError","Error file import inside class!");
+              
             string C = filename;
             filename = ast->childs[1]->val;
             short K = fileTOP;
@@ -2427,14 +2458,55 @@ public:
               printf("SyntaxError in file %s\n%s\nThe line does not seem to be a meaningful statement!\n", filename.c_str(), ast->val.c_str());
               exit(0);
           }
-          ast = ast->childs[ast->childs.size() - 1];
+          ast = ast->childs.back();
       }
       return program;
 
   }
-  vector<unsigned char> compileProgram(Node* ast)//compiles as a complete program adds NPOP_STACK and OP_EXIT
+  vector<unsigned char> compileProgram(Node* ast,int argc,const char* argv[])//compiles as a complete program adds NPOP_STACK and OP_EXIT
   {
+    STACK_SIZE = 3;
+    globals.clear();
+    locals.clear();
     bytes_done = 0;
+    scope = 0;
+    line_num = 1;
+    prefixes.clear();
+    globals.emplace("argv",0);
+    globals.emplace("stdin",1);
+    globals.emplace("stdout",2);
+    int k = 2;
+    PltList l;
+    PltObject elem;
+    elem.type = 's';
+    while (k < argc)
+    {
+        //elem.s = argv[k];
+        string* p = allocString();
+        *p = argv[k];
+        l.push_back(PltObjectFromStringPtr(p));
+        k += 1;
+    }
+    PltObject A;
+    A.type = 'j';
+    PltList* p = allocList();
+    *p = l;
+    A.ptr = (void*)p;
+    vm.STACK.push_back(A);
+    FileObject* STDIN = allocFileObject();
+    STDIN->open = true;
+    STDIN ->fp = stdin;
+
+    FileObject* STDOUT = allocFileObject();
+    STDOUT->open = true;
+    STDOUT ->fp = stdout;
+    A.type = 'u';
+    A.ptr = (void*)STDIN;
+    vm.STACK.push_back(A);
+    A.type = 'u';
+    A.ptr = (void*)STDOUT;
+    vm.STACK.push_back(A);
+    vm.strings.push_back("super");
     vector<unsigned char> bytecode = compile(ast,false);
     if(globals.size()!=0)
     {
@@ -2448,6 +2520,8 @@ public:
     }
     bytecode.push_back(OP_EXIT);
     bytes_done+=1;
+    globals.clear();
+    
     if (bytes_done != bytecode.size())
     {
         printf("Plutonium encountered an internal error.\nError Code: 10\n");

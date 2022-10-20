@@ -8,7 +8,7 @@ extern string filename;
 extern vector<string> files;
 extern vector<string> sources;
 
-const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield"};//23 keywords right now
+const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
 bool isKeyword(string s)
 {
   for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
@@ -70,9 +70,9 @@ vector<Token> generateTokens(const string& s) //generates tokens for a plutonium
     lexMacros.emplace("e",macro);
     macro.content=to_string(CLOCKS_PER_SEC);
     lexMacros.emplace("clocks_per_sec",macro);
-    macro.content = to_string(-FLT_MAX);
+    macro.content = to_string(-DBL_MAX);
     lexMacros.emplace("FLT_MIN",macro);
-    macro.content = to_string(FLT_MAX);
+    macro.content = to_string(DBL_MAX);
     lexMacros.emplace("FLT_MAX",macro);
     macro.type = NUM_TOKEN;
     macro.content = to_string(INT_MIN);
@@ -363,23 +363,12 @@ vector<Token> generateTokens(const string& s) //generates tokens for a plutonium
                 line_num = ln;
                 lexErr("SyntaxError","Invalid Syntax",false);
            }
-           if(s[k+1]=='.')
-           {
-               Token i;
-               i.type = TokenType::Ellipsis_TOKEN;
-               i.content="..";
-               i.ln = ln;
-               tokenlist.push_back(i);
-               k = k+1;
-           }
-           else
-           {
-               Token i;
-               i.type = TokenType::OP_TOKEN;
-               i.content+=c;
-               i.ln = ln;
-               tokenlist.push_back(i);
-           }
+            Token i;
+            i.type = TokenType::OP_TOKEN;
+            i.content+=c;
+            i.ln = ln;
+            tokenlist.push_back(i);
+        
         }
         else if(c=='+' || c=='-')
         {

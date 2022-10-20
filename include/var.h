@@ -54,8 +54,8 @@ string unescape(string s)
     s = replace_all("\v","\\v",s);
     s = replace_all("\t","\\t",s);
     s = replace_all("\a","\\b",s);
-	s = replace_all("\"","\\\"",s);
-	return s;
+  	s = replace_all("\"","\\\"",s);
+	  return s;
 }
 
 string PltObjectToStr(const PltObject& a)
@@ -71,7 +71,7 @@ string PltObjectToStr(const PltObject& a)
           return IntToHex(a.i);
         else if(a.type=='e')
         {
-          return "Error Object";
+          return "<Error Object>";
         }
         else if(a.type=='b')
         {
@@ -82,47 +82,40 @@ string PltObjectToStr(const PltObject& a)
         else if(a.type=='u')
         {
             char buff[100];
-            snprintf(buff,100,"Opened File at %p",a.ptr);
+            snprintf(buff,100,"<Opened File at %p>",a.ptr);
             string s = buff;
             return s;
         }
 				else if(a.type=='w')
 				{
-					return "Function";
+					return "<Function>";
 				}
         else if(a.type=='y')
-          return "Native Function";
+          return "<Native Function>";
 				else if(a.type=='v')
-				  return "Class "+a.s;
+				  return "<Class "+*(string*)a.ptr+">";
 			  else if(a.type=='o')
         {
-				  return "Instance of class "+a.s;
+				  return "<Instance of class "+((KlassInstance*)a.ptr) -> klass->name+">";
         }
         else if(a.type=='q')
         {
             char buff[100];
-            snprintf(buff,100,"Module Object at %p",a.ptr);
+            snprintf(buff,100,"<Module Object at %p>",a.ptr);
             string s = buff;
             return s;
         }
         else if(a.type=='r')
         {
-          return "Native Method";
-        }
-        else if(a.type=='c')
-        {
-            char buff[100];
-            snprintf(buff,100,"Native Object");
-            string s = buff;
-            return s;
+          return "<Native Method>";
         }
         else if(a.type=='z')
         {
-          return "Coroutine Object";
+          return "<Coroutine Object>";
         }
         else if(a.type=='g')
         {
-          return "Coroutine";
+          return "<Coroutine>";
         }
         else if(a.type=='j')
         {
@@ -132,7 +125,9 @@ string PltObjectToStr(const PltObject& a)
             return PltListToStr(p);
         }
         else if(a.type=='s')
-          return a.s;
+        {
+          return *(string*)a.ptr;
+        }
         else if(a.type=='a')
         {
             //printf("returning PltObjectToStr of dictionary\n");
@@ -175,7 +170,7 @@ string PltListToStr(PltList* p,vector<void*>* prev=nullptr)
       }
 			else if(l[k].type=='s')
 			{
-				res+= "\""+unescape(l[k].s)+"\"";
+				res+= "\""+unescape(*(string*)l[k].ptr)+"\"";
 			}
       else
       {
@@ -202,7 +197,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
        PltObject key = e.first;
        PltObject val = e.second;
        if(key.type=='s')
-          res+= "\""+unescape(key.s)+"\"";
+          res+= "\""+unescape(*(string*)key.ptr)+"\"";
        else if(key.type=='a')
 			 {
 				 if( std::find(seen.begin(), seen.end(), key.ptr) != seen.end())
@@ -225,7 +220,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
        res+=(" : ");
 			 //////////////
        if(val.type=='s')
-          res+= "\""+unescape(val.s)+"\"";
+          res+= "\""+unescape(*(string*)val.ptr)+"\"";
 			 else if(val.type=='a')
 			 {
 				 if( std::find(seen.begin(), seen.end(), val.ptr) != seen.end())

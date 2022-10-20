@@ -8,13 +8,13 @@ union FOO
 }FOO;
 union FOO1
 {
-    unsigned char bytes[8];
+    unsigned char bytes[sizeof(long long int)];
     long long int l;
 }FOO1;
 union FOO2
 {
-    unsigned char bytes[4];
-    float f;
+    unsigned char bytes[sizeof(double)];
+    double f;
 }FOO2;
 
 #endif

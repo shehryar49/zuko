@@ -19,7 +19,7 @@
 using namespace std;
 #include "PltObject.h"
 #define PltArgs const vector<PltObject>&
-typedef PltObject(*func)(PltArgs);
+typedef PltObject(*func)(PltObject*,int);
 void PromoteType(PltObject&,char t);
 string fullform(char);
 string PltObjectToStr(const PltObject&);

@@ -243,8 +243,7 @@ const char* StrTokenTypes[] =
   "newline",
   "byte",
   "bool",
-  "EOP",
-  "Ellipsis"
+  "EOP"
 };
 
 // Function to print AST in tablular form
@@ -291,13 +290,12 @@ class Parser
 private:
   vector<Token> known_constants;
   vector<string> prefixes = {""};//for namespaces
-  vector<string>* fnReferenced;
-  //block of each udf function
+  vector<string>* fnReferenced;//names of functions referenced in source code
   size_t line_num = 1;
   int* num_of_constants;
   bool foundYield = false;
 public:
-  std::unordered_map<string,vector<string>> fntable;//to store list of functions referenced in
+  std::unordered_map<string,vector<string>> fntable;
   void init(vector<string>* fnr,int* p)
   {
     fnReferenced = fnr;
@@ -593,7 +591,15 @@ public:
         vector<Token> e = {tokens.begin()+1,tokens.end()};
         if(e.size()==0)
           parseError("SyntaxError","Invalid Syntax",false);
-        ast->childs.push_back(parseExpr(e));
+        size_t sz = known_constants.size();
+        Node* E = parseExpr(e);
+        if(known_constants.size()==sz+1 && e.size()==1 && (known_constants[sz].type==FLOAT_TOKEN || known_constants[sz].type==NUM_TOKEN))
+        {
+          known_constants[sz].content = "-"+known_constants[sz].content;
+          ast->val = ((string)StrTokenTypes[known_constants[sz].type]+": "+known_constants[sz].content);
+          return ast;
+        }
+        ast->childs.push_back(E);
         return ast;
       }
       if(tokens[0].content=="+")
@@ -940,7 +946,7 @@ public:
     if(tokens.size()==0)
       parseError("SyntaxError","Invalid Syntax",false);
     //length of tokens is never zero
-    if(tokens.size()==1 && (tokens[0].content=="endfunc" || tokens[0].content=="endnm" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || tokens[0].content=="endfor" || tokens[0].content=="endelse" || tokens[0].content=="endwhile" || tokens[0].content =="endclass" || tokens[0].content=="endelif"  || tokens[0].content=="endif") && tokens[0].type==KEYWORD_TOKEN)
+    if(tokens.size()==1 && (tokens[0].content=="endfunc" || tokens[0].content=="endnm" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || tokens[0].content=="endfor" || tokens[0].content=="endelse" || tokens[0].content=="endwhile" || tokens[0].content =="endclass" || tokens[0].content=="endelif"  || tokens[0].content=="endif" || tokens[0].content=="gc") && tokens[0].type==KEYWORD_TOKEN)
     {
       return NewNode(tokens[0].content);
     }
@@ -1107,12 +1113,12 @@ public:
     }
     if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="class")
     {
-      if(tokens.size()!=2 && tokens.size()!=4)
+      if(tokens.size()<2)
         parseError("SyntaxError","Invalid Syntax",false);
       if(tokens[1].type!=ID_TOKEN)
         parseError("SyntaxError","Invalid Syntax",false);
       bool extendedClass=false;
-      if(tokens.size()==4)
+      if(tokens.size()>=4)
       {
         if(tokens[2].type!=TokenType::KEYWORD_TOKEN || tokens[3].type!=TokenType::ID_TOKEN)
           parseError("SyntaxError","Invalid Syntax",false);
@@ -1120,6 +1126,12 @@ public:
             parseError("SyntaxError","Invalid Syntax",false);
         extendedClass = true;
       }
+      else if(tokens.size()==2)
+      {
+
+      }
+      else
+        parseError("SyntaxError","Invalid Syntax",false);
       Node* ast;
       if(!extendedClass)
         ast = NewNode("class");
@@ -1127,6 +1139,7 @@ public:
         ast = NewNode("extclass");
       Node* n = NewNode("line "+to_string(line_num));
       ast->childs.push_back(n);
+      //Do not allow class names having '::'
       if(tokens[1].content.find("::")!=string::npos)
         parseError("SyntaxError","Invalid Syntax",false);
       string fnprefix;
@@ -1170,10 +1183,6 @@ public:
         int i = findToken(t,0,tokens);
         if(i==-1)
         {
-          t.type = TokenType::Ellipsis_TOKEN;
-          t.content = "..";
-          i = findToken(t,0,tokens);
-          if(i==-1)
             parseError("SyntaxError","Invalid Syntax",false);
         }
         vector<Token> init = {tokens.begin(),tokens.begin()+i};
@@ -1276,31 +1285,47 @@ public:
           vector<Token> t;
           if(tokens.size()==2)
           {
-          if(tokens[1].type==ID_TOKEN)
+            if(tokens[1].type==ID_TOKEN)
+            {
+              t.push_back(tokens[1]);
+              Node* n = new Node;
+              n->val = "line ";
+              n->val+=to_string(tokens[0].ln);
+              ast->childs.push_back(n);
+              ast->childs.push_back(parseExpr(t));
+              return ast;
+            }
+            if(tokens[1].type== TokenType::STRING_TOKEN)
+            {
+              t.push_back(tokens[1]);
+              Node* n = new Node;
+              n->val = "line ";
+              n->val+=to_string(tokens[0].ln);
+              ast->childs.push_back(n);
+              ast->childs.push_back(NewNode("string: "+tokens[1].content));
+              return ast;
+            }
+            else
+            {
+                    //line_num = tokens[1].ln;
+                    parseError("SyntaxError","Invalid Syntax",false);
+            }
+          }
+          else if(tokens.size()==4)
           {
+            if(tokens[1].type!=ID_TOKEN || tokens[2].type!=KEYWORD_TOKEN || tokens[2].content!="as" || tokens[3].type!=ID_TOKEN)
+            {
+               parseError("SyntaxError","Invalid Syntax",false);
+            }
+            ast->val="importas";
             t.push_back(tokens[1]);
             Node* n = new Node;
             n->val = "line ";
             n->val+=to_string(tokens[0].ln);
             ast->childs.push_back(n);
             ast->childs.push_back(parseExpr(t));
+            ast->childs.push_back(NewNode("id: "+tokens[3].content));
             return ast;
-          }
-          if(tokens[1].type== TokenType::STRING_TOKEN)
-          {
-            t.push_back(tokens[1]);
-            Node* n = new Node;
-            n->val = "line ";
-            n->val+=to_string(tokens[0].ln);
-            ast->childs.push_back(n);
-            ast->childs.push_back(NewNode("string: "+tokens[1].content));
-            return ast;
-          }
-          else
-          {
-                  //line_num = tokens[1].ln;
-                  parseError("SyntaxError","Invalid Syntax",false);
-          }
           }
           else if(tokens.size()==6)
           {
@@ -1466,16 +1491,7 @@ public:
           k+=1;
       }
        
-      /*if(tokens[0].type== TokenType::ID_TOKEN && tokens.size()>=5)
-      {
-         if(tokens[1].type== TokenType::OP_TOKEN && tokens[1].content==".")
-         {
-           Node* line = NewNode("line "+to_string(tokens[0].ln));
-           Node* ast = parseExpr(tokens);
-           ast->childs.insert(ast->childs.begin(),line);
-           return ast;
-         }
-      }*/
+      
       if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="try")
       {
            Node* line = NewNode("line "+to_string(tokens[0].ln));
@@ -1865,13 +1881,13 @@ public:
                  ast->childs.push_back(parse(block,inwhile,true));
                  if(foundYield)
                    ast->val = "gen "+ast->val.substr(5);
-              //   printf("dependencies: ");
+                 //printf("dependencies: ");
                  size_t increase = fnReferenced->size()-before;
                  for(int i=1;i<=increase;i+=1)
                  {
                    string e = fnReferenced->back();
                    fnReferenced->pop_back();
-                  // printf("%s  ",e.c_str());
+                   //printf("%s  ",e.c_str());
                    if(e!=ast->val.substr(5))
                      fntable[ast->val.substr(5)].push_back(e);
                  }

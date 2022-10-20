@@ -18,7 +18,7 @@ string str(int x)
 {
 	return to_string(x);
 }
-string str(float f)
+string str(double f)
 {
 	string x = to_string(f);
   
@@ -37,11 +37,11 @@ string str(long long int l)
 {
 	return to_string(l);
 }
-float Float(string s)
+double Float(string s)
 {
     int sign = 1;
 	const char* n = s.c_str();
-	float f = atof(n);
+	double f = atof(n);
 	return f;
 }
 long long int toInt64(string s)
