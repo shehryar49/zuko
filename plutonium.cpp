@@ -1,9 +1,8 @@
 #define BUILD_FOR_LINUX
-
-#include <time.h>
 #include "include/PltObject.h"
 #include "include/plutonium.h"
-#include <csignal>
+#include <signal.h>
+#include <time.h>
 size_t line_num = 1;
 string source_code;
 string filename;
@@ -11,7 +10,6 @@ std::unordered_map<size_t, ByteSrc> LineNumberTable;
 vector<string> files;
 vector<string> sources;
 short fileTOP = 0;
-VM vm;
 void signalHandler(int signum)
 {
   if(signum==SIGABRT || signum==SIGFPE || signum==SIGILL || signum==SIGSEGV)
@@ -31,10 +29,11 @@ string readline()
   return line;
 }
 
-string readfile(string filename)
+string& readfile(string filename)
 {
   FILE* fp = fopen(filename.c_str(), "r");
-  string src;
+  static string src;
+  src = "";
   if (!fp)
   {
       printf("Error opening file: %s\n", strerror(errno));
@@ -56,7 +55,7 @@ string readfile(string filename)
 }
 
 #define PLUTONIUM_VER 1.5
-int main(int argc, char** argv)
+int main(int argc, const char* argv[])
 {
     signal(SIGFPE,signalHandler);
     signal(SIGILL,signalHandler);
@@ -84,26 +83,28 @@ int main(int argc, char** argv)
         Parser parser;
         parser.init(&fnReferenced,&num_of_constants);
         Node* ast = parser.parse(tokens);
-      //  printAST(ast);
+       // printAST(ast);
       //  return 0;
         Compiler compiler;
-        compiler.init(3,&vm,&fnReferenced,&num_of_constants);
-        compiler.globals.emplace("argv",0);
-        compiler.globals.emplace("stdin",1);
-        compiler.globals.emplace("stdout",2);
+        compiler.init(&fnReferenced,&num_of_constants);
         vm.constants = new PltObject[num_of_constants];
         vm.total_constants = 1;
         initFunctions();
         initMethods();
-        bytecode = compiler.compileProgram(ast);
+        bytecode = compiler.compileProgram(ast,argc,argv);
         deleteAST(ast);
         tokens.clear();
-        
+
     }
 
     //Code for writing the bytecode to a file
-
-   /*FILE* f = fopen("program.pltb","wb");
+   /*
+   FILE* f = fopen("program.pltb","wb");
+   if(!f)
+   {
+    printf("error writing bytecode file \n");
+    return 0;
+   }
     //write line number table
     int total = LineNumberTable.size();
     fwrite(&total,sizeof(int),1,f);
@@ -140,39 +141,15 @@ int main(int argc, char** argv)
     }
     fwrite(arr,sizeof(unsigned char),bytecode.size(),f);
     fclose(f);
-*/
+    */
     //return 0;
-    int k = 2;
-    PltList l;
-    PltObject elem;
-    elem.type = 's';
-    while (k < argc)
-    {
-        elem.s = argv[k];
-        l.push_back(elem);
-        k += 1;
-    }
-    PltObject A;
-    A.type = 'j';
-    PltList* p = vm.allocList();
-    *p = l;
-    A.ptr = (void*)p;
-    vm.STACK.push_back(A);
-    FileObject* STDIN = vm.allocFileObject();
-    STDIN->open = true;
-    STDIN ->fp = stdin;
-
-    FileObject* STDOUT = vm.allocFileObject();
-    STDOUT->open = true;
-    STDOUT ->fp = stdout;
-    A.type = 'u';
-    A.ptr = (void*)STDIN;
-    vm.STACK.push_back(A);
-    A.type = 'u';
-    A.ptr = (void*)STDOUT;
-    vm.STACK.push_back(A);
     vm.load(bytecode);
+    bytecode.clear();
+    bytecode.shrink_to_fit();
     vm.interpret();
-    delete[] vm.constants;
+
+//printf("GC Cycles = %lld\n",vm.GC_Cycles);
+  //  printf("%lld\n%lld\n",sizeof(string),sizeof(Dictionary));
+
     return 0;
 }
