@@ -19,7 +19,7 @@ string IntToHex(int i)
         }
         else
         {
-           if(r==10)
+/*           if(r==10)
             res+="a";
            else if(r==11)
             res+="b";
@@ -30,8 +30,8 @@ string IntToHex(int i)
            else if(r==14)
             res+="e";
            else if(r==15)
-            res+="f";
-
+            res+="f";*/
+           res+= (char) (r+87);
         }
         i = i/16;
     }
@@ -82,7 +82,7 @@ unsigned char tobyte(string s)
     }
     return b;
 }
-string addlnbreaks(string s)
+string addlnbreaks(string s,bool& hadErr)
 {
 
     unsigned int k = 0;
@@ -134,7 +134,8 @@ string addlnbreaks(string s)
             }
             else
             {
-                lexErr("SyntaxError","Unknown escape character: \\"+s.substr(k,1),false);
+                hadErr = true;
+                return "Unknown escape character: \\"+s.substr(k,1);
                
             }
             escaped = false;
@@ -147,7 +148,8 @@ string addlnbreaks(string s)
     }
    if(escaped)
    {
-       lexErr("SyntaxError","Error string contains non terminated escape chars",false);
+       hadErr = true;
+       return "Error string contains non terminated escape chars";
    }
 	return r;
 }

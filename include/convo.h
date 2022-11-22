@@ -39,7 +39,6 @@ string str(long long int l)
 }
 double Float(string s)
 {
-    int sign = 1;
 	const char* n = s.c_str();
 	double f = atof(n);
 	return f;

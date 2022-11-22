@@ -72,6 +72,7 @@ struct PltObject
     {
         type = 'n';
     }
+    
     bool operator==(const PltObject& other)const
     {
         if(other.type!=type)
@@ -141,17 +142,17 @@ struct PltObject
 size_t hashPltObject(const PltObject&);
 size_t hashList(void* p)
 {
-  PltList l = *(PltList*)p;
+  PltList& l = *(PltList*)p;
    size_t hash = l.size();
-   for (auto i : l)
+   for (auto& i : l)
       hash ^= hashPltObject(i) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
     return hash;
 }
 size_t hashDict(void* p)
 {
-  Dictionary d = *(Dictionary*)p;
+  Dictionary& d = *(Dictionary*)p;
    size_t hash = d.size();
-    for (auto i : d)
+    for (const auto& i : d)
       hash ^= hashPltObject(i.first)+hashPltObject(i.second) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
     return hash;
 }
@@ -159,63 +160,43 @@ size_t hashPltObject(const PltObject& a)
 {
     char t = a.type;
     if(t=='s')
-    {
         return std::hash<std::string>()(*(string*)a.ptr);
-    }
     else if(t=='i')
-    {
         return std::hash<int>()(a.i);
-    }
     else if(t=='l')
-    {
         return std::hash<long long int>()(a.l);
-    }
     else if(t=='f')
-    {
-        return std::hash<float>()(a.f);
-    }
+        return std::hash<double>()(a.f);
     else if(t=='j')
-    {
         return hashList(a.ptr);
-    }
     else if(t=='a')
-    {
         return hashDict(a.ptr);
-    }
     else if(t=='u')
-    {
         return std::hash<FILE*>()(((FileObject*)a.ptr)->fp);
-    }
     else if(t=='m')
-    {
         return std::hash<unsigned char>()(a.i);
-    }
     else if(t=='b')
-    {
         return std::hash<bool>()(a.i);
-    }
     else if(t=='r' || t=='q' || t=='y')
-    {
       return std::hash<void*>()(a.ptr);
-    }
     return 0;
 }
 struct Klass
 {
   string name;
-  Dictionary members;
-  Dictionary privateMembers;
+  std::unordered_map<string,PltObject> members;
+  std::unordered_map<string,PltObject> privateMembers;
 };
 struct KlassInstance
 {
   Klass* klass;
-  Dictionary members;
-  Dictionary privateMembers;
+  std::unordered_map<string,PltObject> members;
+  std::unordered_map<string,PltObject> privateMembers;
 };
 struct Module
 {
   std::string name;
-  Dictionary members;
+  std::unordered_map<string,PltObject> members;
 };
 struct FunObject
 {
@@ -223,6 +204,7 @@ struct FunObject
   string name;
   size_t i;
   size_t args;
+  PltList opt; //default/optional parameters
 };
 struct ErrObject
 {

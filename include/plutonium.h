@@ -19,14 +19,14 @@
 using namespace std;
 #include "PltObject.h"
 #define PltArgs const vector<PltObject>&
-typedef PltObject(*func)(PltObject*,int);
+typedef PltObject(*BuiltinFunc)(PltObject*,int);
 void PromoteType(PltObject&,char t);
 string fullform(char);
 string PltObjectToStr(const PltObject&);
 string substr(int,int,string);
 int find(char,string);
 string replace_all(string,string,string);
-string addlnbreaks(string);
+string addlnbreaks(string,bool&);
 unsigned char tobyte(string);
 #include "opcode.h"
 #include "overflow.h"

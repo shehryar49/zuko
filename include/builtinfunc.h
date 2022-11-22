@@ -1,11 +1,14 @@
+//These header contains some builtin functions which are embed into the interpreter
+//the prototype of these functions is different from the ones in the native modules
+
 #ifndef BUILTIN_FUNC_H_
 #define BUILTIN_FUNC_H_
 #include "vm.h"
 #include "plutonium.h"
 using namespace std;
 
-std::unordered_map<string,func> funcs;
-extern VM vm;
+std::unordered_map<string,BuiltinFunc> funcs;
+
 int f;
 string fullform(char);
 #define PltArgs const vector<PltObject>&
@@ -127,8 +130,8 @@ PltObject ADDR(PltObject* args,int argc)
   if(argc!=1)
     return Plt_Err(ARGUMENT_ERROR,"Error addr() takes one argument!");
   if(args[0].type!='s' && args[0].type!='o' && args[0].type!='y' && args[0].type!='v' && args[0].type!='w')
-    return Plt_Err(TYPE_ERROR,"Error ascii() function not suppported for type "+fullform(args[0].type));
-  printf("%x\n",args[0].ptr);
+    return Plt_Err(TYPE_ERROR,"Error addr() function not suppported for type "+fullform(args[0].type));
+  printf("%p\n",args[0].ptr);
   PltObject ret;
   return ret;
 }
@@ -344,12 +347,15 @@ PltObject isInstanceOf(PltObject* args,int argc)
 {
   if(argc!=2)
     return Plt_Err(ARGUMENT_ERROR,"Error function isInstanceOf() takes 2 arguments!");
-  if(args[0].type!='o')
-    return Plt_Err(TYPE_ERROR,"Error first argument to  isInstanceOf() should be an object!");
   if(args[1].type!='v')
     return Plt_Err(TYPE_ERROR,"Error second argument to  isInstanceOf() should be a class!");
   PltObject ret;
   ret.type = 'b';
+  if(args[0].type!='o')
+  {
+    ret.i = 0;
+    return ret;
+  }
   KlassInstance* obj = (KlassInstance*)args[0].ptr;
   Klass* k = (Klass*)args[1].ptr;
   ret.i = obj->klass == k;
@@ -378,7 +384,6 @@ PltObject LEN(PltObject* args,int argc)
 //////////
 PltObject OPEN(PltObject* args,int argc)
 {
-    char t;
     string patt = "ss";
     PltObject ret;
     if(!validateArgTypes("open",patt,args,argc,ret))
@@ -598,19 +603,12 @@ PltObject OBJINFO(PltObject* args,int argc)
       KlassInstance* k = (KlassInstance*)args[0].ptr;
       for(auto e: k->members)
       {
-          if(e.first.type=='s')
-          {
-            string& name = *(string*)e.first.ptr;
-            printf("%s: %s\n",name.c_str(),fullform(e.second.type).c_str());
-          }
+            printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
+          
       }
       for(auto e: k->privateMembers)
       {
-          if(e.first.type=='s')
-          {
-            string& name = *(string*)e.first.ptr;
-            printf("%s: %s\n",name.c_str(),fullform(e.second.type).c_str());
-          }
+          printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
       }
       PltObject ret;
       return ret;
@@ -941,18 +939,14 @@ PltObject SHUFFLE(PltObject* args,int argc)
 			{
 			    PltList a = *(PltList*)args[0].ptr;
 				std::random_shuffle(a.begin(),a.end());
-				PltList* p = new PltList(a);
 				PltObject ret;
-				ret.ptr = (void*)p;
-
-				ret.type = 'j';
 				return ret;
 			}
 			else
-            {
-        	    return Plt_Err(TYPE_ERROR,"Error shuffle takes a list as an argument!");
-	    		exit(0);
-            }
+      {
+        return Plt_Err(TYPE_ERROR,"Error shuffle takes a list as an argument!");
+        exit(0);
+      }
 		}
 		return Plt_Err(ARGUMENT_ERROR,"Error shuffle() takes exactly one argument!");
 }
@@ -1036,9 +1030,9 @@ PltObject TOINT(PltObject* args,int argc)
 			{
                PltObject ret;
                double d = args[0].f;
-               if(d<LLONG_MIN)
+               if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
-               else if(d>LLONG_MAX)
+               else if(d>(double)LLONG_MAX)
                  ret.l = LLONG_MAX;
                else 
                  ret.l = static_cast<long long int>(args[0].f);
@@ -1372,7 +1366,6 @@ PltObject FREAD(PltObject* args,int argc)
     if(!fobj.open)
       return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
-    size_t n = 0;
     if(fread(bytes,sizeof(unsigned char),e,currF)!=e)
         return Plt_Err(FILEIO_ERROR,"Error unable to read specified bytes from the file.");
     /*{
@@ -1891,7 +1884,7 @@ void initFunctions()
   funcs.emplace("fninfo",&fninfo);
   funcs.emplace("addr",&ADDR);
 }
-std::unordered_map<string,func> methods;
+std::unordered_map<string,BuiltinFunc> methods;
 void initMethods()
 {
   methods.emplace("push",&PUSH);

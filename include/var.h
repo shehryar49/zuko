@@ -88,7 +88,8 @@ string PltObjectToStr(const PltObject& a)
         }
 				else if(a.type=='w')
 				{
-					return "<Function>";
+          FunObject* p = (FunObject*)a.ptr;
+					return "<Function "+p->name +">";
 				}
         else if(a.type=='y')
           return "<Native Function>";
@@ -96,7 +97,7 @@ string PltObjectToStr(const PltObject& a)
 				  return "<Class "+*(string*)a.ptr+">";
 			  else if(a.type=='o')
         {
-				  return "<Instance of class "+((KlassInstance*)a.ptr) -> klass->name+">";
+				  return "<"+((KlassInstance*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
         }
         else if(a.type=='q')
         {

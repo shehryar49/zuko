@@ -7,7 +7,7 @@ bool exponen_overflows(int a,int b)
     double c = pow(a,b);
     if(c==HUGE_VAL)
       return true;
-    if(c>INT_MAX || c<INT_MIN)
+    if(c>(double)INT_MAX || c<(double)INT_MIN)
       return true;
     return false;
 }
@@ -17,7 +17,7 @@ bool exponen_overflows(long long int a,long long int b)
      double c = pow(a,b);
     if(c==HUGE_VAL || c==-HUGE_VAL)
       return true;
-    if(c>LLONG_MAX || c<LLONG_MIN)
+    if(c>(double)LLONG_MAX || c<(double)LLONG_MIN)
       return true;
     return false;
 }
