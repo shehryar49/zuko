@@ -38,8 +38,7 @@ namespace json
               }
               if(!terminated)
               {
-                  println("SyntaxError string not terminated!")
-                  exit()
+                  throw @ValueError,"SyntaxError non terminated string in Json "
               }
               tokens.push(Token("str",substr(i,j-1,str)))
               i = j
@@ -178,6 +177,7 @@ namespace json
     {
         return (tok.type=="str" or tok.type=="num" or tok.type=="float" or tok.type=="nil")
     }
+    var fn = nil
     function extract_list(var i,var j,var tokens)
     {
 
@@ -193,10 +193,10 @@ namespace json
                 {
                    throw @ValueError,"Invalid JSON"
                 }
-                if(typeof(elem[0])=="List")
-                  list.push(elem[0])
-                else
+                if(typeof(elem[0])=="String")
                   list.push(elem[0].content)
+                else
+                  list.push(elem[0])
                 elem.clear()
             }
             else if(isValTok(tokens[k]))
@@ -214,20 +214,26 @@ namespace json
                 elem.push(sublist)
                 k = end
             }
+            else if(tokens[k].type=="lcb")
+            {
+                var end = match_lcb(k,tokens)
+                if(end==nil or end >= j)
+                   throw @ValueError,"Invalid JSON"
+                var subobject = fn(k,end,tokens)
+                elem.push(subobject)
+                k = end
+            }
             else
             {
                 throw @ValueError,"Invalid JSON"
             }
         }
         if(len(elem)!=1)
-        {
-            println("SyntaxError")
-            exit()
-        }
-        if(typeof(elem[0])=="List")
-            list.push(elem[0])
-        else
+            throw @ValueError,"Invalid JSON"
+        if(typeof(elem[0])=="String")
             list.push(elem[0].content)
+        else
+            list.push(elem[0])
         return list
     }
     function fromTokens(var start,var end,var tokens)
@@ -311,6 +317,7 @@ namespace json
     }
     function loads(var str) # makes Dictionary from json string
     {
+        fn = fromTokens
         var tokens = generateTokens(str)
         return fromTokens(0,len(tokens)-1,tokens)
     }

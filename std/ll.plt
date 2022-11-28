@@ -80,6 +80,12 @@ namespace ll
             n.next = it.curr
             it.curr.prev = n
         }
+        function setvalue(var it,var val)
+        {
+            if(!isInstanceOf(it,Iterator))
+              throw @TypeError,"Iterator Object required!"
+            it.curr.val = val
+        }
         function erase(var it)
         {
             it.curr.prev.next = it.curr.next

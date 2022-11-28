@@ -12,7 +12,7 @@ namespace algo
     while(i<=n-1)
     {
       var j = 0
-      while(j<=n-2)
+      while(j<n-i)
       {
         if(arr[j] > arr[j+1])
         {
@@ -113,8 +113,8 @@ namespace algo
     if(l<h)
     {
       var p = __partition(l,h,arr)
-      quickSort(l,p-1,arr)
-      quickSort(p+1,h,arr)
+      quickSort(arr,l,p-1)
+      quickSort(arr,p+1,h)
     }
   }
   function __merge(var arr,var l,var mid,var h)
@@ -163,7 +163,7 @@ namespace algo
       var mid = (l+h)/2
       mergeSort(arr,l,mid)
       mergeSort(arr,mid+1,h)
-      merge(arr,l,mid,h)
+      __merge(arr,l,mid,h)
     }
   }
   function sublist(var l,var h,var list)
@@ -308,6 +308,7 @@ namespace algo
   {
     if(x==1)
       return true
+    #Use Bitwise Magic
     return x & (x-1) == 0
   }
   function median(var list)
@@ -318,5 +319,53 @@ namespace algo
       return (dummy[len(dummy)/2 - 1] + dummy[len(dummy)/2 ]) / 2.0
     else
       return dummy[len(dummy)/2]
+  }
+  function hex(var n)
+  {
+    if(n==0)
+      return "0"
+    var ans = ""
+    var r = 0
+    while(n!=0)
+    {
+      r = n%16
+      if(r>=10)
+        ans+=char(r+87)
+      else
+        ans+=str(r)
+      n/=16
+    }
+    ans = reverse(ans)
+    return ans
+  }
+  function bin(var n)
+  {
+    if(n==0)
+      return "0"
+    var ans = ""
+    var r = 0
+    while(n!=0)
+    {
+      r = n%2
+      ans+=char(48+r)
+      n/=2
+    }
+    ans = reverse(ans)
+    return ans
+  }
+  function octal(var n)
+  {
+    if(n==0)
+      return "0"
+    var ans = ""
+    var r = 0
+    while(n!=0)
+    {
+      r = n%8
+      ans+=char(48+r)
+      n/=8
+    }
+    ans = reverse(ans)
+    return ans
   }
 }
