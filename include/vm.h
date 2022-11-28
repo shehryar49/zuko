@@ -2494,10 +2494,10 @@ public:
           if (obj->members.find("super") != obj->members.end())
           {
             KlassInstance *newSuper = allocKlassInstance();
-            Klass *kk = (Klass *)fn.ptr;
-            newSuper->klass = kk;
-            newSuper->members = kk->members;
-            newSuper->privateMembers = kk->privateMembers;
+            KlassInstance *oldSuper = (KlassInstance *)(obj->members["super"].ptr);
+            newSuper->klass = oldSuper->klass;
+            newSuper->members = oldSuper->members;
+            newSuper->privateMembers = oldSuper->privateMembers;
             obj->members["super"] = PltObjectFromKlassInstance(newSuper);
           }
           obj->privateMembers = ((Klass *)fn.ptr)->privateMembers;
