@@ -1895,7 +1895,6 @@ public:
               }
               else if(ast->val.substr(0,5)=="func ")
               {
-              //   printf("parser found a function %s\n",ast->val.substr(5).c_str());
                  bgscope.content = "{";
                  bgscope.type=L_CURLY_BRACKET_TOKEN;
                  int j = findTokenConsecutive(bgscope,start+line.size(),tokens);
@@ -1905,12 +1904,19 @@ public:
                      newlinetok.content = "\n";
                      newlinetok.type=NEWLINE_TOKEN;
                      j = findTokenConsecutive(newlinetok,start+line.size(),tokens);
+                     if(j==-1)
+                       parseError("SyntaxError","Expected code block after function definition!");
                      i = findToken(newlinetok,j+1,tokens);
+                     if(i==-1)
+                       parseError("SyntaxError","Expected code block after function definition!");
                  }
                  else
                    i = findRCB(j,tokens);
+                 if(i==-1)
+                    parseError("SyntaxError","Error missing '}' to end function definition.");
                  if(j==-1 || (j<tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                     parseError("SyntaxError","Error expected code block or line after function definition!");
+    
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
                  if(block.size()==1 && block[0].type==KEYWORD_TOKEN && (block[0].content=="endfor" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || block[0].content=="endwhile" || block[0].content=="endnm" || block[0].content=="endclass" || block[0].content=="endfunc" || block[0].content=="endelse" || block[0].content=="endelif" || block[0].content=="endif"))
                  {
