@@ -158,8 +158,8 @@ private:
 #ifdef BUILD_FOR_LINUX
   vector<void *> moduleHandles;
 #endif
-  vector<FunObject *> executing = {NULL}; // pointer to plutonium function object we are executing,NULL means code is not in a function
-  vector<PltObject> STACK;
+  vector<FunObject *> executing = {NULL}; // pointer to plutonium function object we are executing,NULL means control is not in a function
+  
   vector<BuiltinFunc> builtin; // addresses of builtin native functions
   // referenced in bytecode
   string magicName = ".destroy";
@@ -168,6 +168,7 @@ private:
   vector<string> *files;
   vector<string> *sources;
   PltList aux; // auxiliary space for markV2
+  vector<PltObject> STACK;
 public:
   friend class Compiler;
   std::unordered_map<void *, MemInfo> memory;
@@ -176,12 +177,13 @@ public:
   vector<string> strings; // string constants used in bytecode
   PltObject *constants = NULL;
   int total_constants = 0; // total constants stored in the array constants
+  
   void load(vector<unsigned char> b, std::unordered_map<size_t, ByteSrc> *ltable, vector<string> *a, vector<string> *c)
   {
     if (program)
       delete[] program;
     program = new unsigned char[b.size()];
-    for (int k = 0; k < b.size(); k += 1)
+    for (size_t k = 0; k < b.size(); k += 1)
     {
       program[k] = b[k];
     }
@@ -221,9 +223,9 @@ public:
     auto it = std::find(files->begin(), files->end(), filename);
     size_t i = it - files->begin();
     string source_code = (*sources)[i];
-    int l = 1;
+    size_t l = 1;
     string line = "";
-    int k = 0;
+    size_t k = 0;
 
     while (l <= line_num)
     {
@@ -551,7 +553,7 @@ public:
       GC_THRESHHOLD *= 2;
     }
   }
-  inline bool invokeOperator(string meth, PltObject A, int args, string op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
+  inline bool invokeOperator(string meth, PltObject A, size_t args, string op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
   {
     KlassInstance *obj = (KlassInstance *)A.ptr;
     auto it = obj->members.find(meth);
@@ -622,9 +624,10 @@ public:
     allocators.a8 = &allocNativeFun;
     allocators.a9 = &allocModule;
 
-    api_setup(&allocators);
+    api_setup(&allocators);//for native modules
     srand(time(0));
     k = program + offset;
+
     unsigned char inst;
     while (*k != OP_EXIT)
     {
@@ -714,6 +717,11 @@ public:
             STACK.pop_back();
             PltObject key = STACK[STACK.size() - 1];
             STACK.pop_back();
+            if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
+            {
+              spitErr(TYPE_ERROR,"Error key of type "+fullform(key.type)+" not allowed.");
+              continue;
+            }
             if (dict.find(key) != dict.end())
             {
               spitErr(VALUE_ERROR, "Error duplicate keys in dictionary!");
@@ -785,7 +793,7 @@ public:
         if (p3.type == 'j')
         {
           pl_ptr1 = (PltList *)p3.ptr;
-          size_t idx = 0;
+          long long int idx = 0;
           if (p1.type == 'i')
             idx = p1.i;
           else if (p1.type == 'l')
@@ -795,7 +803,7 @@ public:
             spitErr(TYPE_ERROR, "Error type " + fullform(p1.type) + " cannot be used to index list!");
             continue;
           }
-          if (idx < 0 || idx > pl_ptr1->size())
+          if (idx < 0 || idx > (long long int)pl_ptr1->size())
           {
             spitErr(VALUE_ERROR, "Error index " + PltObjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size()));
             continue;
@@ -990,7 +998,7 @@ public:
           if (p4.type == 'w')
           {
             FunObject *memFun = (FunObject *)p4.ptr;
-            if (i2 + 1 + memFun->opt.size() < memFun->args || i2 + 1 > memFun->args)
+            if ((size_t)i2 + 1 + memFun->opt.size() < memFun->args || (size_t)i2 + 1 > memFun->args)
             {
               spitErr(ARGUMENT_ERROR, "Error function " + memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
               continue;
@@ -1005,7 +1013,7 @@ public:
             frames.push_back(STACK.size());
             STACK.insert(STACK.end(), pl1.begin(), pl1.end());
             // add default arguments
-            for (int i = memFun->opt.size() - (memFun->args - 1 - i2); i < (memFun->opt.size()); i++)
+            for (size_t i = memFun->opt.size() - (memFun->args - 1 - (size_t)i2); i < (memFun->opt.size()); i++)
             {
               STACK.push_back(memFun->opt[i]);
             }
@@ -1228,7 +1236,7 @@ public:
         callstack.pop_back();
         executing.pop_back();
         PltObject val = STACK[STACK.size() - 1];
-        while (STACK.size() != frames.back())
+        while (STACK.size() != (size_t)frames.back())
         {
           STACK.pop_back();
         }
@@ -1885,7 +1893,7 @@ public:
           }
 
           PltList l = *(PltList *)val.ptr;
-          if (i.l >= l.size())
+          if ((size_t)i.l >= l.size())
           {
             orgk = k - program;
             spitErr(VALUE_ERROR, "Error index is out of range!");
@@ -1922,7 +1930,7 @@ public:
             continue;
           }
           string s = *(string *)val.ptr;
-          if (i.l >= s.length())
+          if ((size_t)i.l >= s.length())
           {
             orgk = k - program;
             spitErr(VALUE_ERROR, "Error index is out of range!");
@@ -2064,6 +2072,38 @@ public:
           PromoteType(a, t);
           PromoteType(b, t);
         }
+        else if(a.type=='j' && b.type=='i')
+        {
+          PltList* src = (PltList*)a.ptr;
+          PltList* res = allocList();
+          if(src->size()!=0)
+          {
+          for(int i=b.i;i;--i)
+            res->insert(res->end(),src->begin(),src->end());
+          }
+          p1.type = 'j';
+          p1.ptr = (void*)res;
+          STACK.push_back(p1);
+          DoThreshholdBusiness();
+          ++k;
+          continue;
+        }
+        else if(a.type=='s' && b.type=='i')
+        {
+          string* src = (string*)a.ptr;
+          string* res = allocString();
+          if(src->size()!=0)
+          {
+            for(int i=b.i;i;--i)
+              res->insert(res->end(),src->begin(),src->end());
+          }
+          p1.type = 's';
+          p1.ptr = (void*)res;
+          STACK.push_back(p1);
+          DoThreshholdBusiness();
+          ++k;
+          continue;
+        }
         else
         {
           orgk = k - program;
@@ -2121,15 +2161,10 @@ public:
         orgk = k - program;
         PltObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
-        k += 1;
+        ++k;
         memcpy(&i1, k, sizeof(int));
         k += 3;
-        string mname = strings[i1];
-        if (a.type != 'o' && a.type != 'q' && a.type != 'e')
-        {
-          spitErr(TYPE_ERROR, "Error member operator only supported for objects!");
-          continue;
-        }
+        string& mname = strings[i1];
         if (a.type == 'e')
         {
           ErrObject *E = (ErrObject *)a.ptr;
@@ -2161,7 +2196,7 @@ public:
           k++;
           continue;
         }
-        if (a.type == 'q')
+        else if (a.type == 'q')
         {
           Module *m = (Module *)a.ptr;
 
@@ -2174,28 +2209,35 @@ public:
           ++k;
           continue;
         }
-        KlassInstance *ptr = (KlassInstance *)a.ptr;
-
-        if (ptr->members.find(mname) == ptr->members.end())
+        else if(a.type == 'o')
         {
-          if (a.type == 'o')
+          KlassInstance *ptr = (KlassInstance *)a.ptr;
+          if (ptr->members.find(mname) == ptr->members.end())
           {
-            if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
+            if (a.type == 'o')
             {
-              FunObject *A = executing.back();
-              if (A == NULL)
+              if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
               {
-                spitErr(ACCESS_ERROR, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                FunObject *A = executing.back();
+                if (A == NULL)
+                {
+                  spitErr(ACCESS_ERROR, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  continue;
+                }
+                if (ptr->klass != A->klass)
+                {
+                  spitErr(ACCESS_ERROR, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  continue;
+                }
+                STACK.push_back(ptr->privateMembers[mname]);
+                k += 1;
                 continue;
               }
-              if (ptr->klass != A->klass)
+              else
               {
-                spitErr(ACCESS_ERROR, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                spitErr(NAME_ERROR, "Error object has no member named " + mname);
                 continue;
               }
-              STACK.push_back(ptr->privateMembers[mname]);
-              k += 1;
-              continue;
             }
             else
             {
@@ -2203,15 +2245,14 @@ public:
               continue;
             }
           }
-          else
-          {
-            spitErr(NAME_ERROR, "Error object has no member named " + mname);
-            continue;
-          }
+          PltObject ret = ptr->members[mname];
+          STACK.push_back(ret);
         }
-        PltObject ret = ptr->members[mname];
-
-        STACK.push_back(ret);
+        else
+        {
+          spitErr(TYPE_ERROR, "Error member operator only supported for objects!");
+          continue;
+        }
         break;
       }
       case LOAD_FUNC:
@@ -2358,7 +2399,7 @@ public:
         for (auto e : Base->members)
         {
           const string &n = e.first;
-          if (n == "super")
+          if (n == "super")//do not add base class's super to this class
             continue;
           if (d->members.find(n) == d->members.end())
           {
@@ -2447,7 +2488,7 @@ public:
         if (fn.type == 'w')
         {
           FunObject *obj = (FunObject *)fn.ptr;
-          if (N + obj->opt.size() < obj->args || N > obj->args)
+          if ((size_t)N + obj->opt.size() < obj->args || (size_t)N > obj->args)
           {
             spitErr(ARGUMENT_ERROR, "Error function " + obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
             continue;
@@ -2458,7 +2499,7 @@ public:
             spitErr(MAX_RECURSION_ERROR, "Error max recursion limit 1000 reached.");
             continue;
           }
-          for (int i = obj->opt.size() - (obj->args - N); i < obj->opt.size(); i++)
+          for (size_t i = obj->opt.size() - (obj->args - N); i < obj->opt.size(); i++)
             STACK.push_back(obj->opt[i]);
           executing.push_back(obj);
           frames.push_back(STACK.size() - obj->args);
@@ -2494,10 +2535,10 @@ public:
           if (obj->members.find("super") != obj->members.end())
           {
             KlassInstance *newSuper = allocKlassInstance();
-            KlassInstance *oldSuper = (KlassInstance *)(obj->members["super"].ptr);
-            newSuper->klass = oldSuper->klass;
-            newSuper->members = oldSuper->members;
-            newSuper->privateMembers = oldSuper->privateMembers;
+            KlassInstance* super = (KlassInstance*)obj->members["super"].ptr;
+            newSuper->klass = super->klass;
+            newSuper->members = super->members;
+            newSuper->privateMembers = super->privateMembers;
             obj->members["super"] = PltObjectFromKlassInstance(newSuper);
           }
           obj->privateMembers = ((Klass *)fn.ptr)->privateMembers;
@@ -2509,7 +2550,7 @@ public:
             if (construct.type == 'w')
             {
               FunObject *p = (FunObject *)construct.ptr;
-              if (N + p->opt.size() + 1 < p->args || N + 1 > p->args)
+              if ((size_t)N + p->opt.size() + 1 < p->args || (size_t)N + 1 > p->args)
               {
                 spitErr(ARGUMENT_ERROR, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
                 continue;
@@ -2519,7 +2560,7 @@ public:
               r.ptr = (void *)obj;
               callstack.push_back(k + 1);
 
-              for (int i = p->opt.size() - (p->args - 1 - N); i < p->opt.size(); i++)
+              for (size_t i = p->opt.size() - (p->args - 1 - N); i < p->opt.size(); i++)
               {
                 STACK.push_back(p->opt[i]);
               }
@@ -2574,7 +2615,7 @@ public:
         }
         else if (fn.type == 'g')
         {
-          if (N != fn.extra)
+          if ((size_t)N != fn.extra)
           {
             spitErr(ARGUMENT_ERROR, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(fn.extra) + " arguments," + to_string(N) + " given!");
             continue;
@@ -3041,6 +3082,7 @@ public:
 
       } // end switch statement
       k += 1;
+
     } // end while loop
     if (STACK.size() != 0 && panic)
     {

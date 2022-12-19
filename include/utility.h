@@ -19,18 +19,6 @@ string IntToHex(int i)
         }
         else
         {
-/*           if(r==10)
-            res+="a";
-           else if(r==11)
-            res+="b";
-           else if(r==12)
-            res+="c";
-           else if(r==13)
-            res+="d";
-           else if(r==14)
-            res+="e";
-           else if(r==15)
-            res+="f";*/
            res+= (char) (r+87);
         }
         i = i/16;
@@ -46,8 +34,9 @@ string IntToHex(int i)
 
 unsigned char tobyte(string s)
 {
+
     std::reverse(s.begin(),s.end());
-    int k = 0;
+    size_t k = 0;
     int p = 0;
     unsigned char b = 0;
     while(k<s.length())

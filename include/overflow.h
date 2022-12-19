@@ -141,7 +141,8 @@ inline bool division_overflows(long long int op1,long long int op2) {
   }
   return false;
 }
-inline bool division_overflows(double op1,double op2) {
+inline bool division_overflows(double op1,double op2) 
+{
   return false;
 }
 

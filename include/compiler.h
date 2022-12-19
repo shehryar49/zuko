@@ -47,9 +47,9 @@ public:
     auto it = std::find(files->begin(),files->end(),filename);
     size_t i = it-files->begin();
     string& source_code = (*sources)[i];
-    int l = 1;
+    size_t l = 1;
     string line = "";
-    int k = 0;
+    size_t k = 0;
     while(l<=line_num)
     {
         if(source_code[k]=='\n')
@@ -277,7 +277,7 @@ public:
       if (ast->val == "list")
       {
           
-          for (int k = 0; k < ast->childs.size(); k += 1)
+          for (size_t k = 0; k < ast->childs.size(); k += 1)
           {
               vector<unsigned char> elem = exprByteCode(ast->childs[k]);
               bytes.insert(bytes.end(), elem.begin(), elem.end());
@@ -295,7 +295,7 @@ public:
       if (ast->val == "dict")
       {
           
-          for (int k = 0; k < ast->childs.size(); k += 1)
+          for (size_t k = 0; k < ast->childs.size(); k += 1)
           {
               vector<unsigned char> elem = exprByteCode(ast->childs[k]);
               bytes.insert(bytes.end(), elem.begin(), elem.end());
@@ -464,7 +464,7 @@ public:
               vector<unsigned char> a = exprByteCode(ast->childs[0]);
               bytes.insert(bytes.end(), a.begin(), a.end());
               Node* args = callnode->childs[2];
-              for (int f = 0; f < args->childs.size(); f += 1)
+              for (size_t f = 0; f < args->childs.size(); f += 1)
               {
                   vector<unsigned char> arg = exprByteCode(args->childs[f]);
                   bytes.insert(bytes.end(), arg.begin(), arg.end());
@@ -741,7 +741,7 @@ public:
           }
           if (udf)
           {
-              for (int k = 0; k < ast->childs[2]->childs.size(); k += 1)
+              for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
                   vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
                   bytes.insert(bytes.end(), val.begin(), val.end());
@@ -751,7 +751,7 @@ public:
               vector<unsigned char> fn = exprByteCode(E);
               delete E;
               bytes.insert(bytes.end(),fn.begin(),fn.end());
-                            LineNumberTable->emplace(bytes_done, tmp);
+              LineNumberTable->emplace(bytes_done, tmp);
 
               bytes.push_back(CALLUDF);
               bytes.push_back(ast->childs[2]->childs.size());
@@ -760,7 +760,7 @@ public:
           }
           else
           {
-              for (int k = 0; k < ast->childs[2]->childs.size(); k += 1)
+              for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
                   vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
                   bytes.insert(bytes.end(), val.begin(), val.end());
@@ -769,7 +769,7 @@ public:
               LineNumberTable->emplace(bytes_done, tmp);
               bytes.push_back(CALLFORVAL);
               bool add = true;
-              int index = 0;
+              size_t index = 0;
               for(index = 0;index < vm.builtin.size();index+=1)
               {
                 if(vm.builtin[index]==funcs[name])
@@ -832,7 +832,6 @@ public:
   vector<string> scanClass(Node* ast)
   {
     vector<string> names;
-    Node* org = ast;
     while(ast->val!="endclass")
     {
       if(ast->val=="declare")
@@ -866,10 +865,10 @@ public:
           compileError("NameError","Error coroutine inside class not allowed.");
       }
       
-      else if(ast->val=="class" && ast!=org)
+      else if(ast->val=="class")
       {
         line_num = atoi(ast->childs[0]->val.substr(5).c_str());
-        compileError("SyntaxError","Error classes within a class not supported yet.");
+        compileError("SyntaxError","Error nested classes not supported");
       
       }
       ast = ast->childs.back();
@@ -1053,16 +1052,16 @@ public:
                   program.insert(program.end(),lhs.begin(),lhs.end());
                   if(ast->childs[1]->childs[1]->val.substr(0,4)!="id: ")
                     compileError("SyntaxError","Invalid Syntax");
-                    string mname = ast->childs[1]->childs[1]->val.substr(4);
-                    vector<unsigned char> val = exprByteCode(ast->childs[2]);
-                    program.insert(program.end(), val.begin(), val.end());
-                    program.push_back(ASSIGNMEMB);
-                    for(auto e: mname)
-                      program.push_back(e);
-                    program.push_back(0);
-                    ByteSrc tmp = { fileTOP,line_num };
-                    LineNumberTable->emplace(bytes_done, tmp);
-                    bytes_done+=mname.length()+2;
+                  string mname = ast->childs[1]->childs[1]->val.substr(4);
+                  vector<unsigned char> val = exprByteCode(ast->childs[2]);
+                  program.insert(program.end(), val.begin(), val.end());
+                  program.push_back(ASSIGNMEMB);
+                  for(auto e: mname)
+                    program.push_back(e);
+                  program.push_back(0);
+                  ByteSrc tmp = { fileTOP,line_num };
+                  LineNumberTable->emplace(bytes_done, tmp);
+                  bytes_done+=mname.length()+2;
 
               }
           }
@@ -1349,7 +1348,7 @@ public:
 
               std::unordered_map<string,int> m;
               bool add = true;
-              int index = 0;
+              size_t index = 0;
               int fnIdx = 0;
               for(index = 0;index < vm.builtin.size();index+=1)
               {
@@ -1491,9 +1490,9 @@ public:
               compileError("SyntaxError","Namespace declartion inside function!");
             }
             string name = ast->childs[1]->val;
-          string prefix;
-          for(auto e: prefixes)
-            prefix+=e;
+            string prefix;
+            for(auto e: prefixes)
+              prefix+=e;
             prefixes.push_back(prefix+name+"::");
             vector<unsigned char> block = compile(ast->childs[2],false);
             prefixes.pop_back();
@@ -1636,7 +1635,7 @@ public:
               int elifBlockcounter = 3;//third node of ast
               vector<int> elifLocalSizes ;
               vector<vector<unsigned char>> elifBlocks;
-              for (int k = 1; k < ast->childs[1]->childs.size(); k += 1)
+              for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
               {
                   vector<unsigned char> elifCond = exprByteCode(ast->childs[1]->childs[k]);
                   elifConditions.push_back(elifCond);
@@ -1697,7 +1696,7 @@ public:
               program.push_back(FOO.bytes[1]);
               program.push_back(FOO.bytes[2]);
               program.push_back(FOO.bytes[3]);
-              for (int k = 0; k < elifBlocks.size(); k += 1)
+              for (size_t k = 0; k < elifBlocks.size(); k += 1)
               {
 
                   elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSet_Size) + 1;
@@ -1768,7 +1767,7 @@ public:
             int elifBlockcounter = 3;//third node of ast
             vector<int> elifLocalSizes ;
             vector<vector<unsigned char>> elifBlocks;
-            for (int k = 1; k < ast->childs[1]->childs.size(); k += 1)
+            for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
             {
                 vector<unsigned char> elifCond = exprByteCode(ast->childs[1]->childs[k]);
                 elifConditions.push_back(elifCond);
@@ -1821,7 +1820,7 @@ public:
             program.push_back(FOO.bytes[1]);
             program.push_back(FOO.bytes[2]);
             program.push_back(FOO.bytes[3]);
-            for (int k = 0; k < elifBlocks.size(); k += 1)
+            for (size_t k = 0; k < elifBlocks.size(); k += 1)
             {
                 elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSet_Size) + 1;
                 if(elifLocalSizes[k]!=0)
@@ -1971,7 +1970,7 @@ public:
                 vector<unsigned char> expr;
                 int before = STACK_SIZE;
                 STACK_SIZE = 0;
-                for (int k =0; k<ast->childs[1]->childs.size(); k += 1)
+                for (size_t k =0; k<ast->childs[1]->childs.size(); k += 1)
                 {
                   string n = ast->childs[1]->childs[k]->val;
                   if(ast->childs[1]->childs[k]->childs.size()!=0)
@@ -2114,20 +2113,20 @@ public:
               extendedClass = true;
             }
             string name = ast->childs[1]->val;
-                        size_t C = line_num;
-                        if(scope==0)
-                        {
-                          if(globals.find(name)!=globals.end())
-                            compileError("NameError","Redeclaration of name "+name);
-                          globals.emplace(name,STACK_SIZE);
-                        }
-                        else
-                        {
-                          if(locals.back().find(name)!=locals.back().end())
-                            compileError("NameError","Redeclaration of name "+name);
-                          locals.back().emplace(name,STACK_SIZE);
-                        }
-                        STACK_SIZE+=1;
+            size_t C = line_num;
+            if(scope==0)
+            {
+              if(globals.find(name)!=globals.end())
+                compileError("NameError","Redeclaration of name "+name);
+              globals.emplace(name,STACK_SIZE);
+            }
+            else
+            {
+              if(locals.back().find(name)!=locals.back().end())
+                compileError("NameError","Redeclaration of name "+name);
+              locals.back().emplace(name,STACK_SIZE);
+            }
+            STACK_SIZE+=1;
             vector<string> names = scanClass(ast->childs[2]);
             if(extendedClass)
             {
@@ -2282,7 +2281,7 @@ public:
               {
                 udf = true;
               }
-              for (int k = 0; k < ast->childs[2]->childs.size(); k += 1)
+              for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
                   vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
                   program.insert(program.end(), val.begin(), val.end());
@@ -2306,7 +2305,7 @@ public:
                   LineNumberTable->emplace(bytes_done, tmp);
                   program.push_back(CALL);
                   bytes_done += 1;
-                  int index = 0;
+                  size_t index = 0;
                   bool add = true;
                   for(index = 0;index < vm.builtin.size();index+=1)
                   {

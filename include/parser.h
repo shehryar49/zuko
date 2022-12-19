@@ -20,16 +20,18 @@ string substr(int x,int y,string s)
 {
   //Crash safe substr function, the std::string.substr() can cause program to crash(or throws exception whatever)
   //this function allows you to check string for subsequences without worrying about out of range issues
-  int  k = x;
+  //returns a string if indexes are valid
+  int k = x;
 	string p = "";
-	while(k<=y && k<s.length())
+  int l = s.length();
+	while(k<=y && k<l)
 	{
 		p+= s[k];
 		k+=1;
 	}
 	return p;
 }
-vector<string> split(string s,string x)
+vector<string> split(string s,const string& x)
 {
 	unsigned int  k = 0;
 	vector<string> list;
@@ -133,7 +135,8 @@ int findLCBRight(int k,const vector<Token>& tokens)
 }
 int findToken(Token t,int start,const vector<Token>& tokens)
 {
-   while(start<tokens.size())
+   int l = tokens.size();
+   while(start<l)
    {
      if(tokens[start].type==t.type && tokens[start].content==t.content)
        return start;
@@ -144,7 +147,8 @@ int findToken(Token t,int start,const vector<Token>& tokens)
 int matchRP(int k,const vector<Token> tokens)
 {
   int ignore = 0;
-  while(k<tokens.size())
+  int l = tokens.size();
+  while(k<l)
   {
     if(tokens[k].type== TokenType::LParen_TOKEN)
       ignore+=1;
@@ -161,7 +165,8 @@ int matchRP(int k,const vector<Token> tokens)
 int findEndList(int k,const vector<Token>& tokens)
 {
   int ignore = 0;
-  while(k<tokens.size())
+  int l = tokens.size();
+  while(k<l)
   {
     if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
       ignore+=1;
@@ -178,7 +183,8 @@ int findEndList(int k,const vector<Token>& tokens)
 int findRCB(int k,const vector<Token>& tokens)
 {
   int ignore = 0;
-  while(k<tokens.size())
+  int l = tokens.size();
+  while(k<l)
   {
     if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
       ignore+=1;
@@ -210,7 +216,8 @@ void CopyAst(Node*& dest,Node* src)
         return;
     dest->val = src->val;
     int k = 0;
-    for(k=0;k<src->childs.size();k+=1)
+    int l = src->childs.size();
+    for(k=0;k<l;k+=1)
     {
         Node* n = new Node;
         CopyAst(n,src->childs[k]);
@@ -261,7 +268,8 @@ void printAST(Node* n,int spaces = 0)
 }
 int findTokenConsecutive(Token t,int start,const vector<Token>& tokens)
 {
-    for(int k=start;k<tokens.size();k+=1)
+    int l = tokens.size();
+    for(int k=start;k<l;k+=1)
     {
         if(tokens[k].type==t.type && tokens[k].content==t.content)
         {
@@ -308,9 +316,9 @@ public:
     auto it = std::find(files->begin(),files->end(),filename);
     size_t i = it-files->begin();
     string source_code = (*sources)[i];
-    int l = 1;
+    size_t l = 1;
     string line = "";
-    int k = 0;
+    size_t k = 0;
     while(l<=line_num)
     {
 
@@ -349,7 +357,7 @@ public:
 
     }
   }
-  Node* parseExpr(vector<Token> tokens)
+  Node* parseExpr(vector<Token>& tokens)
   {
     if(tokens.size()==0)
       parseError("SyntaxError","Invalid Syntax");
@@ -390,199 +398,54 @@ public:
     
     
     /////////
+    static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","&","^"},{"+","-"},{"/","*","%"}};
+    static int l = prec.size();
     int k = tokens.size()-1;
-    while(k>=0)
+    for(int i=0;i<l;++i)
     {
-      if(tokens[k].type== TokenType::RParen_TOKEN)
+      vector<string>& op_set = prec[i];
+      k = tokens.size()-1;
+      while(k>=0)
       {
-        int i = matchRPRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k = i;
-      }
-      else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-      {
-         int i = findBeginList(k,tokens);
-         if(i==-1)
-           parseError("SyntaxError","Invalid Syntax");
-         k=i;
-      }
-      else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-      {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k=i;
-      }
-      else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="and" || tokens[k].content=="or" || tokens[k].content=="is"))
-      {
-        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-        if(lhs.size()==0 || rhs.size()==0)
-          parseError("SyntaxError","Invalid Syntax");
-        Node* ast = NewNode(tokens[k].content);
-        ast->childs.push_back(parseExpr(lhs));
-        ast->childs.push_back(parseExpr(rhs));
-        return ast;
-      }
-      k-=1;
-    }
-    //////
-    ////
-    //////////
-    k = tokens.size()-1;
-    while(k>=0)
-    {
-      if(tokens[k].type== TokenType::RParen_TOKEN)
-      {
-        int i = matchRPRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k = i;
-      }
-      else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-      {
-         int i = findBeginList(k,tokens);
-         if(i==-1)
-           parseError("SyntaxError","Invalid Syntax");
-         k=i;
-      }
-      else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-      {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k=i;
-      }
-      else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="==" || tokens[k].content=="!=" || tokens[k].content=="<" || tokens[k].content==">" || tokens[k].content=="<=" || tokens[k].content==">="))
-      {
-        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-        if(lhs.size()==0 || rhs.size()==0)
-          parseError("SyntaxError","Invalid Syntax");
-        Node* ast = NewNode(tokens[k].content);
-        ast->childs.push_back(parseExpr(lhs));
-        ast->childs.push_back(parseExpr(rhs));
-        return ast;
-      }
-      k-=1;
-    }
-    /////
-    k = tokens.size()-1;
-    while(k>=0)
-    {
-      if(tokens[k].type==TokenType::RParen_TOKEN)
-      {
-        int i = matchRPRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k = i;
-      }
-      else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-      {
-         int i = findBeginList(k,tokens);
-         if(i==-1)
-           parseError("SyntaxError","Invalid Syntax");
-         k=i;
-      }
-      else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-      {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k=i;
-      }
-      else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="<<" || tokens[k].content==">>" || tokens[k].content=="&" || tokens[k].content=="|" || tokens[k].content=="^"))
-      {
-        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-        if(lhs.size()==0 || rhs.size()==0)
-          parseError("SyntaxError","Invalid Syntax");
-        Node* ast = NewNode(tokens[k].content);
-        ast->childs.push_back(parseExpr(lhs));
-        ast->childs.push_back(parseExpr(rhs));
-        return ast;
-      }
-      k-=1;
-    }
-    //////////
-    k = tokens.size()-1;
-    while(k>=0)
-    {
-      if(tokens[k].type== TokenType::RParen_TOKEN)
-      {
-        int i = matchRPRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k = i;
-      }
-      else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-      {
-         int i = findBeginList(k,tokens);
-         if(i==-1)
-           parseError("SyntaxError","Invalid Syntax");
-         k=i;
-      }
-      else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-      {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k=i;
-      }
-      else if(tokens[k].type==OP_TOKEN && (tokens[k].content=="+" || tokens[k].content=="-") && k!=0)
-      {
-        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-        if(lhs.size()==0 || rhs.size()==0 )
-          parseError("SyntaxError","Invalid Syntax");
-        Node* ast = NewNode(tokens[k].content);
-        ast->childs.push_back(parseExpr(lhs));
-        ast->childs.push_back(parseExpr(rhs));
-        return ast;
-      }
-      k-=1;
-    }
-
-    k = tokens.size()-1;
-    while(k>=0)
-    {
-       if(tokens[k].type== TokenType::RParen_TOKEN)
-       {
-         int i = matchRPRight(k,tokens);
-         if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-         k = i;
-       }
-       else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-       {
+        if(tokens[k].type== TokenType::RParen_TOKEN)
+        {
+          int i = matchRPRight(k,tokens);
+          if(i==-1)
+            parseError("SyntaxError","Invalid Syntax");
+          k = i;
+        }
+        else if(tokens[k].type== TokenType::END_LIST_TOKEN)
+        {
           int i = findBeginList(k,tokens);
           if(i==-1)
-           parseError("SyntaxError","Invalid Syntax");
+            parseError("SyntaxError","Invalid Syntax");
           k=i;
-       }
-       else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-      {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-          parseError("SyntaxError","Invalid Syntax");
-        k=i;
+        }
+        else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
+        {
+          int i = findLCBRight(k,tokens);
+          if(i==-1)
+            parseError("SyntaxError","Invalid Syntax");
+          k=i;
+        }
+        else if(tokens[k].type== TokenType::OP_TOKEN && (std::find(op_set.begin(),op_set.end(),tokens[k].content)!=op_set.end()) && k!=0)
+        {
+          vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
+          vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
+          if(lhs.size()==0 || rhs.size()==0)
+            parseError("SyntaxError","Invalid Syntax");
+          Node* ast = NewNode(tokens[k].content);
+          ast->childs.push_back(parseExpr(lhs));
+          ast->childs.push_back(parseExpr(rhs));
+          return ast;
+        }
+        k-=1;
       }
-       else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="/" || tokens[k].content=="*" || tokens[k].content=="%"))
-       {
-         vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-         vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-         if(lhs.size()==0 || rhs.size()==0)
-          parseError("SyntaxError","Invalid Syntax");
-         Node* ast = NewNode(tokens[k].content);
-         ast->childs.push_back(parseExpr(lhs));
-         ast->childs.push_back(parseExpr(rhs));
-         return ast;
-       }
-      k-=1;
-     }
+    }
+    //////
+    
      /////////////////
-
+    //Unary Operators
      ////////////////
     if(tokens[0].type== TokenType::OP_TOKEN)
     {
@@ -604,14 +467,14 @@ public:
         ast->childs.push_back(E);
         return ast;
       }
-      if(tokens[0].content=="+")
+      else if(tokens[0].content=="+")
       {
         vector<Token> e = {tokens.begin()+1,tokens.end()};
         if(e.size()==0)
           parseError("SyntaxError","Invalid Syntax");
         return (parseExpr(e));
       }
-      if(tokens[0].content=="~")
+      else if(tokens[0].content=="~")
       {
         Node* ast = NewNode("~");
         vector<Token> e = {tokens.begin()+1,tokens.end()};
@@ -620,14 +483,13 @@ public:
         ast->childs.push_back(parseExpr(e));
         return ast;
       }
-
-    }
-    if(tokens[0].type== TokenType::OP_TOKEN && tokens[0].content=="!")
-    {
-      Node* ast = NewNode("!");
-      vector<Token> e = {tokens.begin()+1,tokens.end()};
-      ast->childs.push_back(parseExpr(e));
-      return ast;
+      else if(tokens[0].content=="!")
+      {
+        Node* ast = NewNode("!");
+        vector<Token> e = {tokens.begin()+1,tokens.end()};
+        ast->childs.push_back(parseExpr(e));
+        return ast;
+      }
     }
     if(tokens[tokens.size()-1].type==END_LIST_TOKEN)// evaluate indexes
     {
@@ -655,7 +517,8 @@ public:
          if(tokens.size()==2)
            return ast;
          vector<Token> t;
-         for(int k = 1;k<=tokens.size()-2;k+=1)
+         int L = tokens.size()-2;
+         for(int k = 1;k<=L;k+=1)
          {
            if(tokens[k].type== TokenType::COMMA_TOKEN)
            {
@@ -667,7 +530,7 @@ public:
            else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
            {
              int R = findEndList(k,tokens);
-             if(R>(tokens.size()-2) || R==-1)
+             if(R>(L) || R==-1)
                parseError("SyntaxError","Invalid Syntax");
              vector<Token> sublist = {tokens.begin()+k,tokens.begin()+R+1};
              t.insert(t.end(),sublist.begin(),sublist.end());
@@ -676,7 +539,7 @@ public:
            else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
            {
              int R = findRCB(k,tokens);
-             if(R>(tokens.size()-2) || R==-1)
+             if(R>L || R==-1)
                parseError("SyntaxError","Invalid Syntax");
              vector<Token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
              t.insert(t.end(),subdict.begin(),subdict.end());
@@ -685,7 +548,7 @@ public:
            else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
            {
              int R = matchRP(k,tokens);
-             if(R>(tokens.size()-2) || R==-1)
+             if(R>L || R==-1)
                parseError("SyntaxError","Invalid Syntax");
              vector<Token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
              t.insert(t.end(),subfn.begin(),subfn.end());
@@ -745,16 +608,14 @@ public:
     {
     if(tokens[0].type== TokenType::L_CURLY_BRACKET_TOKEN && tokens.back().type==TokenType::R_CURLY_BRACKET_TOKEN)
     {
-      int i = tokens.size()-1;
-      if(i==tokens.size()-1)
-      {
          ast = NewNode("dict");
          if(tokens.size()==2)
            return ast;
          vector<Token> Key;
          vector<Token> Value;
          string tofill = "key";
-         for(int k = 1;k<=tokens.size()-2;k+=1)
+         int L = tokens.size()-2;
+         for(int k = 1;k<=L;k+=1)
          {
            if(tokens[k].type== TokenType::COMMA_TOKEN)
            {
@@ -790,7 +651,7 @@ public:
            else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
            {
              int R = findRCB(k,tokens);
-             if(R==tokens.size()-1)
+             if(R==(int)tokens.size()-1)
                parseError("SyntaxError","Invalid Syntax");
 
              vector<Token> subdict ={tokens.begin()+k,tokens.begin()+R+1};
@@ -809,7 +670,7 @@ public:
            else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
            {
              int R = matchRP(k,tokens);
-             if(R>(tokens.size()-2) || R==-1)
+             if(R>((int)tokens.size()-2) || R==-1)
                parseError("SyntaxError","Invalid Syntax");
              vector<Token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
              if(tofill=="key")
@@ -835,9 +696,8 @@ public:
            parseError("SyntaxError","Invalid Syntax");
          ast->childs.push_back(parseExpr(Value));
          Value.clear();
-
          return ast;
-      }
+      
       }
     }
     ////////////////////
@@ -847,7 +707,7 @@ public:
       int i = matchRP(1,tokens);
       if(i==-1)
         parseError("SyntaxError","Invalid Syntax");
-      if(i==tokens.size()-1)
+      if(i==(int)tokens.size()-1)
       {
               Node* ast = NewNode("call");
       Node* args = NewNode("args");
@@ -871,7 +731,7 @@ public:
         ast->childs.push_back(args);
         return ast;
       }
-      for(int k = 0;k<Args.size();k+=1)
+      for(int k = 0;k<(int)Args.size();k+=1)
       {
         if(Args[k].type== TokenType::COMMA_TOKEN)
         {
@@ -925,7 +785,7 @@ public:
       int i = matchRP(0,tokens);
       if(i==-1)
         parseError("SyntaxError","Invalid Syntax");
-      if(i==tokens.size()-1)
+      if(i==(int)tokens.size()-1)
       {
          vector<Token> e = {tokens.begin()+1,tokens.end()-1};
          return parseExpr(e);
@@ -936,7 +796,10 @@ public:
     for(auto e: tokens)
     {
       if(e.type==NEWLINE_TOKEN)
+      {
         multiline=true;
+        break;
+      }
       if(e.type==TokenType::STRING_TOKEN)
         expr+= "\"" + e.content + "\"";
       else
@@ -1071,7 +934,7 @@ public:
           }
           vector<Token> T;
           vector<Token> Args = {tokens.begin()+2,tokens.end()-1};
-          for(int k = 0;k<Args.size();k+=1)
+          for(int k = 0;k<(int)Args.size();k+=1)
           {
             if(Args[k].type== TokenType::COMMA_TOKEN)
             {
@@ -1157,7 +1020,10 @@ public:
         tokens[1].content = fnprefix+tokens[1].content;
       ast->childs.push_back(NewNode(tokens[1].content));
       if(extendedClass)
-        ast->childs.push_back(parseExpr(vector<Token>{tokens.begin()+3,tokens.end()}));
+      {
+        tokens = {tokens.begin()+3,tokens.end()};
+        ast->childs.push_back(parseExpr(tokens));
+      }
       return ast;
     }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="while" || tokens[0].content=="dowhile"))
@@ -1356,7 +1222,7 @@ public:
               parseError("SyntaxError","Invalid Syntax");
           }
       }
-      if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
       {
           Node* ast = NewNode("return");
           vector<Token> t = {tokens.begin()+1,tokens.end()};
@@ -1367,7 +1233,7 @@ public:
           ast->childs.push_back(parseExpr(t));
           return ast;
       }
-      if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
       {
         foundYield = true;
         Node* ast = NewNode("yield");
@@ -1431,7 +1297,7 @@ public:
               int i2 = 0;
               int i3 = 0;
               bool found = false;
-              for(;j<args.size();j++)
+              for(;j<(int)args.size();j++)
               {
                 if(args[j].type==L_CURLY_BRACKET_TOKEN)
                   i1+=1;
@@ -1451,7 +1317,7 @@ public:
                   break;
                 }
               }
-              if(!found && j!=args.size())
+              if(!found && (size_t)j!=args.size())
                 parseError("SyntaxError","Invalid Syntax");
               found_default = true;
               vector<Token> default_expr = {args.begin()+k,args.begin()+j};
@@ -1477,10 +1343,8 @@ public:
       }
       return ast;
     }
-
-
-     int k=0;
-      while(k<tokens.size())
+    int k=0;
+    while(k<(int)tokens.size())
       {
           if(tokens[k].type!= TokenType::OP_TOKEN)
           {
@@ -1561,8 +1425,10 @@ public:
         Node* line = NewNode("line "+to_string(tokens[0].ln));
         Node* ast = NewNode("throw");
         ast->childs.push_back(line);
-        ast->childs.push_back(parseExpr(vector<Token>{tokens[1]}));
-        ast->childs.push_back(parseExpr(vector<Token>{tokens[3]}));
+        vector<Token> aux = {tokens[1]};
+        ast->childs.push_back(parseExpr(aux));
+        aux = {tokens[3]};
+        ast->childs.push_back(parseExpr(aux));
         return ast;
       }
     k = tokens.size()-1;
@@ -1604,6 +1470,23 @@ public:
       }
       k-=1;
     }
+    if(REPL_MODE)
+    {
+      vector<Token> dummyStmt;
+      Token i;
+      i.content = "println";
+      i.ln = tokens[0].ln;
+      i.type = ID_TOKEN;
+      dummyStmt.push_back(i);
+      i.content = "(";
+      i.type = LParen_TOKEN;
+      dummyStmt.push_back(i);
+      dummyStmt.insert(dummyStmt.end(),tokens.begin(),tokens.end());
+      i.content = ")";
+      i.type = RParen_TOKEN;
+      dummyStmt.push_back(i);
+      return parseExpr(dummyStmt);
+    }
     parseError("SyntaxError","Unknown statement");
     return nullptr;//to avoid compiler warning otherwise the parseError function exits after printing error message
 
@@ -1618,7 +1501,7 @@ public:
       Node* e = nullptr;//e points to the lowest rightmost node of ast
       Node* Final = nullptr;
       line_num = 1;
-      while(k<tokens.size())
+      while(k<(int)tokens.size())
       {
           if(tokens[k].type== TokenType::NEWLINE_TOKEN)
           {
@@ -1640,10 +1523,6 @@ public:
                     continue;
               }
               ast = parseStmt(line,infunc,inclass);
-              if(inclass && ast->val!="declare" && substr(0,4,ast->val)!="func " && ast->val!="endclass" && ast->val!="endnm" && ast->val!="endfunc")
-              {
-                parseError("SyntaxError","Error classes are allowed to have member variables and functions only!");
-              }
               if(ast->val=="if")
               {
                   ElseTok.type = TokenType::KEYWORD_TOKEN;
@@ -1668,7 +1547,7 @@ public:
                      j = findTokenConsecutive(newlinetok,start+line.size(),tokens);
                      i = findToken(newlinetok,j+1,tokens);
                      line_num = line[0].ln;
-                     if(i==-1 || (j<tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
+                     if(i==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                        parseError("SyntaxError","Error expected code block or line after if!");
 
 
@@ -1678,7 +1557,6 @@ public:
                  {
                        parseError("SyntaxError","Error use brackets {} after if!");
                  }
-               //  printf("ifblock size = %ld\nisNEWLINE_TOKEN = %d\n%s\n",block.size(),block[0].type==KEYWORD_TOKEN,block[0].content.c_str());
                  removeUselessNewlines(block);
                  vector<vector<Token>> elifBlocks;
                  vector<vector<Token>> elifConditions;
@@ -1711,7 +1589,7 @@ public:
                      i = findToken(newlinetok,j+1,tokens);
                        line_num = tokens[p].ln;
                        j-=1;
-                       if(i==-1 || (j+1<tokens.size()-1 && tokens[j+2].type==EOP_TOKEN))
+                       if(i==-1 || (j+1<(int)tokens.size()-1 && tokens[j+2].type==EOP_TOKEN))
                          parseError("SyntaxError","Error expected code block or line after else if");
                    }
                    else
@@ -1735,7 +1613,7 @@ public:
                      {
                          j = findTokenConsecutive(newlinetok,e+1,tokens);
                          i = findToken(newlinetok,j+1,tokens);
-                         if(i==-1 || (j<tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
+                         if(i==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                            parseError("SyntaxError","Error expected code block or line after else");
                      }
                      else
@@ -1750,7 +1628,7 @@ public:
                        parseError("SyntaxError","Error use brackets {} after else!");
                  }
                    removeUselessNewlines(elseBlock);
-                   for(int a=0;a<elifConditions.size();a++)
+                   for(int a=0;a<(int)elifConditions.size();a++)
                    {
                        line_num = elifConditions[a][0].ln;   
                        ast->childs[1]->childs.push_back(parseExpr(elifConditions[a]));
@@ -1770,7 +1648,7 @@ public:
                    elseBlock.push_back(newlinetok);
                    ast->childs.push_back(parse(block,inwhile,infunc));
                    t.content = "endelif";
-                   for(int a=0;a<elifBlocks.size();a++)
+                   for(int a=0;a<(int)elifBlocks.size();a++)
                    {
                       vector<Token> elifBlock = elifBlocks[a];
                       removeUselessNewlines(elifBlock);
@@ -1798,7 +1676,7 @@ public:
                  else if(foundelif && !foundElse)
                  {
                    ast->val = "ifelif";
-                   for(int a=0;a<elifConditions.size();a++)
+                   for(int a=0;a<(int)elifConditions.size();a++)
                    {
                                            line_num = elifConditions[a][0].ln;
                        ast->childs[1]->childs.push_back(parseExpr(elifConditions[a]));
@@ -1812,7 +1690,7 @@ public:
                    block.push_back(newlinetok);
                    ast->childs.push_back(parse(block,inwhile,infunc));
                    t.content = "endelif";
-                   for(int a=0;a<elifBlocks.size();a++)
+                   for(int a=0;a<(int)elifBlocks.size();a++)
                    {
                       vector<Token> elifBlock = elifBlocks[a];
                       removeUselessNewlines(elifBlock);
@@ -1914,7 +1792,7 @@ public:
                    i = findRCB(j,tokens);
                  if(i==-1)
                     parseError("SyntaxError","Error missing '}' to end function definition.");
-                 if(j==-1 || (j<tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
+                 if(j==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                     parseError("SyntaxError","Error expected code block or line after function definition!");
     
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
@@ -1940,7 +1818,7 @@ public:
                    ast->val = "gen "+ast->val.substr(5);
                  //printf("dependencies: ");
                  size_t increase = fnReferenced->size()-before;
-                 for(int i=1;i<=increase;i+=1)
+                 for(int i=1;i<=(int)increase;i+=1)
                  {
                    string e = fnReferenced->back();
                    fnReferenced->pop_back();
@@ -2047,7 +1925,6 @@ public:
               }
               else if(ast->val=="while" || ast->val=="dowhile" || ast->val=="for" || ast->val=="foreach")//loops
               {
-            //    printf("parsing loop\n");
                  bgscope.content ="{";
                  bgscope.type= L_CURLY_BRACKET_TOKEN;
                  int j = findTokenConsecutive(bgscope,start+line.size(),tokens);
@@ -2058,7 +1935,7 @@ public:
                      newlinetok.type=NEWLINE_TOKEN;
                      j = findTokenConsecutive(newlinetok,start+line.size(),tokens);
                      i = findToken(newlinetok,j+1,tokens);
-                     if(i==-1 || (j<tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
+                     if(i==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                       parseError("SyntaxError","Error expected a code block or line after "+ast->val);
                  }
                  else
@@ -2109,7 +1986,7 @@ public:
                      newlinetok.type=NEWLINE_TOKEN;
                      j = findTokenConsecutive(newlinetok,start+line.size(),tokens);
                      i = findToken(newlinetok,j+1,tokens);
-                     if(i==-1 || (i<tokens.size()-1 && tokens[i+1].type==EOP_TOKEN))
+                     if(i==-1 || (i<(int)tokens.size()-1 && tokens[i+1].type==EOP_TOKEN))
                       parseError("SyntaxError","Error expected a code block or line after try!");
                  }
                  else
@@ -2128,7 +2005,7 @@ public:
                  if(j!=-1)
                  {
                      line_num = tokens[j].ln;
-                     if(j+4>=tokens.size())
+                     if(j+4>=(int)tokens.size())
                      {
                        parseError("SyntaxError","Invalid Syntax");
                      }
@@ -2149,7 +2026,7 @@ public:
                      {
                          j = findTokenConsecutive(newlinetok,e+1,tokens);
                          i = findToken(newlinetok,j+1,tokens);
-                         if(i==-1 || (i<tokens.size()-1 && tokens[i+1].type==EOP_TOKEN))
+                         if(i==-1 || (i<(int)tokens.size()-1 && tokens[i+1].type==EOP_TOKEN))
                            parseError("SyntaxError","Error expected code block or line after catch");
                      }
                      else

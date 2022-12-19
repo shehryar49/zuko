@@ -647,7 +647,7 @@ public:
             else
             {
                 //error;
-                    if(c>127 || c<0)
+                    if(c<0)
                     {
                     printf("Error: The given file is non ascii\n");
                     exit(0);

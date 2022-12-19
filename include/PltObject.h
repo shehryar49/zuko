@@ -29,8 +29,6 @@ struct PltObject;
 #define PLT_FUNC 'w' //plutonium code function
 #define PLT_COROUTINE 'g'
 #define PLT_COROUTINE_OBJ 'z'
-size_t hashList(void*);
-size_t hashDict(void*);
 //
 enum ErrCode
 {
@@ -139,23 +137,7 @@ struct PltObject
       }
   };
 };
-size_t hashPltObject(const PltObject&);
-size_t hashList(void* p)
-{
-  PltList& l = *(PltList*)p;
-   size_t hash = l.size();
-   for (auto& i : l)
-      hash ^= hashPltObject(i) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    return hash;
-}
-size_t hashDict(void* p)
-{
-  Dictionary& d = *(Dictionary*)p;
-   size_t hash = d.size();
-    for (const auto& i : d)
-      hash ^= hashPltObject(i.first)+hashPltObject(i.second) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    return hash;
-}
+
 size_t hashPltObject(const PltObject& a)
 {
     char t = a.type;
@@ -167,18 +149,11 @@ size_t hashPltObject(const PltObject& a)
         return std::hash<long long int>()(a.l);
     else if(t=='f')
         return std::hash<double>()(a.f);
-    else if(t=='j')
-        return hashList(a.ptr);
-    else if(t=='a')
-        return hashDict(a.ptr);
-    else if(t=='u')
-        return std::hash<FILE*>()(((FileObject*)a.ptr)->fp);
     else if(t=='m')
         return std::hash<unsigned char>()(a.i);
     else if(t=='b')
         return std::hash<bool>()(a.i);
-    else if(t=='r' || t=='q' || t=='y')
-      return std::hash<void*>()(a.ptr);
+    //other types not supported as keys in dictionaries
     return 0;
 }
 struct Klass

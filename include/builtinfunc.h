@@ -16,7 +16,7 @@ void PromoteType(PltObject&,char);
 
 PltList ListToByteList(PltList l)
 {
-   int k = 0;
+   size_t k = 0;
         PltObject A;
         A.type = 'm';
         PltList res;
@@ -56,7 +56,7 @@ PltList ListToByteList(PltList l)
             else if(A.type=='s')
             {
                 string s = *(string*)A.ptr;
-                int j = 0;
+                size_t j = 0;
                 A.type = 'm';
                 while(j<s.length())
                 {
@@ -71,7 +71,7 @@ PltList ListToByteList(PltList l)
             {
                FOO2.f = A.f;
                A.type = 'm';
-               int j = 0;
+               size_t j = 0;
                while(j<4)
                {
                    A.i = (unsigned char)(FOO2.bytes[j]);
@@ -90,7 +90,7 @@ PltList ListToByteList(PltList l)
 
 bool validateArgTypes(string name,string e,PltObject* args,int argc,PltObject& x)
 {
-    if(e.length()!=argc)
+    if(e.length()!=(size_t)argc)
     {
       x = Plt_Err(ARGUMENT_ERROR,"Error "+name+"() takes "+str((long long int)e.length())+" arguments!");
       return false;
@@ -285,7 +285,6 @@ PltObject fninfo(PltObject* args,int argc) //for debugging purposes
 void printList(PltList);
 PltObject println(PltObject* args,int argc)
 {
-  //  printf("args[0].type = %c\nargs[0].f = %s\n",args[0].type,to_string(args[0].f).c_str());
     int k = 0;
     while(k<argc)
     {
@@ -624,9 +623,9 @@ PltObject makeList(PltObject* args,int argc)
         if(!validateArgTypes("makeList","js",args,argc,ret))
           return ret;
         string& pattern = *(string*)args[1].ptr;
-        int k = 0;
+        size_t k = 0;
         PltList res;
-        int i = 0;
+        size_t i = 0;
 
         PltList currList = *(PltList*)args[0].ptr;
         while(k<currList.size())
@@ -706,7 +705,7 @@ PltObject makeList(PltObject* args,int argc)
             }
             else if(pattern[i]=='s')
             {
-                int j = k;
+                size_t j = k;
                 PltObject e;
                 string* f = allocString();
                 bool terminated = false;
@@ -762,7 +761,6 @@ PltObject makeList(PltObject* args,int argc)
             i+=1;
             k+=1;
         }
-       // printf("i = %d\n",i);
         if(i!=pattern.length())
         {
             return Plt_Err(VALUE_ERROR,"Error the list does not have enough bytes to follow the pattern!");
@@ -979,23 +977,21 @@ PltObject STR(PltObject* args,int argc)
 }
 PltObject FIND(PltObject* args,int argc)
 {
-        PltObject ret;
-        if(!validateArgTypes("find","ss",args,argc,ret))
-         return ret;
-			  
-          ret.type = 'l';
-          string& a = *(string*)args[0].ptr;
-          string& b = *(string*)args[1].ptr;
-          
-          auto y = b.find(a); 
-			    if(y==std::string::npos)
-                {
-                    ret.type = 'n';
-                    return ret;
-                }
-                else
-                ret.l = static_cast<long long int>(y);
-                return ret;
+  PltObject ret;
+  if(!validateArgTypes("find","ss",args,argc,ret))
+    return ret;  
+  ret.type = 'l';
+  string& a = *(string*)args[0].ptr;
+  string& b = *(string*)args[1].ptr;
+  auto y = b.find(a); 
+  if(y==std::string::npos)
+  {
+    ret.type = 'n';
+    return ret;
+  }
+  else
+    ret.l = static_cast<long long int>(y);
+  return ret;
 }
 PltObject TOINT(PltObject* args,int argc)
 {
@@ -1292,52 +1288,52 @@ PltObject writelines(PltObject* args,int argc)
 }
 PltObject readlines(PltObject* args,int argc)
 {
-       if(argc==1)
-        {
-            if(args[0].type!='u')
-                return Plt_Err(TYPE_ERROR,"Error first argument given to readlines() must be a filestream!");
-                char ch;
-                FileObject fobj = *(FileObject*)args[0].ptr;
-                if(!fobj.open)
-                  return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
-                FILE* currF = fobj.fp;
-               // bool done;
-               PltList lines;
-               string* reg = allocString();
-               lines.push_back(PltObjectFromStringPtr(reg));
-               int k = 0;
+    if(argc==1)
+    {
+      if(args[0].type!='u')
+          return Plt_Err(TYPE_ERROR,"Error first argument given to readlines() must be a filestream!");
+      char ch;
+      FileObject fobj = *(FileObject*)args[0].ptr;
+      if(!fobj.open)
+        return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
+      FILE* currF = fobj.fp;
+      // bool done;
+      PltList lines;
+      string* reg = allocString();
+      lines.push_back(PltObjectFromStringPtr(reg));
+      int k = 0;
 
-                while(true)
-                {
-                   // done =true;
-                    ch = fgetc(currF);
-                    if(ch==EOF)
-                    {
-                        break;
-                    }
-                    else if(ch=='\n')
-                    {
-                       k+=1;
-                       reg = allocString();
-                       lines.push_back(PltObjectFromStringPtr(reg));
-                    }
-                    else
-                    {
-                      *reg+=ch;
-                    }
-                }
-                PltObject ret;
-                PltList* p = allocList();
-                *p = lines;
-                ret.type = 'j';
-                ret.ptr = (void*)p;
-                return ret;
-        }
-        else
-        {
-            return Plt_Err(ARGUMENT_ERROR,"Error readlines() takes one argument!");
-            exit(0);
-        }
+      while(true)
+      {
+          // done =true;
+          ch = fgetc(currF);
+          if(ch==EOF)
+          {
+              break;
+          }
+          else if(ch=='\n')
+          {
+              k+=1;
+              reg = allocString();
+              lines.push_back(PltObjectFromStringPtr(reg));
+          }
+          else
+          {
+            *reg+=ch;
+          }
+      }
+      PltObject ret;
+      PltList* p = allocList();
+      *p = lines;
+      ret.type = 'j';
+      ret.ptr = (void*)p;
+      return ret;
+    }
+    else
+      {
+          return Plt_Err(ARGUMENT_ERROR,"Error readlines() takes one argument!");
+          exit(0);
+      }
 }
 void clean_stdin(void)
 {
@@ -1366,7 +1362,7 @@ PltObject FREAD(PltObject* args,int argc)
     if(!fobj.open)
       return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
-    if(fread(bytes,sizeof(unsigned char),e,currF)!=e)
+    if(fread(bytes,sizeof(unsigned char),e,currF)!=(size_t)e)
         return Plt_Err(FILEIO_ERROR,"Error unable to read specified bytes from the file.");
     /*{
         printf("n = %ld\n",n);
@@ -1427,7 +1423,7 @@ PltObject FWRITE(PltObject* args,int argc)
             return Plt_Err(VALUE_ERROR,"Error the list should contain bytes only!");
         bytes[k] = m.i;
     }
-    if(fwrite(bytes,sizeof(unsigned char),S,currF)!=S)
+    if(fwrite(bytes,sizeof(unsigned char),S,currF)!=(size_t)S)
     {
         string what = strerror(errno);
         return Plt_Err(FILEIO_ERROR,"Error unable to write the bytes to file!");
@@ -1596,6 +1592,8 @@ PltObject CLOCK(PltObject* args,int argc)
 }
 ////////////////////
 //Builtin Methods
+//Methods work exactly like functions except that they except their first argument to
+//be an object
 PltObject POP(PltObject* args,int argc)
 {
   if(args[0].type!='j')
@@ -1659,7 +1657,7 @@ PltObject FINDINLIST(PltObject* args,int argc)
     return Plt_Err(ARGUMENT_ERROR,"Error method find() takes 1 arguments!");
   PltList* p = (PltList*)args[0].ptr;
   PltObject ret;
-  for(int k=0;k<p->size();k+=1)
+  for(size_t k=0;k<p->size();k+=1)
   {
     if((*p)[k]==args[1])
     {
@@ -1685,7 +1683,7 @@ PltObject INSERT(PltObject* args,int argc)
     PromoteType(idx,'l');
     if(idx.l < 0)
       return Plt_Err(VALUE_ERROR,"Error insertion position is negative!");
-    if(idx.l > p->size())
+    if((size_t)idx.l > p->size())
           return Plt_Err(VALUE_ERROR,"Error insertion position out of range!");
     if(val.type=='j')
     {
@@ -1723,7 +1721,7 @@ PltObject ERASE(PltObject* args,int argc)
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
         return Plt_Err(VALUE_ERROR,"Error index is negative!");
-    if(idx1.l >= p->size() || idx2.l >= p->size())
+    if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
         return Plt_Err(VALUE_ERROR,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
     PltObject ret;
@@ -1735,6 +1733,8 @@ PltObject ERASE(PltObject* args,int argc)
        return Plt_Err(ARGUMENT_ERROR,"Error dictionary method erase() takes 1 argument!");
     Dictionary* d = (Dictionary*)args[0].ptr;
     PltObject key = args[1];
+    if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
+      return Plt_Err(TYPE_ERROR,"Error key of type "+fullform(key.type)+" not allowed.");
     if(d->find(key)==d->end())
       return Plt_Err(KEY_ERROR,"Error cannot erase value,key not found in the dictionary!");
     d->erase(key);
@@ -1811,7 +1811,10 @@ PltObject EMPLACE(PltObject* args,int argc)
   if(argc!=3)
     return Plt_Err(ARGUMENT_ERROR,"Error method emplace() takes 2 arguments!");
   Dictionary* p = (Dictionary*)args[0].ptr;
-  p->emplace(args[1],args[2]);
+  PltObject& key = args[1];
+  if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
+    return Plt_Err(TYPE_ERROR,"Error key of type "+fullform(key.type)+" not allowed.");
+  p->emplace(key,args[2]);
   PltObject ret;
   return ret;
 

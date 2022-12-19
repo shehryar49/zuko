@@ -3,17 +3,7 @@
 #include "PltObject.h"
 
 using namespace std;
-int find(char x,string s)
-{
-	int  k = 0;
-	int  t = -1;
-	while(k<=len(s))
-	{
-		if(s[k]==x){t=k;break;}
-		k+=1;
-	}
-	return t;
-}
+
 string replace(int startpos,int endpos,string x,string s)
 {
   string p1,p2,p3;
@@ -32,7 +22,7 @@ string replace(int startpos,int endpos,string x,string s)
 string replace_all(string x,string y,string s)//replaces all x strings in s with string y
 {
 	int  startpos = 0;
-	while(startpos<s.length())
+	while((size_t)startpos<s.length())
 	{
 		if(s[startpos]==x[0] && substr(startpos,startpos+len(x),s)==x)
 		{
@@ -147,7 +137,7 @@ string PltListToStr(PltList* p,vector<void*>* prev=nullptr)
     seen = *prev;
 	seen.push_back(p);
   string res="[";
-  for(int k=0;k<l.size();k+=1)
+  for(size_t k=0;k<l.size();k+=1)
   {
       if(l[k].type=='j')
       {
@@ -187,7 +177,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 {
 
     string res = "{";
-    int k = 0;
+    size_t k = 0;
 		vector<void*> seen;
 		if(prev!=nullptr)
 		  seen = *prev;
