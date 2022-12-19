@@ -38,7 +38,7 @@ string& readfile(string filename)
   signed char ch;
   while ((ch = fgetc(fp)) != EOF)
   {
-      if(ch <= 0 || ch > 127)
+      if(ch <= 0)
       {
         printf("Error the file %s does not seem to be a text file or contains non-ascii characters.\n",filename.c_str());
         exit(0);
@@ -74,7 +74,7 @@ void WriteByteCode(vector<unsigned char>& bytecode,std::unordered_map<size_t,Byt
       fwrite(s.c_str(),sizeof(char),s.length(),f);
     }
     //
-   unsigned char arr[bytecode.size()];
+   unsigned char* arr = new unsigned char[bytecode.size()];
    total = vm.total_constants;
    fwrite(&total,sizeof(int),1,f);
    for(int i=0;i<vm.total_constants;i+=1)
@@ -87,12 +87,13 @@ void WriteByteCode(vector<unsigned char>& bytecode,std::unordered_map<size_t,Byt
    }
    int sz = bytecode.size();
    fwrite(&sz,sizeof(int),1,f);
-    for(int k=0;k<bytecode.size();k+=1)
+    for(size_t k=0;k<bytecode.size();k+=1)
     {
       arr[k] = bytecode[k];
     }
     fwrite(arr,sizeof(unsigned char),bytecode.size(),f);
     fclose(f);
+    delete[] arr;
 }
 
 void REPL()
@@ -136,7 +137,7 @@ void REPL()
     }
     sources[k-1] += ((sources[k-1]=="") ? "" : "\n") +line;
     tokens = lex.generateTokens(filename,sources[k-1]);
-    int i1=0,i2=0,i3=0;
+    int i1=0;
     for(auto tok: tokens)
     {
       if(tok.type==L_CURLY_BRACKET_TOKEN)
@@ -203,7 +204,6 @@ int main(int argc, const char* argv[])
       filename = argv[1];
       source_code = readfile(filename);
     }
-
     vector<unsigned char> bytecode;
     files.push_back(filename);//add to the list of compiled files
     sources.push_back(source_code);
@@ -224,8 +224,6 @@ int main(int argc, const char* argv[])
         parser.init(&fnReferenced,&num_of_constants,&files,&sources,filename);
         Node* ast = parser.parse(tokens);
     
-      //  printAST(ast);
-      //  return 0;
         Compiler compiler;
         compiler.init(&fnReferenced,&num_of_constants,&files,&sources,&LineNumberTable,filename);
         vm.constants = new PltObject[num_of_constants];
@@ -235,10 +233,9 @@ int main(int argc, const char* argv[])
         bytecode = compiler.compileProgram(ast,argc,argv);
         deleteAST(ast);
         tokens.clear();
-
     }
 
-  
+    WriteByteCode(bytecode,LineNumberTable,files);
     vm.load(bytecode,&LineNumberTable,&files,&sources);
     bytecode.clear();
     bytecode.shrink_to_fit();
