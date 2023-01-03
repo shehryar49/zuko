@@ -835,7 +835,7 @@ public:
         memcpy(&i1, k, 4);
         k += 4;
         int howmany = *k;
-        p1 = builtin[i1](&STACK[STACK.size() - howmany], howmany);
+        builtin[i1](&STACK[STACK.size() - howmany], howmany);
         if (p1.type == 'e')
         {
           ErrObject *E = (ErrObject *)p1.ptr;
