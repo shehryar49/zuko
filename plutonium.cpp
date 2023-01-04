@@ -235,7 +235,7 @@ int main(int argc, const char* argv[])
         tokens.clear();
     }
 
-    WriteByteCode(bytecode,LineNumberTable,files);
+    //WriteByteCode(bytecode,LineNumberTable,files);
     vm.load(bytecode,&LineNumberTable,&files,&sources);
     bytecode.clear();
     bytecode.shrink_to_fit();
