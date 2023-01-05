@@ -1,9 +1,17 @@
 #simple plutonium program for binary search
 function binarySearch(var nums, var target){
-    for(var i = 0 to len(nums) step 1)
+    var l = 0
+    var h = len(nums)-1
+    var mid = 0
+    while(l<=h)
     {
-        if(nums[i] == target)
-        return i
+        mid=(l+h)/2
+        if(nums[mid]==target)
+          return mid
+        else if(target>nums[mid])
+          l=mid+1
+        else
+          h=mid-1
     }
     return -1      #returns -1 if the element is not found
 }
