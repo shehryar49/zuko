@@ -5,8 +5,8 @@ function checkPalindrome(var nums){
     while(start<=end){
         if(nums[start]!=nums[end])
             return false
-            start+=1
-            end-=1
+        start+=1
+        end-=1
     }
     return true
 }
