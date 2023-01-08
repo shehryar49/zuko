@@ -11,16 +11,16 @@ void REPL();
 class Compiler
 {
 private:
-  int STACK_SIZE = 0;//simulating STACK's size
-  int scope = 0;
+  int32_t STACK_SIZE = 0;//simulating STACK's size
+  int32_t scope = 0;
   size_t line_num = 1;
   vector<size_t> contTargets;
   vector<size_t> breakTargets;
-  vector<int> indexOfLastWhileLocals;
+  vector<int32_t> indexOfLastWhileLocals;
   vector<string>* fnReferenced;
-  vector<std::unordered_map<string,int>> locals;
+  vector<std::unordered_map<string,int32_t>> locals;
   vector<string> prefixes;
-  int* num_of_constants;
+  int32_t* num_of_constants;
   string filename;
   vector<string>* files;
   vector<string>* sources;
@@ -28,9 +28,9 @@ private:
   unordered_map<size_t,ByteSrc>* LineNumberTable;
   bool compileAllFuncs;
 public:
-  std::unordered_map<string,int> globals;
+  std::unordered_map<string,int32_t> globals;
   size_t bytes_done = 0;
-  void init(vector<string>* fnR,int* e,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
+  void init(vector<string>* fnR,int32_t* e,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
   {
     fnReferenced = fnR;
     num_of_constants = e;
@@ -68,9 +68,9 @@ public:
       REPL();
     exit(0);
   }
-  int isDuplicateConstant(PltObject x)
+  int32_t isDuplicateConstant(PltObject x)
   {
-      for (int k = 0; k < vm.total_constants; k += 1)
+      for (int32_t k = 0; k < vm.total_constants; k += 1)
       {
           if (vm.constants[k] == x)
               return k;
@@ -78,10 +78,10 @@ public:
       return -1;
   }
 
-  vector<unsigned char> exprByteCode(Node* ast)
+  vector<uint8_t> exprByteCode(Node* ast)
   {
       PltObject reg;
-      vector<unsigned char> bytes;
+      vector<uint8_t> bytes;
       if (ast->childs.size() == 0)
       {
           if (ast->val.substr(0, 5) == "num: ")
@@ -91,7 +91,7 @@ public:
               {
                   reg.type = 'i';
                   reg.i = Int(n);
-                  int e = isDuplicateConstant(reg);
+                  int32_t e = isDuplicateConstant(reg);
                   if (e != -1)
                       FOO.x = e;
                   else
@@ -106,13 +106,13 @@ public:
                   bytes.push_back(FOO.bytes[1]);
                   bytes.push_back(FOO.bytes[2]);
                   bytes.push_back(FOO.bytes[3]);
-                  bytes_done += 1 + sizeof(int);
+                  bytes_done += 1 + sizeof(int32_t);
               }
               else if (isInt64(n))
               {
                   reg.type = 'l';
                   reg.l = toInt64(n);
-                  int e = isDuplicateConstant(reg);
+                  int32_t e = isDuplicateConstant(reg);
                   if (e != -1)
                       FOO.x = e;
                   else
@@ -127,7 +127,7 @@ public:
                   bytes.push_back(FOO.bytes[1]);
                   bytes.push_back(FOO.bytes[2]);
                   bytes.push_back(FOO.bytes[3]);
-                  bytes_done += 1 + sizeof(int);
+                  bytes_done += 1 + sizeof(int32_t);
               }
               else
               {
@@ -152,7 +152,7 @@ public:
                   n = "-" + n;
               reg.type = 'f';
               reg.f = Float(n);
-              int e = isDuplicateConstant(reg);
+              int32_t e = isDuplicateConstant(reg);
               if (e != -1)
                   FOO.x = e;
               else
@@ -166,7 +166,7 @@ public:
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
               bytes.push_back(FOO.bytes[3]);
-              bytes_done += 1 + sizeof(int);
+              bytes_done += 1 + sizeof(int32_t);
               return bytes;
           }
           else if (ast->val.substr(0, 6) == "bool: ")
@@ -176,7 +176,7 @@ public:
               bool a = (n == "true") ? true : false;
               reg.type = 'b';
               reg.i = a;
-              int e = isDuplicateConstant(reg);
+              int32_t e = isDuplicateConstant(reg);
               if (e != -1)
                   FOO.x = e;
               else
@@ -188,7 +188,7 @@ public:
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
               bytes.push_back(FOO.bytes[3]);
-              bytes_done += 1 + sizeof(int);
+              bytes_done += 1 + sizeof(int32_t);
               return bytes;
           }
           else if (ast->val.substr(0, 8) == "string: ")
@@ -254,10 +254,10 @@ public:
           else if (ast->val.substr(0, 6) == "byte: ")
           {
               bytes.push_back(LOAD_CONST);
-              unsigned char b = tobyte(ast->val.substr(6));
+              uint8_t b = tobyte(ast->val.substr(6));
               reg.type = 'm';
               reg.i = b;
-              int e = isDuplicateConstant(reg);
+              int32_t e = isDuplicateConstant(reg);
               if (e != -1)
                   FOO.x = e;
               else
@@ -269,7 +269,7 @@ public:
               bytes.push_back(FOO.bytes[1]);
               bytes.push_back(FOO.bytes[2]);
               bytes.push_back(FOO.bytes[3]);
-              bytes_done += 1 + sizeof(int);
+              bytes_done += 1 + sizeof(int32_t);
               return bytes;
           }
 
@@ -279,7 +279,7 @@ public:
           
           for (size_t k = 0; k < ast->childs.size(); k += 1)
           {
-              vector<unsigned char> elem = exprByteCode(ast->childs[k]);
+              vector<uint8_t> elem = exprByteCode(ast->childs[k]);
               bytes.insert(bytes.end(), elem.begin(), elem.end());
           }
           bytes.push_back(LOAD);
@@ -297,7 +297,7 @@ public:
           
           for (size_t k = 0; k < ast->childs.size(); k += 1)
           {
-              vector<unsigned char> elem = exprByteCode(ast->childs[k]);
+              vector<uint8_t> elem = exprByteCode(ast->childs[k]);
               bytes.insert(bytes.end(), elem.begin(), elem.end());
           }
           ByteSrc tmp = { fileTOP,line_num };
@@ -316,9 +316,9 @@ public:
       if (ast->val == "+")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(ADD);
           
@@ -330,9 +330,9 @@ public:
       if (ast->val == "-")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(SUB);
           
@@ -344,9 +344,9 @@ public:
       if (ast->val == "/")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(DIV);
           
@@ -358,9 +358,9 @@ public:
       if (ast->val == "*")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(MUL);
           
@@ -372,9 +372,9 @@ public:
       if (ast->val == "^")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(XOR);
           
@@ -386,9 +386,9 @@ public:
       if (ast->val == "%")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(MOD);
           
@@ -400,9 +400,9 @@ public:
       if (ast->val == "<<")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(LSHIFT);
           
@@ -414,9 +414,9 @@ public:
       if (ast->val == ">>")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(RSHIFT);
           
@@ -428,9 +428,9 @@ public:
       if (ast->val == "&")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(BITWISE_AND);
           
@@ -443,9 +443,9 @@ public:
       if (ast->val == "|")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(BITWISE_OR);
           
@@ -461,12 +461,12 @@ public:
           {
               Node* callnode = ast->childs[1];
 
-              vector<unsigned char> a = exprByteCode(ast->childs[0]);
+              vector<uint8_t> a = exprByteCode(ast->childs[0]);
               bytes.insert(bytes.end(), a.begin(), a.end());
               Node* args = callnode->childs[2];
               for (size_t f = 0; f < args->childs.size(); f += 1)
               {
-                  vector<unsigned char> arg = exprByteCode(args->childs[f]);
+                  vector<uint8_t> arg = exprByteCode(args->childs[f]);
                   bytes.insert(bytes.end(), arg.begin(), arg.end());
               }
                 bytes.push_back(CALLMETHOD);
@@ -494,7 +494,7 @@ public:
           }
           else
           {
-              vector<unsigned char> a = exprByteCode(ast->childs[0]);
+              vector<uint8_t> a = exprByteCode(ast->childs[0]);
               bytes.insert(bytes.end(), a.begin(), a.end());
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable->emplace(bytes_done, tmp);
@@ -525,17 +525,17 @@ public:
       {
           
 
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
           bytes.push_back(DUP);
           bytes.push_back(JMPIFFALSE);
-          int I = bytes.size();
+          int32_t I = bytes.size();
           bytes.push_back(0);
           bytes.push_back(0);
           bytes.push_back(0);
           bytes.push_back(0);
           bytes_done+=6;
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(AND);
           
@@ -552,9 +552,9 @@ public:
       if (ast->val == "is")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(IS);
           
@@ -566,17 +566,17 @@ public:
       if (ast->val == "or")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
           bytes.push_back(DUP);
           bytes.push_back(JMPIF);
-          int I = bytes.size();
+          int32_t I = bytes.size();
           bytes.push_back(0);
           bytes.push_back(0);
           bytes.push_back(0);
           bytes.push_back(0);
           bytes_done+=6;
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(OR);
           
@@ -593,9 +593,9 @@ public:
       if (ast->val == "<")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(SMALLERTHAN);
           
@@ -607,9 +607,9 @@ public:
       if (ast->val == ">")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(GREATERTHAN);
           
@@ -621,9 +621,9 @@ public:
       if (ast->val == "==")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(EQ);
           
@@ -635,9 +635,9 @@ public:
       if (ast->val == "!=")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(NOTEQ);
           
@@ -649,9 +649,9 @@ public:
       if (ast->val == ">=")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(GROREQ);
           
@@ -663,9 +663,9 @@ public:
       if (ast->val == "<=")
       {
           
-          vector<unsigned char> a = exprByteCode(ast->childs[0]);
+          vector<uint8_t> a = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), a.begin(), a.end());
-          vector<unsigned char> b = exprByteCode(ast->childs[1]);
+          vector<uint8_t> b = exprByteCode(ast->childs[1]);
           bytes.insert(bytes.end(), b.begin(), b.end());
           bytes.push_back(SMOREQ);
           
@@ -677,7 +677,7 @@ public:
       if (ast->val == "neg")
       {
           
-          vector<unsigned char> val = exprByteCode(ast->childs[0]);
+          vector<uint8_t> val = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), val.begin(), val.end());
           bytes.push_back(NEG);
           
@@ -689,7 +689,7 @@ public:
       if (ast->val == "~")
       {
           
-          vector<unsigned char> val = exprByteCode(ast->childs[0]);
+          vector<uint8_t> val = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), val.begin(), val.end());
           bytes.push_back(COMPLEMENT);
           
@@ -701,7 +701,7 @@ public:
       if (ast->val == "!")
       {
           
-          vector<unsigned char> val = exprByteCode(ast->childs[0]);
+          vector<uint8_t> val = exprByteCode(ast->childs[0]);
           bytes.insert(bytes.end(), val.begin(), val.end());
           bytes.push_back(NOT);
           
@@ -713,9 +713,9 @@ public:
       if (ast->val == "index")
       {
         
-        vector<unsigned char> a = exprByteCode(ast->childs[0]);
+        vector<uint8_t> a = exprByteCode(ast->childs[0]);
         bytes.insert(bytes.end(), a.begin(), a.end());
-        vector<unsigned char> b = exprByteCode(ast->childs[1]);
+        vector<uint8_t> b = exprByteCode(ast->childs[1]);
         bytes.insert(bytes.end(), b.begin(), b.end());
         bytes.push_back(INDEX);
         
@@ -743,12 +743,12 @@ public:
           {
               for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
-                  vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
+                  vector<uint8_t> val = exprByteCode(ast->childs[2]->childs[k]);
                   bytes.insert(bytes.end(), val.begin(), val.end());
               }
               ByteSrc tmp = { fileTOP,line_num };
               Node* E = NewNode("id: "+name);
-              vector<unsigned char> fn = exprByteCode(E);
+              vector<uint8_t> fn = exprByteCode(E);
               delete E;
               bytes.insert(bytes.end(),fn.begin(),fn.end());
               LineNumberTable->emplace(bytes_done, tmp);
@@ -762,7 +762,7 @@ public:
           {
               for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
-                  vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
+                  vector<uint8_t> val = exprByteCode(ast->childs[2]->childs[k]);
                   bytes.insert(bytes.end(), val.begin(), val.end());
               }
               ByteSrc tmp = { fileTOP,line_num };
@@ -799,7 +799,7 @@ public:
         if(inConstructor)
           compileError("SyntaxError","Error class constructor can not be generators!");
         
-        vector<unsigned char> val = exprByteCode(ast->childs[1]);
+        vector<uint8_t> val = exprByteCode(ast->childs[1]);
         bytes.insert(bytes.end(), val.begin(), val.end());              
         ByteSrc tmp = { fileTOP,line_num };
         LineNumberTable->emplace(bytes_done, tmp);
@@ -809,7 +809,7 @@ public:
       }  
       compileError("SyntaxError", "Invalid syntax in expression");
       exit(0);
-      return bytes;
+      return bytes;//to prevent compiler warning
   }
   Node* getLastMemberName(Node* ast)
   {
@@ -883,14 +883,14 @@ public:
       compileError("SyntaxError","Invalid Syntax");
     return ast;
   }
-  int resolveName(string name,bool& isGlobal,bool blowUp=true)
+  int32_t resolveName(string name,bool& isGlobal,bool blowUp=true)
   {
-    for(int i=locals.size()-1;i>=0;i-=1)
+    for(int32_t i=locals.size()-1;i>=0;i-=1)
     {
       if(locals[i].find(name)!=locals[i].end())
         return locals[i][name];
     }
-      for(int i=prefixes.size()-1;i>=0;i--)
+      for(int32_t i=prefixes.size()-1;i>=0;i--)
       {
         string prefix = prefixes[i];
         if(globals.find(prefix+name) != globals.end())
@@ -912,9 +912,9 @@ public:
   }
   bool inConstructor = false;
   bool inGen = false;
-  vector<unsigned char> compile(Node* ast, bool infunc,bool inclass=false)
+  vector<uint8_t> compile(Node* ast, bool infunc,bool inclass=false)
   {
-      vector<unsigned char> program;
+      vector<uint8_t> program;
       bool isGen = false;
       while (ast->val != "EOP" && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
       {
@@ -923,7 +923,7 @@ public:
           if (ast->val == "declare")
           {
               
-              vector<unsigned char> val = exprByteCode(ast->childs[2]);
+              vector<uint8_t> val = exprByteCode(ast->childs[2]);
               program.insert(program.end(), val.begin(), val.end());
 
               string name = ast->childs[1]->val.substr(4);
@@ -962,7 +962,7 @@ public:
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable->emplace(bytes_done, tmp);
               program.push_back(IMPORT);
-              FOO.x = (int)vm.strings.size();
+              FOO.x = (int32_t)vm.strings.size();
               vm.strings.push_back(name);
               
               program.push_back(FOO.bytes[0]);
@@ -989,7 +989,7 @@ public:
                       {
                         name = name.substr(4);
                         bool isGlobal = false;
-                        int idx = resolveName(name,isGlobal,false);
+                        int32_t idx = resolveName(name,isGlobal,false);
                         if(idx==-1)
                           compileError("NameError","Error name "+name+" is not defined!");
                         ByteSrc tmp = { fileTOP,line_num };
@@ -1011,10 +1011,10 @@ public:
                   {
                       name = name.substr(4);
                       bool isGlobal = false;
-                      int idx = resolveName(name,isGlobal,false);
+                      int32_t idx = resolveName(name,isGlobal,false);
                       if(idx==-1)
                          compileError("NameError","Error name "+name+" is not defined!");
-                      vector<unsigned char> val = exprByteCode(ast->childs[2]);
+                      vector<uint8_t> val = exprByteCode(ast->childs[2]);
                       program.insert(program.end(), val.begin(), val.end());
                       ByteSrc tmp = { fileTOP,line_num };
                       LineNumberTable->emplace(bytes_done, tmp);
@@ -1033,7 +1033,7 @@ public:
               else if (name == "index")
               {
                   //reassign index
-                  vector<unsigned char> M = exprByteCode(ast->childs[1]->childs[0]);
+                  vector<uint8_t> M = exprByteCode(ast->childs[1]->childs[0]);
                   program.insert(program.end(),M.begin(),M.end());
                   M = exprByteCode(ast->childs[2]);
                   program.insert(program.end(),M.begin(),M.end());
@@ -1048,12 +1048,12 @@ public:
               {
                   //reassign object member
                   string rhs = ast->childs[1]->val;
-                  vector<unsigned char> lhs = exprByteCode(ast->childs[1]->childs[0]);
+                  vector<uint8_t> lhs = exprByteCode(ast->childs[1]->childs[0]);
                   program.insert(program.end(),lhs.begin(),lhs.end());
                   if(ast->childs[1]->childs[1]->val.substr(0,4)!="id: ")
                     compileError("SyntaxError","Invalid Syntax");
                   string mname = ast->childs[1]->childs[1]->val.substr(4);
-                  vector<unsigned char> val = exprByteCode(ast->childs[2]);
+                  vector<uint8_t> val = exprByteCode(ast->childs[2]);
                   program.insert(program.end(), val.begin(), val.end());
                   program.push_back(ASSIGNMEMB);
                   for(auto e: mname)
@@ -1070,7 +1070,7 @@ public:
               Node* bitch = NewNode(".");
               bitch->childs.push_back(ast->childs[1]);
               bitch->childs.push_back(ast->childs[2]);
-              vector<unsigned char> stmt = exprByteCode(bitch);
+              vector<uint8_t> stmt = exprByteCode(bitch);
               delete bitch;
               program.insert(program.end(),stmt.begin(),stmt.end());
               program.push_back(POP_STACK);
@@ -1083,27 +1083,27 @@ public:
                    bytes_done+=5;//do while uses one extra jump before the condition
               contTargets.push_back(bytes_done);
                           size_t L = bytes_done;
-              vector<unsigned char> cond = exprByteCode(ast->childs[1]);
+              vector<uint8_t> cond = exprByteCode(ast->childs[1]);
               breakTargets.push_back(bytes_done);
 
               bytes_done += 1 + JUMPOFFSet_Size;//JMPFALSE <4 byte where>
 
               indexOfLastWhileLocals.push_back(locals.size());
               scope += 1;
-              int before = STACK_SIZE;
-              std::unordered_map<string,int> m;
+              int32_t before = STACK_SIZE;
+              std::unordered_map<string,int32_t> m;
               locals.push_back(m);
 
-              vector<unsigned char> block = compile(ast->childs[2], infunc);
+              vector<uint8_t> block = compile(ast->childs[2], infunc);
 
               STACK_SIZE = before;
               breakTargets.pop_back();
               contTargets.pop_back();
               scope -= 1;
               indexOfLastWhileLocals.pop_back();
-              int whileLocals = locals.back().size();
+              int32_t whileLocals = locals.back().size();
               locals.pop_back();
-              int where = block.size() + 1 + JUMPOFFSet_Size;
+              int32_t where = block.size() + 1 + JUMPOFFSet_Size;
               if(whileLocals!=0)
                 where+=4;//4 for NPOP_STACK
              if(ast->val=="dowhile")
@@ -1154,11 +1154,11 @@ public:
               size_t L = bytes_done;
               string loop_var_name = ast->childs[2]->val;
               string I = ast->childs[5]->val;
-            vector<unsigned char> initValue = exprByteCode(ast->childs[3]);
+            vector<uint8_t> initValue = exprByteCode(ast->childs[3]);
 
             program.insert(program.end(),initValue.begin(),initValue.end());
             bool isGlobal = false;
-            int lcvIdx ;
+            int32_t lcvIdx ;
               if(!decl)
               {
                 string name = loop_var_name;
@@ -1182,15 +1182,15 @@ public:
               bytes_done+=6;
               if(isGlobal)
                 bytes_done-=1;
-              vector<unsigned char> finalValue = exprByteCode(ast->childs[4]);
+              vector<uint8_t> finalValue = exprByteCode(ast->childs[4]);
               //
               breakTargets.push_back(bytes_done+1);
-              int before = STACK_SIZE;
+              int32_t before = STACK_SIZE;
               if(decl)
               {
                 scope += 1;
                 before = STACK_SIZE+1;
-                std::unordered_map<string,int> m;
+                std::unordered_map<string,int32_t> m;
                 scope+=1;
                 locals.push_back(m);
                 lcvIdx = STACK_SIZE;
@@ -1202,13 +1202,13 @@ public:
               else
               {
                 scope += 1;
-                std::unordered_map<string,int> m;
+                std::unordered_map<string,int32_t> m;
                 indexOfLastWhileLocals.push_back(locals.size());
                 locals.push_back(m);
               }
 
               bytes_done+=2+JUMPOFFSet_Size;//for jump before block
-              vector<unsigned char> block = compile(ast->childs[6], infunc);
+              vector<uint8_t> block = compile(ast->childs[6], infunc);
 
               STACK_SIZE = before;
               breakTargets.pop_back();
@@ -1218,11 +1218,11 @@ public:
               else
                 scope-=1;
               indexOfLastWhileLocals.pop_back();
-              int whileLocals = locals.back().size();
+              int32_t whileLocals = locals.back().size();
               locals.pop_back();
               if(decl)
                 locals.pop_back();
-              int where;
+              int32_t where;
               if(!isGlobal)
               {
                 program.push_back(LOAD);
@@ -1239,7 +1239,7 @@ public:
               program.push_back(SMOREQ);
   //            program.push_back(AND);
               ////
-              vector<unsigned char> inc;
+              vector<uint8_t> inc;
               line_num = lnCopy;
 
 
@@ -1341,15 +1341,15 @@ public:
               
               string loop_var_name = ast->childs[1]->val;
 
-              vector<unsigned char> startIdx = exprByteCode(ast->childs[3]);
+              vector<uint8_t> startIdx = exprByteCode(ast->childs[3]);
               program.insert(program.end(),startIdx.begin(),startIdx.end());
-              int E = STACK_SIZE;
+              int32_t E = STACK_SIZE;
               STACK_SIZE+=1;
 
-              std::unordered_map<string,int> m;
+              std::unordered_map<string,int32_t> m;
               bool add = true;
               size_t index = 0;
-              int fnIdx = 0;
+              int32_t fnIdx = 0;
               for(index = 0;index < vm.builtin.size();index+=1)
               {
                 if(vm.builtin[index]==funcs["len"])
@@ -1366,9 +1366,9 @@ public:
               else
                 fnIdx = index;
               //Bytecode to calculate length of list we are looping from
-              vector<unsigned char> LIST = exprByteCode(ast->childs[2]);
+              vector<uint8_t> LIST = exprByteCode(ast->childs[2]);
               program.insert(program.end(),LIST.begin(),LIST.end());
-              int ListStackIdx = STACK_SIZE;
+              int32_t ListStackIdx = STACK_SIZE;
                 STACK_SIZE+=1;
               FOO.x = E;
               program.push_back(INPLACE_INC);
@@ -1379,7 +1379,7 @@ public:
               contTargets.push_back(bytes_done);
               bytes_done+=5;
   //////////
-              int before = STACK_SIZE;
+              int32_t before = STACK_SIZE;
               scope+=1;
               indexOfLastWhileLocals.push_back(locals.size());
               locals.push_back(m);
@@ -1390,7 +1390,7 @@ public:
               LineNumberTable->emplace(L+12, tmp);
               bytes_done+=20+6+1+JUMPOFFSet_Size+6;
               breakTargets.push_back(bytes_done-1-JUMPOFFSet_Size-7-6);
-              vector<unsigned char> block = compile(ast->childs[4],infunc);
+              vector<uint8_t> block = compile(ast->childs[4],infunc);
               program.push_back(LOAD);
               program.push_back('v');
               FOO.x = E;
@@ -1417,8 +1417,8 @@ public:
               program.push_back(1);
               program.push_back(SMALLERTHAN);
               program.push_back(JMPIFFALSE);
-              int where = 7+block.size()+1+JUMPOFFSet_Size+5+6;
-              int whileLocals = locals.back().size();
+              int32_t where = 7+block.size()+1+JUMPOFFSet_Size+5+6;
+              int32_t whileLocals = locals.back().size();
               if(whileLocals!=0)
                 where+=4;
               FOO.x = where;
@@ -1494,7 +1494,7 @@ public:
             for(auto e: prefixes)
               prefix+=e;
             prefixes.push_back(prefix+name+"::");
-            vector<unsigned char> block = compile(ast->childs[2],false);
+            vector<uint8_t> block = compile(ast->childs[2],false);
             prefixes.pop_back();
             program.insert(program.end(),block.begin(),block.end());
             //Hasta La Vista Baby
@@ -1502,7 +1502,7 @@ public:
           else if (ast->val == "if")
           {
               
-              vector<unsigned char> cond = exprByteCode(ast->childs[1]->childs[0]);
+              vector<uint8_t> cond = exprByteCode(ast->childs[1]->childs[0]);
               if(ast->childs[2]->val=="endif")
               {
                 program.insert(program.end(),cond.begin(),cond.end());
@@ -1513,10 +1513,10 @@ public:
               }
               bytes_done += 1 + JUMPOFFSet_Size;
               scope += 1;
-              int before = STACK_SIZE;
-              std::unordered_map<string,int> m;
+              int32_t before = STACK_SIZE;
+              std::unordered_map<string,int32_t> m;
               locals.push_back(m);
-              vector<unsigned char> block = compile(ast->childs[2], infunc);
+              vector<uint8_t> block = compile(ast->childs[2], infunc);
               scope -= 1;
               STACK_SIZE = before;
               bool hasLocals = (locals.back().size()!=0);
@@ -1546,17 +1546,17 @@ public:
           else if (ast->val == "ifelse")
           {
               
-              vector<unsigned char> ifcond = exprByteCode(ast->childs[1]->childs[0]);
+              vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
               bytes_done += 1 + JUMPOFFSet_Size;
               scope += 1;
-              int before = STACK_SIZE;
-              std::unordered_map<string,int> m;
+              int32_t before = STACK_SIZE;
+              std::unordered_map<string,int32_t> m;
               locals.push_back(m);
-              vector<unsigned char> ifblock = compile(ast->childs[2], infunc);
+              vector<uint8_t> ifblock = compile(ast->childs[2], infunc);
               scope -= 1;
               STACK_SIZE = before;
               //
-              int iflocals = locals.back().size();
+              int32_t iflocals = locals.back().size();
               locals.pop_back();
               program.insert(program.end(), ifcond.begin(), ifcond.end());
               program.push_back(JMPIFFALSE);
@@ -1578,10 +1578,10 @@ public:
               bytes_done += 1 + JUMPOFFSet_Size;
               before = STACK_SIZE;
               locals.push_back(m);
-              vector<unsigned char> elseblock = compile(ast->childs[3], infunc);
+              vector<uint8_t> elseblock = compile(ast->childs[3], infunc);
               scope -= 1;
               STACK_SIZE = before;
-              int elseLocals = locals.back().size();
+              int32_t elseLocals = locals.back().size();
               locals.pop_back();
               if(iflocals!=0)
               {
@@ -1616,37 +1616,37 @@ public:
           else if (ast->val == "ifelifelse")
           {
               
-              vector<unsigned char> ifcond = exprByteCode(ast->childs[1]->childs[0]);
+              vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
               bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
               scope += 1;
-              std::unordered_map<string,int> m;
+              std::unordered_map<string,int32_t> m;
               locals.push_back(m);
-              int before = STACK_SIZE;
-              vector<unsigned char> ifblock = compile(ast->childs[2], infunc);
+              int32_t before = STACK_SIZE;
+              vector<uint8_t> ifblock = compile(ast->childs[2], infunc);
               scope -= 1;
               STACK_SIZE = before;
-              int iflocals = locals.back().size();
+              int32_t iflocals = locals.back().size();
               locals.pop_back();
               bytes_done += 1 + JUMPOFFSet_Size;//JMP of if block
               if(iflocals!=0)
                 bytes_done+=4;//for NPOP_STACK+ 4 byte operand
-              vector<vector<unsigned char>> elifConditions;
-              int elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
-              int elifBlockcounter = 3;//third node of ast
-              vector<int> elifLocalSizes ;
-              vector<vector<unsigned char>> elifBlocks;
+              vector<vector<uint8_t>> elifConditions;
+              int32_t elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
+              int32_t elifBlockcounter = 3;//third node of ast
+              vector<int32_t> elifLocalSizes ;
+              vector<vector<uint8_t>> elifBlocks;
               for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
               {
-                  vector<unsigned char> elifCond = exprByteCode(ast->childs[1]->childs[k]);
+                  vector<uint8_t> elifCond = exprByteCode(ast->childs[1]->childs[k]);
                   elifConditions.push_back(elifCond);
                   bytes_done += 1 + JUMPOFFSet_Size;//JMPIFFALSE of elif
                   scope += 1;
                   before = STACK_SIZE;
                   locals.push_back(m);
-                  vector<unsigned char> elifBlock = compile(ast->childs[elifBlockcounter], infunc);
+                  vector<uint8_t> elifBlock = compile(ast->childs[elifBlockcounter], infunc);
                   scope -= 1;
                   STACK_SIZE = before;
-                  int eliflocals = locals.back().size();
+                  int32_t eliflocals = locals.back().size();
                   elifLocalSizes.push_back(eliflocals);
                   locals.pop_back();
                   bytes_done += 1 + JUMPOFFSet_Size;// JMP of elifBlock
@@ -1662,10 +1662,10 @@ public:
               scope += 1;
               locals.push_back(m);
               before = STACK_SIZE;
-              vector<unsigned char> elseBlock = compile(ast->childs[ast->childs.size() - 2], infunc);
+              vector<uint8_t> elseBlock = compile(ast->childs[ast->childs.size() - 2], infunc);
               scope -= 1;
               STACK_SIZE = before;
-              int elseLocals = locals.back().size();
+              int32_t elseLocals = locals.back().size();
               locals.pop_back();
               program.insert(program.end(), ifcond.begin(), ifcond.end());
               program.push_back(JMPIFFALSE);
@@ -1748,37 +1748,37 @@ public:
           else if (ast->val == "ifelif")
           {
             
-            vector<unsigned char> ifcond = exprByteCode(ast->childs[1]->childs[0]);
+            vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
             bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
             scope += 1;
-            std::unordered_map<string,int> m;
+            std::unordered_map<string,int32_t> m;
             locals.push_back(m);
-            int before = STACK_SIZE;
-            vector<unsigned char> ifblock = compile(ast->childs[2], infunc);
+            int32_t before = STACK_SIZE;
+            vector<uint8_t> ifblock = compile(ast->childs[2], infunc);
             scope -= 1;
             STACK_SIZE = before;
-            int iflocals = locals.back().size();
+            int32_t iflocals = locals.back().size();
             locals.pop_back();
             bytes_done += 1 + JUMPOFFSet_Size;//JMP of if block
             if(iflocals!=0)
               bytes_done+=4;//for NPOP_STACK+ 4 byte operand
-            vector<vector<unsigned char>> elifConditions;
-            int elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
-            int elifBlockcounter = 3;//third node of ast
-            vector<int> elifLocalSizes ;
-            vector<vector<unsigned char>> elifBlocks;
+            vector<vector<uint8_t>> elifConditions;
+            int32_t elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
+            int32_t elifBlockcounter = 3;//third node of ast
+            vector<int32_t> elifLocalSizes ;
+            vector<vector<uint8_t>> elifBlocks;
             for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
             {
-                vector<unsigned char> elifCond = exprByteCode(ast->childs[1]->childs[k]);
+                vector<uint8_t> elifCond = exprByteCode(ast->childs[1]->childs[k]);
                 elifConditions.push_back(elifCond);
                 bytes_done += 1 + JUMPOFFSet_Size;//JMPIFFALSE of elif
                 scope += 1;
                 before = STACK_SIZE;
                 locals.push_back(m);
-                vector<unsigned char> elifBlock = compile(ast->childs[elifBlockcounter], infunc);
+                vector<uint8_t> elifBlock = compile(ast->childs[elifBlockcounter], infunc);
                 scope -= 1;
                 STACK_SIZE = before;
-                int eliflocals = locals.back().size();
+                int32_t eliflocals = locals.back().size();
                 elifLocalSizes.push_back(eliflocals);
                 locals.pop_back();
                 bytes_done += 1 + JUMPOFFSet_Size;// JMP of elifBlock
@@ -1859,8 +1859,8 @@ public:
           else if(ast->val=="throw")
           {
             
-            vector<unsigned char> code = exprByteCode(ast->childs[1]);
-            vector<unsigned char> msg = exprByteCode(ast->childs[2]);
+            vector<uint8_t> code = exprByteCode(ast->childs[1]);
+            vector<uint8_t> msg = exprByteCode(ast->childs[2]);
             program.insert(program.end(),code.begin(),code.end());
             program.insert(program.end(),msg.begin(),msg.end());
             program.push_back(THROW);
@@ -1874,13 +1874,13 @@ public:
             program.push_back(ONERR_GOTO);
             bytes_done+=5;
             scope += 1;
-            int before = STACK_SIZE;
-            std::unordered_map<string,int> m;
+            int32_t before = STACK_SIZE;
+            std::unordered_map<string,int32_t> m;
             locals.push_back(m);
-            vector<unsigned char> tryBlock = compile(ast->childs[2],false,false);
+            vector<uint8_t> tryBlock = compile(ast->childs[2],false,false);
             scope -= 1;
             STACK_SIZE = before;
-            int trylocals = locals.back().size();
+            int32_t trylocals = locals.back().size();
             locals.pop_back();
 
             FOO.x = bytes_done+6 +(trylocals==0 ? 0:5);
@@ -1907,8 +1907,8 @@ public:
             m.emplace(ast->childs[1]->val,STACK_SIZE);
             STACK_SIZE+=1;
             locals.push_back(m);
-            vector<unsigned char> catchBlock = compile(ast->childs[3],false,false);
-            int catchlocals = locals.back().size();
+            vector<uint8_t> catchBlock = compile(ast->childs[3],false,false);
+            int32_t catchlocals = locals.back().size();
             scope-=1;
             FOO.x = catchBlock.size()+(catchlocals==1 ? 1 : 5);
             program.push_back(JMP);
@@ -1938,7 +1938,7 @@ public:
           }
           else if (substr(0, 4, ast->val) == "func " || (isGen = substr(0,3,ast->val) == "gen "))
           {
-              int selfIdx= 0;
+              int32_t selfIdx= 0;
               if(infunc)
               {
                 line_num = atoi(ast->childs[0]->val.substr(5).c_str());
@@ -1965,11 +1965,19 @@ public:
                     locals.back().emplace(name,STACK_SIZE);
                   STACK_SIZE+=1;
                 }
-                unordered_map<string,int> C;
-                unsigned char def_param =0;
-                vector<unsigned char> expr;
-                int before = STACK_SIZE;
+                unordered_map<string,int32_t> C;
+                uint8_t def_param =0;
+                vector<uint8_t> expr;
+                int32_t before = STACK_SIZE;
                 STACK_SIZE = 0;
+                if(inclass)
+                {
+                  locals.back().emplace("self",STACK_SIZE);
+                  selfIdx = STACK_SIZE;
+                  if(name=="__construct__")
+                    inConstructor = true;
+                  STACK_SIZE+=1;
+                }
                 for (size_t k =0; k<ast->childs[1]->childs.size(); k += 1)
                 {
                   string n = ast->childs[1]->childs[k]->val;
@@ -2021,20 +2029,13 @@ public:
                 /////////
                 bytes_done += 1 + JUMPOFFSet_Size ;
                 locals.push_back(C);
-                vector<unsigned char> paraBytes;
+                vector<uint8_t> paraBytes;
                 
                 
-                if(inclass)
-                {
-                  locals.back().emplace("self",STACK_SIZE);
-                  selfIdx = STACK_SIZE;
-                  if(name=="__construct__")
-                    inConstructor = true;
-                  STACK_SIZE+=1;
-                }
+                
                 scope += 1;
                 inGen = isGen;
-                vector<unsigned char> funcBody = compile(ast->childs[2], true,false);
+                vector<uint8_t> funcBody = compile(ast->childs[2], true,false);
                 scope -= 1;
                 inConstructor = false;
                 inGen = false;
@@ -2130,7 +2131,7 @@ public:
             vector<string> names = scanClass(ast->childs[2]);
             if(extendedClass)
             {
-              vector<unsigned char> baseClass = exprByteCode(ast->childs[ast->childs.size()-2]);
+              vector<uint8_t> baseClass = exprByteCode(ast->childs[ast->childs.size()-2]);
               program.insert(program.end(),baseClass.begin(),baseClass.end());
             }
             for(auto e: names)
@@ -2154,15 +2155,15 @@ public:
               program.push_back(FOO.bytes[3]);
               bytes_done+=5;
             }
-            std::unordered_map<string,int> M;
+            std::unordered_map<string,int32_t> M;
             locals.push_back(M);
-            int before = STACK_SIZE;
+            int32_t before = STACK_SIZE;
             scope+=1;
-            vector<unsigned char> block = compile(ast->childs[2],false,true);
+            vector<uint8_t> block = compile(ast->childs[2],false,true);
             scope-=1;
 
             locals.pop_back();
-            int totalMembers = names.size();
+            int32_t totalMembers = names.size();
             STACK_SIZE = before;
 
             program.insert(program.end(),block.begin(),block.end());
@@ -2200,7 +2201,7 @@ public:
               if(inConstructor)
                 compileError("SyntaxError","Error class constructors should not return anything!");
               
-              vector<unsigned char> val = exprByteCode(ast->childs[1]);
+              vector<uint8_t> val = exprByteCode(ast->childs[1]);
               program.insert(program.end(), val.begin(), val.end());
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable->emplace(bytes_done, tmp);
@@ -2215,7 +2216,7 @@ public:
               if(inConstructor)
                 compileError("SyntaxError","Error class constructor can not be generators!");
               
-              vector<unsigned char> val = exprByteCode(ast->childs[1]);
+              vector<uint8_t> val = exprByteCode(ast->childs[1]);
               program.insert(program.end(), val.begin(), val.end());              
               ByteSrc tmp = { fileTOP,line_num };
               LineNumberTable->emplace(bytes_done, tmp);
@@ -2233,7 +2234,7 @@ public:
               program.push_back(FOO.bytes[2]);
               program.push_back(FOO.bytes[3]);
               FOO.x = 0;
-              for(int i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
+              for(int32_t i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
                 FOO.x += locals[i].size();
 
               program.push_back(FOO.bytes[0]);
@@ -2258,7 +2259,7 @@ public:
               program.push_back(FOO.bytes[3]);
           //    FOO.x = scope - scopeOfLastWhile.back();
               FOO.x = 0;
-              for(int i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
+              for(int32_t i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
                 FOO.x += locals[i].size();
               program.push_back(FOO.bytes[0]);
               program.push_back(FOO.bytes[1]);
@@ -2283,13 +2284,13 @@ public:
               }
               for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
               {
-                  vector<unsigned char> val = exprByteCode(ast->childs[2]->childs[k]);
+                  vector<uint8_t> val = exprByteCode(ast->childs[2]->childs[k]);
                   program.insert(program.end(), val.begin(), val.end());
               }
               if (udf)
               {
                   Node* E = NewNode("id: "+name);
-                  vector<unsigned char> fn = exprByteCode(E);
+                  vector<uint8_t> fn = exprByteCode(E);
                   delete E;
                   program.insert(program.end(),fn.begin(),fn.end());
                   ByteSrc tmp = { fileTOP,line_num };
@@ -2342,7 +2343,7 @@ public:
             filename = ast->childs[1]->val;
             short K = fileTOP;
             fileTOP = std::find(files->begin(),files->end(),filename) - files->begin();
-            vector<unsigned char> fByteCode = compile(ast->childs[2],false,false);
+            vector<uint8_t> fByteCode = compile(ast->childs[2],false,false);
             program.insert(program.end(),fByteCode.begin(),fByteCode.end());
             filename = C;
             fileTOP = K;
@@ -2357,7 +2358,7 @@ public:
       return program;
 
   }
-  vector<unsigned char> compileProgram(Node* ast,int argc,const char* argv[],vector<unsigned char> prev = {},bool compileNonRefFns = false,bool popGlobals = true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
+  vector<uint8_t> compileProgram(Node* ast,int32_t argc,const char* argv[],vector<uint8_t> prev = {},bool compileNonRefFns = false,bool popGlobals = true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
   {
     //If prev vector is empty then this program will be compiled as an independent new one
     //otherwise this program will be an addon to the previous one
@@ -2376,7 +2377,7 @@ public:
       globals.emplace("argv",0);
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
-      int k = 2;
+      int32_t k = 2;
       PltList l;
       PltObject elem;
       elem.type = 's';
@@ -2409,7 +2410,7 @@ public:
       vm.STACK.push_back(A);
       vm.strings.push_back("super");
     }
-    vector<unsigned char> bytecode = compile(ast,false);
+    vector<uint8_t> bytecode = compile(ast,false);
     if(globals.size()!=0 && popGlobals)
     {
           bytecode.push_back(NPOP_STACK);

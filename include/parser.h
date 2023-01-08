@@ -364,7 +364,7 @@ public:
 
     //Tokens.size is never zero
     Node* ast = nullptr;
-    
+
     if(tokens.size()==1)
     {
        if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="nil" )
@@ -398,6 +398,7 @@ public:
     
     
     /////////
+    //Following precdence is in reverse order
     static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","&","^"},{"+","-"},{"/","*","%"}};
     static int l = prec.size();
     int k = tokens.size()-1;
@@ -1431,6 +1432,8 @@ public:
         ast->childs.push_back(parseExpr(aux));
         return ast;
       }
+    //Handle statements of the form
+    //expr.fun()
     k = tokens.size()-1;
     while(k>=0)
     {
@@ -1466,6 +1469,19 @@ public:
         ast->childs.push_back(line);
         ast->childs.push_back(parseExpr(lhs));
         ast->childs.push_back(parseExpr(rhs));
+        //rhs must be a function call as stated above
+
+        Node* L = ast->childs[ast->childs.size()-2];
+        if(ast->childs.back()->val!="call")
+        {
+          deleteAST(ast);
+          break;
+        }
+        if(L->val!="." && substr(0,3,L->val)!="id: ")
+        {
+          deleteAST(ast);
+          break;
+        }
         return ast;
       }
       k-=1;

@@ -71,6 +71,43 @@ unsigned char tobyte(string s)
     }
     return b;
 }
+int32_t hexToInt32(const string& s)
+{
+    int32_t res = 0;
+    int32_t p = 1;
+    for(int32_t i=s.length()-1;i>=0;i--)
+    {
+        if(s[i] >= '0' && s[i]<='9')
+        {
+            res+= (s[i]-48) * p;
+        }
+        else if(s[i] >= 'a' && s[i]<='z')
+        {
+            res+= (s[i]-87) * p;
+        }
+        p<<=4;
+    }
+    return res;
+}
+int64_t hexToInt64(const string& s)
+{
+    int64_t res = 0;
+    int64_t p = 1;
+    for(int32_t i=s.length()-1;i>=0;i--)
+    {
+        if(s[i] >= '0' && s[i]<='9')
+        {
+            res+= (s[i]-48) * p;
+        }
+        else if(s[i] >= 'a' && s[i]<='z')
+        {
+            res+= (s[i]-87) * p;
+        }
+        
+        p<<=4;
+    }
+    return res;
+}
 string addlnbreaks(string s,bool& hadErr)
 {
 
