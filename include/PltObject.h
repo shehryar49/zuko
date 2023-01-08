@@ -16,7 +16,7 @@ struct PltObject;
 #define PLT_INT 'i'
 #define PLT_INT64 'l'
 #define PLT_FLOAT 'f'
-#define PLT_BYTE = 'm'
+#define PLT_BYTE  'm'
 #define PLT_NATIVE_FUNC 'y'//native function
 #define PLT_MODULE 'q'
 #define PLT_STR 's'
@@ -29,6 +29,7 @@ struct PltObject;
 #define PLT_FUNC 'w' //plutonium code function
 #define PLT_COROUTINE 'g'
 #define PLT_COROUTINE_OBJ 'z'
+#define PLT_ERROBJ 'e'
 //
 enum ErrCode
 {
@@ -61,8 +62,8 @@ struct PltObject
     {
         void* ptr;
         double f;
-        long long int l;
-        int i;
+        int64_t l;
+        int32_t i;
     };
     char type;
     size_t extra;
@@ -351,28 +352,31 @@ inline PltObject PltObjectFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
   return ret;
 }
 //
-struct allocFuncions
+extern "C"
 {
-  alloc1 a1;
-  alloc2 a2;
-  alloc3 a3;
-  alloc4 a4;
-  alloc5 a5;
-  alloc6 a6;
-  alloc7 a7;
-  alloc8 a8;
-  alloc9 a9;
-};
-extern "C" void api_setup(allocFuncions* p)
-{
-  vm_allocList = p->a1;
-  vm_allocDict = p->a2;
-  vm_allocString = p->a3;
-  vm_allocErrObject = p->a4;
-  vm_allocFileObject = p->a5;
-  vm_allocKlass = p->a6;
-  vm_allocKlassInstance = p->a7;
-  vm_allocNativeFunObj = p->a8;
-  vm_allocModule = p->a9;
+  struct allocFuncions
+  {
+    alloc1 a1;
+    alloc2 a2;
+    alloc3 a3;
+    alloc4 a4;
+    alloc5 a5;
+    alloc6 a6;
+    alloc7 a7;
+    alloc8 a8;
+    alloc9 a9;
+  };
+  void api_setup(allocFuncions* p)
+  {
+    vm_allocList = p->a1;
+    vm_allocDict = p->a2;
+    vm_allocString = p->a3;
+    vm_allocErrObject = p->a4;
+    vm_allocFileObject = p->a5;
+    vm_allocKlass = p->a6;
+    vm_allocKlassInstance = p->a7;
+    vm_allocNativeFunObj = p->a8;
+    vm_allocModule = p->a9;
+  }
 }
 #endif
