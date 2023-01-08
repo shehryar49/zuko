@@ -2,6 +2,9 @@
 #define LEXER_H_
 #include "plutonium.h"
 using namespace std;
+int32_t hexToInt32(const string&);
+int64_t hexToInt64(const string&);
+
 const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
 bool isKeyword(string s)
 {
@@ -130,7 +133,6 @@ public:
             c = s[k];
             if(c=='"')
             {
-
                 size_t j = k+1;
                 string t;
                 bool match;
@@ -233,30 +235,54 @@ public:
             }
             else if(isdigit(c))
             {
-                if(c=='0')
+                //hex literal
+                if(c=='0' && k!=s.length()-1 && s[k+1]=='x')
                 {
-                    if(k!=s.length()-1)
+
+                    k+=1;
+                    size_t j = k+1;
+                    string b;
+                    Token i;
+                    while(j<s.length())
                     {
-                        if(s[k+1]=='x')
-                        {
-                            k+=1;
-                            if(k+1+1>s.length()-1)
-                            {
-                                line_num = ln;
-                                lexErr("SyntaxError","Invalid Syntax");
-                            }
-                            k+=1;
-                            string b = s.substr(k,1+1);
-                            Token i;
-                            i.type = BYTE_TOKEN;
-                            i.ln = ln;
-                            i.content = b;
-                            tokenlist.push_back(i);
-                            //="byte";
-                            k+=1+1;
-                            continue;
-                        }
+                        c = s[j];
+                        if(c>='0' && c<='9')
+                            b+=c;
+                        else if(c>='a' && c<='z')
+                          b+=c;
+                        else
+                          break;
+                        j+=1;
+
                     }
+                    if(b.length() == 1 || b.length() == 2) //byte
+                    {
+                       i.type = BYTE_TOKEN;
+                       i.ln = ln;
+                       i.content = b;
+                       tokenlist.push_back(i);
+                    }
+                    else if(b.length() >= 8 && b.length()<16)//int32
+                    {
+                       i.type = NUM_TOKEN;
+                       i.ln = ln;
+                       i.content = to_string(hexToInt32(b));
+                       tokenlist.push_back(i);
+                    }
+                    else if(b.length()>8 &&  b.length() <= 16)//int64
+                    {
+                       i.type = NUM_TOKEN;
+                       i.ln = ln;
+                       i.content = to_string(hexToInt64(b));
+                       tokenlist.push_back(i);
+                    }
+                    else
+                    {
+                        line_num = ln;
+                        lexErr("SyntaxError","Invalid Syntax");
+                    }
+                    k = j;
+                    continue;
                 }
                 size_t j = k+1;
                 string t;
@@ -319,47 +345,46 @@ public:
             }
             else if(c=='>' || c=='<')
             {
-
-            if(k==s.length()-1)
-            {
+                if(k==s.length()-1)
+                {
                     line_num = ln;
                     lexErr("SyntaxError","Invalid Syntax");
-            }
-            if(s[k+1]=='=')
-            {
-                Token i;
-                i.type = TokenType::OP_TOKEN;
-                i.content+=c;
-                i.content+="=";
-                i.ln = ln;
-                tokenlist.push_back(i);
-                k = k+1;
-            }
-            else if(c=='<' && s[k+1]=='<')
-            {
-                Token i;
-                i.type=TokenType::OP_TOKEN;
-                i.content ="<<";
-                tokenlist.push_back(i);
-                k+=1;
-            }
-            else if(c=='>' && s[k+1]=='>')
-            {
-                Token i;
-                i.type=TokenType::OP_TOKEN;
-                i.content =">>";
-                tokenlist.push_back(i);
-                k+=1;
-            }
-            else
-            {
-                Token i;
-                i.type = TokenType::OP_TOKEN;
-                i.content+=c;
-                i.ln = ln;
-                tokenlist.push_back(i);
+                }
+                if(s[k+1]=='=')
+                {
+                    Token i;
+                    i.type = TokenType::OP_TOKEN;
+                    i.content+=c;
+                    i.content+="=";
+                    i.ln = ln;
+                    tokenlist.push_back(i);
+                    k = k+1;
+                }
+                else if(c=='<' && s[k+1]=='<')
+                {
+                    Token i;
+                    i.type=TokenType::OP_TOKEN;
+                    i.content ="<<";
+                    tokenlist.push_back(i);
+                    k+=1;
+                }
+                else if(c=='>' && s[k+1]=='>')
+                {
+                    Token i;
+                    i.type=TokenType::OP_TOKEN;
+                    i.content =">>";
+                    tokenlist.push_back(i);
+                    k+=1;
+                }
+                else
+                {
+                    Token i;
+                    i.type = TokenType::OP_TOKEN;
+                    i.content+=c;
+                    i.ln = ln;
+                    tokenlist.push_back(i);
 
-            }
+                }
             }
             else if(c=='.')
             {
@@ -396,7 +421,6 @@ public:
                 i.content += c;
                 i.type = TokenType::OP_TOKEN;
                 tokenlist.push_back(i);
-                // = "TokenType::OP_TOKEN";
             }
             else if(c=='/' || c=='*' || c=='%' || c=='^' || c=='&' || c=='|' || c=='~')
             {
@@ -545,8 +569,8 @@ public:
                 {
                     if((j!=s.length()-1 && s[j]==':' && s[j+1]==':'))
                     {
-                    t+="::";
-                    j+=2;
+                        t+="::";
+                        j+=2;
                     }
                     else if(!isalpha(s[j]) && !isdigit(s[j]) && s[j]!='_')
                     {
@@ -555,50 +579,44 @@ public:
                     }
                     else
                     {
-                    t+=s[j];
-                    j+=1;
+                        t+=s[j];
+                        j+=1;
                     }
                 }
 
                 Token i;
                 if(isKeyword(t))
                 {
-                if(t=="if" && k!=0 && tokenlist.size()!=0)
-                {
-                    if(tokenlist[tokenlist.size()-1].type == KEYWORD_TOKEN && tokenlist[tokenlist.size()-1].content=="else")
+                    if(t=="if" && k!=0 && tokenlist.size()!=0)
                     {
-                        tokenlist[tokenlist.size()-1].content+=" if";
-                        k = j+1;
-                        continue;
+                        if(tokenlist[tokenlist.size()-1].type == KEYWORD_TOKEN && tokenlist[tokenlist.size()-1].content=="else")
+                        {
+                            tokenlist[tokenlist.size()-1].content+=" if";
+                            k = j+1;
+                            continue;
+                        }
                     }
-                }
-                //  Token i;
-                i.type = KEYWORD_TOKEN;
-                // = "keyword";
-                i.content = t;
-                i.ln = ln;
-                //printf("keyword ln = %ld\n",i.ln);
+                    i.type = KEYWORD_TOKEN;
+                    i.content = t;
+                    i.ln = ln;
                 }
                 else if(t=="or" || t=="and" || t=="is")
                 {
-                i.content = t;
-                i.type = TokenType::OP_TOKEN;
-                            i.ln = ln;
-                // = "TokenType::OP_TOKEN";
+                    i.content = t;
+                    i.type = TokenType::OP_TOKEN;
+                    i.ln = ln;
                 }
                 else if(t=="true" || t=="false")
                 {
-                i.content = t;
-                i.type = BOOL_TOKEN;
-                            i.ln = ln;
-                // = "bool";
+                    i.content = t;
+                    i.type = BOOL_TOKEN;
+                    i.ln = ln;
                 }
                 else
                 {
-                i.type = ID_TOKEN;
-                // = "id";
-                i.content = t;
-                i.ln = ln;
+                    i.type = ID_TOKEN;
+                    i.content = t;
+                    i.ln = ln;
                 }
                 tokenlist.push_back(i);
                 k = j;
@@ -657,7 +675,7 @@ public:
             }
             k+=1;
         }
-        removeUselessNewlines(tokenlist);
+        removeUselessNewlines(tokenlist);//removes newlines start and end of token list
         if (tokenlist.size() == 0)
             return tokenlist;
         Token t;

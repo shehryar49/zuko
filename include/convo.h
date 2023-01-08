@@ -9,12 +9,12 @@
 using namespace std;
 /////////
 
-string str(int);
-int Int(string);
+string str(int32_t);
+int32_t Int(string);
 /////////
 using namespace std;
 //This file contains functions for performing various conversions
-string str(int x)
+string str(int32_t x)
 {
 	return to_string(x);
 }
@@ -33,7 +33,7 @@ string str(double f)
     return x;
 }
 
-string str(long long int l)
+string str(int64_t l)
 {
 	return to_string(l);
 }
@@ -43,10 +43,10 @@ double Float(string s)
 	double f = atof(n);
 	return f;
 }
-long long int toInt64(string s)
+int64_t toInt64(string s)
 {
 	size_t k = 0;
-	long long int l = 0;
+	int64_t l = 0;
 	char c;
 	short sign = 1;
 	if(s[0]=='-')
@@ -63,61 +63,35 @@ long long int toInt64(string s)
 	return l*sign;
 }
 
-int Int(string s)
+int32_t Int(string s)
 {
   return atoi(s.c_str());
 }
-string str(bool b)
-{
-    if(b)
-    {
-        return "true";
-    }
-    else
-    {
-        return "false";
-    }
 
-}
 bool isInt64(string s)
 {
     while(s.length()>1 && s[0]=='0')
-                    s = s.substr(1);
-	if(str(toInt64(s.c_str()))==s)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+        s = s.substr(1);
+	return (str(toInt64(s.c_str()))==s);
 }
 bool isnum(string s)
 {
     while(s.length()>1 && s[0]=='0')
-                    s = s.substr(1);
-	if(str(atoi(s.c_str()))==s)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+      s = s.substr(1);
+	return (str(atoi(s.c_str()))==s);
 }
 string replace(string,string,string);
 bool isaFloat(string s)
 {
     if(s=="" || s.find('.')==std::string::npos)return false;
-   // vector<string> a = chop(s,'.');
     if(s.length() <=8)//8 because the decimal point is also counted
     {
-            s = replace(".","",s);
-			if(std::all_of(s.begin(), s.end(), ::isdigit))
-	 	    {
-               return true;
-		    }
-		    return false;
+        s = replace(".","",s);
+        if(std::all_of(s.begin(), s.end(), ::isdigit))
+        {
+            return true;
+        }
+        return false;
     }
     return false;
 }
