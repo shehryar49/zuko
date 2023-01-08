@@ -1,8 +1,10 @@
 #define BUILD_FOR_LINUX
-#include "include/PltObject.h"
-#include "include/plutonium.h"
 #include <signal.h>
 #include <time.h>
+#include <cstdint>
+#include "include/PltObject.h"
+#include "include/plutonium.h"
+
 #define PLUTONIUM_VER 1.5
 bool REPL_MODE = false;
 void signalHandler(int signum)
@@ -48,7 +50,7 @@ string& readfile(string filename)
   fclose(fp);
   return src;
 }
-void WriteByteCode(vector<unsigned char>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
+void WriteByteCode(vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
 {
 
    FILE* f = fopen("program.pltb","wb");
@@ -74,7 +76,7 @@ void WriteByteCode(vector<unsigned char>& bytecode,std::unordered_map<size_t,Byt
       fwrite(s.c_str(),sizeof(char),s.length(),f);
     }
     //
-   unsigned char* arr = new unsigned char[bytecode.size()];
+   uint8_t* arr = new uint8_t[bytecode.size()];
    total = vm.total_constants;
    fwrite(&total,sizeof(int),1,f);
    for(int i=0;i<vm.total_constants;i+=1)
@@ -91,7 +93,7 @@ void WriteByteCode(vector<unsigned char>& bytecode,std::unordered_map<size_t,Byt
     {
       arr[k] = bytecode[k];
     }
-    fwrite(arr,sizeof(unsigned char),bytecode.size(),f);
+    fwrite(arr,sizeof(uint8_t),bytecode.size(),f);
     fclose(f);
     delete[] arr;
 }
@@ -102,7 +104,7 @@ void REPL()
   static vector<string> sources;
   static vector<string> files;
   static string filename;
-  static int k = 0;
+  static int32_t k = 0;
   k = files.size()+1;
   filename = "<stdin-"+to_string(k)+">";
   files.push_back(filename);
@@ -111,7 +113,7 @@ void REPL()
   vector<string> fnReferenced;
   Lexer lex;
   string line;
-  static std::vector<unsigned char> bytecode;
+  static std::vector<uint8_t> bytecode;
   size_t offset = bytecode.size();
   static int noc = 1;
   vector<Token> tokens;
@@ -194,7 +196,7 @@ int main(int argc, const char* argv[])
     std::unordered_map<size_t, ByteSrc> LineNumberTable;
     vector<string> files;// filenames
     vector<string> sources;
-    if(argc>=3 && strcmp(argv[1],"-c")==0)
+    if(argc>=3 && strncmp(argv[1],"-c",2)==0)
     {
       filename = "argv";
       source_code = argv[2];
@@ -204,11 +206,11 @@ int main(int argc, const char* argv[])
       filename = argv[1];
       source_code = readfile(filename);
     }
-    vector<unsigned char> bytecode;
+    vector<uint8_t> bytecode;
     files.push_back(filename);//add to the list of compiled files
     sources.push_back(source_code);
     {
-        int num_of_constants = 1;
+        int32_t num_of_constants = 1;
         vector<string> fnReferenced;//stores the names of functions that are actually called in the program
         //functions that are not being called will not be compiled
         Lexer lex;
@@ -223,7 +225,6 @@ int main(int argc, const char* argv[])
         //vector by the parser
         parser.init(&fnReferenced,&num_of_constants,&files,&sources,filename);
         Node* ast = parser.parse(tokens);
-    
         Compiler compiler;
         compiler.init(&fnReferenced,&num_of_constants,&files,&sources,&LineNumberTable,filename);
         vm.constants = new PltObject[num_of_constants];
