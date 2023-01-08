@@ -368,4 +368,18 @@ namespace algo
     ans = reverse(ans)
     return ans
   }
+  function decodeASCII(var bytes)
+  {
+    var str = ""
+    foreach(var byte: bytes)
+      str+=char(ByteToInt(byte))
+    return str
+  }
+  function encodeASCII(var str)
+  {
+    var bytes = []
+    foreach(var ch: str)
+      bytes.push(ascii(ch))
+    return bytes
+  }
 }
