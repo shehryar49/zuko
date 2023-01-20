@@ -4,10 +4,10 @@
 #include <vector>
 #include <unordered_map>
 using namespace std;
-
-#define PltList vector<PltObject>
-#define Dictionary std::unordered_map<PltObject,PltObject,PltObject::HashFunction>
+struct HashFunction;
 struct PltObject;
+#define PltList vector<PltObject>
+#define Dictionary std::unordered_map<PltObject,PltObject,HashFunction>
 
 //
 //Types for different plutonium objects
@@ -56,77 +56,18 @@ struct FileObject
   FILE* fp;
   bool open;
 };
-struct PltObject
+extern "C" struct PltObject
 {
     union
     {
-        void* ptr;
         double f;
         int64_t l;
         int32_t i;
+        void* ptr;
     };
-    char type;
-    size_t extra;
-    PltObject()
-    {
-        type = 'n';
-    }
-    
-    bool operator==(const PltObject& other)const
-    {
-        if(other.type!=type)
-            return false;
-        if(type=='n')
-        {
-          return true;
-        }
-        else if(type=='i')
-        {
-          return i==other.i;
-        }
-        else if(type=='l')
-        {
-          return l==other.l;
-        }
-        else if(type=='f')
-        {
-          return f==other.f;
-        }
-        else if(type=='b')
-        {
-          return i==other.i;
-        }
-        else if(type=='m')
-        {
-          return i==other.i;
-        }
-        else if(type=='u')
-        {
-          return ((FileObject*)ptr)==((FileObject*)other.ptr);
-        }
-        else if(type=='s')
-        {
-          return *(string*)other.ptr==*(string*)ptr;
-        }
-        else if(type=='j')
-        {
-            return *(PltList*)ptr==*(PltList*)other.ptr;
-        }
-        else if(other.type=='y' || other.type=='r')
-        {
-          return ptr==other.ptr;
-        }
-        else if(type=='q' || type=='z')
-        {
-          return ptr==other.ptr;;
-        }
-        else if(type=='a')
-        {
-            return *(Dictionary*)ptr==*(Dictionary*)other.ptr;
-        }
-        return false;
-    }
-    struct HashFunction
+    char type='n';
+};
+struct HashFunction
     {
       size_t operator()(const PltObject& obj) const
       {
@@ -137,8 +78,60 @@ struct PltObject
         return a ^ b;
       }
   };
-};
-
+bool operator==(const PltObject& lhs,const PltObject& other)
+    {
+        if(other.type!=lhs.type)
+            return false;
+        if(lhs.type=='n')
+        {
+          return true;
+        }
+        else if(lhs.type=='i')
+        {
+          return lhs.i==other.i;
+        }
+        else if(lhs.type=='l')
+        {
+          return lhs.l==other.l;
+        }
+        else if(lhs.type=='f')
+        {
+          return lhs.f==other.f;
+        }
+        else if(lhs.type=='b')
+        {
+          return lhs.i==other.i;
+        }
+        else if(lhs.type=='m')
+        {
+          return lhs.i==other.i;
+        }
+        else if(lhs.type=='u')
+        {
+          return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);
+        }
+        else if(lhs.type=='s')
+        {
+          return *(string*)other.ptr==*(string*)lhs.ptr;
+        }
+        else if(lhs.type=='j')
+        {
+            return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
+        }
+        else if(other.type=='y' || other.type=='r')
+        {
+          return lhs.ptr==other.ptr;
+        }
+        else if(lhs.type=='q' || lhs.type=='z')
+        {
+          return lhs.ptr==other.ptr;;
+        }
+        else if(lhs.type=='a')
+        {
+            return *(Dictionary*)lhs.ptr==*(Dictionary*)other.ptr;
+        }
+        return false;
+    }
 size_t hashPltObject(const PltObject& a)
 {
     char t = a.type;

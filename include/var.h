@@ -72,7 +72,7 @@ string PltObjectToStr(const PltObject& a)
         else if(a.type=='u')
         {
             char buff[100];
-            snprintf(buff,100,"<Opened File at %p>",a.ptr);
+            snprintf(buff,100,"<File object at %p>",a.ptr);
             string s = buff;
             return s;
         }

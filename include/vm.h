@@ -114,10 +114,12 @@ PltList *allocList();
 Dictionary *allocDict();
 string *allocString();
 FunObject *allocFunObject();
-Coroutine *allocCoroutine();
+FunObject *allocCoroutine();
+Coroutine *allocCoObj();
 FileObject *allocFileObject();
 Module *allocModule();
 NativeFunction *allocNativeFun();
+FunObject* allocFunObject();
 extern bool REPL_MODE;
 void REPL();
 class VM
@@ -266,7 +268,7 @@ public:
     }
   }
 
-  inline bool isHeapObj(const PltObject &obj)
+  inline static bool isHeapObj(const PltObject &obj)
   {
     if (obj.type != PLT_INT && obj.type != PLT_INT64 && obj.type != PLT_FLOAT && obj.type != PLT_NIL && obj.type != PLT_BYTE && obj.type != 'p' && obj.type != PLT_BOOL)
       return true; // all other objects are on heap
@@ -423,7 +425,7 @@ public:
           }
         }
       }
-      else if (curr.type == PLT_FUNC)
+      else if (curr.type == PLT_FUNC || curr.type == 'g')
       {
         Klass *k = ((FunObject *)curr.ptr)->klass;
         it = memory.find((void *)k);
@@ -517,7 +519,7 @@ public:
         delete (FileObject *)e;
         allocated -= sizeof(FileObject);
       }
-      else if (m.type == PLT_FUNC)
+      else if (m.type == PLT_FUNC || m.type=='g')
       {
         delete (FunObject *)e;
         allocated -= sizeof(FunObject);
@@ -1076,7 +1078,7 @@ public:
             spitErr(VALUE_ERROR, "Error the coroutine already running cannot resume it!");
             continue;
           }
-          bool push = false;
+
           if (g->giveValOnResume)
           {
             if (i2 != 1)
@@ -1084,7 +1086,6 @@ public:
               spitErr(VALUE_ERROR, "Error the coroutine expects one value to be resumed!");
               continue;
             }
-            push = true;
           }
           else if(i2 != 0)
           {
@@ -1182,27 +1183,27 @@ public:
         typedef void (*mfunc)(PltObject *);
         typedef void (*api)(allocFuncions *);
         #ifdef BUILD_FOR_WINDOWS
-        name = "C:\\plutonium\\modules\\" + name + ".dll";
-        HINSTANCE module = LoadLibraryA(name.c_str());
-        api a = (api)GetProcAddress(module, "api_setup");
-        mfunc f = (mfunc)GetProcAddress(module, "init");
-        if (!module)
-        {
-          spitErr(IMPORT_ERROR, "Error importing module " + to_string(GetLastError()));
-          continue;
-        }
-#endif
-#ifdef BUILD_FOR_LINUX
-        name = "/opt/plutonium/modules/" + name + ".so";
-        void *module = dlopen(name.c_str(), RTLD_LAZY);
-        if (!module)
-        {
-          spitErr(IMPORT_ERROR, "Error importing module " + (std::string)(dlerror()));
-          continue;
-        }
-        mfunc f = (mfunc)dlsym(module, "init");
-        api a = (api)dlsym(module, "api_setup");
-#endif
+          name = "C:\\plutonium\\modules\\" + name + ".dll";
+          HINSTANCE module = LoadLibraryA(name.c_str());
+          api a = (api)GetProcAddress(module, "api_setup");
+          mfunc f = (mfunc)GetProcAddress(module, "init");
+          if (!module)
+          {
+            spitErr(IMPORT_ERROR, "Error importing module " + to_string(GetLastError()));
+            continue;
+          }
+        #endif
+          #ifdef BUILD_FOR_LINUX
+          name = "/opt/plutonium/modules/" + name + ".so";
+          void *module = dlopen(name.c_str(), RTLD_LAZY);
+          if (!module)
+          {
+            spitErr(IMPORT_ERROR, "Error importing module " + (std::string)(dlerror()));
+            continue;
+          }
+          mfunc f = (mfunc)dlsym(module, "init");
+          api a = (api)dlsym(module, "api_setup");
+        #endif
         if (!f)
         {
           spitErr(IMPORT_ERROR, "Error init() function not found in the module");
@@ -1334,9 +1335,9 @@ public:
           if (invokeOperator("__lshift__", p1, 2, "<<", &p2))
             continue;
         }
-        if (p1.type != p2.type)
+        if (p2.type != PLT_INT)
         {
-          spitErr(TYPE_ERROR, "Error operands should have same type for '<<' ");
+          spitErr(TYPE_ERROR, "Error rhs for '<<' must be an Integer 32 bit");
           continue;
         }
         p3.type = p1.type;
@@ -1346,7 +1347,13 @@ public:
         }
         else if (p1.type == PLT_INT64)
         {
-          p3.l = p1.l << p2.l;
+          p3.l = p1.l << p2.i;
+        }
+        else if(p1.type == PLT_BYTE)
+        {
+          uint8_t p = p1.i;
+          p<<=p2.i;
+          p3.i = p;
         }
         else
         {
@@ -1368,9 +1375,9 @@ public:
           if (invokeOperator("__rshift__", p1, 2, ">>", &p2))
             continue;
         }
-        if (p1.type != p2.type)
+        if (p2.type != PLT_INT)
         {
-          spitErr(TYPE_ERROR, "Error operands should have same type for '>>' ");
+          spitErr(TYPE_ERROR, "Error rhs for '>>' must be an Integer 32 bit");
           continue;
         }
         p3.type = p1.type;
@@ -1380,7 +1387,13 @@ public:
         }
         else if (p1.type == PLT_INT64)
         {
-          p3.l = p1.l >> p2.l;
+          p3.l = p1.l >> p2.i;
+        }
+        else if(p1.type == PLT_BYTE)
+        {
+          uint8_t p = p1.i;
+          p>>=p2.i;
+          p3.i = p;
         }
         else
         {
@@ -1416,6 +1429,10 @@ public:
         {
           p3.l = p1.l & p2.l;
         }
+        else if (p1.type == PLT_BYTE)
+        {
+          p3.i = (uint8_t)p1.i & (uint8_t)p2.i;
+        }
         else
         {
           spitErr(TYPE_ERROR, "Error operator & unsupported for type " + fullform(p1.type));
@@ -1450,6 +1467,10 @@ public:
         {
           p3.l = p1.l | p2.l;
         }
+        else if (p1.type == PLT_BYTE)
+        {
+          p3.i = (uint8_t)p1.i | (uint8_t)p2.i;
+        }
         else
         {
           spitErr(TYPE_ERROR, "Error operator | unsupported for type " + fullform(p1.type));
@@ -1478,6 +1499,15 @@ public:
         {
           p2.type = PLT_INT64;
           p2.l = ~p1.l;
+          STACK.push_back(p2);
+        }
+        else if (p1.type == PLT_BYTE)
+        {
+          
+          p2.type = PLT_BYTE;
+          uint8_t p = p1.i;
+          p = ~p;
+          p2.i = p; 
           STACK.push_back(p2);
         }
         else
@@ -1513,6 +1543,10 @@ public:
         {
           p3.l = p1.l ^ p2.l;
         }
+        else if (p1.type == PLT_BYTE)
+        {
+          p3.i = (uint8_t)p1.i ^ (uint8_t)p2.i;
+        }
         else
         {
           spitErr(TYPE_ERROR, "Error operator '^' unsupported for type " + fullform(p1.type));
@@ -1533,7 +1567,9 @@ public:
           if (invokeOperator("__add__", p1, 2, "+", &p2))
             continue;
         }
-        if (isNumeric(p1.type) && isNumeric(p2.type))
+        if(p1.type==p2.type)
+          c1 = p1.type;
+        else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
           if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
             c1 = PLT_FLOAT;
@@ -1544,8 +1580,6 @@ public:
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
-        else if (p1.type == p2.type)
-          c1 = p1.type;
         else
         {
           spitErr(TYPE_ERROR, "Error operator '+' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
@@ -1819,7 +1853,6 @@ public:
       }
       case NEG:
       {
-
         PltObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
         if (a.type == PLT_OBJ)
@@ -2058,7 +2091,9 @@ public:
         }
         PltObject c;
         char t;
-        if (isNumeric(a.type) && isNumeric(b.type))
+        if(a.type==b.type && isNumeric(a.type))
+          t = a.type;
+        else if (isNumeric(a.type) && isNumeric(b.type))
         {
           if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
             t = PLT_FLOAT;
@@ -2285,9 +2320,13 @@ public:
         memcpy(&idx, k, sizeof(int32_t));
         k += 4;
         PltObject co;
+        FunObject* fn = allocCoroutine();
+        fn->args = *k;
+        fn->i = p;
+        fn->name = "Coroutine";
+        fn->klass = nullptr;
         co.type = 'g';
-        co.i = p;
-        co.extra = *k;
+        co.ptr = (void*)fn;
         STACK.push_back(co);
         break;
       }
@@ -2474,11 +2513,6 @@ public:
       {
         orgk = k - program;
         PltObject fn = STACK.back();
-        if (fn.type != PLT_CLASS && fn.type != PLT_FUNC && fn.type != 'g' && fn.type != PLT_NATIVE_FUNC)
-        {
-          spitErr(TYPE_ERROR, "Error type " + fullform(fn.type) + " not callable!");
-          continue;
-        }
         STACK.pop_back();
         k += 1;
         int32_t N = *k;
@@ -2491,6 +2525,7 @@ public:
             continue;
           }
           callstack.push_back(k + 1);
+          frames.push_back(STACK.size() - N);
           if (callstack.size() >= 1000)
           {
             spitErr(MAX_RECURSION_ERROR, "Error max recursion limit 1000 reached.");
@@ -2499,7 +2534,6 @@ public:
           for (size_t i = obj->opt.size() - (obj->args - N); i < obj->opt.size(); i++)
             STACK.push_back(obj->opt[i]);
           executing.push_back(obj);
-          frames.push_back(STACK.size() - obj->args);
           k = program + obj->i;
           continue;
         }
@@ -2611,13 +2645,15 @@ public:
         }
         else if (fn.type == 'g')
         {
-          if ((size_t)N != fn.extra)
+          FunObject* f = (FunObject*)fn.ptr;
+          if ((size_t)N != f->args)
           {
-            spitErr(ARGUMENT_ERROR, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(fn.extra) + " arguments," + to_string(N) + " given!");
+            spitErr(ARGUMENT_ERROR, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(f->args) + " arguments," + to_string(N) + " given!");
             continue;
           }
-          Coroutine *g = allocCoroutine();
-          g->curr = fn.i;
+          Coroutine *g = allocCoObj();
+          g->fun = f;
+          g->curr = f->i;
           g->state = SUSPENDED;
           vector<PltObject> locals = {STACK.end() - N, STACK.end()};
           STACK.erase(STACK.end() - N, STACK.end());
@@ -2628,6 +2664,11 @@ public:
           T.ptr = g;
           STACK.push_back(T);
           DoThreshholdBusiness();
+        }
+        else
+        {
+          spitErr(TYPE_ERROR, "Error type " + fullform(fn.type) + " not callable!");
+          continue;
         }
         break;
       }
@@ -2765,7 +2806,9 @@ public:
         }
         PltObject c;
         char t;
-        if (isNumeric(a.type) && isNumeric(b.type))
+        if(a.type == b.type && isNumeric(a.type))
+          t = a.type;
+        else if (isNumeric(a.type) && isNumeric(b.type))
         {
           if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
             t = PLT_FLOAT;
@@ -2775,6 +2818,7 @@ public:
             t = PLT_INT;
           PromoteType(a, t);
           PromoteType(b, t);
+          
         }
         else
         {
@@ -2841,7 +2885,9 @@ public:
         }
         PltObject c;
         char t;
-        if (isNumeric(a.type) && isNumeric(b.type))
+        if(a.type == b.type && isNumeric(a.type))
+          t = a.type;
+        else if (isNumeric(a.type) && isNumeric(b.type))
         {
           if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
             t = PLT_FLOAT;
@@ -3229,7 +3275,7 @@ KlassInstance *allocKlassInstance()
   vm.memory.emplace((void *)p, m);
   return p;
 }
-Coroutine *allocCoroutine()
+Coroutine *allocCoObj()//allocates coroutine object
 {
   Coroutine *p = new Coroutine;
   if (!p)
@@ -3256,6 +3302,22 @@ FunObject *allocFunObject()
   vm.allocated += sizeof(FunObject);
   MemInfo m;
   m.type = PLT_FUNC;
+  m.isMarked = false;
+  vm.memory.emplace((void *)p, m);
+  return p;
+}
+FunObject* allocCoroutine() //coroutine can be represented by FunObject
+{
+  FunObject *p = new FunObject;
+  if (!p)
+  {
+    printf("error allocating memory!\n");
+    exit(0);
+  }
+  p->klass = NULL;
+  vm.allocated += sizeof(FunObject);
+  MemInfo m;
+  m.type = 'g';
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;

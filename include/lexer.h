@@ -262,7 +262,7 @@ public:
                        i.content = b;
                        tokenlist.push_back(i);
                     }
-                    else if(b.length() >= 8 && b.length()<16)//int32
+                    else if(b.length() >= 3 && b.length()<=8)//int32
                     {
                        i.type = NUM_TOKEN;
                        i.ln = ln;

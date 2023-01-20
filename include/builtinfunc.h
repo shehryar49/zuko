@@ -567,7 +567,7 @@ PltObject REVERSE(PltObject* args,int32_t argc)
 PltObject BYTES(PltObject* args,int32_t argc)
 {
        if(argc!=1)
-            return Plt_Err(ARGUMENT_ERROR,"Error toBytes() takes one argument!");
+            return Plt_Err(ARGUMENT_ERROR,"Error bytes() takes one argument!");
         PltList l;
         const PltObject& e = args[0];
         if(e.type=='i')
@@ -616,9 +616,9 @@ PltObject BYTES(PltObject* args,int32_t argc)
         }
         else if(e.type=='b')
         {
-            l.push_back(e);
-            l = ListToByteList(l);
-            PltObject ret;
+          l.push_back(e);
+          l = ListToByteList(l);
+          PltObject ret;
           ret.type = 'j';
           PltList* p = allocList();
           *p = l;
@@ -626,9 +626,9 @@ PltObject BYTES(PltObject* args,int32_t argc)
             return ret;
         }
         else
-            {
-                return Plt_Err(TYPE_ERROR,"Error cannot convert "+fullform(e.type)+" type to bytes!");
-            }
+        {
+            return Plt_Err(TYPE_ERROR,"Error cannot convert "+fullform(e.type)+" type to bytes!");
+        }
 }
 ///////////////
 PltObject OBJINFO(PltObject* args,int32_t argc)
