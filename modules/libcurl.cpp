@@ -1,8 +1,14 @@
-#include "libcurl.h"
+/*
+Libcurl Binding for Plutonium(easy interface only)
+The original code of libcurl is not modified in anyway. This is just a wrapper around libcurl
+and requires libcurl libraries to be linked when compiling.
+Written by Shahryar Ahmad
+*/
 #include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "libcurl.h"
 using namespace std;
 struct MemoryStruct
 {
@@ -44,6 +50,7 @@ Klass* mimeklass;
 Klass* mimepartklass;
 void init(PltObject* rr)
 {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
     PltObject nil;
     Module* d = vm_allocModule();
     //
@@ -56,6 +63,8 @@ void init(PltObject* rr)
     curlklass->members.emplace("getinfo",PltObjectFromMethod("Curl.getinfo",&getinfo,curlklass));
     curlklass->members.emplace("data",PltObjectFromMethod("Curl.data",&data,curlklass));
     curlklass->members.emplace(".destroy",PltObjectFromMethod(".destroy",&curlklass__destroy,curlklass));
+    curlklass->members.emplace("escape",PltObjectFromFunction("escape",&ESCAPE,curlklass));
+    curlklass->members.emplace("unescape",PltObjectFromFunction("unescape",&UNESCAPE,curlklass));
     
     //
     mimepartklass = vm_allocKlass();
@@ -89,6 +98,7 @@ void init(PltObject* rr)
     d->members.emplace(("VERSION_NUM"),PltObjectFromInt(LIBCURL_VERSION_NUM));
     d->members.emplace(("VERSION_MAJOR"),PltObjectFromInt(LIBCURL_VERSION_MAJOR));
     d->members.emplace(("VERSION_MINOR"),PltObjectFromInt(LIBCURL_VERSION_MINOR));
+    
     rr->type = PLT_MODULE;
     rr->ptr = (void*)d;
 }
@@ -533,7 +543,72 @@ void data(PltObject* args,int n,PltObject* rr)
     rr->type = PLT_LIST;
     rr->ptr = (void*)p; 
 }
+void ESCAPE(PltObject* args,int n,PltObject* rr)
+{
+  if(n!=2)
+  {
+    *rr = Plt_Err(ARGUMENT_ERROR,"2 Arguments required.");
+    return;
+  }
+  if(args[0].type != PLT_OBJ || ((KlassInstance*)args[0].ptr) -> klass !=curlklass)
+  {
+    *rr = Plt_Err(TYPE_ERROR,"Argument 1 must be a Curl Object");
+    return;
+  }
+  if(args[1].type!=PLT_STR)
+  {
+    *rr = Plt_Err(TYPE_ERROR,"Argument 1 must be a string");
+    return;
+  }
+  KlassInstance* ki = (KlassInstance*)args[0].ptr;
+  CurlObject* k = (CurlObject*)ki->members[".handle"].ptr;
+  string& str = *(string*)args[1].ptr;
+  string* res = vm_allocString();
+  char* output = curl_easy_escape(k->handle,str.c_str(),str.length());
+  size_t i = 0;
+  while(output[i])
+  {
+    res->push_back(output[i]);
+    ++i;
+  }
+  curl_free(output);
+  rr->type = PLT_STR;
+  rr->ptr = (void*)res;
+}
+void UNESCAPE(PltObject* args,int n,PltObject* rr)
+{
+  if(n!=2)
+  {
+    *rr = Plt_Err(ARGUMENT_ERROR,"2 Arguments required.");
+    return;
+  }
+  if(args[0].type != PLT_OBJ || ((KlassInstance*)args[0].ptr) -> klass !=curlklass)
+  {
+    *rr = Plt_Err(TYPE_ERROR,"Argument 1 must be a Curl Object");
+    return;
+  }
+  if(args[1].type!=PLT_STR)
+  {
+    *rr = Plt_Err(TYPE_ERROR,"Argument 1 must be a string");
+    return;
+  }
+  KlassInstance* ki = (KlassInstance*)args[0].ptr;
+  CurlObject* k = (CurlObject*)ki->members[".handle"].ptr;
+  string& str = *(string*)args[1].ptr;
+  string* res = vm_allocString();
+  int decodelen = 0;
+  char* output = curl_easy_unescape(k->handle,str.c_str(),str.length(),&decodelen);
+  size_t i = 0;
+  while(i<decodelen)
+  {
+    res->push_back(output[i]);
+    ++i;
+  }
+  curl_free(output);
+  rr->type = PLT_STR;
+  rr->ptr = (void*)res;
+}
 extern "C" void unload()
 {
-
+  curl_global_cleanup();
 }

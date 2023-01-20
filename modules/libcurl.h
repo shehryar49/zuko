@@ -14,6 +14,8 @@ extern "C"
     void cleanup(PltObject*,int,PltObject*);
     void getinfo(PltObject*,int,PltObject*);
     void data(PltObject*,int,PltObject*);
+    void ESCAPE(PltObject*,int,PltObject*);
+    void UNESCAPE(PltObject*,int,PltObject*);
     void curlklass__destroy(PltObject*,int,PltObject*);
     //Methods of MimeObject
     void mime__construct__(PltObject*,int,PltObject*);
