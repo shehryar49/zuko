@@ -36,7 +36,6 @@ string& readfile(string filename)
       printf("Error opening file: %s\n", strerror(errno));
       exit(0);
   }
-
   signed char ch;
   while ((ch = fgetc(fp)) != EOF)
   {
