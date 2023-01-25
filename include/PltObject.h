@@ -30,6 +30,7 @@ struct PltObject;
 #define PLT_COROUTINE 'g'
 #define PLT_COROUTINE_OBJ 'z'
 #define PLT_ERROBJ 'e'
+#define PLT_BYTEARR 'c'
 //
 enum ErrCode
 {
@@ -202,6 +203,7 @@ struct Coroutine
   FunObject* fun;//function from which this coroutine object was made
   bool giveValOnResume;
 };
+
 //Helper and extension API Functions
 
 inline PltObject PltObjectFromStringPtr(string* s)

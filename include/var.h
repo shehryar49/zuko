@@ -59,6 +59,8 @@ string PltObjectToStr(const PltObject& a)
           return str(a.f);
         else if(a.type=='m')
           return IntToHex(a.i);
+        else if(a.type=='c')
+          return "<bytearray>";
         else if(a.type=='e')
         {
           return "<Error Object>";

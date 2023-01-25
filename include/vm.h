@@ -111,6 +111,7 @@ ErrObject *allocErrObject();
 Klass *allocKlass();
 KlassInstance *allocKlassInstance();
 PltList *allocList();
+vector<uint8_t>* allocByteArray();
 Dictionary *allocDict();
 string *allocString();
 FunObject *allocFunObject();
@@ -446,6 +447,7 @@ public:
           }
         }
       }
+      
     } // end while loop
   }
   void mark()
@@ -543,6 +545,11 @@ public:
       {
         delete (NativeFunction *)e;
         allocated -= sizeof(NativeFunction);
+      }
+      else if(m.type == PLT_BYTEARR)
+      {
+        delete (vector<uint8_t>*)e;
+        allocated -= sizeof(vector<uint8_t>);
       }
       memory.erase(e);
     }
@@ -811,6 +818,31 @@ public:
             continue;
           }
           (*pl_ptr1)[idx] = p2;
+        }
+        else if (p3.type == PLT_BYTEARR)
+        {
+          vector<uint8_t>* p= (vector<uint8_t>*)p3.ptr;
+          int64_t idx = 0;
+          if (p1.type == PLT_INT)
+            idx = p1.i;
+          else if (p1.type == PLT_INT64)
+            idx = p1.l;
+          else
+          {
+            spitErr(TYPE_ERROR, "Error type " + fullform(p1.type) + " cannot be used to index bytearray!");
+            continue;
+          }
+          if (idx < 0 || idx > (int64_t)p->size())
+          {
+            spitErr(INDEX_ERROR, "Error index " + PltObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size()));
+            continue;
+          }
+          if(p2.type!=PLT_BYTE)
+          {
+            spitErr(TYPE_ERROR,"Error byte value required for bytearray!");
+            continue;
+          }
+          (*p)[idx] = (uint8_t)p2.i;
         }
         else if (p3.type == PLT_DICT)
         {
@@ -1930,6 +1962,34 @@ public:
             continue;
           }
           STACK.push_back(l[i.i]);
+          break;
+        }
+        else if (val.type == PLT_BYTEARR)
+        {
+          if (i.type != PLT_INT && i.type != PLT_INT64)
+          {
+            orgk = k - program;
+            spitErr(TYPE_ERROR, "Error index should be integer!");
+            continue;
+          }
+          PromoteType(i, PLT_INT64);
+          if (i.l < 0)
+          {
+            orgk = k - program;
+            spitErr(VALUE_ERROR, "Error index cannot be negative!");
+            continue;
+          }
+
+          vector<uint8_t>* l = (vector<uint8_t> *)val.ptr;
+          if ((size_t)i.l >= l->size())
+          {
+            orgk = k - program;
+            spitErr(VALUE_ERROR, "Error index is out of range!");
+            continue;
+          }
+          p1.type = 'm';
+          p1.i = (*l)[i.i];
+          STACK.push_back(p1);
           break;
         }
         else if (val.type == PLT_DICT)
@@ -3195,6 +3255,21 @@ PltList *allocList()
   vm.allocated += sizeof(PltList);
   MemInfo m;
   m.type = PLT_LIST;
+  m.isMarked = false;
+  vm.memory.emplace((void *)p, m);
+  return p;
+}
+vector<uint8_t>* allocByteArray()
+{
+  auto p = new vector<uint8_t>;
+  if (!p)
+  {
+    printf("error allocating memory!\n");
+    exit(0);
+  }
+  vm.allocated += sizeof(std::vector<uint8_t>);
+  MemInfo m;
+  m.type = PLT_BYTEARR;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;

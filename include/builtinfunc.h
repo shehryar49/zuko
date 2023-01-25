@@ -241,6 +241,20 @@ void printList(PltList* l,vector<void*> seen = {})
   }
   printf("]");
 }
+
+void printByteArray(vector<uint8_t>* arr)
+{
+  string IntToHex(int);
+  size_t len = arr->size();
+  printf("bytearr([");
+  for(size_t i=0;i<len;i++)
+  {
+    printf("%s",IntToHex((*arr)[i]).c_str());
+    if(i!=len-1)
+      printf(",");
+  }
+  printf("])\n");
+}
 PltObject print(PltObject* args,int32_t argc)
 {
     int32_t k = 0;
@@ -250,6 +264,8 @@ PltObject print(PltObject* args,int32_t argc)
            printList((PltList*)args[k].ptr);
         else if(args[k].type=='a')
            printDictionary((Dictionary*)args[k].ptr);
+        else if(args[k].type==PLT_BYTEARR)
+          printByteArray((vector<uint8_t>*)args[k].ptr);
         else
           printf("%s",PltObjectToStr(args[k]).c_str());
         k+=1;
@@ -284,6 +300,8 @@ PltObject PRINTF(PltObject* args,int32_t argc)
            printList((PltList*)args[j].ptr);
           else if(args[j].type=='a')
            printDictionary((Dictionary*)args[j].ptr);
+          else if(args[j].type==PLT_BYTEARR)
+          printByteArray((vector<uint8_t>*)args[j].ptr);
           else
            printf("%s",PltObjectToStr(args[j]).c_str());
           j+=1;
@@ -320,7 +338,8 @@ PltObject fninfo(PltObject* args,int32_t argc) //for debugging purposes
     ret.type = 'n';
     return ret;
 }
-void printList(PltList);
+//void printList(PltList);
+
 PltObject println(PltObject* args,int32_t argc)
 {
     int32_t k = 0;
@@ -330,6 +349,8 @@ PltObject println(PltObject* args,int32_t argc)
           printList((PltList*)args[k].ptr);
         else if(args[k].type=='a')
           printDictionary((Dictionary*)args[k].ptr);
+        else if(args[k].type==PLT_BYTEARR)
+          printByteArray((vector<uint8_t>*)args[k].ptr);
         else
           printf("%s",PltObjectToStr(args[k]).c_str());
         k+=1;
@@ -505,7 +526,37 @@ PltObject RAND(PltObject* args,int32_t argc)
     return ret;
 }
 //////////////
-
+PltObject BYTEARRAY(PltObject* args,int32_t argc)
+{
+  PltObject ret;
+  if(argc==0)
+  {
+    vector<uint8_t>* arr = allocByteArray();
+    ret.type = PLT_BYTEARR;
+    ret.ptr = (void*)arr;
+    return ret;
+  }
+  else if(argc == 1)
+  {
+    if(args[0].type != PLT_LIST)
+    {
+      return Plt_Err(TYPE_ERROR,"Error bytearray() takes a list argument!");
+    }
+    PltList* p = (PltList*)args[0].ptr;
+    size_t len = p->size();
+    vector<uint8_t>* arr = allocByteArray();
+    ret.type = PLT_BYTEARR;
+    ret.ptr = (void*)arr;
+    for(size_t i=0;i<len;i++)
+    {
+      if((*p)[i].type!=PLT_BYTE)
+        return Plt_Err(TYPE_ERROR,"Error argument list given to bytearray() must contain only bytes!");
+      arr->push_back((*p)[i].i);
+    }
+    return ret;
+  }
+  return Plt_Err(ARGUMENT_ERROR,"Error bytearray() takes 0 or 1 arguments!");
+}
 
 PltObject WRITE(PltObject* args,int32_t argc)
 {
@@ -1383,6 +1434,7 @@ void clean_stdin(void)
 }
 PltObject FREAD(PltObject* args,int32_t argc)
 {
+    PltObject ret;
     if(argc!=2)
         return Plt_Err(ARGUMENT_ERROR,"Error fread() takes two arguments!");
     if(args[0].type!='i' && args[0].type!='l')
@@ -1394,33 +1446,16 @@ PltObject FREAD(PltObject* args,int32_t argc)
     PltObject a = args[0];
     PromoteType(a,'l');
     int64_t e = a.l;
- //   printf("e = %lld\n",e);
-    unsigned char* bytes = new unsigned char[e];
+    auto p = allocByteArray();
+    ret.ptr = (void*)p;
+    ret.type = 'c';
+    p->resize(e);
     FileObject fobj = *(FileObject*)args[1].ptr;
     if(!fobj.open)
       return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
-    if(fread(bytes,sizeof(unsigned char),e,currF)!=(size_t)e)
+    if(fread(&(p->at(0)),1,e,currF)!=(size_t)e)
         return Plt_Err(FILEIO_ERROR,"Error unable to read specified bytes from the file.");
-    /*{
-        printf("n = %ld\n",n);
-        string what = strerror(errno);
-        return Plt_Err("IOERROR",what);
-    }*/
-    PltList l;
-    for(int32_t k=0;k<e;k++)
-    {
-        PltObject m;
-        m.type = 'm';
-        m.i = (unsigned char)(bytes[k]);
-        l.push_back(m);
-    }
-    PltObject ret;
-    PltList* p = new PltList(l);
-    ret.ptr = (void*)p;
-    ret.type = 'j';
-
-    delete[] bytes;
     if(currF == stdin)
       clean_stdin();
     return ret;
@@ -1431,9 +1466,9 @@ PltObject FWRITE(PltObject* args,int32_t argc)
     int64_t S = 0;
     if(argc==2)
     {
-    if(!validateArgTypes("fwrite","ju",args,argc,ret))
+    if(!validateArgTypes("fwrite","cu",args,argc,ret))
       return ret;
-     S = ((PltList*)args[0].ptr)->size(); 
+     S = ((vector<uint8_t>*)args[0].ptr)->size(); 
     }
     else if(argc==3)
     {
@@ -1448,26 +1483,19 @@ PltObject FWRITE(PltObject* args,int32_t argc)
     {
       return Plt_Err(ARGUMENT_ERROR,"Error fread takes either 2 or 3 arguments");
     }
-    PltList l = *(PltList*)args[0].ptr;
+    auto l = (vector<uint8_t>*)args[0].ptr;
+    if(S > l->size())
+      return Plt_Err(VALUE_ERROR,"Error the bytearray needs to have specified number of bytes!");
     FileObject fobj = *(FileObject*)args[1].ptr;
     if(!fobj.open)
       return Plt_Err(VALUE_ERROR,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
-    unsigned char* bytes = new unsigned char[S];
-    for(int32_t k=0;k<S;k++)
-    {
-        PltObject m = l[k];
-        if(m.type!='m')
-            return Plt_Err(VALUE_ERROR,"Error the list should contain bytes only!");
-        bytes[k] = m.i;
-    }
-    if(fwrite(bytes,sizeof(unsigned char),S,currF)!=(size_t)S)
+    if(fwrite(&(l->at(0)),1,S,currF)!=(size_t)S)
     {
         string what = strerror(errno);
         return Plt_Err(FILEIO_ERROR,"Error unable to write the bytes to file!");
 
     }
-    delete[] bytes;
     return ret;
 
 }
@@ -1926,6 +1954,7 @@ void initFunctions()
   funcs.emplace("char",&TOCHAR);
   funcs.emplace("fninfo",&fninfo);
   funcs.emplace("addr",&ADDR);
+  funcs.emplace("bytearray",&BYTEARRAY);
 }
 std::unordered_map<string,BuiltinFunc> methods;
 void initMethods()
