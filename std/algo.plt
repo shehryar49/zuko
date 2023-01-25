@@ -119,51 +119,45 @@ namespace algo
   }
   function __merge(var arr,var l,var mid,var h)
   {
-    var arr1 = []
-    var arr2 = []
-    for(var i=l to mid step 1)
-      arr1.push(arr[i])
-    for(var i=mid+1 to h step 1)
-      arr2.push(arr[i])
-    var i = 0
-    var j = 0
-    var k = l
-    while(i<len(arr1) and j<len(arr2))
+    var temp = []
+    var i = l
+    var j = mid+1
+    while(i<=mid and j<=h)
     {
-      if(arr1[i]<= arr2[j])
-      {
-        arr[k] = arr1[i]
-        k+=1
+        if(arr[i]<= arr[j])
+        {
+          temp.push(arr[i])
+          i+=1
+        }
+        else
+        {
+          temp.push(arr[j])
+          j+=1
+        }
+    }
+    while(i<=mid)
+    {
+        temp.push(arr[i])
         i+=1
-      }
-      else
-      {
-        arr[k] = arr2[j]
+    }
+    while(j<=h)
+    {
+        temp.push(arr[j])
         j+=1
-        k+=1
-      }
     }
-    while(i<len(arr1))
+    for(var i=0 to len(temp)-1 step 1)
     {
-      arr[k] = arr1[i]
-      k+=1
-      i+=1
+        arr[l+i] = temp[i]
     }
-    while(j<len(arr2))
-    {
-      arr[k] = arr2[j]
-      k+=1
-      j+=1
-    }
-  }
+  } 
   function mergeSort(var arr,var l,var h)
   {
     if(l<h)
     {
-      var mid = (l+h)/2
-      mergeSort(arr,l,mid)
-      mergeSort(arr,mid+1,h)
-      __merge(arr,l,mid,h)
+        var mid = (l+h)/2
+        mergeSort(arr,l,mid)
+        mergeSort(arr,mid+1,h)
+        __merge(arr,l,mid,h)
     }
   }
   function sublist(var l,var h,var list)
