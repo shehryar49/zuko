@@ -1,0 +1,4 @@
+this is A.f1()
+this is A.f2()
+this is A.f1()
+this is B.f2()

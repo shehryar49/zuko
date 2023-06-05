@@ -1,0 +1,85 @@
+import std/algo.plt
+class Process
+{
+  #class members are public by default
+  var capacity = nil
+  var period = nil
+  var id = nil
+  function __construct__(var id,var a,var b)
+  {
+    self.id = id
+    self.capacity = a
+    self.period = b
+  }
+  # Overloaded greaterthan operator
+  # To support sorting
+  function __greaterthan__(var rhs)
+  {
+    return self.period > rhs.period
+  }
+}
+function lcmPeriod(var p)
+{
+    #p is sorted on basis of time period
+    #so max time period is at p[l-1].period, where l is total number of processes
+    var l = len(p)
+    var max = p[l-1].period
+    var i = max
+    while(true)
+    {
+        var isLcm = true
+        for(var j=0 to l-1 step 1)
+        {
+          if(i % p[j].period != 0)
+          {
+            isLcm = false
+            break
+          }
+        }
+        if(isLcm)
+          return i
+        i+=1
+    }
+    return nil
+}
+function scheduleRateMonotonic(var p)
+{
+    var lcm = lcmPeriod(p)
+    var l = len(p)
+    var exec = [0]*l # number of time units process
+    #executed in it's interval
+    var k = 0
+    for(var i=0 to lcm-1 step 1) # this is an infinite loop in a real scheduler
+    {
+       var picked = nil
+       for(var j=0 to l-1 step 1)
+       {
+         #reset execution count if new interval has begun for process p[j]
+         if(i% (p[j].period) == 0)
+         {
+           if(exec[j] != p[j].capacity and i!=0) #p[j] didn't execute for required time in previous interval
+           {
+             printf("[-] % did execute it's full capacity in interval %-%\n",p[j].id,i-p[j].period,i)
+             return nil
+           }
+           exec[j] = 0 #reset execution count making process eligible for
+           #execution again
+         }
+         #pick process
+         if(picked==nil and p[j].capacity > exec[j])
+            picked = j
+       }
+       if(picked == nil) #no process picked
+         printf("%-%: IDLE\n",i,i+1)
+       else
+       {
+         printf("%-%: %\n",i,i+1,p[picked].id)
+         exec[picked]+=1
+       }
+    }
+}
+var processes = [Process("T0",2,6),Process("T1",3,12),Process("T2",5,18),Process("T3",6,24)] #[Process("T1",3,20),Process("T2",2,5),Process("T3",2,10)]
+#sort processes on basis of time period
+#see overloaded greater than operator
+algo::bubbleSort(processes)
+scheduleRateMonotonic(processes)

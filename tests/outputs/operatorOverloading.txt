@@ -1,0 +1,19 @@
+true
+false
+true
+true
+-20
+false
+30
+0
+30
+-21
+Bitch please!
+30
+10
+2
+200
+20
+10
+Object being garbage collected
+Object being garbage collected

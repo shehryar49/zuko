@@ -1,0 +1,61 @@
+import math
+class complex
+{
+  private var real = nil
+  private var imaginary = nil
+  function __construct__(var r,var i)
+  {
+     self.real = r
+     self.imaginary = i
+  }
+  function display()
+  {
+     var i = self.imaginary
+     var op = " + "
+     if(i<0)
+     {
+       i = -i
+       op = " - "
+     }
+     println(self.real,op,i,"i")
+  }
+  function conjugate()
+  {
+    return complex(self.real,-self.imaginary)
+  }
+  function add(var obj)
+  {
+     self.real+=obj.real
+     self.imaginary+=obj.imaginary
+  }
+  function subtract(var obj)
+  {
+     self.real-=obj.real
+     self.imaginary-=obj.imaginary
+  }
+  function magnitude()
+  {
+     return math.sqrt(self.real*self.real+self.imaginary*self.imaginary+0.0)
+  }
+  function input()
+  {
+    print("Enter real: ")
+    self.real = int(input())
+    print("Enter imaginary: ")
+    self.imaginary = int(input())
+  }
+}
+var c1 = complex(0,0)
+println("Enter c1")
+c1.input()
+var c2 = complex(0,0)
+println("Enter c2")
+c2.input()
+var t = c1.conjugate()
+print("Conjugate of c1: ")
+t.display()
+c1.add(c2)
+print("c1 + c2 = ")
+c1.display()
+print("Magnitude of (c1+c2) = ")
+println(c1.magnitude())

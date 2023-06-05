@@ -1,0 +1,6 @@
+h
+["A","quick","brown","fox","jumps","over","a","lazy","dog"]
+[1,2]
+bbbb
+baaa
+0
