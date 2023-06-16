@@ -16,7 +16,7 @@ const char* tests[] =
     "while",
     "dowhile",
     "for",
-    //"lists", uses some features not available in current stable release
+    "lists",
     "dicts",
     "byte",
     "bytearray",
@@ -43,32 +43,18 @@ const char* tests[] =
     "huffman",
     "pyramid",
     "awkwardLexer",
-    "polynomial"
+    "polynomial",
+    "coroutines"
 };
 int main(int argc,const char* argv[])
 {
-  string exePath;
-  if(argc == 1)
-  {
-    #ifdef _WIN32
-    exePath = "..\\plutonium ";
-    #else
-      exePath = "../plutonium ";
-    #endif
-  }
-  else
-  {
-    exePath = argv[1];
-    exePath+=" ";
-  }
   int n = sizeof(tests)/sizeof(const char*);
   int failed = 0;
   string expectedOutput;
   string output;
   string test;
   string line;
-
-  cout<<"Using binary "<<exePath<<endl;
+  cout<<"Using binary ../plutonium"<<endl;
   for(int i=1;i<=n;i++)
   {
     output = "";
@@ -87,7 +73,8 @@ int main(int argc,const char* argv[])
     while(fin.get(ch))
       expectedOutput+= ch;
     fin.close();
-    line = exePath + test+".plt > out.txt";
+    line = "../plutonium ";
+    line += test+".plt > out.txt";
     int l = system(line.c_str());//produces out.txt
     ifstream file("out.txt",ios::in);
     if(l!=0 || !file)
