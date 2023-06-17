@@ -23,14 +23,14 @@ typedef PltObject(*BuiltinFunc)(PltObject*,int32_t);
 void PromoteType(PltObject&,char t);
 string fullform(char);
 string PltObjectToStr(const PltObject&);
-string substr(int32_t,int32_t,string);
+string substr(int32_t,int32_t,const string&);
 int32_t find(char,string);
 string replace_all(string,string,string);
 string addlnbreaks(string,bool&);
 unsigned char tobyte(string);
 #include "opcode.h"
 #include "overflow.h"
-#include "unions.h"
+//#include "unions.h"
 #include "convo.h"
 #include "token.h"
 #include "parser.h"

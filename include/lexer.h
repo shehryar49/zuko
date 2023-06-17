@@ -1,3 +1,24 @@
+/*MIT License
+
+Copyright (c) 2022 Shahryar Ahmad 
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
 #ifndef LEXER_H_
 #define LEXER_H_
 #include "plutonium.h"
@@ -55,7 +76,60 @@ private:
     exit(0);
   }
 public:
-    
+    static Token resolveMacro(string name)
+    {
+        Token macro;
+        macro.type = NUM_TOKEN;
+        if(name == "SEEK_CUR")
+          macro.content = to_string(SEEK_CUR);
+        else if(name == "SEEK_SET")
+          macro.content = to_string(SEEK_SET);
+        else if(name == "SEEK_END")
+          macro.content = to_string(SEEK_END);
+        else if(name == "pi")
+        {
+          macro.type = FLOAT_TOKEN;
+          macro.content = "3.14159";
+        }
+        else if(name == "e")
+        {
+          macro.type = FLOAT_TOKEN;
+          macro.content = "2.718";
+        }
+        else if(name == "clocks_per_sec")
+        {
+          macro.type = FLOAT_TOKEN;
+          macro.content=to_string(CLOCKS_PER_SEC);
+        }
+        else if(name == "FLT_MIN")
+        {
+          macro.type=FLOAT_TOKEN;
+          macro.content = to_string(-DBL_MAX);
+        }
+        else if(name == "FLT_MAX")
+        {
+          macro.type=FLOAT_TOKEN;
+          macro.content = to_string(DBL_MAX);
+        }
+        else if(name == "INT_MIN")
+          macro.content = to_string(INT_MIN);
+        else if(name == "INT_MAX")
+          macro.content = to_string(INT_MAX);
+        else if(name == "INT64_MIN")
+          macro.content = to_string(LLONG_MIN);
+        else if(name == "INT64_MAX")        
+          macro.content = to_string(LLONG_MAX);
+        else if(name == "os")
+        {
+          const char* getOS();
+          macro.type = STRING_TOKEN;
+          macro.content = getOS();
+        }
+        else 
+          macro.type = EOP_TOKEN;//to indicate macro not found
+        return macro;
+
+    }
     vector<Token> generateTokens(string fname,const string& s)
     {
         //fname is current filename
@@ -64,71 +138,11 @@ public:
         filename = fname;
         source_code = s;
         size_t k = 0;
-        std::unordered_map<string,Token> lexMacros;
-        Token macro;
-        macro.type = NUM_TOKEN;
-        macro.content = to_string(SEEK_CUR);
-        lexMacros.emplace("SEEK_CUR",macro);
-        macro.content = to_string(SEEK_SET);
-        lexMacros.emplace("SEEK_SET",macro);
-        macro.content = to_string(SEEK_END);
-        lexMacros.emplace("SEEK_END",macro);
-        macro.type = FLOAT_TOKEN;
-        macro.content = "3.14159";
-        lexMacros.emplace("pi",macro);
-        macro.content = "2.718";
-        lexMacros.emplace("e",macro);
-        macro.content=to_string(CLOCKS_PER_SEC);
-        lexMacros.emplace("clocks_per_sec",macro);
-        macro.content = to_string(-DBL_MAX);
-        lexMacros.emplace("FLT_MIN",macro);
-        macro.content = to_string(DBL_MAX);
-        lexMacros.emplace("FLT_MAX",macro);
-        macro.type = NUM_TOKEN;
-        macro.content = to_string(INT_MIN);
-        lexMacros.emplace("INT_MIN",macro);
-        macro.content = to_string(INT_MAX);
-        lexMacros.emplace("INT_MAX",macro);
-        macro.content = to_string(LLONG_MIN);
-        lexMacros.emplace("INT64_MIN",macro);
-        macro.content = to_string(LLONG_MAX);
-        lexMacros.emplace("INT64_MAX",macro);
-        macro.content = "1";
-        lexMacros.emplace("TypeError",macro);
-        macro.content = "2";
-        lexMacros.emplace("ValueError",macro);
-        macro.content = "3";
-        lexMacros.emplace("MathError",macro);
-        macro.content = "4";
-        lexMacros.emplace("NameError",macro);
-        macro.content = "5";
-        lexMacros.emplace("IndexError",macro);
-        macro.content = "6";
-        lexMacros.emplace("ArgumentError",macro);
-        macro.content = "7";
-        lexMacros.emplace("UnknownError",macro);
-        macro.content = "8";
-        lexMacros.emplace("FileIOError",macro);
-        macro.content = "9";
-        lexMacros.emplace("KeyError",macro);
-        macro.content = "10";
-        lexMacros.emplace("OverflowError",macro);
-        macro.content = "11";
-        lexMacros.emplace("FileOpenError",macro);
-        macro.content = "12";
-        lexMacros.emplace("FileSeekError",macro);
-        macro.content = "13";
-        lexMacros.emplace("ImportError",macro);
-        macro.content = "14";
-        lexMacros.emplace("ThrowError",macro);
-        macro.content = "15";
-        lexMacros.emplace("MaxRecursionError",macro);
-        macro.content = "16";
-        lexMacros.emplace("AccessError",macro);
+        size_t srcLen = s.length();
         char c;
         vector<Token> tokenlist;
         int ln = 1;
-        while(k<s.length())
+        while(k<srcLen)
         {
             c = s[k];
             if(c=='"')
@@ -137,7 +151,7 @@ public:
                 string t;
                 bool match;
                 bool escaped = false;
-                while(j<s.length())
+                while(j<srcLen)
                 {
                     if(s[j]=='"')
                     {
@@ -191,14 +205,14 @@ public:
             }
             else if(c=='@')
             {
-                if(k==s.length()-1)
+                if(k==srcLen-1)
                 {
                     line_num = ln;
                     lexErr("SyntaxError","Invalid macro name");
                 }
                 size_t j = k+1;
                 string t = "";
-                while(j<s.length())
+                while(j<srcLen)
                 {
 
                     if(!isalpha(s[j]) && !isdigit(s[j]) && s[j]!='_')
@@ -211,39 +225,60 @@ public:
                     t+=s[j];
                     j+=1;
                 }
-                if(lexMacros.find(t)==lexMacros.end())
+                Token tok = resolveMacro(t);
+                if(tok.type == EOP_TOKEN)
                 {
                     line_num = ln;
                     lexErr("NameError","Unknown macro "+t);
                 }
-                tokenlist.push_back(lexMacros[t]);
+                tokenlist.push_back(tok);
                 k = j;
                 continue;
             }
             else if(c=='#')
             {
+                bool multiline = false;
+                bool foundEnd = false;
+                if(k+1 < srcLen && s[k+1]=='-')
+                  multiline = true;
                 size_t j=k+1;
-                for(;j<s.length();j+=1)
+                size_t orgLn = ln;
+                for(;j<srcLen;j+=1)
                 {
-                    if(s[j]=='\n')
+                    if(!multiline && s[j]=='\n')
                     {
                         break;
                     }
+                    else if(multiline && s[j] == '-')
+                    {
+                        if(j+1 < srcLen && s[j+1]=='#')
+                        {
+                            foundEnd = true;
+                            j+=2;
+                            break;
+                        }
+                    }
+                    else if(s[j] == '\n')
+                      ln++;
+                }
+                if(multiline && !foundEnd)
+                {
+                  line_num = orgLn;
+                  lexErr("SyntaxError","Unable to find the end of multiline comment!");
                 }
                 k = j-1;
-
             }
             else if(isdigit(c))
             {
                 //hex literal
-                if(c=='0' && k!=s.length()-1 && s[k+1]=='x')
+                if(c=='0' && k!=srcLen-1 && s[k+1]=='x')
                 {
 
                     k+=1;
                     size_t j = k+1;
                     string b;
                     Token i;
-                    while(j<s.length())
+                    while(j<srcLen)
                     {
                         c = s[j];
                         if(c>='0' && c<='9')
@@ -291,7 +326,7 @@ public:
                 bool exp = false;
 
                 bool expSign = false;
-                while(j<s.length())
+                while(j<srcLen)
                 {
                     if(!isdigit(s[j]) && s[j]!='.' && s[j]!='e' && s[j]!='-' && s[j]!='+')
                     {
@@ -345,7 +380,7 @@ public:
             }
             else if(c=='>' || c=='<')
             {
-                if(k==s.length()-1)
+                if(k==srcLen-1)
                 {
                     line_num = ln;
                     lexErr("SyntaxError","Invalid Syntax");
@@ -388,7 +423,7 @@ public:
             }
             else if(c=='.')
             {
-            if(k==s.length()-1)
+            if(k==srcLen-1)
             {
                     line_num = ln;
                     lexErr("SyntaxError","Invalid Syntax");
@@ -402,7 +437,7 @@ public:
             }
             else if(c=='+' || c=='-')
             {
-                if(k!=s.length()-1)
+                if(k!=srcLen-1)
                 {
                     if(s[k+1]=='=')
                     {
@@ -425,7 +460,7 @@ public:
             else if(c=='/' || c=='*' || c=='%' || c=='^' || c=='&' || c=='|' || c=='~')
             {
 
-                if(k!=s.length()-1)
+                if(k!=srcLen-1)
                 {
                     if(s[k+1]=='=')
                     {
@@ -451,47 +486,40 @@ public:
             }
             else if(c=='(')
             {
-                //("found TokenType::LParen_TOKEN\n");
                 Token i;
                 i.content += c;
                 i.type = TokenType::LParen_TOKEN;
                 i.ln = ln;
                 tokenlist.push_back(i);
-                // = "TokenType::LParen_TOKEN";
             }
             else if(c==')')
             {
-                //("here\n");
                 Token i;
                 i.content += c;
                 i.type = TokenType::RParen_TOKEN;
                             i.ln = ln;
-                // = "TokenType::RParen_TOKEN";
                 tokenlist.push_back(i);
-                //("done\n");
             }
             else if(c=='!')
             {
-                if(k!=s.length()-1)
+                if(k!=srcLen-1)
                 {
                     if(s[k+1]=='=')
                     {
                         Token i;
                         i.content = "!=";
                         i.type = TokenType::OP_TOKEN;
-                        // = "TokenType::OP_TOKEN";
-                                    i.ln = ln;
+                        i.ln = ln;
                         k+=1;
                         tokenlist.push_back(i);
                     }
                     else
                     {
-                    Token i;
-                    i.content = "!";
-                    i.type = TokenType::OP_TOKEN;
-                                i.ln = ln;
-
-                    tokenlist.push_back(i);
+                        Token i;
+                        i.content = "!";
+                        i.type = TokenType::OP_TOKEN;
+                        i.ln = ln;
+                        tokenlist.push_back(i);
                     }
                 }
                 else
@@ -499,7 +527,7 @@ public:
                     Token i;
                     i.content = "!";
                     i.type = TokenType::OP_TOKEN;
-                                i.ln = ln;
+                    i.ln = ln;
                     tokenlist.push_back(i);
                 }
             }
@@ -510,8 +538,7 @@ public:
                 Token i;
                 i.content = "==";
                 i.type = TokenType::OP_TOKEN;
-                // = "TokenType::OP_TOKEN";
-                            i.ln = ln;
+                i.ln = ln;
                 k+=1;
                 tokenlist.push_back(i);
                 }
@@ -520,8 +547,7 @@ public:
                 Token i;
                 i.content = "=";
                 i.type = TokenType::OP_TOKEN;
-                // = "equal";
-                            i.ln = ln;
+                i.ln = ln;
                 tokenlist.push_back(i);
                 }
             }
@@ -565,9 +591,9 @@ public:
                 size_t j = k+1;
                 string t;
                 t+=c;
-                while(j<s.length())
+                while(j<srcLen)
                 {
-                    if((j!=s.length()-1 && s[j]==':' && s[j+1]==':'))
+                    if((j!=srcLen-1 && s[j]==':' && s[j+1]==':'))
                     {
                         t+="::";
                         j+=2;
@@ -627,7 +653,6 @@ public:
                 i.type = COMMA_TOKEN;
                 i.content = ",";
                 i.ln = ln;
-                // = "comma";
                 tokenlist.push_back(i);
             }
             else if(c==':')
@@ -636,7 +661,6 @@ public:
                 i.type = COLON_TOKEN;
                 i.content = ":";
                 i.ln = ln;
-                // = "colon";
                 tokenlist.push_back(i);
             }
             else if(c=='\n' )
@@ -644,7 +668,6 @@ public:
                 Token i;
                 i.content = "\n";
                 i.type = NEWLINE_TOKEN;;
-                // = "newline";
                 i.ln = -1;
                 tokenlist.push_back(i);
                 ln+=1;
@@ -667,8 +690,8 @@ public:
                 //error;
                     if(c<0)
                     {
-                    printf("Error: The given file is non ascii\n");
-                    exit(0);
+                        printf("Error: The given file is non ascii\n");
+                        exit(0);
                     }
                     line_num = ln;
                     lexErr("SyntaxError","Invalid Syntax");

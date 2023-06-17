@@ -14,7 +14,7 @@ int32_t Int(string);
 /////////
 using namespace std;
 //This file contains functions for performing various conversions
-string str(int32_t x)
+inline string str(int32_t x)
 {
 	return to_string(x);
 }
@@ -22,26 +22,19 @@ string str(double f)
 {
 	string x = to_string(f);
   
-	while(x.length()>=1 && x[x.length()-1]=='0')
-    {
-        x = x.substr(0,x.length()-1);
-    }
+	while(x.length()>=1 && x[x.length()-1]=='0')//remove zeros at end
+	    x.pop_back();
     if(x.length()>=1 && x[x.length()-1]=='.')
-    {
         x+='0';
-    }
     return x;
 }
-
-string str(int64_t l)
+inline string str(int64_t l)
 {
 	return to_string(l);
 }
-double Float(string s)
+inline double Float(string s)
 {
-	const char* n = s.c_str();
-	double f = atof(n);
-	return f;
+	return atof(s.c_str());
 }
 int64_t toInt64(string s)
 {
@@ -63,7 +56,7 @@ int64_t toInt64(string s)
 	return l*sign;
 }
 
-int32_t Int(string s)
+inline int32_t Int(string s)
 {
   return atoi(s.c_str());
 }
