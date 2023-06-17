@@ -8,7 +8,7 @@ The code is completely free to use and comes without any guarantee/warrantee
 #include "C:\\plutonium\\PltObject.h"
 #define EXPORT __declspec(dllexport)
 #else
-#include "PltObject.h"
+#include "/opt/plutonium/PltObject.h"
 #define EXPORT 
 #endif
 

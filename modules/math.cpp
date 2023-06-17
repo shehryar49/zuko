@@ -39,11 +39,11 @@ PltObject FLOOR(PltObject* args,int n)
 {
     //rr stands for return result
     if(n!=1)
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
     if(args[0].type=='i' || args[0].type=='l')
         return args[0];
     if(args[0].type!=PLT_FLOAT)
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");    
+        return Plt_Err(TypeError,"Numeric argument needed!");    
     double res = (floor(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
       return PObjFromInt64((long long int)res);
@@ -54,7 +54,7 @@ PltObject CEIL(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -64,7 +64,7 @@ PltObject CEIL(PltObject* args,int n)
     }
     if(args[0].type!=PLT_FLOAT)
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (ceil(args[0].f));
@@ -77,7 +77,7 @@ PltObject TRUNC(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -87,7 +87,7 @@ PltObject TRUNC(PltObject* args,int n)
     }
     if(args[0].type!=PLT_FLOAT)
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (trunc(args[0].f));
@@ -100,7 +100,7 @@ PltObject ROUND(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -110,7 +110,7 @@ PltObject ROUND(PltObject* args,int n)
     }
     if(args[0].type!=PLT_FLOAT)
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (round(args[0].f));
@@ -123,7 +123,7 @@ PltObject SQRT(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -143,7 +143,7 @@ PltObject SQRT(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -151,7 +151,7 @@ PltObject RADIANS(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     double pi = 2*acos(0.0);
@@ -172,7 +172,7 @@ PltObject RADIANS(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -180,14 +180,14 @@ PltObject LOG(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].f));
@@ -197,7 +197,7 @@ PltObject LOG(PltObject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].i));
@@ -207,7 +207,7 @@ PltObject LOG(PltObject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].l));
@@ -215,7 +215,7 @@ PltObject LOG(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -223,14 +223,14 @@ PltObject LOG10(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].f));
@@ -240,7 +240,7 @@ PltObject LOG10(PltObject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].i));
@@ -250,7 +250,7 @@ PltObject LOG10(PltObject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside log;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].l));
@@ -258,7 +258,7 @@ PltObject LOG10(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -266,7 +266,7 @@ PltObject SIN(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -286,7 +286,7 @@ PltObject SIN(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -294,7 +294,7 @@ PltObject COS(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -314,7 +314,7 @@ PltObject COS(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -322,14 +322,14 @@ PltObject TAN(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(cos(args[0].f)==0)
         {
-            return Plt_Err(MATH_ERROR,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].f));
@@ -339,7 +339,7 @@ PltObject TAN(PltObject* args,int n)
     {
         if(cos(args[0].i)==0)
         {
-            return Plt_Err(MATH_ERROR,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].i));
@@ -349,7 +349,7 @@ PltObject TAN(PltObject* args,int n)
     {
         if(cos(args[0].l)==0)
         {
-            return Plt_Err(MATH_ERROR,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].l));
@@ -357,7 +357,7 @@ PltObject TAN(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -365,7 +365,7 @@ PltObject SINH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -385,7 +385,7 @@ PltObject SINH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -393,7 +393,7 @@ PltObject COSH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -413,7 +413,7 @@ PltObject COSH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -421,7 +421,7 @@ PltObject TANH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -441,7 +441,7 @@ PltObject TANH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -449,14 +449,14 @@ PltObject ASIN(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside asin;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].f));
@@ -466,7 +466,7 @@ PltObject ASIN(PltObject* args,int n)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside asin;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].i));
@@ -476,7 +476,7 @@ PltObject ASIN(PltObject* args,int n)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside asin;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].l));
@@ -484,7 +484,7 @@ PltObject ASIN(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -492,14 +492,14 @@ PltObject ACOS(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acos;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].f));
@@ -509,7 +509,7 @@ PltObject ACOS(PltObject* args,int n)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acos;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].i));
@@ -519,7 +519,7 @@ PltObject ACOS(PltObject* args,int n)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acos;'s domain interval [-1,1]");
+            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].l));
@@ -527,7 +527,7 @@ PltObject ACOS(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -535,7 +535,7 @@ PltObject ATAN(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -555,7 +555,7 @@ PltObject ATAN(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -563,7 +563,7 @@ PltObject ASINH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
@@ -583,7 +583,7 @@ PltObject ASINH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -591,14 +591,14 @@ PltObject ACOSH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acosh;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].f));
@@ -608,7 +608,7 @@ PltObject ACOSH(PltObject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acosh;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].i));
@@ -618,7 +618,7 @@ PltObject ACOSH(PltObject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside acosh;'s domain interval [1,inf)");
+            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].l));
@@ -626,7 +626,7 @@ PltObject ACOSH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -634,14 +634,14 @@ PltObject ATANH(PltObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ARGUMENT_ERROR,"1 argument needed");
+        return Plt_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==PLT_FLOAT)
     {
         if(args[0].f <= -1 || args[0].f>=1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside atanh;'s domain interval (-1,1)");
+            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].f));
@@ -651,7 +651,7 @@ PltObject ATANH(PltObject* args,int n)
     {
         if(args[0].i <= -1 || args[0].i>=1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside atanh;'s domain interval (-1,1)");
+            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].i));
@@ -661,7 +661,7 @@ PltObject ATANH(PltObject* args,int n)
     {
         if(args[0].l <= -1 || args[0].l>=1)
         {
-            return Plt_Err(MATH_ERROR,"Input outside atanh;'s domain interval (-1,1)");
+            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].l));
@@ -669,7 +669,7 @@ PltObject ATANH(PltObject* args,int n)
     }
     else
     {
-        return Plt_Err(TYPE_ERROR,"Numeric argument needed!");
+        return Plt_Err(TypeError,"Numeric argument needed!");
         
     }
 }

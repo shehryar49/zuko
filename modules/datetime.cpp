@@ -6,7 +6,7 @@ The code is completely free to use and comes without any guarantee/warrantee
 */
 #include "datetime.h"
 #include <time.h>
-using namespace std;
+
 Klass* tmklass;
 PltObject init()
 {
@@ -22,7 +22,7 @@ PltObject init()
 PltObject TIME(PltObject* args,int32_t n)
 {
     if(n!=0)
-      return Plt_Err(ARGUMENT_ERROR,"0 arguments required!");
+      return Plt_Err(ArgumentError,"0 arguments required!");
     time_t now = time(NULL);
     //time_t is typedef for long
     //so time_t can fit in int64_t
@@ -34,9 +34,9 @@ PltObject TIME(PltObject* args,int32_t n)
 PltObject CTIME(PltObject* args,int32_t n)
 {
     if(n!=1)
-      return Plt_Err(ARGUMENT_ERROR,"1 argument required!");
+      return Plt_Err(ArgumentError,"1 argument required!");
     if(args[0].type != PLT_INT64)
-      return Plt_Err(TYPE_ERROR,"Argument must be an int64!");
+      return Plt_Err(TypeError,"Argument must be an int64!");
     time_t now = (time_t)args[0].l;
     string* s = vm_allocString();
     char* tm = ctime(&now);
@@ -48,13 +48,13 @@ PltObject CTIME(PltObject* args,int32_t n)
 PltObject LOCALTIME(PltObject* args,int32_t n)
 {
     if(n!=1)
-      return Plt_Err(ARGUMENT_ERROR,"1 argument required!");
+      return Plt_Err(ArgumentError,"1 argument required!");
     if(args[0].type != PLT_INT64)
-      return Plt_Err(TYPE_ERROR,"Argument must be an int64!");
+      return Plt_Err(TypeError,"Argument must be an int64!");
     time_t now = (time_t)args[0].l;
     tm* time = localtime(&now);
     if(!time)
-      return Plt_Err(UNKNOWN_ERROR,"C localtime() returned nullptr");
+      return Plt_Err(Error,"C localtime() returned nullptr");
     KlassInstance* ki = vm_allocKlassInstance();
     ki->klass = tmklass;
     ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
@@ -72,13 +72,13 @@ PltObject LOCALTIME(PltObject* args,int32_t n)
 PltObject GMTIME(PltObject* args,int32_t n)
 {
     if(n!=1)
-      return Plt_Err(ARGUMENT_ERROR,"1 argument required!");
+      return Plt_Err(ArgumentError,"1 argument required!");
     if(args[0].type != PLT_INT64)
-      return Plt_Err(TYPE_ERROR,"Argument must be an int64!");
+      return Plt_Err(TypeError,"Argument must be an int64!");
     time_t now = (time_t)args[0].l;
     tm* time = localtime(&now);
     if(!time)
-      return Plt_Err(UNKNOWN_ERROR,"C localtime() returned nullptr");
+      return Plt_Err(Error,"C localtime() returned nullptr");
     KlassInstance* ki = vm_allocKlassInstance();
     ki->klass = tmklass;
     ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));

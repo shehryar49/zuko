@@ -372,16 +372,16 @@ Dictionary* POST(bool& err)
 PltObject FormData(PltObject* args,int n)
 {
     if(n!=0)
-        return Plt_Err(ARGUMENT_ERROR,"0 arguments needed!");
+        return Plt_Err(ArgumentError,"0 arguments needed!");
     char* method = getenv("REQUEST_METHOD");
     if(!method)
-        return Plt_Err(UNKNOWN_ERROR,"Environment variable REQUEST_METHOD not found!");
+        return Plt_Err(Error,"Environment variable REQUEST_METHOD not found!");
     if(string(method)=="GET")
     {
        Dictionary* d = vm_allocDict();
        d = GET();
        if(!d)
-          return Plt_Err(UNKNOWN_ERROR,"Error parsing request(bad or unsupported format)");
+          return Plt_Err(Error,"Error parsing request(bad or unsupported format)");
        return PObjFromDict(d);
        
     }
@@ -390,11 +390,11 @@ PltObject FormData(PltObject* args,int n)
        bool hadErr=false;
        Dictionary* d = POST(hadErr);
        if(!d || hadErr)
-          return Plt_Err(UNKNOWN_ERROR,"Error parsing request(bad or unsupported format)");
+          return Plt_Err(Error,"Error parsing request(bad or unsupported format)");
        return PObjFromDict(d);
     }
     else
-      return Plt_Err(VALUE_ERROR,"Unknown method "+(string)method);
+      return Plt_Err(ValueError,"Unknown method "+(string)method);
 }
 PltObject nil;
 PltObject init()
@@ -418,10 +418,10 @@ PltObject init()
 PltObject cookies(PltObject* args,int n)
 {
   if(n!=0)
-    return Plt_Err(ARGUMENT_ERROR,"0 arguments needed!");
+    return Plt_Err(ArgumentError,"0 arguments needed!");
   char* cookie = getenv("HTTP_COOKIE");
   if(!cookie)
-    return Plt_Err(VALUE_ERROR,"No cookies!");
+    return Plt_Err(ValueError,"No cookies!");
   string data = cookie;
   vector<string> parts = split(data,"; ");
   Dictionary* dict = vm_allocDict();
@@ -429,7 +429,7 @@ PltObject cookies(PltObject* args,int n)
   {
     vector<string> eq = split(e,"=");
     if(eq.size()!=2)
-      return Plt_Err(VALUE_ERROR,"Bad or unsupported format");
+      return Plt_Err(ValueError,"Bad or unsupported format");
     dict->emplace(PObjFromStr(eq[0]),PObjFromStr(eq[1]));
   }
   return PObjFromDict(dict);

@@ -13,12 +13,12 @@ PltObject match(PltObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ARGUMENT_ERROR,"2 arguments needed!");
+    return Plt_Err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s')
   {
-    return Plt_Err(TYPE_ERROR,"2 string arguments needed!");
+    return Plt_Err(TypeError,"2 string arguments needed!");
     
   }
   PltObject rr;
@@ -29,7 +29,7 @@ PltObject match(PltObject* args,int n)
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(VALUE_ERROR,e.what());
+    return Plt_Err(ValueError,e.what());
   }
   return rr;
 }
@@ -37,12 +37,12 @@ PltObject search(PltObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ARGUMENT_ERROR,"2 arguments needed!");
+    return Plt_Err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s')
   {
-    return Plt_Err(TYPE_ERROR,"2 string arguments needed!");
+    return Plt_Err(TypeError,"2 string arguments needed!");
     
   }
   smatch m;
@@ -58,7 +58,7 @@ PltObject search(PltObject* args,int n)
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(VALUE_ERROR,e.what());
+    return Plt_Err(ValueError,e.what());
   }
   return PObjFromList(parts);
 }
@@ -66,12 +66,12 @@ PltObject replace(PltObject* args,int n)
 {
   if(n!=3)
   {
-    return Plt_Err(ARGUMENT_ERROR,"3 arguments needed!");
+    return Plt_Err(ArgumentError,"3 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s' || args[2].type!='s')
   {
-    return Plt_Err(TYPE_ERROR,"3 string arguments needed!");
+    return Plt_Err(TypeError,"3 string arguments needed!");
     
   }
   try
@@ -80,6 +80,6 @@ PltObject replace(PltObject* args,int n)
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(VALUE_ERROR,e.what());
+    return Plt_Err(ValueError,e.what());
   }
 }

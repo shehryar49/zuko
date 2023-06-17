@@ -2,7 +2,6 @@
 //Written by Shahryar Ahmad  15/5/2021
 //This module uses mariadb C connector and does not change the original
 //connector's source code.
-#include "pch.h"
 #include "mysql.h"
 #include <string.h>
 #include <stdlib.h>
@@ -62,11 +61,11 @@ PltObject init()
 PltObject INIT(PltObject* args,int32_t n)
 {
   if(n!=0)
-    return Plt_Err(ARGUMENT_ERROR,"0 arguments needed!");
+    return Plt_Err(ArgumentError,"0 arguments needed!");
   MYSQL* conn = new MYSQL;
   mysql_init(conn);
   if(!conn)
-    return Plt_Err(UNKNOWN_ERROR,"Initialization failed.");
+    return Plt_Err(Error,"Initialization failed.");
   KlassInstance* ki = vm_allocKlassInstance();
   ki->klass = connKlass;
   ki->members = connKlass->members;
@@ -76,7 +75,7 @@ PltObject INIT(PltObject* args,int32_t n)
 PltObject REAL_CONNECT(PltObject* args,int n)
 {
   if(n!=5 && n!=6)
-    return Plt_Err(VALUE_ERROR,"Either 5 or 6 arguments needed!");
+    return Plt_Err(ValueError,"Either 5 or 6 arguments needed!");
   int k;
   int port;
   if(n==5)
@@ -87,24 +86,24 @@ PltObject REAL_CONNECT(PltObject* args,int n)
     port = args[5].i;
   }
   if(k!=-1)
-    return Plt_Err(TYPE_ERROR,"Invalid type of argument "+to_string(k));
+    return Plt_Err(TypeError,"Invalid type of argument "+to_string(k));
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection is closed.");
+    return Plt_Err(ValueError,"Connection is closed.");
   if(ki->klass!=connKlass)
-    return Plt_Err(TYPE_ERROR,"Argument 1 must be a connection object!");
+    return Plt_Err(TypeError,"Argument 1 must be a connection object!");
   MYSQL* conn = (MYSQL*)ki->members[".ptr"].ptr;
   string& host = *(string*)args[1].ptr;
   if(n==5)
   {
     if(!mysql_real_connect(conn, host.c_str(),((string*)args[2].ptr)->c_str(), ((string*)args[3].ptr)->c_str(),((string*)args[4].ptr)->c_str(),0,NULL,0)) {
-      return Plt_Err(UNKNOWN_ERROR,mysql_error(conn));
+      return Plt_Err(Error,mysql_error(conn));
     }
   }
   else
   {
       if(!mysql_real_connect(conn, host.c_str(),((string*)args[2].ptr)->c_str(), ((string*)args[3].ptr)->c_str(),((string*)args[4].ptr)->c_str(),port,NULL,0)) {
-      return Plt_Err(UNKNOWN_ERROR,mysql_error(conn));
+      return Plt_Err(Error,mysql_error(conn));
     }
   }
   return nil;
@@ -112,30 +111,30 @@ PltObject REAL_CONNECT(PltObject* args,int n)
 PltObject QUERY(PltObject* args,int n)
 {
   if(n!=2)
-    return Plt_Err(VALUE_ERROR,"2 arguments needed!");
+    return Plt_Err(ValueError,"2 arguments needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=connKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a connection object!");
+    return Plt_Err(TypeError,"First argument should be a connection object!");
   if(args[1].type!='s')
-    return Plt_Err(TYPE_ERROR,"Second argument should be a string!");
+    return Plt_Err(TypeError,"Second argument should be a string!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection is closed.");
+    return Plt_Err(ValueError,"Connection is closed.");
   MYSQL* conn = (MYSQL*)ki->members[".ptr"].ptr;
   string& query = *(string*)args[1].ptr;
   if(mysql_query(conn,query.c_str())!=0)
-      return Plt_Err(UNKNOWN_ERROR,mysql_error(conn));
+      return Plt_Err(Error,mysql_error(conn));
   return nil;
 }
 
 PltObject STORE_RESULT(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 arguments needed!");
+    return Plt_Err(ValueError,"1 arguments needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=connKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a connection object!");
+    return Plt_Err(TypeError,"First argument should be a connection object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection is closed.");
+    return Plt_Err(ValueError,"Connection is closed.");
   MYSQL* conn = (MYSQL*)ki->members[".ptr"].ptr;
   MYSQL_RES* res = mysql_store_result(conn);
   if(!res)//no result
@@ -149,12 +148,12 @@ PltObject STORE_RESULT(PltObject* args,int n)
 PltObject FETCH_ROW(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 argument needed!");
+    return Plt_Err(ValueError,"1 argument needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=resKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a result object!");
+    return Plt_Err(TypeError,"First argument should be a result object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection is closed.");
+    return Plt_Err(ValueError,"Connection is closed.");
   MYSQL_RES* res = (MYSQL_RES*)ki->members[".ptr"].ptr;
  // int totalrows = mysql_num_rows(res);
   int numfields = mysql_num_fields(res);
@@ -183,9 +182,9 @@ PltObject FETCH_ROW(PltObject* args,int n)
 PltObject NUM_FIELDS(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 argument needed!");
+    return Plt_Err(ValueError,"1 argument needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=resKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a result object!");
+    return Plt_Err(TypeError,"First argument should be a result object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   MYSQL_RES* res = (MYSQL_RES*)ki->members[".ptr"].ptr;
  // int totalrows = mysql_num_rows(res);
@@ -195,9 +194,9 @@ PltObject NUM_FIELDS(PltObject* args,int n)
 PltObject NUM_ROWS(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 argument needed!");
+    return Plt_Err(ValueError,"1 argument needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=resKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a result object!");
+    return Plt_Err(TypeError,"First argument should be a result object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   MYSQL_RES* res = (MYSQL_RES*)ki->members[".ptr"].ptr;
  // int totalrows = mysql_num_rows(res);
@@ -207,12 +206,12 @@ PltObject NUM_ROWS(PltObject* args,int n)
 PltObject FETCH_ROW_AS_STR(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 argument needed!");
+    return Plt_Err(ValueError,"1 argument needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=resKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a result object!");
+    return Plt_Err(TypeError,"First argument should be a result object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection is closed.");
+    return Plt_Err(ValueError,"Connection is closed.");
   MYSQL_RES* res = (MYSQL_RES*)ki->members[".ptr"].ptr;
   int totalrows = mysql_num_rows(res);
   int numfields = mysql_num_fields(res);
@@ -244,12 +243,12 @@ PltObject FETCH_ROW_AS_STR(PltObject* args,int n)
 PltObject CLOSE(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 arguments needed!");
+    return Plt_Err(ValueError,"1 arguments needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=connKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a connection object!");
+    return Plt_Err(TypeError,"First argument should be a connection object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"].type == PLT_NIL)
-    return Plt_Err(VALUE_ERROR,"Connection already closed.");
+    return Plt_Err(ValueError,"Connection already closed.");
   if(ki->members[".ptr"] == nil)
     return nil;
   MYSQL* conn = (MYSQL*)ki->members[".ptr"].ptr;
@@ -261,9 +260,9 @@ PltObject CLOSE(PltObject* args,int n)
 PltObject CONN__DEL__(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 arguments needed!");
+    return Plt_Err(ValueError,"1 arguments needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=connKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a connection object!");
+    return Plt_Err(TypeError,"First argument should be a connection object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"] == nil)
     return nil;
@@ -276,9 +275,9 @@ PltObject CONN__DEL__(PltObject* args,int n)
 PltObject RES__DEL__(PltObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(VALUE_ERROR,"1 arguments needed!");
+    return Plt_Err(ValueError,"1 arguments needed!");
   if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=resKlass)
-    return Plt_Err(TYPE_ERROR,"First argument should be a result object!");
+    return Plt_Err(TypeError,"First argument should be a result object!");
   KlassInstance* ki = (KlassInstance*)args[0].ptr;
   if(ki->members[".ptr"] == nil)
     return nil;

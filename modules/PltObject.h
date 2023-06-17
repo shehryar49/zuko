@@ -1,3 +1,24 @@
+/*MIT License
+
+Copyright (c) 2022 Shahryar Ahmad 
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
 #ifndef PLTOBJECT_H_
 #define PLTOBJECT_H_
 #include <string>
@@ -29,28 +50,9 @@ struct PltObject;
 #define PLT_FUNC 'w' //plutonium code function
 #define PLT_COROUTINE 'g'
 #define PLT_COROUTINE_OBJ 'z'
-#define PLT_ERROBJ 'e'
+#define PLT_ERROBJ 'e' //same as an object,just in thrown state
 #define PLT_BYTEARR 'c'
 //
-enum ErrCode
-{
-  TYPE_ERROR = 1,
-  VALUE_ERROR = 2,
-  MATH_ERROR  = 3,
-  NAME_ERROR = 4,
-  INDEX_ERROR = 5,
-  ARGUMENT_ERROR = 6,
-  UNKNOWN_ERROR = 7,
-  FILEIO_ERROR = 8,
-  KEY_ERROR = 9,
-  OVERFLOW_ERROR = 10,
-  FILE_OPEN_ERROR = 11,
-  FILE_SEEK_ERROR  = 12,
-  IMPORT_ERROR = 13,
-  THROW_ERROR = 14,
-  MAX_RECURSION_ERROR=15,
-  ACCESS_ERROR = 16
-};
 
 struct FileObject
 {
@@ -84,53 +86,29 @@ bool operator==(const PltObject& lhs,const PltObject& other)
         if(other.type!=lhs.type)
             return false;
         if(lhs.type=='n')
-        {
           return true;
-        }
         else if(lhs.type=='i')
-        {
           return lhs.i==other.i;
-        }
         else if(lhs.type=='l')
-        {
           return lhs.l==other.l;
-        }
         else if(lhs.type=='f')
-        {
           return lhs.f==other.f;
-        }
         else if(lhs.type=='b')
-        {
           return lhs.i==other.i;
-        }
         else if(lhs.type=='m')
-        {
           return lhs.i==other.i;
-        }
         else if(lhs.type=='u')
-        {
           return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);
-        }
         else if(lhs.type=='s')
-        {
           return *(string*)other.ptr==*(string*)lhs.ptr;
-        }
         else if(lhs.type=='j')
-        {
             return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
-        }
-        else if(other.type=='y' || other.type=='r')
-        {
+        else if(other.type=='y' || other.type=='r' || other.type == PLT_CLASS)
           return lhs.ptr==other.ptr;
-        }
         else if(lhs.type=='q' || lhs.type=='z')
-        {
-          return lhs.ptr==other.ptr;;
-        }
+          return lhs.ptr==other.ptr;
         else if(lhs.type=='a')
-        {
             return *(Dictionary*)lhs.ptr==*(Dictionary*)other.ptr;
-        }
         return false;
     }
 size_t hashPltObject(const PltObject& a)
@@ -171,16 +149,13 @@ struct Module
 struct FunObject
 {
   Klass* klass;//functions can be binded to classes as methods in which case they will have access to private members of that class
+  //and also keep the class alive with them
   string name;
   size_t i;
   size_t args;
   PltList opt; //default/optional parameters
 };
-struct ErrObject
-{
-  string des;
-  int code;
-};
+
 typedef PltObject(*NativeFunPtr)(PltObject*,int);
 struct NativeFunction
 {
@@ -204,8 +179,25 @@ struct Coroutine
   bool giveValOnResume;
 };
 
+//Error classes
+Klass* Error;
+Klass* TypeError;
+Klass* ValueError;
+Klass* MathError; 
+Klass* NameError;
+Klass* IndexError;
+Klass* ArgumentError;
+Klass* FileIOError;
+Klass* KeyError;
+Klass* OverflowError;
+Klass* FileOpenError;
+Klass* FileSeekError; 
+Klass* ImportError;
+Klass* ThrowError;
+Klass* MaxRecursionError;
+Klass* AccessError;
+//these classes are set by either the compiler or by the api_setup()
 //Helper and extension API Functions
-
 inline PltObject PObjFromStrPtr(string* s)
 {
   PltObject ret;
@@ -214,7 +206,7 @@ inline PltObject PObjFromStrPtr(string* s)
   return ret;
 }
 
-inline PltObject PObjFromInt(int x)
+inline PltObject PObjFromInt(int32_t x)
 {
   PltObject ret;
   ret.type = 'i';
@@ -228,7 +220,7 @@ inline PltObject PObjFromDouble(double f)
   ret.f = f;
   return ret;
 }
-inline PltObject PObjFromInt64(long long int x)
+inline PltObject PObjFromInt64(int64_t x)
 {
   PltObject ret;
   ret.type = 'l';
@@ -242,11 +234,18 @@ inline PltObject PObjFromPtr(void* p)
   ret.ptr = p;
   return ret;
 }
-inline PltObject PObjFromByte(unsigned char x)
+inline PltObject PObjFromByte(uint8_t x)
 {
   PltObject ret;
   ret.type = 'm';
   ret.i = x;
+  return ret;
+}
+inline PltObject PObjFromBool(bool b)
+{
+  PltObject ret;
+  ret.type = PLT_BOOL;
+  ret.i = b;
   return ret;
 }
 
@@ -292,11 +291,18 @@ inline PltObject PObjFromByteArr(vector<uint8_t>* k)
   ret.ptr = (void*)k;
   return ret;
 }
+inline PltObject PObjFromFile(FileObject* file)
+{
+  PltObject ret;
+  ret.type = PLT_FILESTREAM;
+  ret.ptr = (void*)file;
+  return ret;
+}
 
 typedef PltList*(*fn1)();
 typedef Dictionary*(*fn2)();
 typedef string*(*fn3)();
-typedef ErrObject*(*fn4)();
+typedef void*(*fn4)();//unused for now
 typedef FileObject*(*fn5)();
 typedef Klass*(*fn6)();
 typedef KlassInstance*(*fn7)();
@@ -311,7 +317,7 @@ typedef void(*fn13)(void*);
 fn1 vm_allocList;
 fn2 vm_allocDict;
 fn3 vm_allocString;
-fn4 vm_allocErrObject;
+//fn4 vm_allocErrObject;
 fn5 vm_allocFileObject;
 fn6 vm_allocKlass;
 fn7 vm_allocKlassInstance;
@@ -330,13 +336,15 @@ inline PltObject PObjFromStr(string s)
   ret.ptr = (void*)ptr;
   return ret;
 }
-PltObject Plt_Err(ErrCode e,string des)
+PltObject Plt_Err(Klass* errKlass,string des)
 {
   PltObject ret;
-  ErrObject* p = vm_allocErrObject();
-  p->des = des;
-  p->code = (int)e;
-  ret.type = 'e';
+  KlassInstance* p = vm_allocKlassInstance();
+  p->klass = errKlass;
+  p->members = errKlass->members;
+  p->privateMembers = errKlass->privateMembers;
+  p->members["msg"] = PObjFromStr(des);
+  ret.type = PLT_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
 }
@@ -380,13 +388,33 @@ extern "C"
     fn11 a11;
     fn12 a12;
     fn13 a13;
+    Klass* k1;
+    Klass* k2;
+    Klass* k3;
+    Klass* k4;
+    Klass* k5;
+    Klass* k6;
+    Klass* k7;
+    Klass* k8;
+    Klass* k9;
+    Klass* k10;
+    Klass* k11;
+    Klass* k12;
+    Klass* k13;
+    Klass* k14;
+    Klass* k15;
+    Klass* k16;
+
   };
+  #ifdef _WIN32
+  __declspec(dllexport)
+  #endif
   void api_setup(apiFuncions* p)
   {
     vm_allocList = p->a1;
     vm_allocDict = p->a2;
     vm_allocString = p->a3;
-    vm_allocErrObject = p->a4;
+  //  vm_allocErrObject = p->a4;
     vm_allocFileObject = p->a5;
     vm_allocKlass = p->a6;
     vm_allocKlassInstance = p->a7;
@@ -396,6 +424,22 @@ extern "C"
     vm_callObject = p->a11;
     vm_markImportant = p->a12;
     vm_unmarkImportant = p->a13;
+    Error = p->k1;
+    TypeError = p->k2;
+    ValueError = p->k3;
+    MathError = p->k4; 
+    NameError = p->k5;
+    IndexError = p->k6;
+    ArgumentError = p->k7;
+    FileIOError = p->k8;
+    KeyError = p->k9;
+    OverflowError = p->k10;
+    FileOpenError = p->k11;
+    FileSeekError = p->k12; 
+    ImportError = p->k13;
+    ThrowError = p->k14;
+    MaxRecursionError = p->k15;
+    AccessError = p->k16;
   }
 }
 #endif

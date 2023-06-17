@@ -56,6 +56,8 @@ vector<Token> tokenize(std::string& str,bool& hadErr,string& msg)
   hadErr = true;
   size_t l = str.length();
   size_t i = 0;
+  int line_num = 1;
+  int line_begin = 0;
   while(i<l)
   {
     char c = str[i];
@@ -173,7 +175,7 @@ vector<Token> tokenize(std::string& str,bool& hadErr,string& msg)
         }
         else
         {
-           msg = "unknown keyword "+id +" "+to_string(i);
+           msg = "unknown keyword "+id +" at "+to_string(line_num)+":"+to_string(i-line_begin);
            return tokens;
         }
         i = j;
@@ -203,7 +205,12 @@ vector<Token> tokenize(std::string& str,bool& hadErr,string& msg)
     {
         tokens.push_back(Token(COL,":"));
     }
-    else if(c==' ' or c=='\t' or c=='\n' or c=='\r')
+    else if(c == '\n')
+    {
+      line_num++;
+      line_begin = i+1;
+    }
+    else if(c==' ' || c=='\t'  || c=='\r')
     ;
     else
     {
@@ -427,15 +434,15 @@ PltObject init()
 PltObject loads(PltObject* args,int32_t n)
 {
   if(n!=1 || args[0].type!=PLT_STR)
-    return Plt_Err(TYPE_ERROR,"String argument required!");
+    return Plt_Err(TypeError,"String argument required!");
   string& src = *(string*)args[0].ptr;
   bool hadErr;
   string msg;
   vector<Token> tokens = tokenize(src,hadErr,msg);
   if(hadErr)
-    return Plt_Err(UNKNOWN_ERROR,"Tokenization failed."+msg);
+    return Plt_Err(Error,"Tokenization failed."+msg);
   Dictionary* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
-     return Plt_Err(UNKNOWN_ERROR,"Parsing failed."+msg);
+     return Plt_Err(Error,"Parsing failed."+msg);
   return PObjFromDict(m);
 }

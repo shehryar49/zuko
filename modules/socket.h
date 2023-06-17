@@ -1,6 +1,10 @@
-#pragma once
+#ifndef SOCKET_PLT_H_
+#define SOCKET_PLT_H_
+#ifdef _WIN32
 #include "C:\plutonium\PltObject.h"
 #define EXPORT __declspec(dllexport)
+#endif
+#define EXPORT 0
 extern "C"
 {
 	//Functions
@@ -18,3 +22,4 @@ extern "C"
 	EXPORT PltObject socket_RecvFrom( PltObject*, int);
 	EXPORT PltObject socket_Destroy( PltObject*, int);
 }
+#endif
