@@ -24,9 +24,11 @@ const char* tests[] =
     "foreach",
     "functions",
     "defaultArgs",
+    "trycatch",
     "classes",
     "operatorOverloading",
     "extendedClasses",
+    "optionalself",
     "namespaces",
     "scopes",
     "dmas",
@@ -44,17 +46,26 @@ const char* tests[] =
     "pyramid",
     "awkwardLexer",
     "polynomial",
-    "coroutines"
+    "coroutines",
 };
 int main(int argc,const char* argv[])
 {
+  #ifdef _WIN32
+    string path = "..\\plutonium.exe";
+  #else
+    string path = "../plutonium";
+  #endif
+  if(argc == 2)
+  {
+    path = argv[1];
+  }
   int n = sizeof(tests)/sizeof(const char*);
   int failed = 0;
   string expectedOutput;
   string output;
   string test;
   string line;
-  cout<<"Using binary ../plutonium"<<endl;
+  cout<<"Using binary "<<path<<endl;
   for(int i=1;i<=n;i++)
   {
     output = "";
@@ -73,7 +84,7 @@ int main(int argc,const char* argv[])
     while(fin.get(ch))
       expectedOutput+= ch;
     fin.close();
-    line = "../plutonium ";
+    line = path+" ";
     line += test+".plt > out.txt";
     int l = system(line.c_str());//produces out.txt
     ifstream file("out.txt",ios::in);

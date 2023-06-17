@@ -8,6 +8,14 @@ namespace std
         println(std::x) # 40
     }
 }
+namespace std
+{
+    class Demo
+    {
+        var id = 0
+    }
+}
 
 std::f1()
 println(x)
+println(std::Demo.id)

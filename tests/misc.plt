@@ -23,3 +23,5 @@ println(g()[getIndex()])
 println(replace("a","b","aaaa"))
 println(replace_once("a","b","aaaa"))
 println(find("a","aaaa"))
+
+[1,2,3].push(45)
