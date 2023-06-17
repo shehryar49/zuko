@@ -6,6 +6,7 @@ mkdir /opt/plutonium/modules
 echo "[+] Starting compilation"
 g++ plutonium.cpp -o plutonium -ldl -DNDEBUG -O3 -w
 strip plutonium
+cp include/PltObject.h /opt/plutonium/
 cp include/PltObject.h modules/PltObject.h
 g++ -shared modules/math.cpp -o modules/math.so -fPIC -DNDEBUG -O3
 g++ -shared modules/regex.cpp -o modules/regex.so -fPIC -DNDEBUG -O3
