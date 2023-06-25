@@ -27,3 +27,5 @@ Use the following command:
 You can test your build using test_all tool (src in tests/) .You will have to build it from source. To use it to test your build just run it from command line and pass the plutonium interpreter's path.This is done by default when building on Linux using install.sh .On Windows you can also use this tool.
 
 The website: https://plutonium-lang.000webhostapp.com
+
+Discord Server: https://discord.gg/6CnnV4Es
