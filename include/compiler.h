@@ -81,6 +81,8 @@ private:
   string className;
   vector<string> classMemb;
   int32_t foo = 0;
+  int32_t fnScope;
+  bool returnStmtAtFnScope;
 public:
   std::unordered_map<string,int32_t> globals;
   size_t bytes_done = 0;
@@ -1805,6 +1807,8 @@ public:
                 scope += 1;
                 infunc = true;
                 inGen = isGen;
+                fnScope = scope;
+                returnStmtAtFnScope = false;
                 vector<uint8_t> funcBody = compile(ast->childs[3]);
                 infunc = false;
                 scope -= 1;
@@ -1827,7 +1831,8 @@ public:
                   }
                   else
                   {
-                    if (funcBody[funcBody.size() - 1] != RETURN)
+
+                    if (!returnStmtAtFnScope)
                     {
                         foo = 0;
                         funcBody.push_back(LOAD_CONST);
@@ -1928,7 +1933,9 @@ public:
           {
               if(inConstructor)
                 compileError("SyntaxError","Error class constructors should not return anything!");
-              
+              if(scope == fnScope)
+                returnStmtAtFnScope = true;//function has an unconditional return
+                //stmt in it's block
               vector<uint8_t> val = exprByteCode(ast->childs[1]);
               program.insert(program.end(), val.begin(), val.end());
               addLnTableEntry(bytes_done);

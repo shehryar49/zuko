@@ -29,11 +29,7 @@ SOFTWARE.*/
 using namespace std;
 extern bool REPL_MODE;
 void REPL();
-/*struct Node
-{
-  string val;
-  vector<Node*> childs;
-};*/
+
 int len(string s)
 {
   return s.length()-1;
@@ -92,7 +88,7 @@ Node* NewNode(NodeType type,string val="")
   if(!p)
   {
     printf("error allocating memory!\n");
-    exit(0);
+    exit(1);
   }
   p->val = val;
   p->type = type;
@@ -354,7 +350,7 @@ public:
     printf("%s\n",msg.c_str());
     if(REPL_MODE)
       REPL();
-    exit(0);
+    exit(1);
   }
   void addToFnReferenced(string name)
   {

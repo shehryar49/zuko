@@ -2192,8 +2192,7 @@ void initFunctions()
   funcs.emplace("isInstanceOf",&isInstanceOf);
   funcs.emplace("ascii",&ASCII);
   funcs.emplace("char",&TOCHAR);
-  funcs.emplace("fninfo",&fninfo);
-  funcs.emplace("addr",&ADDR);
+
   funcs.emplace("bytearray",&BYTEARRAY);
   funcs.emplace("moduleInfo",&moduleInfo);
   funcs.emplace("format",&FORMAT);

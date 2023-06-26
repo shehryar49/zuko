@@ -73,7 +73,7 @@ private:
     fprintf(stderr,"%s\n",msg.c_str());
     if(REPL_MODE)
       REPL();
-    exit(0);
+   // exit(0);
   }
 public:
     static Token resolveMacro(string name)
@@ -151,6 +151,7 @@ public:
                 string t;
                 bool match;
                 bool escaped = false;
+                int LN = ln;
                 while(j<srcLen)
                 {
                     if(s[j]=='"')
@@ -186,8 +187,9 @@ public:
                 }
                 if(!match)
                 {
-                    line_num = ln;
+                    line_num = LN;
                     lexErr("SyntaxError","Error expected a '\"' at the end!");
+                    return {};
                 }
                 Token i;
                 line_num = ln;
@@ -197,6 +199,7 @@ public:
                 {
                     line_num = ln;
                     lexErr("SyntaxError",i.content);
+                    return {};
                 }
                 i.type = STRING_TOKEN;
                 i.ln = ln;
@@ -209,6 +212,7 @@ public:
                 {
                     line_num = ln;
                     lexErr("SyntaxError","Invalid macro name");
+                    return {};
                 }
                 size_t j = k+1;
                 string t = "";
@@ -221,6 +225,7 @@ public:
                     {
                         line_num = ln;
                         lexErr("SyntaxError","Invalid macro name");
+                        return {};
                     }
                     t+=s[j];
                     j+=1;
@@ -230,6 +235,7 @@ public:
                 {
                     line_num = ln;
                     lexErr("NameError","Unknown macro "+t);
+                    return {};
                 }
                 tokenlist.push_back(tok);
                 k = j;
@@ -265,6 +271,7 @@ public:
                 {
                   line_num = orgLn;
                   lexErr("SyntaxError","Unable to find the end of multiline comment!");
+                  return {};
                 }
                 k = j-1;
             }
@@ -315,6 +322,7 @@ public:
                     {
                         line_num = ln;
                         lexErr("SyntaxError","Invalid Syntax");
+                        return {};
                     }
                     k = j;
                     continue;
@@ -380,12 +388,7 @@ public:
             }
             else if(c=='>' || c=='<')
             {
-                if(k==srcLen-1)
-                {
-                    line_num = ln;
-                    lexErr("SyntaxError","Invalid Syntax");
-                }
-                if(s[k+1]=='=')
+                if(k+1 < srcLen && s[k+1]=='=')
                 {
                     Token i;
                     i.type = TokenType::OP_TOKEN;
@@ -403,7 +406,7 @@ public:
                     tokenlist.push_back(i);
                     k+=1;
                 }
-                else if(c=='>' && s[k+1]=='>')
+                else if(c=='>' && k+1 < srcLen && s[k+1]=='>')
                 {
                     Token i;
                     i.type=TokenType::OP_TOKEN;
@@ -423,11 +426,6 @@ public:
             }
             else if(c=='.')
             {
-            if(k==srcLen-1)
-            {
-                    line_num = ln;
-                    lexErr("SyntaxError","Invalid Syntax");
-            }
                 Token i;
                 i.type = TokenType::OP_TOKEN;
                 i.content+=c;
@@ -688,13 +686,14 @@ public:
             else
             {
                 //error;
-                    if(c<0)
-                    {
-                        printf("Error: The given file is non ascii\n");
-                        exit(0);
-                    }
-                    line_num = ln;
-                    lexErr("SyntaxError","Invalid Syntax");
+                if(c<0)
+                {
+                    printf("Error: The given file is non ascii\n");
+                    return {};
+                }
+                line_num = ln;
+                lexErr("SyntaxError","Invalid Syntax");
+                return {};
             }
             k+=1;
         }

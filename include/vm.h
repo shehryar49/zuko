@@ -32,9 +32,7 @@ struct ByteSrc
 
 inline bool isNumeric(char t)
 {
-  if (t == PLT_INT || t == PLT_FLOAT || t == PLT_INT64)
-    return true;
-  return false;
+  return (t == PLT_INT || t == PLT_FLOAT || t == PLT_INT64);
 }
 inline void PromoteType(PltObject &a, char t)
 {
@@ -309,7 +307,11 @@ public:
     }
     if (REPL_MODE)
       REPL(); // start another REPL and exit after it finishes
-    exit(0);
+    this->k = program+program_size-1;//set instruction pointer to last instruction
+    //which is always OP_EXIT
+    STACK.clear();
+    return;
+    
   }
   inline void DoThreshholdBusiness()
   {
@@ -698,7 +700,7 @@ public:
     PltList* pl_ptr1; // plutonium list pointer 1
     //Dictionary pd1;
     Dictionary *pd_ptr1;
-    vector<uint8_t>* bt_ptr;
+    vector<uint8_t>* bt_ptr1;
     k = program + offset;
     
     uint8_t inst;
@@ -708,7 +710,6 @@ public:
       #ifdef PLUTONIUM_PROFILE
         instCount[inst-1]+=1;
       #endif
-
       switch (inst)
       {
       case LOAD_GLOBAL:
@@ -885,7 +886,7 @@ public:
         }
         else if (p3.type == PLT_BYTEARR)
         {
-          bt_ptr = (vector<uint8_t>*)p3.ptr;
+          bt_ptr1 = (vector<uint8_t>*)p3.ptr;
           int64_t idx = 0;
           if (p1.type == PLT_INT)
             idx = p1.i;
@@ -896,7 +897,7 @@ public:
             spitErr(TypeError, "Error type " + fullform(p1.type) + " cannot be used to index bytearray!");
             continue;
           }
-          if (idx < 0 || idx > (int64_t)bt_ptr->size())
+          if (idx < 0 || idx > (int64_t)bt_ptr1->size())
           {
             spitErr(IndexError, "Error index " + PltObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size()));
             continue;
@@ -906,7 +907,7 @@ public:
             spitErr(TypeError,"Error byte value required for bytearray!");
             continue;
           }
-          (*bt_ptr)[idx] = (uint8_t)p2.i;
+          (*bt_ptr1)[idx] = (uint8_t)p2.i;
         }
         else if (p3.type == PLT_DICT)
         {
@@ -1209,24 +1210,24 @@ public:
       case ASSIGNMEMB:
       {
         orgk = k - program;
-        PltObject val = STACK.back();
+        p2 = STACK.back();//value
         STACK.pop_back();
-        PltObject Parent = STACK.back();
+        p1 = STACK.back();//parent
         STACK.pop_back();
         k++;
         memcpy(&i1, k, 4);
         k += 3;
         s1 = strings[i1];
         
-        if (Parent.type != PLT_OBJ)
+        if (p1.type != PLT_OBJ)
         {
-          spitErr(TypeError, "Error member assignment unsupported for " + fullform(Parent.type));
+          spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
           continue;
         }
-        KlassInstance *ptr = (KlassInstance *)Parent.ptr;
+        KlassInstance *ptr = (KlassInstance *)p1.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
         {
-          if (Parent.type == PLT_OBJ)
+          if (p1.type == PLT_OBJ)
           {
             if (ptr->privateMembers.find(s1) != ptr->privateMembers.end())
             {
@@ -1242,7 +1243,7 @@ public:
                 spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
                 continue;
               }
-              ptr->privateMembers[s1] = val;
+              ptr->privateMembers[s1] = p2;
               k += 1;
               continue;
             }
@@ -1259,7 +1260,7 @@ public:
           }
         }
 
-        ptr->members[s1] = val;
+        ptr->members[s1] = p2;
         break;
       }
       case IMPORT:
@@ -1304,15 +1305,14 @@ public:
           continue;
         }
         a(&api);
-        PltObject Q;
-        Q = f();
-        if (Q.type != PLT_MODULE)
+        p1 = f();
+        if (p1.type != PLT_MODULE)
         {
           spitErr(ValueError, "Error module's init() should return a module object!");
           continue;
         }
         moduleHandles.push_back(module);
-        STACK.push_back(Q);
+        STACK.push_back(p1);
         break;
       }
       case RETURN:
@@ -1320,13 +1320,13 @@ public:
         k = callstack[callstack.size() - 1];
         callstack.pop_back();
         executing.pop_back();
-        PltObject val = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         while (STACK.size() != (size_t)frames.back())
         {
           STACK.pop_back();
         }
         frames.pop_back();
-        STACK.push_back(val);
+        STACK.push_back(p1);
         if(!k)
           return;//return from interpret function
         continue;
@@ -1334,20 +1334,20 @@ public:
       case YIELD:
       {
         executing.pop_back();
-        PltObject val = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];//val
         STACK.pop_back();
         PltList locals = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
 
-        PltObject genObj = STACK.back();
+        p2 = STACK.back();//genObj
         STACK.pop_back();
-        Coroutine *g = (Coroutine *)genObj.ptr;
+        Coroutine *g = (Coroutine *)p2.ptr;
         g->locals = locals;
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = false;
         frames.pop_back();
-        STACK.push_back(val);
+        STACK.push_back(p1);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
         break;
@@ -1355,19 +1355,19 @@ public:
       case YIELD_AND_EXPECTVAL:
       {
         executing.pop_back();
-        PltObject val = STACK[STACK.size() - 1];
+        p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
         PltList locals = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
-        PltObject genObj = STACK.back();
+        p1 = STACK.back();
         STACK.pop_back();
-        Coroutine *g = (Coroutine *)genObj.ptr;
+        Coroutine *g = (Coroutine *)p1.ptr;
         g->locals = locals;
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = true;
         frames.pop_back();
-        STACK.push_back(val);
+        STACK.push_back(p2);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
         break;
@@ -1936,183 +1936,181 @@ public:
       }
       case NOT:
       {
-        PltObject a = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (p1.type == PLT_OBJ)
         {
           orgk = k-program;
-          if (invokeOperator("__not__", a, 1, "!"))
+          if (invokeOperator("__not__", p1, 1, "!"))
             continue;
         }
-        if (a.type != PLT_BOOL)
+        if (p1.type != PLT_BOOL)
         {
           orgk = k - program;
-          spitErr(TypeError, "Error operator '!' unsupported for type " + fullform(a.type));
+          spitErr(TypeError, "Error operator '!' unsupported for type " + fullform(p1.type));
           continue;
         }
-        a.i = (bool)!(a.i);
-        STACK.push_back(a);
+        p1.i = (bool)!(p1.i);
+        STACK.push_back(p1);
         break;
       }
       case NEG:
       {
-        PltObject a = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (p1.type == PLT_OBJ)
         {
           orgk = k - program;
-          if (invokeOperator("__neg__", a, 1, "-"))
+          if (invokeOperator("__neg__", p1, 1, "-"))
             continue;
         }
-        if (!isNumeric(a.type))
+        if (!isNumeric(p1.type))
         {
           orgk = k - program;
-          spitErr(TypeError, "Error unary operator '-' unsupported for type " + fullform(a.type));
+          spitErr(TypeError, "Error unary operator '-' unsupported for type " + fullform(p1.type));
           exit(0);
         };
-        if (a.type == PLT_INT)
+        if (p1.type == PLT_INT)
         {
-          if (a.i != INT_MIN)
-            a.i = -(a.i);
+          if (p1.i != INT_MIN)
+            p1.i = -(p1.i);
           else
           {
-            a.type = PLT_INT64;
-            a.l = -(int64_t)(INT_MIN);
+            p1.type = PLT_INT64;
+            p1.l = -(int64_t)(INT_MIN);
           }
         }
-        else if (a.type == PLT_INT64)
+        else if (p1.type == PLT_INT64)
         {
-          if (a.l == LLONG_MIN) // taking negative of LLONG_MIN results in LLONG_MAX+1 so we have to avoid it
+          if (p1.l == LLONG_MIN) // taking negative of LLONG_MIN results in LLONG_MAX+1 so we have to avoid it
           {
             orgk = k - program;
             spitErr(OverflowError, "Error negation of INT64_MIN causes overflow!");
             continue;
           }
-          else if (-a.l == INT_MIN)
+          else if (-p1.l == INT_MIN)
           {
-            a.type = PLT_INT;
-            a.i = INT_MIN;
+            p1.type = PLT_INT;
+            p1.i = INT_MIN;
           }
           else
-            a.l = -a.l;
+            p1.l = -p1.l;
         }
-        else if (a.type == PLT_FLOAT)
+        else if (p1.type == PLT_FLOAT)
         {
-          a.f = -a.f;
+          p1.f = -p1.f;
         }
-        STACK.push_back(a);
+        STACK.push_back(p1);
         break;
       }
       case INDEX:
       {
-        PltObject i = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];//index
         STACK.pop_back();
-        PltObject val = STACK[STACK.size() - 1];
+        p2 = STACK[STACK.size() - 1];//value
         STACK.pop_back();
-        if (val.type == PLT_LIST)
+        if (p2.type == PLT_LIST)
         {
-          if (i.type != PLT_INT && i.type != PLT_INT64)
+          if (p1.type != PLT_INT && p1.type != PLT_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
             continue;
           }
-          PromoteType(i, PLT_INT64);
-          if (i.l < 0)
+          PromoteType(p1, PLT_INT64);
+          if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
             continue;
           }
 
-          PltList l = *(PltList *)val.ptr;
-          if ((size_t)i.l >= l.size())
+          pl_ptr1 = (PltList *)p2.ptr;
+          if ((size_t)p1.l >= pl_ptr1->size())
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
             continue;
           }
-          STACK.push_back(l[i.i]);
+          STACK.push_back((*pl_ptr1)[p1.l]);
           break;
         }
-        else if (val.type == PLT_BYTEARR)
+        else if (p2.type == PLT_BYTEARR)
         {
-          if (i.type != PLT_INT && i.type != PLT_INT64)
+          if (p1.type != PLT_INT && p1.type != PLT_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
             continue;
           }
-          PromoteType(i, PLT_INT64);
-          if (i.l < 0)
+          PromoteType(p1, PLT_INT64);
+          if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
             continue;
           }
 
-          vector<uint8_t>* l = (vector<uint8_t> *)val.ptr;
-          if ((size_t)i.l >= l->size())
+          bt_ptr1 = (vector<uint8_t>*)p2.ptr;
+          if ((size_t)p1.l >= bt_ptr1->size())
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
             continue;
           }
-          p1.type = 'm';
-          p1.i = (*l)[i.i];
-          STACK.push_back(p1);
+          p3.type = 'm';
+          p3.i = (*bt_ptr1)[p1.l];
+          STACK.push_back(p3);
           break;
         }
-        else if (val.type == PLT_DICT)
+        else if (p2.type == PLT_DICT)
         {
-          Dictionary d = *(Dictionary *)val.ptr;
-          if (d.find(i) == d.end())
+          Dictionary d = *(Dictionary *)p2.ptr;
+          if (d.find(p1) == d.end())
           {
             orgk = k - program;
-            spitErr(KeyError, "Error key " + PltObjectToStr(i) + " not found in the dictionary!");
+            spitErr(KeyError, "Error key " + PltObjectToStr(p1) + " not found in the dictionary!");
             continue;
           }
-          PltObject res = d[i];
+          PltObject res = d[p1];
           STACK.push_back(res);
         }
-        else if (val.type == PLT_STR)
+        else if (p2.type == PLT_STR)
         {
-          if (i.type != PLT_INT && i.type != PLT_INT64)
+          if (p1.type != PLT_INT && p1.type != PLT_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index for string should be an integer!");
             continue;
           }
-          PromoteType(i, PLT_INT64);
-          if (i.l < 0)
+          PromoteType(p1, PLT_INT64);
+          if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
             continue;
           }
-          const string& s = *(string *)val.ptr;
-          if ((size_t)i.l >= s.length())
+          const string& s = *(string *)p2.ptr;
+          if ((size_t)p1.l >= s.length())
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
           }
-          char c = s[i.l];
-          PltObject a;
+          char c = s[p1.l];
           string *p = allocString();
           *p += c;
-          a = PObjFromStrPtr(p);
-          STACK.push_back(a);
+          STACK.push_back(PObjFromStrPtr(p));
           DoThreshholdBusiness();
         }
-        else if (val.type == PLT_OBJ)
+        else if (p2.type == PLT_OBJ)
         {
-          if (invokeOperator("__index__", val, 2, "[]", &i))
+          if (invokeOperator("__index__", p2, 2, "[]", &p1))
             continue;
         }
         else
         {
           orgk = k - program;
-          spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(val.type));
+          spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(p2.type));
           continue;
         }
         break;
@@ -2120,79 +2118,77 @@ public:
       case NOTEQ:
       {
 
-        PltObject b = STACK[STACK.size() - 1];
+        p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
 
-        if (a.type == PLT_OBJ && b.type != PLT_NIL)
+        if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
-          if (invokeOperator("__noteq__", a, 2, "!=", &b, 0))
+          if (invokeOperator("__noteq__", p1, 2, "!=", &p1, 0))
             continue;
         }
-        PltObject c;
-        c.type = PLT_BOOL;
-        if (a.type == PLT_INT && b.type == PLT_INT64)
-          PromoteType(a, PLT_INT64);
-        else if (a.type == PLT_INT64 && b.type == PLT_INT)
-          PromoteType(b, PLT_INT64);
-        c.i = (bool)!(a == b);
-        STACK.push_back(c);
+        p3.type = PLT_BOOL;
+        if (p1.type == PLT_INT && p2.type == PLT_INT64)
+          PromoteType(p1, PLT_INT64);
+        else if (p1.type == PLT_INT64 && p2.type == PLT_INT)
+          PromoteType(p2, PLT_INT64);
+        p3.i = (bool)!(p1 == p2);
+        STACK.push_back(p3);
         break;
       }
       case IS:
       {
 
-        PltObject b = STACK[STACK.size() - 1];
+        p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject c;
-        if ((a.type != PLT_DICT && a.type != PLT_CLASS && a.type != PLT_LIST && a.type != PLT_OBJ && a.type != PLT_STR && a.type != PLT_MODULE && a.type != PLT_FUNC) || (a.type != PLT_CLASS && b.type != PLT_DICT && b.type != PLT_STR && b.type != PLT_FUNC && b.type != PLT_LIST && b.type != PLT_OBJ && b.type != PLT_MODULE))
+        if ((p1.type != PLT_DICT && p1.type != PLT_CLASS && p1.type != PLT_LIST && p1.type != PLT_OBJ && p1.type != PLT_STR && p1.type != PLT_MODULE && p1.type != PLT_FUNC) || (p2.type != PLT_CLASS && p2.type != PLT_DICT && p2.type != PLT_STR && p2.type != PLT_FUNC && p2.type != PLT_LIST && p2.type != PLT_OBJ && p2.type != PLT_MODULE))
         {
           orgk = k - program;
-          spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(a.type) + " and " + fullform(b.type));
+          spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           continue;
         }
-        c.type = PLT_BOOL;
-        c.i = (bool)(a.ptr == b.ptr);
-        STACK.push_back(c);
+        p3.type = PLT_BOOL;
+        p3.i = (bool)(p1.ptr == p2.ptr);
+        STACK.push_back(p3);
         break;
       }
       case MUL:
       {
 
-        PltObject b = STACK[STACK.size() - 1];
+        p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__mul__", a, 2, "*", &b))
+          if (invokeOperator("__mul__", p1, 2, "*", &p2))
             continue;
         }
         PltObject c;
         char t;
-        if(a.type==b.type && isNumeric(a.type))
-          t = a.type;
-        else if (isNumeric(a.type) && isNumeric(b.type))
+        if(p1.type==p2.type && isNumeric(p1.type))
+          t = p1.type;
+        else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
+          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
             t = PLT_FLOAT;
-          else if (a.type == PLT_INT64 || b.type == PLT_INT64)
+          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
             t = PLT_INT64;
-          else if (a.type == PLT_INT || b.type == PLT_INT)
+          else if (p1.type == PLT_INT || p2.type == PLT_INT)
             t = PLT_INT;
-          PromoteType(a, t);
-          PromoteType(b, t);
+          PromoteType(p1, t);
+          PromoteType(p2, t);
         }
-        else if(a.type==PLT_LIST && b.type==PLT_INT)
+        else if(p1.type==PLT_LIST && p2.type==PLT_INT)
         {
-          PltList* src = (PltList*)a.ptr;
+          PltList* src = (PltList*)p1.ptr;
           PltList* res = allocList();
           if(src->size()!=0)
           {
-          for(int32_t i=b.i;i;--i)
+          for(int32_t i=p2.i;i;--i)
             res->insert(res->end(),src->begin(),src->end());
           }
           p1.type = PLT_LIST;
@@ -2202,13 +2198,13 @@ public:
           ++k;
           continue;
         }
-        else if(a.type==PLT_STR && b.type==PLT_INT)
+        else if(p1.type==PLT_STR && p2.type==PLT_INT)
         {
-          string* src = (string*)a.ptr;
+          string* src = (string*)p1.ptr;
           string* res = allocString();
           if(src->size()!=0)
           {
-            for(int32_t i=b.i;i;--i)
+            for(int32_t i=p2.i;i;--i)
               res->insert(res->end(),src->begin(),src->end());
           }
           p1.type = PLT_STR;
@@ -2221,51 +2217,51 @@ public:
         else
         {
           orgk = k - program;
-          spitErr(TypeError, "Error operator '*' unsupported for " + fullform(a.type) + " and " + fullform(b.type));
+          spitErr(TypeError, "Error operator '*' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
           continue;
         }
 
         if (t == PLT_INT)
         {
           c.type = PLT_INT;
-          if (!multiplication_overflows(a.i, b.i))
+          if (!multiplication_overflows(p1.i, p2.i))
           {
-            c.i = a.i * b.i;
+            c.i = p1.i * p2.i;
             STACK.push_back(c);
             break;
           }
           orgk = k - program;
-          if (multiplication_overflows((int64_t)a.i, (int64_t)b.i))
+          if (multiplication_overflows((int64_t)p1.i, (int64_t)p2.i))
           {
             spitErr(OverflowError, "Overflow occurred");
             continue;
           }
           c.type = PLT_INT64;
-          c.l = (int64_t)(a.i) * (int64_t)(b.i);
+          c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
           STACK.push_back(c);
         }
         else if (t == PLT_FLOAT)
         {
-          if (multiplication_overflows(a.f, b.f))
+          if (multiplication_overflows(p1.f, p2.f))
           {
             orgk = k - program;
             spitErr(OverflowError, "Floating point overflow during multiplication");
             continue;
           }
           c.type = PLT_FLOAT;
-          c.f = a.f * b.f;
+          c.f = p1.f * p2.f;
           STACK.push_back(c);
         }
         else if (t == PLT_INT64)
         {
-          if (multiplication_overflows(a.l, b.l))
+          if (multiplication_overflows(p1.l, p2.l))
           {
             orgk = k - program;
             spitErr(OverflowError, "Error overflow during solving expression.");
             continue;
           }
           c.type = PLT_INT64;
-          c.l = a.l * b.l;
+          c.l = p1.l * p2.l;
           STACK.push_back(c);
         }
         break;
@@ -2421,6 +2417,7 @@ public:
         obj->name = name;
         vector<PltObject> values;
         vector<PltObject> names;
+
         for (int32_t i = 1; i <= N; i++)
         {
           p1 = STACK.back();
