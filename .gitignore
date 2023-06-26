@@ -1,1 +1,4 @@
 /plutonium
+/tests/test_all
+/modules/*.so
+/tests/out.txt
