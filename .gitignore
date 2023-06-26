@@ -3,3 +3,4 @@
 /modules/*.so
 /tests/out.txt
 out.txt
+/program.plt

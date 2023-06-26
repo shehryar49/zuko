@@ -27,7 +27,7 @@ void REPL()
   files.push_back(filename);
   sources.push_back("");
   static std::unordered_map<size_t,ByteSrc> LineNumberTable;
-  static size_t stackSize = 19;
+  static size_t stackSize = 0;
   static Compiler compiler;
   if(vm.STACK.size() > stackSize)
   {
@@ -53,10 +53,9 @@ void REPL()
       printf(">>> ");
     else
       printf("... ");
-    //continued=false;
     line = readline();
     if(line=="exit" || line=="quit" || line=="baskardebhai" || line=="yawr")
-      break;
+      exit(0);
     else if(line == ".showstack")
     {
       for(auto e: vm.STACK)
@@ -93,6 +92,7 @@ void REPL()
     vm.constants = constants;
     compiler.init(&fnReferenced,&noc,&files,&sources,&LineNumberTable,filename);
     bytecode = compiler.compileProgram(ast,0,NULL,bytecode,true,false); //ask the compiler to add previous bytecode before
+    stackSize = vm.STACK.size();
     deleteAST(ast);
     //new bytecode
     //how much is the retarded user gonna write anyway in REPL

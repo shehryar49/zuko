@@ -122,7 +122,7 @@ public:
     fprintf(stderr,"%s\n",msg.c_str());
     if(REPL_MODE)
       REPL();
-    exit(0);
+    exit(1);
   }
   int32_t isDuplicateConstant(PltObject x)
   {
@@ -772,7 +772,7 @@ public:
         return bytes;
       }  
       compileError("SyntaxError", "Invalid syntax in expression");
-      exit(0);
+      exit(1);
       return bytes;//to prevent compiler warning
   }
   
@@ -2064,7 +2064,7 @@ public:
           else
           {
               printf("SyntaxError in file %s\n%s\nThe line does not seem to be a meaningful statement!\n", filename.c_str(), NodeTypeNames[(int)ast->type]);
-              exit(0);
+              exit(1);
           }
           ast = ast->childs.back();
         //  printf("ast = %s\n",NodeTypeNames[(int)ast->type]);
@@ -2137,7 +2137,6 @@ public:
     //If prev vector is empty then this program will be compiled as an independent new one
     //otherwise this program will be an addon to the previous one
     //new = prev +curr
-
     bytes_done = prev.size();
     compileAllFuncs = compileNonRefFns;
     line_num = 1;
@@ -2248,7 +2247,7 @@ public:
     {
         printf("Plutonium encountered an internal error.\nError Code: 10\n");
        // printf("%ld   /  %ld  bytes done\n",bytes_done,bytecode.size());
-        exit(0);
+        exit(1);
     }
     //final phase
     //optimize short circuit jumps for and 
