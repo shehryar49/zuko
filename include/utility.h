@@ -206,6 +206,8 @@ string readline()
   string line;
   while((ch = fgetc(stdin))!='\n')
   {
+    if(ch == EOF) // readline is used with REPL, so on EOF (CTRL+D) we exit
+      exit(0);
     line+=ch;
   }
   return line;

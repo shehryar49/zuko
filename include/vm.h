@@ -305,8 +305,6 @@ public:
         callstack.pop_back();
       }
     }
-    if (REPL_MODE)
-      REPL(); // start another REPL and exit after it finishes
     this->k = program+program_size-1;//set instruction pointer to last instruction
     //which is always OP_EXIT
     STACK.clear();

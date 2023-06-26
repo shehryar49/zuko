@@ -72,7 +72,7 @@ namespace ll
         function insert(var it,var elem)
         {
             if(!isInstanceOf(it,Iterator))
-              throw @TypeError,"Iterator Object required!"
+              throw TypeError("Iterator Object required!")
             var n = Node()
             n.val = elem
             n.prev = it.curr.prev
@@ -83,7 +83,7 @@ namespace ll
         function setvalue(var it,var val)
         {
             if(!isInstanceOf(it,Iterator))
-              throw @TypeError,"Iterator Object required!"
+              throw TypeError("Iterator Object required!")
             it.curr.val = val
         }
         function erase(var it)
