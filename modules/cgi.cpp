@@ -6,6 +6,10 @@
 #include <unordered_map>
 #include <algorithm>
 #include "cgi.h"
+#ifdef _WIN32
+  #include<io.h>
+  #include <fcntl.h>
+#endif
 using namespace std;
 Klass* CgiFile;
 vector<string> split(string s,const string& x)
@@ -399,6 +403,10 @@ PltObject FormData(PltObject* args,int n)
 PltObject nil;
 PltObject init()
 {
+    #ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);//we dont want CRLF replaced by LF when
+    //reading from stdin
+    #endif
     nil.type = 'n';
     Module* d = vm_allocModule();
     CgiFile = vm_allocKlass();

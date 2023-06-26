@@ -10,10 +10,10 @@ using namespace std;
 
 extern "C"
 {
-    PltObject init();
+    EXPORT PltObject init();
     //Functions
-    PltObject FormData(PltObject*,int);//returns a dictionary containing all the data sent by client
+    EXPORT PltObject FormData(PltObject*,int);//returns a dictionary containing all the data sent by client
     //handles GET,POST and multipart/form POST requests
-    PltObject cookies(PltObject*,int);
+    EXPORT PltObject cookies(PltObject*,int);
 }
 #endif
