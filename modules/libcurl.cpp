@@ -4,7 +4,7 @@ The original code of libcurl is not modified in anyway. This is just a wrapper a
 and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
-#include "curl/curl.h"
+#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
