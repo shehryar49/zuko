@@ -490,10 +490,10 @@ PltObject init()
 {
   //initialize custom errors
   parseError = new Klass;
-  parseError->name = "JSONParseError";
+  parseError->name = "ParseError";
   parseError->members = Error->members;
   tokenizeError = new Klass;
-  tokenizeError->name = "JSONTokenizeError";
+  tokenizeError->name = "TokenizeError";
   tokenizeError->members = Error->members;
   //
   Module* d = vm_allocModule();
@@ -527,9 +527,9 @@ PltObject dumps(PltObject* args,int32_t n)
   dumperror = false;
   string* res = vm_allocString();
   std::unordered_map<void*,bool> seen;
- // *res = "{";
   PObjToStr(args[0],*res,seen);
-
+  if(dumperror)
+    return Plt_Err(Error,dumperrmsg);
   return PObjFromStrPtr(res);
 }
 void unload()
