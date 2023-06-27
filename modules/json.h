@@ -9,6 +9,9 @@
 extern "C"
 {
     EXPORT PltObject init();
-    EXPORT PltObject loads(PltObject*,int32_t);    
+    EXPORT PltObject loads(PltObject*,int32_t);  
+    EXPORT PltObject dumps(PltObject*,int32_t);
+    EXPORT void unload();  
+      
 }
 #endif

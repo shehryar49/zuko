@@ -174,7 +174,7 @@ private:
   PltList aux; // auxiliary space for markV2
   vector<PltObject> STACK;
   vector<void*> important;//important memory not to free even when not reachable
-  bool noGC = false;//enable garbage collection
+ 
 public:
   friend class Compiler;
   friend bool callObject(PltObject*,PltObject*,int,PltObject*);
@@ -313,8 +313,6 @@ public:
   }
   inline void DoThreshholdBusiness()
   {
-    if(noGC)
-      return;
     if (allocated > GC_THRESHHOLD)
     {
       mark();
@@ -2648,7 +2646,7 @@ public:
           KlassInstance *obj = allocKlassInstance(); // instance of class
           obj->members = ((Klass *)fn.ptr)->members;
           obj->privateMembers = ((Klass *)fn.ptr)->privateMembers;
-
+          s1 = ((Klass*)fn.ptr) -> name;
           obj->klass = (Klass *)fn.ptr;
           if (obj->members.find("__construct__") != obj->members.end())
           {
@@ -2689,7 +2687,8 @@ public:
               STACK.erase(STACK.end() - (N + 1), STACK.end());
               if (p4.type == PLT_ERROBJ)
               {
-                spitErr((Klass*)p4.ptr, ((Klass *)fn.ptr)->name + "." + "__construct__:  " + ""/*important*/);
+                const string& msg = *(string*)(((KlassInstance*)p4.ptr)->members["msg"].ptr);
+                spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
                 continue;
               }
               STACK.push_back(r);
@@ -3333,11 +3332,8 @@ public:
       }
       case GC:
       {
-        if(!noGC)
-        {
-          mark();
-          collectGarbage();
-        }
+        mark();
+        collectGarbage();
         break;
       }
   
@@ -3625,10 +3621,9 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
        vm.STACK.push_back(args[i]);
      for(size_t i = fn->opt.size() - (fn->args - N); i < fn->opt.size(); i++)
        vm.STACK.push_back(fn->opt[i]);
-     bool a = vm.noGC;
-     vm.noGC = true;//disable gc
+
      vm.interpret(fn->i);
-     vm.noGC = a;
+
      vm.k = prev;
      *rr = vm.STACK.back();
      vm.STACK.pop_back();
@@ -3639,10 +3634,9 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
     NativeFunction *A = (NativeFunction *)obj->ptr;
     NativeFunPtr f = A->addr;
     PltObject p4;
-    bool a = vm.noGC;
-    vm.noGC = true;
+
     p4 = f(args, N);
-    vm.noGC = a;
+
     if (p4.type == PLT_ERROBJ)
     {
       *rr = p4;

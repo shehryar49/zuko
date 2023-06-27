@@ -229,21 +229,13 @@ bool isValTok(Token t)
   return false;
 }
 PltObject nil;
-PltObject makePbjFromStr(const string& content)
-{
-  string* p = vm_allocString();
-  *p = content;
-  PltObject ret;
-  ret.type = PLT_STR;
-  ret.ptr = (void*)p;
-  return ret;
-}
+
 PltObject TokToPObj(Token t)
 {
   if(t.type == NULLVAL)
     return nil;
   else if(t.type == STR)
-    return makePbjFromStr(t.content);
+    return PObjFromStr(t.content);
   else if(t.type == FLOAT)
     return PObjFromDouble(atof(t.content.c_str()));
   else if(t.type == NUM)
@@ -286,6 +278,7 @@ int match_lcb(int start,int end,vector<Token>& tokens)
     return -1;
 }
 Dictionary* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
+
 PltList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
@@ -375,7 +368,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
     //values begins at tokens[k]
     if(isValTok(tokens[k]))
     {
-      M->emplace(makePbjFromStr(tokens[k-2].content),TokToPObj(tokens[k]));
+      M->emplace(PObjFromStr(tokens[k-2].content),TokToPObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -391,7 +384,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
         return M;
       err = true;
       k = r+1;    
-      M->emplace(makePbjFromStr(key),subobj);
+      M->emplace(PObjFromStr(key),subobj);
     }
     else if(tokens[k].type == LSB) //list
     {
@@ -406,7 +399,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
         return M;
       err = true;
       k = r+1;
-      M->emplace(makePbjFromStr(key),sublist);
+      M->emplace(PObjFromStr(key),sublist);
     }
     else
     {
@@ -422,13 +415,91 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
   err = false;
   return M;
 }
-
+bool dumperror;
+std::string dumperrmsg;
+void PObjToStr(PltObject p,std::string& res,std::unordered_map<void*,bool>& seen)
+{
+  if(p.type == PLT_INT)
+    res+= to_string(p.i);
+  else if(p.type == PLT_INT64)
+    res+= to_string(p.l);
+  else if(p.type == PLT_FLOAT)
+    res+= to_string(p.f);
+  else if(p.type == PLT_STR)
+    res+= "\""+(*(string*)p.ptr)+"\"";
+  else if(p.type == PLT_NIL)
+    res+="null";
+  else if(p.type == PLT_LIST)
+  {
+    if(seen.find(p.ptr) != seen.end())
+      res+="[...]";
+    else
+    {
+      res+="[";
+      seen.emplace(p.ptr,true);
+      PltList& l = *(PltList*)p.ptr;
+      size_t len = l.size();
+      size_t k = 0;
+      for(auto e: l)
+      {
+        PObjToStr(e,res,seen);
+        if(dumperror)
+          return;
+        if(k++ != len-1)
+          res+=",";
+      }
+      res += "]";
+    }
+  }
+  else if(p.type == PLT_DICT)
+  {
+    if(seen.find(p.ptr) != seen.end())
+      res+="{...}";
+    else
+    {
+      res+="{";
+      seen.emplace(p.ptr,true);
+      Dictionary& d = *(Dictionary*)p.ptr;
+      size_t l = d.size();
+      size_t k = 0;
+      for(auto e: d)
+      {
+        if(e.first.type != PLT_STR) //json constraint fail
+        {
+          dumperror = true;
+          dumperrmsg = "Dictionary key not a string!";
+          return;
+        }
+        res += "\"" + (*(string*)e.first.ptr) + "\"";
+        res += ": ";
+        PObjToStr(e.second,res,seen);
+        if(dumperror)
+          return;
+        if(k++ != l-1)
+          res+=",";
+      }
+      res += "}";
+    }
+  }
+}
+///
+Klass* parseError;
+Klass* tokenizeError;
 ////
 PltObject init()
 {
+  //initialize custom errors
+  parseError = new Klass;
+  parseError->name = "JSONParseError";
+  parseError->members = Error->members;
+  tokenizeError = new Klass;
+  tokenizeError->name = "JSONTokenizeError";
+  tokenizeError->members = Error->members;
+  //
   Module* d = vm_allocModule();
   d->name = "json";
   d->members.emplace("loads",PObjFromFunction("json.loads",&loads));
+  d->members.emplace("dumps",PObjFromFunction("json.dumps",&dumps));
   return PObjFromModule(d);
 }
 PltObject loads(PltObject* args,int32_t n)
@@ -440,9 +511,29 @@ PltObject loads(PltObject* args,int32_t n)
   string msg;
   vector<Token> tokens = tokenize(src,hadErr,msg);
   if(hadErr)
-    return Plt_Err(Error,"Tokenization failed."+msg);
+    return Plt_Err(tokenizeError,"Tokenization failed."+msg);
   Dictionary* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
-     return Plt_Err(Error,"Parsing failed."+msg);
+     return Plt_Err(parseError,"Parsing failed."+msg);
   return PObjFromDict(m);
+}
+PltObject dumps(PltObject* args,int32_t n)
+{
+  if(n!=1)
+    return Plt_Err(ArgumentError,"1 argument needed!");
+  if(args[0].type != PLT_DICT)
+    return Plt_Err(TypeError,"Argument must be a dictionary!");
+  dumperrmsg = "";
+  dumperror = false;
+  string* res = vm_allocString();
+  std::unordered_map<void*,bool> seen;
+ // *res = "{";
+  PObjToStr(args[0],*res,seen);
+
+  return PObjFromStrPtr(res);
+}
+void unload()
+{
+  delete tokenizeError;
+  delete parseError;
 }
