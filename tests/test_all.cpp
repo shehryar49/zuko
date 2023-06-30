@@ -47,7 +47,8 @@ const char* tests[] =
     "awkwardLexer",
     "polynomial",
     "coroutines",
-    "addedReturn"
+    "addedReturn",
+    "conversions"
 };
 int main(int argc,const char* argv[])
 {
