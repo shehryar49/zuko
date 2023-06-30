@@ -960,7 +960,7 @@ public:
     {
       if(tokens.size()>=3)
       {
-        if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchRP(0,tokens)==(tokens.size()-1))
+        if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchRP(0,tokens)==((int)tokens.size()-1))
         {
           Node* ast = NewNode(NodeType::call);
           Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
@@ -1503,7 +1503,6 @@ public:
         ast->childs.push_back(parseExpr(rhs));
         //rhs must be a function call as stated above
 
-        Node* L = ast->childs[ast->childs.size()-2];
         if(ast->childs.back()->type!=NodeType::call)
         {
           deleteAST(ast);

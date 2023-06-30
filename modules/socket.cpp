@@ -1,15 +1,25 @@
-#include "pch.h"
 #include "socket.h"
-#include "C:\plutonium\PltObject.h"
-#include <winsock2.h>
+#include "PltObject.h"
+#ifdef _WIN32
+  #include <winsock2.h>
+  #pragma comment(lib,"ws2_32")
+#else
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <unistd.h>
+  #define EXPORT
+#endif
 using namespace std;
 
-#pragma comment(lib,"ws2_32")
 
 struct Socket //wrapper around winsock object
 {
-    SOCKET socket_desc;
-    string ip;
+    #ifdef _WIN32
+      SOCKET socket_desc;
+    #else
+      int socket_desc;
+    #endif
+    std::string ip;
     int ipfamily;
     int connMethod;
     int port;
@@ -36,12 +46,14 @@ struct Socket //wrapper around winsock object
     EXPORT PltObject init()
 	{
         nil.type = 'n';
-		WSADATA wsa;
-		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-		{
-			string errMsg = "Error code: " + to_string(WSAGetLastError());
-			return Plt_Err(UNKNOWN_ERROR, errMsg);
-		}
+        #ifdef _WIN32
+            WSADATA wsa;
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                string errMsg = "Error code: " + to_string(WSAGetLastError());
+                return Plt_Err(UNKNOWN_ERROR, errMsg);
+            }
+        #endif
         Module* d = vm_allocModule();
         socketKlass = vm_allocKlass();
         socketKlass->name = "socket";

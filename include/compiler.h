@@ -26,6 +26,7 @@ SOFTWARE.*/
 #include "lexer.h"
 using namespace std;
 #define JUMPOFFSet_Size 4
+#define SymbolTable std::unordered_map<string,int32_t>
 extern unordered_map<string,BuiltinFunc> funcs;
 extern bool REPL_MODE;
 extern Klass* TypeError;
@@ -45,7 +46,6 @@ extern Klass* MaxRecursionError;
 extern Klass* AccessError;
 void REPL();
 
-
 inline void addBytes(vector<uint8_t>& vec,int32_t x)
 {
   size_t sz = vec.size();
@@ -62,7 +62,7 @@ private:
   vector<size_t> breakTargets;
   vector<int32_t> indexOfLastWhileLocals;
   vector<string>* fnReferenced;
-  vector<std::unordered_map<string,int32_t>> locals;
+  vector<SymbolTable> locals;
   vector<string> prefixes;
   int32_t* num_of_constants;
   string filename;
@@ -84,7 +84,7 @@ private:
   int32_t fnScope;
   bool returnStmtAtFnScope;
 public:
-  std::unordered_map<string,int32_t> globals;
+  SymbolTable globals;
   size_t bytes_done = 0;
   void init(vector<string>* fnR,int32_t* e,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
   {
@@ -1028,7 +1028,7 @@ public:
               indexOfLastWhileLocals.push_back(locals.size());
               scope += 1;
               int32_t before = STACK_SIZE;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               locals.push_back(m);
 
               vector<uint8_t> block = compile(ast->childs[2]);
@@ -1118,7 +1118,7 @@ public:
             {
               scope += 1;
               before = STACK_SIZE+1;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               scope+=1;
               locals.push_back(m);
               lcvIdx = STACK_SIZE;
@@ -1130,7 +1130,7 @@ public:
             else
             {
               scope += 1;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               indexOfLastWhileLocals.push_back(locals.size());
               locals.push_back(m);
             }
@@ -1252,7 +1252,7 @@ public:
               int32_t E = STACK_SIZE;
               STACK_SIZE+=1;
 
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               bool add = true;
               size_t index = 0;
               int32_t fnIdx = 0;
@@ -1387,7 +1387,7 @@ public:
               bytes_done += 1 + JUMPOFFSet_Size;
               scope += 1;
               int32_t before = STACK_SIZE;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               locals.push_back(m);
               vector<uint8_t> block = compile(ast->childs[2]);
               scope -= 1;
@@ -1417,7 +1417,7 @@ public:
               bytes_done += 1 + JUMPOFFSet_Size;
               scope += 1;
               int32_t before = STACK_SIZE;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               locals.push_back(m);
               vector<uint8_t> ifblock = compile(ast->childs[2]);
               scope -= 1;
@@ -1474,7 +1474,7 @@ public:
               vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
               bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
               scope += 1;
-              std::unordered_map<string,int32_t> m;
+              SymbolTable m;
               locals.push_back(m);
               int32_t before = STACK_SIZE;
               vector<uint8_t> ifblock = compile(ast->childs[2]);
@@ -1584,7 +1584,7 @@ public:
             vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
             bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
             scope += 1;
-            std::unordered_map<string,int32_t> m;
+            SymbolTable m;
             locals.push_back(m);
             int32_t before = STACK_SIZE;
             vector<uint8_t> ifblock = compile(ast->childs[2]);
@@ -1676,7 +1676,7 @@ public:
             bytes_done+=5;
             scope += 1;
             int32_t before = STACK_SIZE;
-            std::unordered_map<string,int32_t> m;
+            SymbolTable m;
             locals.push_back(m);
             vector<uint8_t> tryBlock = compile(ast->childs[2]);
             scope -= 1;
@@ -1875,7 +1875,7 @@ public:
             }
             bool extendedClass = (ast->type == NodeType::EXTCLASS);
             string name = ast->childs[1]->val;
-            size_t C = line_num;
+
             if(globals.find(name)!=globals.end())
                 compileError("NameError","Redeclaration of name "+name);
             globals.emplace(name,STACK_SIZE);
@@ -1898,7 +1898,7 @@ public:
               addBytes(program,foo);
               bytes_done+=5;
             }
-            std::unordered_map<string,int32_t> M;
+            SymbolTable M;
             locals.push_back(M);
             int32_t before = STACK_SIZE;
             scope+=1;
@@ -2074,11 +2074,11 @@ public:
   }
   void optimizeJMPS(vector<uint8_t>& bytecode)
   {
-        for(auto e: andJMPS)
+    for(auto e: andJMPS)
     {
       int offset;
       memcpy(&offset,&bytecode[e+1],4);
-      int k = e+5+offset;
+      size_t k = e+5+offset;
       int newoffset;
       while(k < bytes_done && bytecode[k] == JMPIFFALSENOPOP)
       {
@@ -2093,7 +2093,7 @@ public:
     {
       int offset;
       memcpy(&offset,&bytecode[e+1],4);
-      int k = e+5+offset;
+      size_t k = e+5+offset;
       int newoffset;
       while(k < bytes_done && bytecode[k] == NOPOPJMPIF)
       {

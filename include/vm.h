@@ -2627,7 +2627,6 @@ public:
           p4 = f(&(STACK[STACK.size() - N]), N);
           if (p4.type == PLT_ERROBJ)
           {
-            int32_t eCode = p4.i;
             s1 = "Native Function:  " + *(string *)p4.ptr;
             spitErr((Klass*)p4.ptr, s1);
             continue;
@@ -3012,12 +3011,7 @@ public:
             spitErr(MathError, "Error division by zero");
             continue;
           }
-          if (division_overflows(a.f, b.f))
-          {
-            orgk = k - program;
-            spitErr(OverflowError, "Floating point overflow during division");
-            continue;
-          }
+
           c.type = PLT_FLOAT;
           c.f = a.f / b.f;
           STACK.push_back(c);

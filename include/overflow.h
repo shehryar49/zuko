@@ -162,10 +162,7 @@ inline bool division_overflows(int64_t op1,int64_t op2) {
   }
   return false;
 }
-inline bool division_overflows(double op1,double op2) 
-{
-  return false;
-}
+
 
 
 #endif
