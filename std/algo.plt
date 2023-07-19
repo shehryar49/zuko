@@ -366,12 +366,12 @@ namespace algo
   {
     var str = ""
     foreach(var byte: bytes)
-      str+=char(ByteToInt(byte))
+      str+=char(int(byte))
     return str
   }
   function encodeASCII(var str)
   {
-    var bytes = []
+    var bytes = bytearray([])
     foreach(var ch: str)
       bytes.push(ascii(ch))
     return bytes

@@ -44,8 +44,8 @@ enum OPCODE
     JMPIFFALSE=19,
     NPOP_STACK = 20,
     MOD = 21,
-    AND = 22,
-    OR  = 23,
+    LOAD_NIL = 22,
+    LOAD_INT32  = 23,
     RETURN = 24,
     JMPNPOPSTACK=25,// jump to a certain number of bytes and pop n values from stack
     GOTONPSTACK=26,//goto a certain bytecode index and pop n values from stack
@@ -78,7 +78,7 @@ enum OPCODE
     BITWISE_OR = 53,
     COMPLEMENT = 54,
     BUILD_DERIVED_CLASS = 55,//builds a derived class
-    GOTO_CALLSTACK = 56,//simply goes to callstack.back() also pops the callstack
+    LOAD_TRUE = 56,//simply goes to callstack.back() also pops the callstack
     IS = 57,//is operator
     ONERR_GOTO = 58,//begins error handling
     POP_EXCEP_TARG = 59,
@@ -90,7 +90,9 @@ enum OPCODE
     GC=65,
     NOPOPJMPIF=66,
     SELFMEMB=67,
-    ASSIGNSELFMEMB=68
+    ASSIGNSELFMEMB=68,
+    LOAD_FALSE=69,
+    LOAD_BYTE=70
 };
 #ifdef PLUTONIUM_PROFILE
 const char* opNames[] = 
@@ -116,8 +118,8 @@ const char* opNames[] =
    "JMPIFFALSE",
    "NPOP_STACK",
    "MOD",
-   "AND",
-   "OR ",
+   "LOAD_NIL",
+   "LOAD_INT32 ",
    "RETURN",
    "JMPNPOPSTACK",
    "GOTONPSTACK",
@@ -150,7 +152,7 @@ const char* opNames[] =
    "BITWISE_OR",
    "COMPLEMENT",
    "BUILD_DERIVED_CLASS",
-   "GOTO_CALLSTACK",
+   "LOAD_TRUE",
    "IS",
    "ONERR_GOTO",
    "POP_EXCEP_TARG",
@@ -162,7 +164,9 @@ const char* opNames[] =
    "GC",
    "NOPOPJMPIF",
    "SELFMEMB",
-   "ASSIGNSELFMEMB"
+   "ASSIGNSELFMEMB",
+   "LOAD_BYTE",
+   "LOAD_FALSE"
 };
 #endif
 #endif

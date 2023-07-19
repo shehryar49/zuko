@@ -34,6 +34,7 @@ enum class NodeType
   WHILE,
   DOWHILE,
   FOR,
+  DFOR,//down to for loop
   decl,//used with FOR loop to tell if loop control variable should be
   //declared or not
   //i.e for(var i=0 to 10 step 1)
@@ -112,6 +113,7 @@ const char* NodeTypeNames[] =
   "WHILE",
   "DOWHILE",
   "FOR",
+  "DFOR",
   "decl",//used with FOR loop to tell if loop control variable should be
   //declared or not
   //i.e for(var i=0 to 10 step 1)

@@ -50,5 +50,22 @@ struct Token
   string content;
   enum TokenType  type;
   size_t ln;
+  Token()
+  {}
+  Token(const Token& obj)
+  {
+    content = obj.content;
+    type = obj.type;
+    ln = obj.ln;
+  }
+  Token& operator=(const Token& obj)
+  {
+    if(&obj == this)
+      return *this;
+    content = obj.content;
+    type = obj.type;
+    ln = obj.ln;
+    return *this;
+  }
 };
 #endif

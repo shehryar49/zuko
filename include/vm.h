@@ -100,7 +100,7 @@ string fullform(char t)
   else if (t == PLT_CLASS)
     return "Class";
   else if (t == PLT_OBJ)
-    return "Class Instance";
+    return "Class Object";
   else if (t == PLT_NIL)
     return "nil";
   else if (t == PLT_NATIVE_FUNC)
@@ -143,6 +143,7 @@ void unmarkImportant(void*);
 
 extern bool REPL_MODE;
 void REPL();
+
 class VM
 {
 private:
@@ -200,7 +201,7 @@ public:
     LineNumberTable = ltable;
     files = a;
     sources = c;
-    //initialise api function for interpreter as well
+    //initialise api functions for interpreter as well
     //in case a builtin function wants to use it
     api.a1 = &allocList;
     api.a2 = &allocDict;
@@ -234,7 +235,7 @@ public:
     api_setup(&api);//
     srand(time(0));
   }
-  void spitErr(Klass* e, string msg) // used to show a runtime error
+  size_t spitErr(Klass* e, string msg) // used to show a runtime error
   {
     PltObject p1;
     if (except_targ.size() != 0)
@@ -257,7 +258,7 @@ public:
       except_targ.pop_back();
       tryStackCleanup.pop_back();
       tryLimitCleanup.pop_back();
-      return;
+      return k - program;
     }
     size_t line_num = (*LineNumberTable)[orgk].ln;
     string &filename = (*files)[(*LineNumberTable)[orgk].fileIndex];
@@ -308,7 +309,7 @@ public:
     this->k = program+program_size-1;//set instruction pointer to last instruction
     //which is always OP_EXIT
     STACK.clear();
-    return;
+    return this->k - program;
     
   }
   inline void DoThreshholdBusiness()
@@ -695,6 +696,10 @@ public:
     //PltList pl1;      // plutonium list 1
     PltList* pl_ptr1; // plutonium list pointer 1
     //Dictionary pd1;
+    PltObject alwaysi32;
+    PltObject alwaysByte;
+    alwaysi32.type = PLT_INT;
+    alwaysByte.type = PLT_BYTE;
     Dictionary *pd_ptr1;
     vector<uint8_t>* bt_ptr1;
     k = program + offset;
@@ -829,6 +834,21 @@ public:
         memcpy(&i1, k, 4);
         k += 3;
         STACK.push_back(constants[i1]);
+        break;
+      }
+      case LOAD_INT32:
+      {
+        k += 1;
+        memcpy(&alwaysi32.i, k, 4);
+        k += 3;
+        STACK.push_back(alwaysi32);
+        break;
+      }
+      case LOAD_BYTE:
+      {
+        k += 1;
+        alwaysByte.i = *k;
+        STACK.push_back(alwaysByte);
         break;
       }
       case ASSIGN:
@@ -1063,7 +1083,7 @@ public:
               FunObject *p = executing.back();
               if (p == NULL)
               {
-                spitErr(NameError, "Error " + method_name + " is private member of class instance!");
+                spitErr(NameError, "Error " + method_name + " is private member of object!");
                 continue;
               }
               if (p->klass == obj->klass)
@@ -1072,13 +1092,13 @@ public:
               }
               else
               {
-                spitErr(NameError, "Error " + method_name + " is private member of class instance!");
+                spitErr(NameError, "Error " + method_name + " is private member of object!");
                 continue;
               }
             }
             else
             {
-              spitErr(NameError, "Error class instance has no member " + method_name);
+              spitErr(NameError, "Error object has no member " + method_name);
               continue;
             }
           }
@@ -1368,6 +1388,12 @@ public:
         callstack.pop_back();
         break;
       }
+      case LOAD_NIL:
+      {
+        p1.type = PLT_NIL;
+        STACK.push_back(p1);
+        break;
+      }
       case CO_STOP:
       {
         executing.pop_back();
@@ -1400,13 +1426,18 @@ public:
         STACK.erase(STACK.end() - i1, STACK.end());
         break;
       }
-      case GOTO_CALLSTACK:
+      case LOAD_TRUE:
       {
-        k = callstack[callstack.size() - 1] - 1;
-        callstack.pop_back();
-        executing.pop_back();
-        STACK.erase(STACK.begin() + frames.back(), STACK.end());
-        frames.pop_back();
+        p1.type = PLT_BOOL;
+        p1.i = 1;
+        STACK.push_back(p1);
+        break;
+      }
+      case LOAD_FALSE:
+      {
+        p1.type = PLT_BOOL;
+        p1.i = 0;
+        STACK.push_back(p1);
         break;
       }
       case LSHIFT:
@@ -2121,7 +2152,7 @@ public:
 
         if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
-          if (invokeOperator("__noteq__", p1, 2, "!=", &p1, 0))
+          if (invokeOperator("__noteq__", p1, 2, "!=", &p2, 0))
             continue;
         }
         p3.type = PLT_BOOL;
@@ -3187,20 +3218,7 @@ public:
         k += 3;
         string& mname = strings[i1];
      
-        if (a.type == PLT_MODULE)
-        {
-          Module *m = (Module *)a.ptr;
-
-          if (m->members.find(mname) == m->members.end())
-          {
-            spitErr(NameError, "Error module object 'self' has no member named '" + mname + "' ");
-            continue;
-          }
-          STACK.push_back(m->members[mname]);
-          ++k;
-          continue;
-        }
-        else if(a.type == PLT_OBJ)
+        if(a.type == PLT_OBJ)
         {
           KlassInstance *ptr = (KlassInstance *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
@@ -3231,40 +3249,9 @@ public:
           PltObject ret = ptr->members[mname];
           STACK.push_back(ret);
         }
-        else if(a.type == PLT_CLASS)
-        {
-          Klass *ptr = (Klass *)a.ptr;
-          if (ptr->members.find(mname) == ptr->members.end())
-          {
-              if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
-              {
-                FunObject *A = executing.back();
-                if (A == NULL)
-                {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
-                  continue;
-                }
-                if (ptr != A->klass)
-                {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
-                  continue;
-                }
-                STACK.push_back(ptr->privateMembers[mname]);
-                k += 1;
-                continue;
-              }
-              else
-              {
-                spitErr(NameError, "Error class 'self' has no member named " + mname);
-                continue;
-              }
-          }
-          PltObject ret = ptr->members[mname];
-          STACK.push_back(ret);
-        }
         else
         {
-          spitErr(TypeError, "Error member operator unsupported for self type "+fullform(a.type));
+          spitErr(TypeError, "Error can not access member "+mname+", self not an object!");
           continue;
         }
         break;
@@ -3282,7 +3269,7 @@ public:
         
         if (Parent.type != PLT_OBJ)
         {
-          spitErr(TypeError, "Error self is not a class object!");
+          spitErr(TypeError, "Error cannot access variable "+s1+" ,self is not a class object!");
           continue;
         }
         KlassInstance *ptr = (KlassInstance *)Parent.ptr;
@@ -3402,7 +3389,8 @@ public:
     {
       delete (KlassInstance*)e;
     }
-    delete[] constants;
+    if(constants)
+      delete[] constants;
     STACK.clear();
     important.clear();
     mark(); // clearing the STACK and marking objects will result in all objects being deleted

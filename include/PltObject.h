@@ -88,15 +88,15 @@ bool operator==(const PltObject& lhs,const PltObject& other)
             return false;
         if(lhs.type=='n')
           return true;
-        else if(lhs.type=='i')
+        else if(lhs.type==PLT_INT)
           return lhs.i==other.i;
-        else if(lhs.type=='l')
+        else if(lhs.type==PLT_INT64)
           return lhs.l==other.l;
-        else if(lhs.type=='f')
+        else if(lhs.type==PLT_FLOAT)
           return lhs.f==other.f;
-        else if(lhs.type=='b')
+        else if(lhs.type==PLT_BYTE)
           return lhs.i==other.i;
-        else if(lhs.type=='m')
+        else if(lhs.type==PLT_BOOL)
           return lhs.i==other.i;
         else if(lhs.type=='u')
           return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);

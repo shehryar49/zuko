@@ -26,6 +26,7 @@ SOFTWARE.*/
 #include "lexer.h"
 #include "ast.h"
 #include <algorithm>
+#include <queue>
 using namespace std;
 extern bool REPL_MODE;
 void REPL();
@@ -94,7 +95,7 @@ Node* NewNode(NodeType type,string val="")
   p->type = type;
   return p;
 }
-void removeUselessNewlines(vector<Token>& tokens)
+void stripNewlines(vector<Token>& tokens)
 {
     while(tokens.size()>0 && tokens[0].type==NEWLINE_TOKEN )
         tokens.erase(tokens.begin());
@@ -299,27 +300,58 @@ int findTokenConsecutive(Token t,int start,const vector<Token>& tokens)
     return -1;
 }
 
+struct ParseInfo
+{
+  int32_t num_of_constants = 0;//there is 1 constant nil by default
+  std::unordered_map<string,vector<string>> refGraph;
+  ParseInfo(){}
+  ParseInfo(const ParseInfo& other)
+  {
+    num_of_constants = other.num_of_constants;
+    refGraph = other.refGraph;
+  }
+  ParseInfo& operator=(const ParseInfo& other)
+  {
+    if(&other == this)
+      return *this;
+    num_of_constants = other.num_of_constants;
+    refGraph = other.refGraph;
+    return *this;
+  }
+};
+
 class Parser
 {
 private:
   vector<Token> known_constants;
-  vector<string> prefixes = {""};//for namespaces
-  vector<string>* fnReferenced;//names of functions referenced in source code
+  vector<string> prefixes = {""};//for namespaces 
+  std::unordered_map<string,vector<string>>* refGraph;
+  string currSym;
   vector<string>* files;
   vector<string>* sources;
   string filename;
   size_t line_num = 1;
   int* num_of_constants;
+  std::string aux;
   bool foundYield = false;
+  //Context
+  bool infunc;
+  bool inclass;
+  bool inloop;
+  //in class method = inclass && infunc
 public:
-  std::unordered_map<string,vector<string>> fntable;
-  void init(vector<string>* fnr,int* p,vector<string>* fnames,vector<string>* fsc,string fname)
+
+  void init(ParseInfo& p,vector<string>* fnames,vector<string>* fsc,string fname)
   {
-    fnReferenced = fnr;
-    num_of_constants = p;
+    num_of_constants = &p.num_of_constants;
+    refGraph = &p.refGraph;
     files = fnames;
     sources = fsc;
     filename = fname;
+    currSym = ".main";
+    inclass = false;
+    infunc = false;
+    inloop = false;
   }
   void parseError(string type,string msg)
   {
@@ -352,22 +384,18 @@ public:
       REPL();
     exit(1);
   }
-  void addToFnReferenced(string name)
+  bool addSymRef(string name)
   {
-  //    printf("trying to add %s to fnr\n",name.c_str());
-    if(std::find(fnReferenced->begin(),fnReferenced->end(),name)==fnReferenced->end())
-    {
-      if(fntable.find(name)!=fntable.end())
-      {
-        fnReferenced->push_back(name);
-        vector<string> dependencies = fntable[name];
-        for(auto e: dependencies)
-        {
-          addToFnReferenced(e);
-        }
-      }
+    if(name == currSym) // no self loops
+      return false;
+    if(refGraph->find(name)==refGraph->end())
+      return false;
 
-    }
+    //printf("adding edge %s to %s\n",currSym.c_str(),name.c_str());
+    vector<string>& neighbours = (*refGraph)[currSym];
+    if(std::find(neighbours.begin(),neighbours.end(),name) == neighbours.end())
+      neighbours.push_back(name);
+    return true;
   }
   Node* parseExpr(const vector<Token>& tokens)
   {
@@ -384,38 +412,51 @@ public:
          ast = NewNode(NodeType::NIL,tokens[0].content);
          return ast;
        }
-       if(tokens[0].type== TokenType::BYTE_TOKEN || tokens[0].type== TokenType::FLOAT_TOKEN || tokens[0].type== TokenType::BOOL_TOKEN || tokens[0].type== TokenType::NUM_TOKEN || tokens[0].type== TokenType::STRING_TOKEN || tokens[0].type== TokenType::ID_TOKEN)
+       else if(tokens[0].type== TokenType::BOOL_TOKEN )
        {
-         if(tokens[0].type!=ID_TOKEN && findToken(tokens[0],0,known_constants)==-1)
+         ast = NewNode(NodeType::BOOL,tokens[0].content);
+         return ast;
+       }
+       else if(tokens[0].type == TokenType::ID_TOKEN)
+       {
+          auto it = prefixes.rbegin();
+          bool done = false;
+          while(it != prefixes.rend())
+          {
+            aux = (*it)+tokens[0].content;
+            if(done = addSymRef(aux))
+              break;
+            it++;
+          }
+          ast = NewNode(NodeType::ID,tokens[0].content);
+          return ast;
+       }
+       else if(tokens[0].type == TokenType::NUM_TOKEN && isnum(tokens[0].content))
+       {
+         ast = NewNode(NodeType::NUM,tokens[0].content);//int32
+         return ast;
+       }
+       else if(tokens[0].type == TokenType::BYTE_TOKEN)
+       {
+        ast = NewNode(NodeType::BYTE,tokens[0].content);
+        return ast;
+       }
+       else if(tokens[0].type == STRING_TOKEN)
+       {
+           ast = NewNode(NodeType::STR,tokens[0].content);
+           return ast;
+       }
+       else if(tokens[0].type== TokenType::FLOAT_TOKEN || tokens[0].type== TokenType::NUM_TOKEN)
+       {
+         if(findToken(tokens[0],0,known_constants)==-1)
          {
            known_constants.push_back(tokens[0]);
            *num_of_constants = *num_of_constants + 1;
          }
-         if(tokens[0].type==ID_TOKEN && fntable.find(tokens[0].content)!=fntable.end())
-         {
-           addToFnReferenced(tokens[0].content);
-           if(fntable.find("@"+tokens[0].content)!=fntable.end())
-             addToFnReferenced("@"+tokens[0].content);
-           //the user might be referring to function in global namespace or in current namespace
-           //so we add both names to fnReferenced
-
-           if(prefixes.size()>1)
-             addToFnReferenced(prefixes.back()+tokens[0].content);
-         }
-         if(tokens[0].type == BYTE_TOKEN)
-           ast = NewNode(NodeType::BYTE,tokens[0].content);
-         else if(tokens[0].type == FLOAT_TOKEN)
+         if(tokens[0].type == FLOAT_TOKEN)
            ast = NewNode(NodeType::FLOAT,tokens[0].content);
-         else if(tokens[0].type == STRING_TOKEN)
-           ast = NewNode(NodeType::STR,tokens[0].content);
-         else if(tokens[0].type == BOOL_TOKEN)
-           ast = NewNode(NodeType::BOOL,tokens[0].content);
-         else if(tokens[0].type == NUM_TOKEN)
+         else if(tokens[0].type == NUM_TOKEN)//int64
            ast = NewNode(NodeType::NUM,tokens[0].content);
-        else if(tokens[0].type == KEYWORD_TOKEN && tokens[0].content == "nil")
-           ast = NewNode(NodeType::NIL,tokens[0].content);
-        else if(tokens[0].type == ID_TOKEN)
-           ast = NewNode(NodeType::ID,tokens[0].content);
          return ast;
        }
        parseError("SyntaxError","Invalid Syntax");
@@ -536,7 +577,7 @@ public:
         return ast;
       }
     }
-    if(tokens[tokens.size()-1].type==END_LIST_TOKEN)// evaluate indexes
+    if(tokens[tokens.size()-1].type==END_LIST_TOKEN)// evaluate indexes or lists
     {
        int i = findBeginList(tokens.size()-1,tokens);
        if(i==-1)
@@ -545,11 +586,6 @@ public:
        {
           vector<Token> toindex = {tokens.begin(),tokens.begin()+i};
           vector<Token> index = {tokens.begin()+i+1,tokens.end()-1};
-          //printf("handled here\n");
-        //  printf("toindex = ");
-      //    for(auto e: toindex)
-        //    printf("%s",e.content.c_str());
-      //    printf("\n");
 
           Node* ast = NewNode(NodeType::index);
           ast->childs.push_back(parseExpr(toindex));
@@ -559,11 +595,11 @@ public:
        else
        {
          ast = NewNode(NodeType::list);
-         if(tokens.size()==2)
+         if(tokens.size()==2)//empty list
            return ast;
          vector<Token> t;
-         int L = tokens.size()-2;
-         for(int k = 1;k<=L;k+=1)
+         int L = tokens.size()-2;//number of tokens excluding square brackets
+         for(int k = 1;k<=L;k+=1)//process list elements
          {
            if(tokens[k].type== TokenType::COMMA_TOKEN)
            {
@@ -760,15 +796,15 @@ public:
       Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
       ast->childs.push_back(n);
       ast->childs.push_back(NewNode(NodeType::ID,tokens[0].content));
-
-        addToFnReferenced(tokens[0].content);
-        if(fntable.find("@"+tokens[0].content)!=fntable.end())
-          addToFnReferenced("@"+tokens[0].content);
-        //the user might be referring to function in global namespace or in current namespace
-        //so we add both names to fnReferenced
-        if(prefixes.size()>1)
-          addToFnReferenced(prefixes.back()+tokens[0].content);
-
+      auto it = prefixes.rbegin();
+      bool done = false;
+      while(it != prefixes.rend())
+      {
+        aux = (*it)+tokens[0].content;
+        if(done = addSymRef(aux))
+          break;
+        it++;
+      }
       vector<Token> T;
       vector<Token> Args = {tokens.begin()+2,tokens.end()-1};
       if(Args.size()==0)
@@ -857,7 +893,7 @@ public:
     return ast;
   }
 
-  Node* parseStmt(vector<Token> tokens,bool infunc = false,bool inclass=false)
+  Node* parseStmt(vector<Token> tokens)
   {
     if(tokens.size()==0)
       parseError("SyntaxError","Invalid Syntax");
@@ -967,13 +1003,15 @@ public:
           ast->childs.push_back(n);
           ast->childs.push_back(NewNode(NodeType::ID,tokens[0].content));
           //if()
-          addToFnReferenced(tokens[0].content);
-          if(fntable.find("@"+tokens[0].content)!=fntable.end())
-            addToFnReferenced("@"+tokens[0].content);
-          //the user might be referring to function in global namespace or in current namespace
-          //so we add both names to fnReferenced
-          if(prefixes.size()>1)
-            addToFnReferenced(prefixes.back()+tokens[0].content);
+          auto it = prefixes.rbegin();
+          bool done = false;
+          while(it != prefixes.rend())
+          {
+            aux = (*it)+tokens[0].content;
+            if(done = addSymRef(aux))
+              break;
+            it++;
+          }
           Node* args = NewNode(NodeType::args);
           if(tokens.size()==3)
           {
@@ -1104,9 +1142,14 @@ public:
         t.type = TokenType::KEYWORD_TOKEN;
         t.content = "to";
         int i = findToken(t,0,tokens);
+        bool dtoLoop = false;
         if(i==-1)
         {
-            parseError("SyntaxError","Invalid Syntax");
+            t.content = "dto";
+            i = findToken(t,0,tokens);
+            if(i == -1)
+              parseError("SyntaxError","Invalid Syntax");
+            dtoLoop = true;
         }
         vector<Token> init = {tokens.begin(),tokens.begin()+i};
 
@@ -1114,10 +1157,24 @@ public:
         t.content = "step";
         t.type = TokenType::KEYWORD_TOKEN;
         i = findToken(t,i+1,tokens);
-        if(i==-1)
-        parseError("SyntaxError","Invalid Syntax");
-        vector<Token> endpoint = {tokens.begin()+p+1,tokens.begin()+i};
-        vector<Token> inc = {tokens.begin()+i+1,tokens.end()};
+        vector<Token> endpoint;
+        vector<Token> inc;
+        if(i==-1)//step is optional
+        {
+          endpoint = {tokens.begin()+p+1,tokens.end()};
+          Token one;
+          one.type = TokenType::NUM_TOKEN;
+          if(dtoLoop)
+            one.content = "-1";
+          else
+            one.content = "1";
+          inc = {one};
+        }
+        else
+        {
+          endpoint = {tokens.begin()+p+1,tokens.begin()+i};
+          inc = {tokens.begin()+i+1,tokens.end()};
+        }
         bool decl = false;
         if(init[0].type==TokenType::KEYWORD_TOKEN && init[0].content=="var" )
         {
@@ -1127,7 +1184,11 @@ public:
         if(init[0].type==TokenType::ID_TOKEN && init[1].type==TokenType::OP_TOKEN && init[1].content=="=")
         {
           vector<Token> initExpr = {init.begin()+2,init.end()};
-          Node* ast = NewNode(NodeType::FOR);
+          Node* ast;
+          if(dtoLoop)
+            ast = NewNode(NodeType::DFOR);
+          else
+            ast = NewNode(NodeType::FOR);
           Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
           ast->childs.push_back(n);
           if(decl)
@@ -1141,6 +1202,8 @@ public:
 
           return ast;
         }
+        else
+          parseError("SyntaxError","Invalid Syntax");
     }
     if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="foreach")
     {
@@ -1159,9 +1222,7 @@ public:
       Node* exprAST = parseExpr(expr);
       Node* ast = NewNode(NodeType::FOREACH);
       Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-      ast->childs.push_back(n);
-      ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
-      ast->childs.push_back(exprAST);
+      ast->childs = {n,NewNode(NodeType::ID,tokens[1].content),exprAST};
       Token Q;
       Q.type = TokenType::NUM_TOKEN;
       Q.content = "-1";
@@ -1539,7 +1600,7 @@ public:
 
   }
 
-  Node* parse(const vector<Token>& tokens,bool inwhile=false,bool infunc=false,bool inclass=false)
+  Node* parse(const vector<Token>& tokens)
   {
       int k = 0;
       Node* ast = nullptr;
@@ -1569,7 +1630,7 @@ public:
                     k+=1;
                     continue;
               }
-              ast = parseStmt(line,infunc,inclass);
+              ast = parseStmt(line);
               if(ast->type==NodeType::IF)
               {
                   ElseTok.type = TokenType::KEYWORD_TOKEN;
@@ -1596,15 +1657,13 @@ public:
                      line_num = line[0].ln;
                      if(i==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
                        parseError("SyntaxError","Error expected code block or line after if!");
-
-
                  }
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};//if block
                  if(block.size()==1 && block[0].type==KEYWORD_TOKEN && (block[0].content=="endfor" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || block[0].content=="endwhile" || block[0].content=="endnm" || block[0].content=="endclass" || block[0].content=="endfunc" || block[0].content=="endelse" || block[0].content=="endelif" ||  block[0].content=="endif"))
                  {
                        parseError("SyntaxError","Error use brackets {} after if!");
                  }
-                 removeUselessNewlines(block);
+                 stripNewlines(block);
                  vector<vector<Token>> elifBlocks;
                  vector<vector<Token>> elifConditions;
                  j = findTokenConsecutive(elif,i+1,tokens);
@@ -1674,7 +1733,7 @@ public:
                  {
                        parseError("SyntaxError","Error use brackets {} after else!");
                  }
-                   removeUselessNewlines(elseBlock);
+                   stripNewlines(elseBlock);
                    for(int a=0;a<(int)elifConditions.size();a++)
                    {
                        line_num = elifConditions[a][0].ln;   
@@ -1693,20 +1752,20 @@ public:
                    t.content = "endelse";
                    elseBlock.push_back(t);
                    elseBlock.push_back(newlinetok);
-                   ast->childs.push_back(parse(block,inwhile,infunc));
+                   ast->childs.push_back(parse(block));
                    t.content = "endelif";
                    for(int a=0;a<(int)elifBlocks.size();a++)
                    {
                       vector<Token> elifBlock = elifBlocks[a];
-                      removeUselessNewlines(elifBlock);
+                      stripNewlines(elifBlock);
                       if(elifBlock.size()!=0)
                         elifBlock.push_back(newlinetok);
                       elifBlock.push_back(t);
                       elifBlock.push_back(newlinetok);
-                      Node* n = parse(elifBlock,inwhile,infunc);
+                      Node* n = parse(elifBlock);
                       ast->childs.push_back(n);
                    }
-                   ast->childs.push_back(parse(elseBlock,inwhile,infunc));
+                   ast->childs.push_back(parse(elseBlock));
                    if(start==0)
                    {
                      Final = ast;
@@ -1725,7 +1784,7 @@ public:
                    ast->type = NodeType::IFELIF;
                    for(int a=0;a<(int)elifConditions.size();a++)
                    {
-                                           line_num = elifConditions[a][0].ln;
+                       line_num = elifConditions[a][0].ln;
                        ast->childs[1]->childs.push_back(parseExpr(elifConditions[a]));
                    }
                    Token t;
@@ -1735,17 +1794,17 @@ public:
                      block.push_back(newlinetok);
                    block.push_back(t);
                    block.push_back(newlinetok);
-                   ast->childs.push_back(parse(block,inwhile,infunc));
+                   ast->childs.push_back(parse(block));
                    t.content = "endelif";
                    for(int a=0;a<(int)elifBlocks.size();a++)
                    {
                       vector<Token> elifBlock = elifBlocks[a];
-                      removeUselessNewlines(elifBlock);
+                      stripNewlines(elifBlock);
                       if(elifBlock.size()!=0)
                         elifBlock.push_back(newlinetok);
                       elifBlock.push_back(t);
                       elifBlock.push_back(newlinetok);
-                      Node* n = parse(elifBlock,inwhile,infunc);
+                      Node* n = parse(elifBlock);
                       ast->childs.push_back(n);
                    }
                    if(start==0)
@@ -1765,7 +1824,7 @@ public:
                  {
                    ast->type = NodeType::IFELSE;
                    vector<Token> elseBlock = {tokens.begin()+j+1,tokens.begin()+i};
-                   removeUselessNewlines(elseBlock);
+                   stripNewlines(elseBlock);
                    Token t;
                    t.content = "endif";
                    t.type = KEYWORD_TOKEN;
@@ -1778,8 +1837,8 @@ public:
                      elseBlock.push_back(newlinetok);
                    elseBlock.push_back(t);
                    elseBlock.push_back(newlinetok);
-                   ast->childs.push_back(parse(block,inwhile,infunc));
-                   ast->childs.push_back(parse(elseBlock,inwhile,infunc));
+                   ast->childs.push_back(parse(block));
+                   ast->childs.push_back(parse(elseBlock));
                    if(start==0)
                    {
                      Final = ast;
@@ -1803,7 +1862,7 @@ public:
                        block.push_back(newlinetok);
                      block.push_back(t);
                      block.push_back(newlinetok);
-                     ast->childs.push_back(parse(block,inwhile,infunc));
+                     ast->childs.push_back(parse(block));
                      if(start==0)
                      {
                        Final = ast;
@@ -1847,7 +1906,9 @@ public:
                  {
                        parseError("SyntaxError","Error expected code block or line after function definition!");
                  }
-                 removeUselessNewlines(block);
+                 if(infunc)
+                   parseError("SyntaxError","Nested functions not allowed!");
+                 stripNewlines(block);
                  newlinetok.type = NEWLINE_TOKEN;
                  newlinetok.content = "\n";
                  if(block.size()!=0)
@@ -1857,21 +1918,23 @@ public:
                  t.content = "endfunc";
                  block.push_back(t);
                  block.push_back(newlinetok);
-                 size_t before = fnReferenced->size();
-                 fntable.emplace(ast->childs[1]->val,vector<string>{});
+                 
                  foundYield = false;
-                 ast->childs.push_back(parse(block,inwhile,true));
+                 string aux = currSym;
+                 if(!inclass)
+                 {
+                   currSym = ast->childs[1]->val;
+                   refGraph->emplace(ast->childs[1]->val,vector<string>{});
+                 }
+                 infunc = true;
+                 ast->childs.push_back(parse(block));
+                 infunc = false;
+                 if(!inclass)
+                   currSym = aux;
+                 
                  if(foundYield)
                    ast->type = NodeType::CORO;
 
-                 size_t increase = fnReferenced->size()-before;
-                 for(int i=1;i<=(int)increase;i+=1)
-                 {
-                   string e = fnReferenced->back();
-                   fnReferenced->pop_back();
-                   if(e!=ast->childs[1]->val)
-                     fntable[ast->childs[1]->val].push_back(e);
-                 }
                  if(start==0)
                  {
                    Final = ast;
@@ -1887,7 +1950,6 @@ public:
               }
               else if(ast->type==NodeType::CLASS || ast->type==NodeType::EXTCLASS)
               {
-              //   printf("parsing class\n");
                  bgscope.content = "{";
                  bgscope.type=L_CURLY_BRACKET_TOKEN;
                  int j = findTokenConsecutive(bgscope,start+line.size(),tokens);
@@ -1898,8 +1960,10 @@ public:
                  }
                  else
                    i = findRCB(j,tokens);
+                if(inclass)
+                  parseError("SyntaxError","Nested classes not allowed!");
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
-                 removeUselessNewlines(block);
+                 stripNewlines(block);
                  newlinetok.type = NEWLINE_TOKEN;
                  newlinetok.content = "\n";
                  if(block.size()!=0)
@@ -1909,10 +1973,17 @@ public:
                  t.content = "endclass";
                  block.push_back(t);
                  block.push_back(newlinetok);
+                 inclass = true;
+                 string aux = currSym;
+                 currSym = ast->childs[1]->val;
+                 refGraph->emplace(ast->childs[1]->val,vector<string>{});
                  if(ast->val=="class")
-                   ast->childs.push_back(parse(block,inwhile,false,true));
+                   ast->childs.push_back(parse(block));
                  else
-                   ast->childs.insert(ast->childs.begin()+2,parse(block,inwhile,false,true));
+                   ast->childs.insert(ast->childs.begin()+2,parse(block));
+                 //backtrack
+                 inclass = false;
+                 currSym = aux;
                  if(start==0)
                  {
                    Final = ast;
@@ -1940,7 +2011,7 @@ public:
                  else
                    i = findRCB(j,tokens);
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
-                 removeUselessNewlines(block);
+                 stripNewlines(block);
                  newlinetok.type = NEWLINE_TOKEN;
                  newlinetok.content = "\n";
                  if(block.size()!=0)
@@ -1953,7 +2024,7 @@ public:
 
                  prefixes.push_back(ast->childs[1]->val+"::");//prefix each identifier in namespace block
                  //with "namespaceName::"
-                 ast->childs.push_back(parse(block,inwhile,false));
+                 ast->childs.push_back(parse(block));
                  prefixes.pop_back();
                  if(start==0)
                  {
@@ -1968,7 +2039,7 @@ public:
                  start=i+1;
                  k = i;
               }
-              else if(ast->type==NodeType::WHILE || ast->type==NodeType::DOWHILE || ast->type==NodeType::FOR || ast->type==NodeType::FOREACH)//loops
+              else if(ast->type==NodeType::WHILE || ast->type==NodeType::DOWHILE || ast->type==NodeType::FOR || ast->type == NodeType::DFOR || ast->type==NodeType::FOREACH)//loops
               {
                  bgscope.content ="{";
                  bgscope.type= L_CURLY_BRACKET_TOKEN;
@@ -1991,7 +2062,7 @@ public:
                        parseError("SyntaxError","Error use brackets {} after "+ast->val);
                  }
                //  printf("loop block size = %ld\n",block.size());
-                 removeUselessNewlines(block);
+                 stripNewlines(block);
                  Token t;
                  if(ast->val=="while" || ast->val=="dowhile")
                    t.content = "endwhile";
@@ -2005,7 +2076,10 @@ public:
                    block.push_back(newlinetok);
                  block.push_back(t);
                  block.push_back(newlinetok);
-                 ast->childs.push_back(parse(block,true,infunc));//inwhile = true
+                 bool b = inloop;
+                 inloop = true;
+                 ast->childs.push_back(parse(block));//inwhile = true
+                 inloop = b;
                  if(start==0)
                  {
                    Final = ast;
@@ -2041,7 +2115,7 @@ public:
                  {
                        parseError("SyntaxError","Error use brackets {} after "+ast->val);
                  }
-                 removeUselessNewlines(block);
+                 stripNewlines(block);
                  Token CATCH_TOK;
                  CATCH_TOK.type = TokenType::KEYWORD_TOKEN;
                  CATCH_TOK.content = "catch";
@@ -2082,7 +2156,7 @@ public:
                    parseError("SyntaxError","Error expected catch block after try{}!");
                  }
                  vector<Token> catchBlock = {tokens.begin()+j+1,tokens.begin()+i};
-                 removeUselessNewlines(catchBlock);
+                 stripNewlines(catchBlock);
                  Token t;
                  t.content = "endtry";
                  t.type = KEYWORD_TOKEN;
@@ -2099,8 +2173,8 @@ public:
                  catchBlock.push_back(t);
                  catchBlock.push_back(newlinetok);
                  ast->childs.push_back(NewNode(NodeType::ID,catchId));
-                 ast->childs.push_back(parse(block,false,infunc));
-                 ast->childs.push_back(parse(catchBlock,false,infunc));
+                 ast->childs.push_back(parse(block));
+                 ast->childs.push_back(parse(catchBlock));
                  if(start==0)
                  {
                    Final = ast;
@@ -2116,7 +2190,7 @@ public:
               }
               else if(ast->type==NodeType::BREAK || ast->type==NodeType::CONTINUE)
               {
-                if(!inwhile)
+                if(!inloop)
                 {
                   parseError("SyntaxError","Error use of break or continue not allowed outside loop!");
                 }
@@ -2183,7 +2257,7 @@ public:
                     sources->push_back(src);
                     Lexer lex;
                     vector<Token> tokens = lex.generateTokens(filename,src);
-                    removeUselessNewlines(tokens);
+                    stripNewlines(tokens);
                     Token t;
                     Token nl;
                     nl.type = NEWLINE_TOKEN;
@@ -2247,7 +2321,7 @@ public:
           }
           k+=1;
       }
-
+      
       return Final;
   }
 };

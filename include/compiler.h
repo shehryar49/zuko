@@ -44,8 +44,36 @@ extern Klass* ImportError;
 extern Klass* ThrowError;
 extern Klass* MaxRecursionError;
 extern Klass* AccessError;
-void REPL();
 
+void REPL();
+void initFunctions();
+void initMethods();
+
+void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<string>>& graph)//gives the names of symbols that are referenced and not deadcode
+{
+  std::queue<string> q;
+  q.push(".main");
+  //there is no incoming edge on .main
+  //ref.emplace(".main",true);
+  string curr;
+ // printf("--begin BFS--\n");
+  while(!q.empty())
+  {
+    curr = q.front();
+  //  printf("%s\n",curr.c_str());
+    q.pop();
+    const vector<string>& adj = graph[curr];
+    for(auto e: adj)
+    {
+     // printf("  neighbour: %s\n",e.c_str());
+      if(ref.find(e) == ref.end()) //node not already visited or processed
+      {
+        q.push(e);
+        ref.emplace(e,true);
+      }
+    }
+  }
+}
 inline void addBytes(vector<uint8_t>& vec,int32_t x)
 {
   size_t sz = vec.size();
@@ -61,7 +89,7 @@ private:
   vector<size_t> contTargets;
   vector<size_t> breakTargets;
   vector<int32_t> indexOfLastWhileLocals;
-  vector<string>* fnReferenced;
+  unordered_map<string,bool> symRef;
   vector<SymbolTable> locals;
   vector<string> prefixes;
   int32_t* num_of_constants;
@@ -83,18 +111,55 @@ private:
   int32_t foo = 0;
   int32_t fnScope;
   bool returnStmtAtFnScope;
+  vector<uint8_t> bytecode;
 public:
+  friend void REPL();
   SymbolTable globals;
   size_t bytes_done = 0;
-  void init(vector<string>* fnR,int32_t* e,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
+  //init function is used instead of constructor
+  //this way the Compiler class becomes reusable
+  //by initializing it again
+  void init(ParseInfo& p,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
   {
-    fnReferenced = fnR;
-    num_of_constants = e;
+    symRef.clear();
+    extractSymRef(symRef,p.refGraph);
+    num_of_constants = (int32_t*)&(p.num_of_constants);
     files = fnames;
     sources = fsc;
     fileTOP = (short)(std::find(files->begin(),files->end(),filename) - files->begin());
     LineNumberTable = ltable;
     this->filename = filename;
+    if(p.num_of_constants > 0 && !REPL_MODE)
+    {
+      if(vm.constants)
+        delete[] vm.constants;
+      vm.constants = new PltObject[p.num_of_constants];
+      vm.total_constants = 0;
+    }
+    initFunctions();
+    initMethods();
+    //reset all state
+    inConstructor = false;
+    inGen = false;
+    inclass = false;
+    infunc = false;
+    if(!REPL_MODE)
+    {
+      bytecode.clear();
+      globals.clear();
+      locals.clear();
+      className = "";
+      classMemb.clear();
+      line_num = 1;
+      andJMPS.clear();
+      orJMPS.clear();
+      prefixes.clear();
+      scope = 0;
+      breakTargets.clear();
+      contTargets.clear();
+      indexOfLastWhileLocals.clear();
+      bytes_done = 0;
+    }
   }
   void compileError(string type,string msg)
   {
@@ -149,6 +214,18 @@ public:
     ByteSrc tmp = {fileTOP,line_num};
     LineNumberTable->emplace(opcodeIdx,tmp);
   }
+  int32_t addBuiltin(const string& name)
+  {
+    int32_t index;
+    auto fnAddr = funcs[name];
+    for(index = 0;index < vm.builtin.size();index+=1)
+    {
+      if(vm.builtin[index]==fnAddr)
+        return index;
+    }
+    vm.builtin.push_back(funcs[name]);
+    return (int32_t)vm.builtin.size()-1;
+  }
   vector<uint8_t> exprByteCode(Node* ast)
   {
       PltObject reg;
@@ -160,20 +237,8 @@ public:
               const string& n = ast->val;
               if (isnum(n))
               {
-                  reg.type = 'i';
-                  reg.i = Int(n);
-                  int32_t e = isDuplicateConstant(reg);
-                  if (e != -1)
-                      foo = e;
-                  else
-                  {
-                      foo = vm.total_constants;
-                      reg.type = 'i';
-                      reg.i = Int(n);
-                      vm.constants[vm.total_constants++] = reg;
-                  }
-                  bytes.push_back(LOAD_CONST);
-                  addBytes(bytes,foo);
+                  bytes.push_back(LOAD_INT32);
+                  addBytes(bytes,Int(n));
                   bytes_done += 1 + sizeof(int32_t);
               }
               else if (isInt64(n))
@@ -233,21 +298,9 @@ public:
           }
           else if (ast->type ==  NodeType::BOOL)
           {
-              bytes.push_back(LOAD_CONST);
-              string n = ast->val;
-              bool a = (n == "true") ? true : false;
-              reg.type = 'b';
-              reg.i = a;
-              int32_t e = isDuplicateConstant(reg);
-              if (e != -1)
-                  foo = e;
-              else
-              {
-                  foo = vm.total_constants;
-                  vm.constants[vm.total_constants++] = reg;
-              }
-              addBytes(bytes,foo);
-              bytes_done += 1 + sizeof(int32_t);
+              const string& n = ast->val;
+              bytes.push_back((n == "true") ? LOAD_TRUE : LOAD_FALSE);
+              bytes_done+=1;
               return bytes;
           }
           else if (ast->type == NodeType::STR)
@@ -261,11 +314,8 @@ public:
           }
           else if (ast->type == NodeType::NIL)
           {
-              bytes.push_back(LOAD_CONST);
-              PltObject ret;
-              foo = 0;
-              addBytes(bytes,foo);
-              bytes_done += 5;
+              bytes.push_back(LOAD_NIL);
+              bytes_done += 1;
               return bytes;
           }
           else if (ast->type == NodeType::ID)
@@ -300,20 +350,9 @@ public:
           }
           else if (ast->type == NodeType::BYTE)
           {
-              bytes.push_back(LOAD_CONST);
-              uint8_t b = tobyte(ast->val);
-              reg.type = 'm';
-              reg.i = b;
-              int32_t e = isDuplicateConstant(reg);
-              if (e != -1)
-                  foo = e;
-              else
-              {
-                  foo = vm.total_constants;
-                  vm.constants[vm.total_constants++] = reg;
-              }
-              addBytes(bytes,foo);
-              bytes_done += 1 + sizeof(int32_t);
+              bytes.push_back(LOAD_BYTE);
+              bytes.push_back(tobyte(ast->val));
+              bytes_done+=2;
               return bytes;
           }
 
@@ -859,6 +898,7 @@ public:
   {
       vector<uint8_t> program;
       bool isGen = false;
+      bool dfor = false;
       while (ast->type != NodeType::EOP && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
       {
           if(ast->childs.size() >= 1)
@@ -1071,21 +1111,23 @@ public:
               bytes_done += 1 + JUMPOFFSet_Size;
 
           }
-          else if (ast->type == NodeType::FOR )
-          {
-              
+          else if (ast->type == NodeType::FOR || (dfor = ast->type == NodeType::DFOR))
+          {  
             size_t lnCopy = line_num;
-            bool decl = ast->childs[1]->type == NodeType::decl;
+            bool decl = ast->childs[1]->type == NodeType::decl;//whether to declare loop
+            //control variable or not
             size_t L = bytes_done;
             const string& loop_var_name = ast->childs[2]->val;
-            string I = ast->childs[5]->val;
-            vector<uint8_t> initValue = exprByteCode(ast->childs[3]);
+            string I = ast->childs[5]->val;//increment/decrement value
+            vector<uint8_t> initValue = exprByteCode(ast->childs[3]);//start value
 
-            program.insert(program.end(),initValue.begin(),initValue.end());
+            program.insert(program.end(),initValue.begin(),initValue.end());//load start
+            //value
             bool isGlobal = false;
             int32_t lcvIdx ;
             if(!decl)
             {
+              //assign start value to variable which is being used as lcv
               bool isSelf = false;
               foo = resolveName(loop_var_name,isGlobal,true,&isSelf);
               lcvIdx = foo;
@@ -1105,8 +1147,8 @@ public:
                 program.push_back(ASSIGN_GLOBAL);
               addBytes(program,foo);
               bytes_done+=5;
-
             }
+
             contTargets.push_back(bytes_done);
             bytes_done+=5;
 
@@ -1160,19 +1202,22 @@ public:
             foo = lcvIdx;
             addBytes(program,foo);//load loop control variable
             program.insert(program.end(),finalValue.begin(),finalValue.end());
-            program.push_back(SMOREQ);
+            if(dfor)
+              program.push_back(GROREQ);
+            else
+              program.push_back(SMOREQ);
 
             ////
             vector<uint8_t> inc;
             line_num = lnCopy;
 
 
-            if(I!="1")
+            if(dfor || I!="1")
             {
               inc = exprByteCode(ast->childs[5]);
-              where = block.size() + 1 + JUMPOFFSet_Size+inc.size()+12;
-              if(isGlobal)
-                where-=1;
+              where = block.size() + 1 + JUMPOFFSet_Size+inc.size()+11;
+              //11 bytes for some increment code
+              
             }
             else
             {
@@ -1188,7 +1233,7 @@ public:
             addBytes(program,foo);
             //
             block.insert(block.end(),inc.begin(),inc.end());
-            if(I=="1" && ast->childs[5]->type == NodeType::NUM)
+            if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor)
             {
               if(!isGlobal)
                 block.push_back(INPLACE_INC);
@@ -1245,8 +1290,7 @@ public:
           else if (ast->type == NodeType::FOREACH)
           {
               
-              string loop_var_name = ast->childs[1]->val;
-
+              const string& loop_var_name = ast->childs[1]->val;
               vector<uint8_t> startIdx = exprByteCode(ast->childs[3]);
               program.insert(program.end(),startIdx.begin(),startIdx.end());
               int32_t E = STACK_SIZE;
@@ -1255,22 +1299,8 @@ public:
               SymbolTable m;
               bool add = true;
               size_t index = 0;
-              int32_t fnIdx = 0;
-              for(index = 0;index < vm.builtin.size();index+=1)
-              {
-                if(vm.builtin[index]==funcs["len"])
-                {
-                  add = false;
-                  break;
-                }
-              }
-              if(add)
-              {
-                vm.builtin.push_back(funcs["len"]);
-                fnIdx = vm.builtin.size()-1;
-              }
-              else
-                fnIdx = index;
+              int32_t fnIdx = addBuiltin("len");
+
               //Bytecode to calculate length of list we are looping
               vector<uint8_t> LIST = exprByteCode(ast->childs[2]);
               program.insert(program.end(),LIST.begin(),LIST.end());
@@ -1734,7 +1764,9 @@ public:
               compileError("SyntaxError","Error function within function not allowed!");
             }
             const string& name = ast->childs[1]->val;
-            if(compileAllFuncs || std::find(fnReferenced->begin(),fnReferenced->end(),name)!=fnReferenced->end() || inclass)
+            auto it = symRef.find(name);
+            bool isRef = it!=symRef.end() && (*it).second;
+            if(compileAllFuncs || isRef || inclass)
             {
                 if(funcs.find(name)!=funcs.end() && !inclass)
                   compileError("NameError","Error a builtin function with same name already exists!");
@@ -1818,41 +1850,23 @@ public:
                 STACK_SIZE = before;
                 if(name!="__construct__")
                 {
-                  if (funcBody.size() == 0)
+                  if (funcBody.size() == 0 || !returnStmtAtFnScope)
                   {
-                        foo = 0;
-                        funcBody.push_back(LOAD_CONST);
-                        addBytes(funcBody,foo);
+                        funcBody.push_back(LOAD_NIL);
                         if(isGen)
                           funcBody.push_back(CO_STOP);
                         else
                           funcBody.push_back(RETURN);
-                        bytes_done +=6;
-                  }
-                  else
-                  {
-
-                    if (!returnStmtAtFnScope)
-                    {
-                        foo = 0;
-                        funcBody.push_back(LOAD_CONST);
-                        addBytes(funcBody,foo);
-                        if(isGen)
-                          funcBody.push_back(CO_STOP);
-                        else
-                          funcBody.push_back(RETURN);
-                        bytes_done +=6;
-                    }
+                        bytes_done +=2;
                   }
                 }
                 else
                 {
-                  funcBody.push_back(LOAD);
-                  funcBody.push_back('v');
+                  funcBody.push_back(LOAD_LOCAL);
                   foo = selfIdx;
                   addBytes(funcBody,foo);
                   funcBody.push_back(RETURN);
-                  bytes_done+=7;
+                  bytes_done+=6;
                 }
                 //program.push_back(JMP);
                 foo =  funcBody.size();
@@ -1869,12 +1883,15 @@ public:
           }
           else if(ast->type==NodeType::CLASS || ast->type==NodeType::EXTCLASS)
           {
-            if(scope!=0)
-            {
-              compileError("SyntaxError","Class declaration must be at global scope!");
-            }
             bool extendedClass = (ast->type == NodeType::EXTCLASS);
             string name = ast->childs[1]->val;
+            if(!REPL_MODE && symRef.find(name)==symRef.end())
+            {
+              //class not referenced in source code
+              //no need to compile
+              ast = ast->childs.back();
+              continue;
+            }
 
             if(globals.find(name)!=globals.end())
                 compileError("NameError","Redeclaration of name "+name);
@@ -2132,24 +2149,19 @@ public:
     vm.STACK.push_back(PObjFromKlass(k));
     return k;
   }
-  vector<uint8_t> compileProgram(Node* ast,int32_t argc,const char* argv[],vector<uint8_t> prev = {},bool compileNonRefFns = false,bool popGlobals = true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
+  vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
   {
     //If prev vector is empty then this program will be compiled as an independent new one
     //otherwise this program will be an addon to the previous one
     //new = prev +curr
-    bytes_done = prev.size();
+    bytes_done = bytecode.size();
     compileAllFuncs = compileNonRefFns;
     line_num = 1;
     andJMPS.clear();
     orJMPS.clear();
-    vector<uint8_t> bytecode;
-    if(prev.size() == 0)
+    if(bytecode.size() == 0)
     {
       STACK_SIZE = 3;
-      globals.clear();
-      locals.clear();
-      scope = 0;
-      prefixes.clear();
       globals.emplace("argv",0);
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
@@ -2229,8 +2241,7 @@ public:
       MaxRecursionError =makeErrKlass("MaxRecursionError",Error);
       AccessError = makeErrKlass("AccessError",Error);
     }
-    infunc = false;
-    inclass = false;
+    
     auto bt = compile(ast);
     bytecode.insert(bytecode.end(),bt.begin(),bt.end());
     if(globals.size()!=0 && popGlobals)
@@ -2242,15 +2253,14 @@ public:
     }
     bytecode.push_back(OP_EXIT);
     bytes_done+=1;
-    bytecode.insert(bytecode.begin(),prev.begin(),prev.end());
     if (bytes_done != bytecode.size())
     {
         printf("Plutonium encountered an internal error.\nError Code: 10\n");
        // printf("%ld   /  %ld  bytes done\n",bytes_done,bytecode.size());
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     //final phase
-    //optimize short circuit jumps for and 
+    //optimize short circuit jumps for 'and' and 'or' operators
     optimizeJMPS(bytecode);
     return bytecode;
   }

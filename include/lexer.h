@@ -26,7 +26,7 @@ using namespace std;
 int32_t hexToInt32(const string&);
 int64_t hexToInt64(const string&);
 
-const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
+const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
 bool isKeyword(string s)
 {
   for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
@@ -39,7 +39,7 @@ bool isKeyword(string s)
   return false;
 }
 string lstrip(string);
-void removeUselessNewlines(vector<Token>&);
+void stripNewlines(vector<Token>&);
 extern bool REPL_MODE;
 void REPL();
 class Lexer
@@ -299,6 +299,8 @@ public:
                     }
                     if(b.length() == 1 || b.length() == 2) //byte
                     {
+                       if(b.length() == 1)
+                         b = "0" + b;
                        i.type = BYTE_TOKEN;
                        i.ln = ln;
                        i.content = b;
@@ -697,7 +699,7 @@ public:
             }
             k+=1;
         }
-        removeUselessNewlines(tokenlist);//removes newlines start and end of token list
+        stripNewlines(tokenlist);//removes newlines start and end of token list
         if (tokenlist.size() == 0)
             return tokenlist;
         Token t;

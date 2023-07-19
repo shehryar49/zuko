@@ -673,7 +673,7 @@ PltObject OBJINFO(PltObject* args,int32_t argc)
     }
     else
     {
-        return Plt_Err(TypeError,"Error argument is not an instance of any class!");
+        return Plt_Err(TypeError,"Error argument is not an object of any class!");
     }
 }
 PltObject moduleInfo(PltObject* args,int32_t argc)

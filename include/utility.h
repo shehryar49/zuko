@@ -21,7 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef PLT_UTILITY_H_
 #define PLT_UTILITY_H_
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
+
 using namespace std;
 
 string IntToHex(int i)
@@ -53,43 +56,15 @@ string IntToHex(int i)
     return res;
 }
 
-unsigned char tobyte(string s)
+unsigned char tobyte(const string& s)
 {
-
-    std::reverse(s.begin(),s.end());
-    size_t k = 0;
-    int p = 0;
+    //s.length() is always 2
+    //and alphabets are in lowercase
+    if(s.length() != 2)
+      return 0;
     unsigned char b = 0;
-    while(k<s.length())
-    {
-        string a;
-        a+=s[k];
-        if(!isdigit(s[k]))
-        {
-            if(a=="a")
-            {
-                a = "10";
-            }
-            else if(a=="b")
-                a = "11";
-            else if(a=="c")
-                a = "12";
-            else if(a=="d")
-                a = "13";
-            else if(a=="e")
-                a = "14";
-            else if(a=="f")
-               a = "15";
-            else
-            {
-                printf("Invalid Byte literal\n");
-                exit(0);
-            }
-        }
-        b+= Int(a)*pow(16,p);
-        k+=1;
-        p+=1;
-    }
+    b = (isdigit(s[1])) ? s[1]-48 : s[1]-87;
+    b += (isdigit(s[0])) ? (s[0]-48)<<4 : (s[0]-87)<<4;
     return b;
 }
 int32_t hexToInt32(const string& s)
@@ -202,7 +177,7 @@ string addlnbreaks(string s,bool& hadErr)
 }
 string readline()
 {
-  char ch;
+  signed char ch;
   string line;
   while((ch = fgetc(stdin))!='\n')
   {

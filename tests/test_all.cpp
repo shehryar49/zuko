@@ -48,7 +48,8 @@ const char* tests[] =
     "polynomial",
     "coroutines",
     "addedReturn",
-    "conversions"
+    "conversions",
+    "stdlist"
 };
 int main(int argc,const char* argv[])
 {

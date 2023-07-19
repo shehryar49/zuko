@@ -1,5 +1,6 @@
 #ifndef PLUTONIUM_H_
 #define PLUTONIUM_H_
+
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,9 +17,8 @@
 #else
 #include <windows.h>
 #endif
-using namespace std;
 #include "PltObject.h"
-
+using namespace std;
 typedef PltObject(*BuiltinFunc)(PltObject*,int32_t);
 void PromoteType(PltObject&,char t);
 string fullform(char);
@@ -27,10 +27,9 @@ string substr(int32_t,int32_t,const string&);
 int32_t find(char,string);
 string replace_all(string,string,string);
 string addlnbreaks(string,bool&);
-unsigned char tobyte(string);
+unsigned char tobyte(const string&);
 #include "opcode.h"
 #include "overflow.h"
-//#include "unions.h"
 #include "convo.h"
 #include "token.h"
 #include "parser.h"
