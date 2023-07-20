@@ -909,7 +909,6 @@ public:
               vector<uint8_t> val = exprByteCode(ast->childs[1]);
               program.insert(program.end(), val.begin(), val.end());
               const string& name = ast->val;
-              //printf("declaring %s variable %s\n",((scope!=0)? "local" : "global"),name.c_str());
               if (scope == 0)
               {
                   if (globals.find(name) != globals.end())
@@ -1123,10 +1122,11 @@ public:
             //value
             bool isGlobal = false;
             int32_t lcvIdx ;
+            bool isSelf = false;
             if(!decl)
             {
               //assign start value to variable which is being used as lcv
-              bool isSelf = false;
+
               foo = resolveName(loop_var_name,isGlobal,true,&isSelf);
               lcvIdx = foo;
               if(isSelf)
@@ -1135,6 +1135,7 @@ public:
                 program.push_back(ASSIGNSELFMEMB);
                 foo = addToVMStringTable(loop_var_name);
                 L+=5;
+                lcvIdx = foo;
               }
               else if(!isGlobal)
               {
@@ -1191,7 +1192,12 @@ public:
             if(decl)
               locals.pop_back();
             int32_t where;
-            if(!isGlobal)
+            if(isSelf)
+            {
+              program.push_back(SELFMEMB);
+            //  foo = 
+            }
+            else if(!isGlobal)
             {
               program.push_back(LOAD_LOCAL);
             }
@@ -1210,7 +1216,7 @@ public:
             line_num = lnCopy;
 
 
-            if(dfor || I!="1")
+            if(dfor || I!="1" || isSelf)
             {
               inc = exprByteCode(ast->childs[5]);
               where = block.size() + 1 + JUMPOFFSet_Size+inc.size()+11;
@@ -1231,7 +1237,7 @@ public:
             addBytes(program,foo);
             //
             block.insert(block.end(),inc.begin(),inc.end());
-            if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor)
+            if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
             {
               if(!isGlobal)
                 block.push_back(INPLACE_INC);
@@ -1243,25 +1249,25 @@ public:
             }
             else
             {
-              if(!isGlobal)
+              if(isSelf)
+                block.push_back(SELFMEMB);
+              else if(!isGlobal)
               {
                 block.push_back(LOAD_LOCAL);
-
               }
               else
                 block.push_back(LOAD_GLOBAL);
               foo = lcvIdx;
               addBytes(block,foo);
               block.push_back(ADD);
-              if(!isGlobal )
+              if(isSelf)
+                block.push_back(ASSIGNSELFMEMB);
+              else if(!isGlobal )
                 block.push_back(ASSIGN);
               else
                 block.push_back(ASSIGN_GLOBAL);
               addBytes(block,foo);
-
-
-                bytes_done+=11;
-
+              bytes_done+=11;
             }
             program.insert(program.end(), block.begin(), block.end());
             if(whileLocals!=0)

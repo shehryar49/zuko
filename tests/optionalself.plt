@@ -33,6 +33,33 @@ class Window
       g()
     }
 }
+
+namespace std
+{
+  class Game
+  {
+    var x = 30
+    var y = 40
+    var nums = [1,3,5]
+    function run()
+    {
+      println(x," => ",y)
+      for(x=x to y step 1)
+      {
+        println(x) 
+      }
+      return self
+    }
+    function testForEach()
+    {
+      foreach(var elem: nums)
+      {
+        println(elem)
+      }
+    } 
+  }
+}
+
 var win = Window(2,5)
 win.display()
 win.double()
@@ -40,3 +67,4 @@ win.display()
 win.testIncrment()
 win.display()
 win.f()
+std::Game().run().testForEach()
