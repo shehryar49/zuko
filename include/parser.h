@@ -338,7 +338,22 @@ private:
   bool infunc;
   bool inclass;
   bool inloop;
+  bool inif;
+  bool inelif;
+  bool inelse;
+  bool intry;
+  bool incatch;
   //in class method = inclass && infunc
+  inline bool atGlobalLevel()
+  {
+    return (!infunc && !inclass && !inloop
+     && !inif && !inelif && !inelse && !intry && !incatch);
+  }
+  bool isValidCtxForFunc()
+  {
+        return (!infunc  && !inloop
+     && !inif && !inelif && !inelse && !intry && !incatch);
+  }
 public:
 
   void init(ParseInfo& p,vector<string>* fnames,vector<string>* fsc,string fname)
@@ -390,8 +405,8 @@ public:
       return false;
     if(refGraph->find(name)==refGraph->end())
       return false;
-
-    //printf("adding edge %s to %s\n",currSym.c_str(),name.c_str());
+    
+   // printf("adding edge %s to %s\n",currSym.c_str(),name.c_str());
     vector<string>& neighbours = (*refGraph)[currSym];
     if(std::find(neighbours.begin(),neighbours.end(),name) == neighbours.end())
       neighbours.push_back(name);
@@ -423,6 +438,7 @@ public:
           bool done = false;
           while(it != prefixes.rend())
           {
+
             aux = (*it)+tokens[0].content;
             if(done = addSymRef(aux))
               break;
@@ -746,7 +762,6 @@ public:
                Value.insert(Value.end(),subdict.begin(),subdict.end());
                k = R;
              }
-          //   printf("Value.size  =%ld\n",Value.size());
            }
            else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
            {
@@ -956,10 +971,8 @@ public:
       ast->childs.push_back(n);
       if(tokens[1].content.find("::")!=string::npos)
         parseError("SyntaxError","Invalid Syntax");
-      string fnprefix;
-      for(auto e: prefixes)
-        fnprefix+=e;
-      if(!infunc && !inclass)
+      string fnprefix = prefixes.back();
+      if(atGlobalLevel())
         tokens[1].content = fnprefix+tokens[1].content;
       if(isPrivate)
         tokens[1].content = "@"+tokens[1].content;
@@ -1100,10 +1113,9 @@ public:
       //Do not allow class names having '::'
       if(tokens[1].content.find("::")!=string::npos)
         parseError("SyntaxError","Invalid Syntax");
-      string fnprefix;
-      for(auto e: prefixes)
-        fnprefix+=e;
-      if(!infunc)
+      string fnprefix = prefixes.back();
+
+      if(atGlobalLevel())
         tokens[1].content = fnprefix+tokens[1].content;
       ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
       if(extendedClass)
@@ -1357,11 +1369,9 @@ public:
         parseError("SyntaxError","Invalid Syntax");
       if(tokens[1].content.find("::")!=string::npos)
         parseError("SyntaxError","Invalid Syntax");
-      string fnprefix;
-      for(auto e: prefixes)
-        fnprefix+=e;
-      if(!inclass)
-      tokens[1].content = fnprefix+tokens[1].content;
+      string fnprefix = prefixes.back();
+      if(atGlobalLevel())
+        tokens[1].content = fnprefix+tokens[1].content;
       if(isPrivate)
         tokens[1].content = "@" + tokens[1].content;
       Node* ast = NewNode(NodeType::FUNC);
@@ -1630,7 +1640,10 @@ public:
                     k+=1;
                     continue;
               }
+              
               ast = parseStmt(line);
+
+
               if(ast->type==NodeType::IF)
               {
                   ElseTok.type = TokenType::KEYWORD_TOKEN;
@@ -1752,7 +1765,10 @@ public:
                    t.content = "endelse";
                    elseBlock.push_back(t);
                    elseBlock.push_back(newlinetok);
+                   bool ctxCopy = inif;
+                    inif = true;
                    ast->childs.push_back(parse(block));
+                   inif = ctxCopy;
                    t.content = "endelif";
                    for(int a=0;a<(int)elifBlocks.size();a++)
                    {
@@ -1762,10 +1778,16 @@ public:
                         elifBlock.push_back(newlinetok);
                       elifBlock.push_back(t);
                       elifBlock.push_back(newlinetok);
+                      bool ctxCopy = inelif;
+                      inelif = true;
                       Node* n = parse(elifBlock);
+                      inelif = ctxCopy;
                       ast->childs.push_back(n);
                    }
+                   ctxCopy = inelse;
+                   inelse = true;
                    ast->childs.push_back(parse(elseBlock));
+                   inelse = ctxCopy;
                    if(start==0)
                    {
                      Final = ast;
@@ -1794,7 +1816,10 @@ public:
                      block.push_back(newlinetok);
                    block.push_back(t);
                    block.push_back(newlinetok);
+                   bool ctxCopy = inif;
+                   inif = true;
                    ast->childs.push_back(parse(block));
+                   inif = ctxCopy;
                    t.content = "endelif";
                    for(int a=0;a<(int)elifBlocks.size();a++)
                    {
@@ -1804,7 +1829,10 @@ public:
                         elifBlock.push_back(newlinetok);
                       elifBlock.push_back(t);
                       elifBlock.push_back(newlinetok);
+                      bool ctxCopy = inelif;
+                      inelif = true;
                       Node* n = parse(elifBlock);
+                      inelif = ctxCopy;
                       ast->childs.push_back(n);
                    }
                    if(start==0)
@@ -1837,8 +1865,14 @@ public:
                      elseBlock.push_back(newlinetok);
                    elseBlock.push_back(t);
                    elseBlock.push_back(newlinetok);
+                   bool ctxCopy = inif;
+                   inif = true;
                    ast->childs.push_back(parse(block));
+                   inif = ctxCopy;
+                   ctxCopy = inelse;
+                   inelse = true;
                    ast->childs.push_back(parse(elseBlock));
+                   inelse = ctxCopy;
                    if(start==0)
                    {
                      Final = ast;
@@ -1862,7 +1896,10 @@ public:
                        block.push_back(newlinetok);
                      block.push_back(t);
                      block.push_back(newlinetok);
+                     bool ctxCopy = inif;
+                     inif = true;
                      ast->childs.push_back(parse(block));
+                     inif = ctxCopy;
                      if(start==0)
                      {
                        Final = ast;
@@ -1918,7 +1955,8 @@ public:
                  t.content = "endfunc";
                  block.push_back(t);
                  block.push_back(newlinetok);
-                 
+                 if(!isValidCtxForFunc())
+                   parseError("SyntaxError","Local functions not allowed!");
                  foundYield = false;
                  string aux = currSym;
                  if(!inclass)
@@ -1960,8 +1998,8 @@ public:
                  }
                  else
                    i = findRCB(j,tokens);
-                if(inclass)
-                  parseError("SyntaxError","Nested classes not allowed!");
+                if(!atGlobalLevel())
+                  parseError("SyntaxError","Class declartions must be at global scope or in a namespace!");
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
                  stripNewlines(block);
                  newlinetok.type = NEWLINE_TOKEN;
@@ -1982,6 +2020,7 @@ public:
                  else
                    ast->childs.insert(ast->childs.begin()+2,parse(block));
                  //backtrack
+                 //important: change if planning to support nested classes
                  inclass = false;
                  currSym = aux;
                  if(start==0)
@@ -2010,6 +2049,8 @@ public:
                  }
                  else
                    i = findRCB(j,tokens);
+                 if(!atGlobalLevel())
+                   parseError("SyntaxError","Namespace declaration must be at global scope or within another namespace!");
                  vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
                  stripNewlines(block);
                  newlinetok.type = NEWLINE_TOKEN;
@@ -2021,8 +2062,11 @@ public:
                  t.content = "endnm";//end namespace
                  block.push_back(t);
                  block.push_back(newlinetok);
-
-                 prefixes.push_back(ast->childs[1]->val+"::");//prefix each identifier in namespace block
+                 string prefix;
+                 for(auto e: prefixes)
+                   prefix+=e;
+                 prefix += ast->childs[1]->val+"::";
+                 prefixes.push_back(prefix);//prefix each identifier in namespace block
                  //with "namespaceName::"
                  ast->childs.push_back(parse(block));
                  prefixes.pop_back();
@@ -2061,7 +2105,6 @@ public:
                  {
                        parseError("SyntaxError","Error use brackets {} after "+ast->val);
                  }
-               //  printf("loop block size = %ld\n",block.size());
                  stripNewlines(block);
                  Token t;
                  if(ast->val=="while" || ast->val=="dowhile")
@@ -2173,8 +2216,14 @@ public:
                  catchBlock.push_back(t);
                  catchBlock.push_back(newlinetok);
                  ast->childs.push_back(NewNode(NodeType::ID,catchId));
+                 bool ctxCopy = intry;
+                 intry = true;
                  ast->childs.push_back(parse(block));
+                 intry = ctxCopy;
+                 ctxCopy = incatch;
+                 incatch = true;
                  ast->childs.push_back(parse(catchBlock));
+                 incatch = ctxCopy;
                  if(start==0)
                  {
                    Final = ast;

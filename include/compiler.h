@@ -56,7 +56,7 @@ void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<s
   //there is no incoming edge on .main
   //ref.emplace(".main",true);
   string curr;
- // printf("--begin BFS--\n");
+  //printf("--begin BFS--\n");
   while(!q.empty())
   {
     curr = q.front();
@@ -65,7 +65,7 @@ void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<s
     const vector<string>& adj = graph[curr];
     for(auto e: adj)
     {
-     // printf("  neighbour: %s\n",e.c_str());
+  //    printf("  neighbour: %s\n",e.c_str());
       if(ref.find(e) == ref.end()) //node not already visited or processed
       {
         q.push(e);
@@ -73,6 +73,7 @@ void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<s
       }
     }
   }
+  //printf("--end BFS--\n");
 }
 inline void addBytes(vector<uint8_t>& vec,int32_t x)
 {
@@ -91,7 +92,7 @@ private:
   vector<int32_t> indexOfLastWhileLocals;
   unordered_map<string,bool> symRef;
   vector<SymbolTable> locals;
-  vector<string> prefixes;
+  vector<string> prefixes = {""};
   int32_t* num_of_constants;
   string filename;
   vector<string>* files;
@@ -153,7 +154,7 @@ public:
       line_num = 1;
       andJMPS.clear();
       orJMPS.clear();
-      prefixes.clear();
+      prefixes = {""};
       scope = 0;
       breakTargets.clear();
       contTargets.clear();
@@ -558,7 +559,6 @@ public:
 
           bytes.push_back(JMPIFFALSENOPOP);
           andJMPS.push_back(bytes_done);
-       //   printf("added andJMP at %ld\n",bytes_done);
           int32_t I = bytes.size();
           bytes.push_back(0);
           bytes.push_back(0);
@@ -862,10 +862,21 @@ public:
   }
   int32_t resolveName(string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL)
   {
+
     for(int32_t i=locals.size()-1;i>=0;i-=1)
     {
+
       if(locals[i].find(name)!=locals[i].end())
         return locals[i][name];
+    }
+
+    if(isFromSelf)
+    {
+      if(inclass && infunc && (std::find(classMemb.begin(),classMemb.end(),name)!=classMemb.end() || std::find(classMemb.begin(),classMemb.end(),"@"+name)!=classMemb.end() ))
+      {
+        *isFromSelf = true;
+        return -2;
+      }
     }
     for(int32_t i=prefixes.size()-1;i>=0;i--)
       {
@@ -876,19 +887,6 @@ public:
             return globals[prefix+name];
         }
       }
-    if(isFromSelf)
-    {
-      if(inclass && infunc && (std::find(classMemb.begin(),classMemb.end(),name)!=classMemb.end() || std::find(classMemb.begin(),classMemb.end(),"@"+name)!=classMemb.end() ))
-      {
-        *isFromSelf = true;
-        return -2;
-      }
-    }
-    if(globals.find(name) != globals.end())
-    {
-        isGlobal = true;
-        return globals[name];
-    }
     if(blowUp)
       compileError("NameError","Error name "+name+" is not defined!");
     return -1;
@@ -911,7 +909,7 @@ public:
               vector<uint8_t> val = exprByteCode(ast->childs[1]);
               program.insert(program.end(), val.begin(), val.end());
               const string& name = ast->val;
-              
+              //printf("declaring %s variable %s\n",((scope!=0)? "local" : "global"),name.c_str());
               if (scope == 0)
               {
                   if (globals.find(name) != globals.end())
@@ -1388,10 +1386,6 @@ public:
           }
           else if(ast->type == NodeType::NAMESPACE)
           {
-            if(infunc)
-            {
-              compileError("SyntaxError","Namespace declartion inside function!");
-            }
             string name = ast->childs[1]->val;
             string prefix;
             for(auto e: prefixes)

@@ -19,3 +19,23 @@ namespace std
 std::f1()
 println(x)
 println(std::Demo.id)
+
+function f()
+{
+  return "f"
+}
+namespace outer
+{
+  function f()
+  {
+    return "outer f"
+  }
+  namespace inner
+  {
+    function f()
+    {
+      return "inner f"
+    }
+  }
+  println(inner::f())
+}
