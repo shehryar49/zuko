@@ -178,9 +178,10 @@ int main(int argc, const char* argv[])
         deleteAST(ast);
 
     }
-    WriteByteCode(bytecode,LineNumberTable,files);
+    //WriteByteCode(bytecode,LineNumberTable,files);
     vm.load(bytecode,&LineNumberTable,&files,&sources);
-    
+   
+    //it's showtime
     vm.interpret();
     #ifdef PLUTONIUM_PROFILE
      showProfileInfo();
