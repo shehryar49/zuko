@@ -367,6 +367,11 @@ public:
     inclass = false;
     infunc = false;
     inloop = false;
+    inif = false;
+    inelif = false;
+    inelse = false;
+    intry = false;
+    incatch = false;
   }
   void parseError(string type,string msg)
   {
@@ -1011,6 +1016,11 @@ public:
       {
         if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchRP(0,tokens)==((int)tokens.size()-1))
         {
+          bool wrapInPrint = false;
+          if(REPL_MODE && tokens[0].content!="print" && tokens[0].content!="println" && tokens[0].content!="printf")
+          {
+            wrapInPrint = true;
+          }
           Node* ast = NewNode(NodeType::call);
           Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
           ast->childs.push_back(n);
@@ -1077,6 +1087,17 @@ public:
           args->childs.push_back(parseExpr(T));
           T.clear();
           ast->childs.push_back(args);
+          if(wrapInPrint)
+          {
+            Node* p = NewNode(NodeType::call);
+            Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+            p->childs.push_back(n);
+            p->childs.push_back(NewNode(NodeType::ID,"println"));
+            Node* args = NewNode(NodeType::args);
+            args->childs.push_back(ast);
+            p->childs.push_back(args);
+            return p;
+          }
           return ast;
         }
       }
