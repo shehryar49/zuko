@@ -2241,7 +2241,6 @@ public:
       MaxRecursionError =makeErrKlass("MaxRecursionError",Error);
       AccessError = makeErrKlass("AccessError",Error);
     }
-    
     auto bt = compile(ast);
     bytecode.insert(bytecode.end(),bt.begin(),bt.end());
     if(globals.size()!=0 && popGlobals)

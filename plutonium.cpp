@@ -32,7 +32,7 @@ void REPL()
   files.push_back(filename);
   sources.push_back("");
   static std::unordered_map<size_t,ByteSrc> LineNumberTable;
-  static size_t stackSize = 0;
+  static size_t stackSize = 19;
   static Compiler compiler;
   if(vm.STACK.size() > stackSize)
   {
@@ -105,6 +105,7 @@ void REPL()
     vm.constants = constants;
     compiler.init(p,&files,&sources,&LineNumberTable,filename);
     vector<uint8_t>& bytecode = compiler.compileProgram(ast,0,NULL,true,false); //ask the compiler to add previous bytecode before
+    
     stackSize = vm.STACK.size();
     deleteAST(ast);
     

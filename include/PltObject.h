@@ -69,7 +69,7 @@ extern "C" struct PltObject
         int32_t i;
         void* ptr;
     };
-    char type='n';
+    char type;
 };
 struct HashFunction
     {

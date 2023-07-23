@@ -35,7 +35,7 @@ int32_t f;
 string fullform(char);
 void PromoteType(PltObject&,char);
 
-
+PltObject nil;
 bool validateArgTypes(string name,string e,PltObject* args,int32_t argc,PltObject& x)
 {
     if(e.length()!=(size_t)argc)
@@ -62,7 +62,7 @@ PltObject ISALPHA(PltObject* args,int32_t argc)
   if(args[0].type!='s')
     return Plt_Err(TypeError,"Error isalpha() takes a string argument!");
   string s = *(string*)args[0].ptr;
-  PltObject ret;
+  PltObject ret = nil;
   ret.type = 'b';
   ret.i = 0;
   for(auto e: s)
@@ -84,7 +84,7 @@ PltObject ASCII(PltObject* args,int32_t argc)
   if(s.length()!=1)
       return Plt_Err(ValueError,"Error ascii() takes a string argument of length 1!");
  
-  PltObject ret;
+  PltObject ret = nil;
   ret.type = 'i';
   ret.i = s[0];
   return ret;
@@ -98,7 +98,7 @@ PltObject TOCHAR(PltObject* args,int32_t argc)
   char ch = (char)args[0].i;
   string s;
   s+=ch;
-  PltObject ret;
+  PltObject ret = nil;
   string* p = allocString();
   *p = s;
   return PObjFromStrPtr(p);
@@ -222,7 +222,7 @@ PltObject print(PltObject* args,int32_t argc)
           printf("%s",PltObjectToStr(args[k]).c_str());
         k+=1;
     }
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'n';
     return ret;
 }
@@ -262,7 +262,7 @@ PltObject PRINTF(PltObject* args,int32_t argc)
           printf("%c",format[k]);
         k+=1;
     }
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'n';
     return ret;
 }
@@ -331,7 +331,7 @@ PltObject println(PltObject* args,int32_t argc)
         k+=1;
     }
     puts("");
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
 }
 
@@ -348,7 +348,7 @@ PltObject input(PltObject* args,int32_t argc)
       string& prompt = *(string*)args[0].ptr;
       printf("%s",prompt.c_str());
     }
-    PltObject ret;
+    PltObject ret = nil;
     string s;
     char ch;
     while(true)
@@ -382,7 +382,7 @@ PltObject isInstanceOf(PltObject* args,int32_t argc)
     return Plt_Err(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
   if(args[1].type!='v')
     return Plt_Err(TypeError,"Error second argument to  isInstanceOf() should be a class!");
-  PltObject ret;
+  PltObject ret = nil;
   ret.type = 'b';
   if(args[0].type!='o')
   {
@@ -399,7 +399,7 @@ PltObject LEN(PltObject* args,int32_t argc)
     if(argc!=1)
         return Plt_Err(ArgumentError,"Error len() takes one argument!");
 
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'i';
     if(args[0].type=='s')
     {
@@ -420,7 +420,7 @@ PltObject LEN(PltObject* args,int32_t argc)
 PltObject OPEN(PltObject* args,int32_t argc)
 {
     string patt = "ss";
-    PltObject ret;
+    PltObject ret = nil;
     if(!validateArgTypes("open",patt,args,argc,ret))
       return ret;
     string& filename = *(string*)args[0].ptr;
@@ -488,7 +488,7 @@ PltObject CLOSE(PltObject* args,int32_t argc)
     if(f==stdin || f==stdout)
       return Plt_Err(ValueError,"Are you nuts?You should not close stdin or stdout!");
     fclose(f);
-    PltObject ret;
+    PltObject ret = nil;
     ret.type='n';
     fobj->open = false;
     return ret;
@@ -497,7 +497,7 @@ PltObject RAND(PltObject* args,int32_t argc)
 {
     if(argc!=0)
         return Plt_Err(ArgumentError,"Error rand() takes 0 arguments!");
-    PltObject ret;
+    PltObject ret = nil;
     ret.i = rand();
     ret.type= 'i';
     return ret;
@@ -505,7 +505,7 @@ PltObject RAND(PltObject* args,int32_t argc)
 //////////////
 PltObject BYTEARRAY(PltObject* args,int32_t argc)
 {
-  PltObject ret;
+  PltObject ret = nil;
   if(argc==0)
   {
     vector<uint8_t>* arr = allocByteArray();
@@ -541,7 +541,7 @@ PltObject WRITE(PltObject* args,int32_t argc)
   if(argc!=2)
     return Plt_Err(ArgumentError,"Error write() takes two arguments!");
   string patt = "su";
-  PltObject ret;
+  PltObject ret = nil;
   if(!validateArgTypes("write",patt,args,argc,ret))
     return ret;
   string& data = *(string*)args[0].ptr;
@@ -591,7 +591,7 @@ PltObject REVERSE(PltObject* args,int32_t argc)
     {
         l.push_back(currList[k]);
     }
-    PltObject ret;// = l;
+    PltObject ret = nil;// = l;
     PltList* p = allocList();
     *p = l;
     ret.type = 'j';
@@ -605,7 +605,7 @@ PltObject BYTES(PltObject* args,int32_t argc)
       return Plt_Err(ArgumentError,"Error bytes() takes one argument!");
     auto p = allocByteArray();
     const PltObject& e = args[0];
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = PLT_BYTEARR;
     ret.ptr = (void*)p;
     if(e.type=='i')
@@ -668,7 +668,7 @@ PltObject OBJINFO(PltObject* args,int32_t argc)
       {
           printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
       }
-      PltObject ret;
+      PltObject ret = nil;
       return ret;
     }
     else
@@ -690,7 +690,7 @@ PltObject moduleInfo(PltObject* args,int32_t argc)
     printf("%s  %s\n",e.first.c_str(),fullform(e.second.type).c_str());
 
   }
-  PltObject ret;
+  PltObject ret = nil;
   return ret;
 }
 union FOO
@@ -710,7 +710,7 @@ union FOO2
 }FOO2;
 PltObject makeList(PltObject* args,int32_t argc)
 {
-        PltObject ret;
+        PltObject ret = nil;
         if(!validateArgTypes("makeList","js",args,argc,ret))
           return ret;
         string& pattern = *(string*)args[1].ptr;
@@ -922,7 +922,7 @@ PltObject FTELL(PltObject* args,int32_t argc)
       return Plt_Err(FileIOError,"Error file is closed!");
     FILE* currF = p->fp;
     int64_t n = ftell(currF);
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'l';
     ret.l = (int64_t)n;
     return ret;
@@ -941,7 +941,7 @@ PltObject REWIND(PltObject* args,int32_t argc)
       return Plt_Err(FileIOError,"Unable to rewind closed file!");
     FILE* currF = p->fp;
     rewind(currF);
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   return Plt_Err(ArgumentError,"Error rewind() takes 1 argument!");
@@ -977,7 +977,7 @@ PltObject SPLIT(PltObject* args,int32_t argc)
         }
         PltList* p = vm_allocList();
         *p = l;
-        PltObject ret;
+        PltObject ret = nil;
         ret.type = 'j';
         ret.ptr = p;
         return ret;
@@ -1002,7 +1002,7 @@ PltObject GETENV(PltObject* args,int32_t argc)
         if(!c)
         {
           //   return Plt_Err(NameError,"Unknown environment variable!\n");
-          PltObject ret;
+          PltObject ret = nil;
           return ret;
         }
         string* s = allocString();
@@ -1025,7 +1025,7 @@ PltObject SHUFFLE(PltObject* args,int32_t argc)
 			{
 			  PltList* a = (PltList*)args[0].ptr;
 				std::random_shuffle(a->begin(),a->end());
-				PltObject ret;
+				PltObject ret = nil;
 				return ret;
 			}
 			else
@@ -1087,7 +1087,7 @@ PltObject STR(PltObject* args,int32_t argc)
 }
 PltObject FIND(PltObject* args,int32_t argc)
 {
-  PltObject ret;
+  PltObject ret = nil;
   if(!validateArgTypes("find","ss",args,argc,ret))
     return ret;  
   ret.type = 'l';
@@ -1110,7 +1110,7 @@ PltObject TOINT(PltObject* args,int32_t argc)
 			if(args[0].type=='s')
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret;
+			    PltObject ret = nil;
           if(isnum(q))
           {
               ret.i = Int(q);
@@ -1145,7 +1145,7 @@ PltObject TOINT(PltObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-               PltObject ret;
+               PltObject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1175,7 +1175,7 @@ PltObject TOINT32(PltObject* args,int32_t argc)
 			if(args[0].type=='s')
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret;
+			    PltObject ret = nil;
           if(isnum(q))
           {
               ret.i = Int(q);
@@ -1210,7 +1210,7 @@ PltObject TOINT32(PltObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-        PltObject ret;
+        PltObject ret = nil;
         double d = args[0].f;
         if(d<(double)INT_MIN)
           ret.i = INT_MIN;
@@ -1248,7 +1248,7 @@ PltObject TOINT64(PltObject* args,int32_t argc)
 			if(args[0].type=='s')
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret;
+			    PltObject ret = nil;
           if(isnum(q))
           {
               ret.l = Int(q);
@@ -1281,7 +1281,7 @@ PltObject TOINT64(PltObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-               PltObject ret;
+               PltObject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1349,21 +1349,21 @@ PltObject tonumeric(PltObject* args,int32_t argc)
           string& q = *(string*)args[0].ptr;
           if(isnum(q))
           {
-              PltObject ret;
+              PltObject ret = nil;
               ret.type='i';
               ret.i = Int(q);
               return ret;
           }
           else if(isInt64(q))
           {
-              PltObject ret;
+              PltObject ret = nil;
               ret.type = 'l';
               ret.l = toInt64(q);
               return ret;
           }
           else if(isaFloat(q))
           {
-              PltObject ret;
+              PltObject ret = nil;
               ret.type = 'f';
               ret.f = Float(q);
               return ret;
@@ -1382,7 +1382,7 @@ PltObject tonumeric(PltObject* args,int32_t argc)
 }
 PltObject isnumeric(PltObject* args,int32_t argc)
 {
-  PltObject ret;
+  PltObject ret = nil;
   ret.type = 'b';
   ret.i = 1;
     if(argc==1)
@@ -1468,7 +1468,7 @@ PltObject SLEEP(PltObject* args,int32_t argc)
       #else
         usleep(r.l*1000);
       #endif
-      PltObject ret;
+      PltObject ret = nil;
       return ret;
     }
     else
@@ -1530,7 +1530,7 @@ PltObject writelines(PltObject* args,int32_t argc)
                 FileObject* p = (FileObject*)args[1].ptr;
                 FILE* currF = p->fp;
                 fputs(data.c_str(),currF);
-                PltObject ret;
+                PltObject ret = nil;
                 return ret;
             }
             return Plt_Err(ArgumentError,"Error writelines() needs a filestream to write!");
@@ -1575,7 +1575,7 @@ PltObject readlines(PltObject* args,int32_t argc)
             *reg+=ch;
           }
       }
-      PltObject ret;
+      PltObject ret = nil;
       PltList* p = allocList();
       *p = lines;
       ret.type = 'j';
@@ -1598,7 +1598,7 @@ void clean_stdin(void)
 }
 PltObject FREAD(PltObject* args,int32_t argc)
 {
-    PltObject ret;
+    PltObject ret = nil;
     if(argc!=2)
         return Plt_Err(ArgumentError,"Error fread() takes two arguments!");
     if(args[0].type!='i' && args[0].type!='l')
@@ -1625,7 +1625,7 @@ PltObject FREAD(PltObject* args,int32_t argc)
 }
 PltObject FWRITE(PltObject* args,int32_t argc)
 {
-    PltObject ret;
+    PltObject ret = nil;
     size_t S = 0;
     if(argc==2)
     {
@@ -1668,7 +1668,7 @@ PltObject FSEEK(PltObject* args,int32_t argc)
 {
     if(argc!=3)
         return Plt_Err(ArgumentError,"Error fseek() takes 3 arguments!");
-    PltObject ret;
+    PltObject ret = nil;
     if(!validateArgTypes("fseek","uii",args,argc,ret))
       return ret;
     int32_t w = 0;
@@ -1729,7 +1729,7 @@ PltObject COPY(PltObject* args,int32_t argc)
   if(args[0].type=='a')
   {
      Dictionary v = *(Dictionary*)args[0].ptr;
-     PltObject ret;
+     PltObject ret = nil;
      ret.type = 'a';
      ret.ptr = (void*)makeDictCopy(v);
      return ret;
@@ -1738,7 +1738,7 @@ PltObject COPY(PltObject* args,int32_t argc)
   else if(args[0].type=='j')
   {
     PltList v = *(PltList*)args[0].ptr;
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)makeListCopy(v);
     return ret;
@@ -1814,7 +1814,7 @@ PltObject CLOCK(PltObject* args,int32_t argc)
 {
   if(argc!=0)
     return Plt_Err(ArgumentError,"Error clock() takes 0 arguments!");
-  PltObject ret;
+  PltObject ret = nil;
   ret.type = 'f';
   ret.f = static_cast<double> (clock());
   return ret;
@@ -1831,7 +1831,7 @@ PltObject POP(PltObject* args,int32_t argc)
     return Plt_Err(ArgumentError,"Error method pop() takes 1 arguments!");
   if(args[0].type == 'c')
   {
-    PltObject ret;
+    PltObject ret = nil;
 
     auto p = (vector<uint8_t>*)args[0].ptr;
     if(p->size() != 0)
@@ -1844,7 +1844,7 @@ PltObject POP(PltObject* args,int32_t argc)
     return ret;
   }
   PltList* p = (PltList*)args[0].ptr;
-  PltObject ret;
+  PltObject ret = nil;
   if(p->size()!=0)
   {
     ret = p->back();
@@ -1862,7 +1862,7 @@ PltObject CLEAR(PltObject* args,int32_t argc)
     return Plt_Err(ArgumentError,"Error method clear() takes 0 arguments!");
   PltList* p = (PltList*)args[0].ptr;
   p->clear();
-  PltObject ret;
+  PltObject ret = nil;
   return ret;
 }
 PltObject PUSH(PltObject* args,int32_t argc)
@@ -1876,7 +1876,7 @@ PltObject PUSH(PltObject* args,int32_t argc)
     PltList* p = (PltList*)args[0].ptr;
   // p->push_back(args[1]);
     p->emplace_back(args[1]); //faster
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else
@@ -1885,7 +1885,7 @@ PltObject PUSH(PltObject* args,int32_t argc)
     if(args[1].type != PLT_BYTE)
      return Plt_Err(TypeError,"Can only push a byte to a bytearray!");
     p->emplace_back((uint8_t)args[1].i); //faster
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
 }
@@ -1909,7 +1909,7 @@ PltObject RESERVE(PltObject* args,int32_t argc)
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
     p->reserve(x.l);
   }
-  PltObject ret;
+  PltObject ret = nil;
   return ret;
 
 }
@@ -1922,7 +1922,7 @@ PltObject FINDINLIST(PltObject* args,int32_t argc)
   if(args[0].type == 'j')
   {
     PltList* p = (PltList*)args[0].ptr;
-    PltObject ret;
+    PltObject ret = nil;
     for(size_t k=0;k<p->size();k+=1)
     {
       if((*p)[k]==args[1])
@@ -1937,7 +1937,7 @@ PltObject FINDINLIST(PltObject* args,int32_t argc)
   else
   {
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
-    PltObject ret;
+    PltObject ret = nil;
     for(size_t k=0;k<p->size();k+=1)
     {
       if((*p)[k]==(uint8_t)args[1].i)
@@ -1975,7 +1975,7 @@ PltObject INSERTBYTEARRAY(PltObject* args,int32_t argc)
     }
     else
       return Plt_Err(TypeError,"Error method insert() takes a byte or bytearray argument!");
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else
@@ -2008,7 +2008,7 @@ PltObject INSERT(PltObject* args,int32_t argc)
     {
       p->insert(p->begin()+idx.l,val);
     }
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else
@@ -2038,7 +2038,7 @@ PltObject ERASE(PltObject* args,int32_t argc)
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
         return Plt_Err(ValueError,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else if(args[0].type=='a')
@@ -2052,7 +2052,7 @@ PltObject ERASE(PltObject* args,int32_t argc)
     if(d->find(key)==d->end())
       return Plt_Err(KeyError,"Error cannot erase value,key not found in the dictionary!");
     d->erase(key);
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else if(args[0].type == 'c')
@@ -2077,7 +2077,7 @@ PltObject ERASE(PltObject* args,int32_t argc)
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
         return Plt_Err(ValueError,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
-    PltObject ret;
+    PltObject ret = nil;
     return ret;
   }
   else
@@ -2102,7 +2102,7 @@ PltObject asMap(PltObject* args,int32_t argc)
        x.l = i;
        d->emplace(x,l[i]);
     }
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'a';
     ret.ptr = (void*)d;
     return ret;
@@ -2125,7 +2125,7 @@ PltObject ASLIST(PltObject* args,int32_t argc)
       x.ptr = (void*)sub;
       list->push_back(x);
     }
-    PltObject ret;
+    PltObject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)list;
     return ret;
@@ -2140,7 +2140,7 @@ PltObject REVERSELIST(PltObject* args,int32_t argc)
   PltList l = *p;
   std::reverse(l.begin(),l.end());
   *p = l;
-  PltObject ret;
+  PltObject ret = nil;
   return ret;
 }
 PltObject EMPLACE(PltObject* args,int32_t argc)
@@ -2154,7 +2154,7 @@ PltObject EMPLACE(PltObject* args,int32_t argc)
   if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
     return Plt_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
   p->emplace(key,args[2]);
-  PltObject ret;
+  PltObject ret = nil;
   return ret;
 
 }
@@ -2166,7 +2166,7 @@ PltObject HASKEY(PltObject* args,int32_t argc)
     return Plt_Err(ArgumentError,"Error method hasKey() takes 1 argument!");
   Dictionary* p = (Dictionary*)args[0].ptr;
 
-  PltObject ret;
+  PltObject ret = nil;
   ret.type= 'b';
   ret.i = (p->find(args[1])!=p->end());
   return ret;
@@ -2265,6 +2265,7 @@ PltObject UNPACK(PltObject* args,int32_t argc)
 ///////////////
 void initFunctions()
 {
+  nil.type = PLT_NIL;
   funcs.emplace("print",&print);
   funcs.emplace("println",&println);
   funcs.emplace("printf",&PRINTF);
@@ -2322,6 +2323,7 @@ void initFunctions()
 std::unordered_map<string,BuiltinFunc> methods;
 void initMethods()
 {
+  nil.type = PLT_NIL;
   methods.emplace("push",&PUSH);
   methods.emplace("pop",&POP);
   methods.emplace("clear",&CLEAR);

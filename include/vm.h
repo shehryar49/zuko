@@ -190,9 +190,9 @@ public:
   int32_t total_constants = 0; // total constants stored in the array constants
   apiFuncions api;
   #ifdef PLUTONIUM_PROFILE
-  size_t instCount[67] = {0};
+  size_t instCount[sizeof(opNames)/sizeof(const char*)] = {0};
   #endif
-  
+  PltObject nil;
   void load(vector<uint8_t>& b, std::unordered_map<size_t, ByteSrc> *ltable, vector<string> *a, vector<string> *c)
   {
     program = &b[0];
@@ -201,6 +201,7 @@ public:
     LineNumberTable = ltable;
     files = a;
     sources = c;
+    nil.type = PLT_NIL;
     //initialise api functions for interpreter as well
     //in case a builtin function wants to use it
     api.a1 = &allocList;
@@ -657,7 +658,7 @@ public:
         NativeFunction *fn = (NativeFunction *)p3.ptr;
         NativeFunPtr M = fn->addr;
         PltObject rr;
-        PltObject nil;
+        
         PltObject argArr[2] = {A, (!rhs) ? nil : *rhs};
         rr = M(argArr, args);
         if (rr.type == PLT_ERROBJ)
@@ -700,6 +701,7 @@ public:
     PltObject alwaysByte;
     alwaysi32.type = PLT_INT;
     alwaysByte.type = PLT_BYTE;
+    int32_t* alwaysi32ptr = &alwaysi32.i;
     Dictionary *pd_ptr1;
     vector<uint8_t>* bt_ptr1;
     k = program + offset;
@@ -839,7 +841,7 @@ public:
       case LOAD_INT32:
       {
         k += 1;
-        memcpy(&alwaysi32.i, k, 4);
+        memcpy(alwaysi32ptr, k, 4);
         k += 3;
         STACK.push_back(alwaysi32);
         break;

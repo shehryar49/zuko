@@ -37,6 +37,5 @@ unsigned char tobyte(const string&);
 #include "builtinfunc.h"
 #include "vm.h"
 #include "lexer.h"
-#include "var.h"
 #include "utility.h"
 #endif
