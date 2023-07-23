@@ -36,7 +36,7 @@ for(var i=10 dto 1)
 {
   println(i)
 }
-for(var i=10 dto 1 step -2)
+for(var i=10 dto 1 step 2)
 {
   println(i)
 }

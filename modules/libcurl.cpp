@@ -58,7 +58,7 @@ PltObject callback;//write function callback
 PltObject init()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    PltObject nil;
+    nil.type = PLT_NIL;
     Module* d = vm_allocModule();
     //
     curlklass = new Klass;
@@ -87,6 +87,7 @@ PltObject init()
     //these 3 classes are required during whole life of module
     //so we manually manage their memory
     //
+    
     d->members.emplace("Curl",PObjFromKlass(curlklass));
     d->members.emplace("mime",PObjFromKlass(mimeklass));
     d->members.emplace(("strerror"),PObjFromFunction("libcurl.strerror",&STRERROR));

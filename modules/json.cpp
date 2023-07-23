@@ -488,6 +488,7 @@ Klass* tokenizeError;
 ////
 PltObject init()
 {
+  nil.type = PLT_NIL;
   //initialize custom errors
   parseError = new Klass;
   parseError->name = "ParseError";
@@ -512,6 +513,8 @@ PltObject loads(PltObject* args,int32_t n)
   vector<Token> tokens = tokenize(src,hadErr,msg);
   if(hadErr)
     return Plt_Err(tokenizeError,"Tokenization failed."+msg);
+  if(tokens.size() == 0)
+    return Plt_Err(parseError,"Empty string!");
   Dictionary* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
      return Plt_Err(parseError,"Parsing failed."+msg);

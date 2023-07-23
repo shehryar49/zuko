@@ -110,11 +110,12 @@ void REPL()
     deleteAST(ast);
     
     vm.load(bytecode,&LineNumberTable,&files,&sources);
-   // WriteByteCode(bytecode,LineNumberTable,files);// for debugging
+    //WriteByteCode(bytecode,LineNumberTable,files);// for debugging
     vm.interpret(offset,false);//
     //if the instruction executed successfuly
     //it might have changed the stack size 
     stackSize = vm.STACK.size();
+    compiler.reduceStackTo(stackSize);
     bytecode.pop_back();//pop OP_EXIT
     offset=bytecode.size();
     k=files.size()+1;
@@ -172,14 +173,15 @@ int main(int argc, const char* argv[])
         
         parser.init(p,&files,&sources,filename);
         Node* ast = parser.parse(tokens);
-        //printAST(ast);
+      //  printAST(ast);
         Compiler compiler;
         compiler.init(p,&files,&sources,&LineNumberTable,filename);
         bytecode = compiler.compileProgram(ast,argc,argv);
         deleteAST(ast);
 
     }
-    //WriteByteCode(bytecode,LineNumberTable,files);
+   // WriteByteCode(bytecode,LineNumberTable,files);
+    
     vm.load(bytecode,&LineNumberTable,&files,&sources);
    
     //it's showtime

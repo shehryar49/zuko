@@ -1216,7 +1216,7 @@ public:
             line_num = lnCopy;
 
 
-            if(dfor || I!="1" || isSelf)
+            if(dfor || (I!="1" || ast->childs[5]->type!=NodeType::NUM) || isSelf)
             {
               inc = exprByteCode(ast->childs[5]);
               where = block.size() + 1 + JUMPOFFSet_Size+inc.size()+11;
@@ -1236,7 +1236,7 @@ public:
             foo = where;
             addBytes(program,foo);
             //
-            block.insert(block.end(),inc.begin(),inc.end());
+
             if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
             {
               if(!isGlobal)
@@ -1259,7 +1259,11 @@ public:
                 block.push_back(LOAD_GLOBAL);
               foo = lcvIdx;
               addBytes(block,foo);
-              block.push_back(ADD);
+              block.insert(block.end(),inc.begin(),inc.end());
+              if(dfor)
+                block.push_back(SUB);
+              else
+                block.push_back(ADD);
               if(isSelf)
                 block.push_back(ASSIGNSELFMEMB);
               else if(!isGlobal )

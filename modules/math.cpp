@@ -3,11 +3,11 @@
 #include <climits>
 
 using namespace std;
-
+PltObject nil;
 PltObject init()
 {
 
-    PltObject nil;
+    nil.type = PLT_NIL;
     Module* ModuleObject = vm_allocModule();//allocate a module object
 
     ModuleObject->name = "math";//module name is math

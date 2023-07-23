@@ -1017,7 +1017,7 @@ public:
         if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchRP(0,tokens)==((int)tokens.size()-1))
         {
           bool wrapInPrint = false;
-          if(REPL_MODE && tokens[0].content!="print" && tokens[0].content!="println" && tokens[0].content!="printf")
+          if(REPL_MODE && atGlobalLevel() && tokens[0].content!="print" && tokens[0].content!="println" && tokens[0].content!="printf")
           {
             wrapInPrint = true;
           }
@@ -1198,7 +1198,7 @@ public:
           Token one;
           one.type = TokenType::NUM_TOKEN;
           if(dtoLoop)
-            one.content = "-1";
+            one.content = "1";
           else
             one.content = "1";
           inc = {one};

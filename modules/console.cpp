@@ -4,6 +4,7 @@
 PltObject nil;
 PltObject init()
 {
+	nil.type = PLT_NIL;
 	Module* m = vm_allocModule();
 	m->name = "console";
 	m->members.emplace(("setTextAttribute"),PObjFromFunction("setTextAttribute",&setTextAttribute));

@@ -307,9 +307,11 @@ public:
         callstack.pop_back();
       }
     }
+  
     this->k = program+program_size-1;//set instruction pointer to last instruction
     //which is always OP_EXIT
-    STACK.clear();
+    if(!REPL_MODE)
+      STACK.clear();
     return this->k - program;
     
   }

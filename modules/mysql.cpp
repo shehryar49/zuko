@@ -26,7 +26,7 @@ NativeFunction* p1;
 NativeFunction* p2;
 PltObject init()
 {
-  nil.type = 'n';
+  nil.type = PLT_NIL;
   Module* d = vm_allocModule();
   connKlass = vm_allocKlass();
   resKlass = vm_allocKlass();
