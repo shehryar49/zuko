@@ -4,7 +4,6 @@ The original code of libcurl is not modified in anyway. This is just a wrapper a
 and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
-#include "pch.h"
 #ifdef _WIN32
 #define CURL_STATICLIB
 #pragma comment(lib,"crypt32.lib")
