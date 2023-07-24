@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.3)
+cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 project(plutonium)
 set(CMAKE_CXX_STANDARD 11)
 add_executable(plutonium plutonium.cpp)
@@ -40,3 +40,29 @@ set_target_properties(regex PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 add_library(datetime SHARED modules/datetime/datetime.cpp modules/datetime/datetime.h)
 target_include_directories(datetime PUBLIC include)
 set_target_properties(datetime PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+
+# linux specific modules
+add_library(process SHARED modules/process/process.cpp modules/process/process.h)
+target_include_directories(process PUBLIC include)
+set_target_properties(process PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+
+# windows specific modules
+if(WIN32)
+  # conio
+  add_library(conio SHARED modules/conio/conio.cpp modules/conio/conio.h)
+  target_include_directories(conio PUBLIC include)
+  set_target_properties(conio PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+  # console
+  add_library(console SHARED modules/console/console.cpp modules/console/console.h)
+  target_include_directories(console PUBLIC include)
+  set_target_properties(console PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
+endif()
+
+# Third party library bindings
+
+# libcurl
+find_package(CURL REQUIRED) 
+add_library(libcurl SHARED modules/libcurl/libcurl.cpp modules/libcurl/libcurl.h)
+target_include_directories(libcurl PUBLIC include)
+target_link_libraries(libcurl ${CURL_LIBRARIES})
+set_target_properties(libcurl PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
