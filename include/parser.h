@@ -25,6 +25,7 @@ SOFTWARE.*/
 #include "token.h"
 #include "lexer.h"
 #include "ast.h"
+#include "programinfo.h"
 #include <algorithm>
 #include <queue>
 using namespace std;
@@ -300,25 +301,6 @@ int findTokenConsecutive(Token t,int start,const vector<Token>& tokens)
     return -1;
 }
 
-struct ParseInfo
-{
-  int32_t num_of_constants = 0;//there is 1 constant nil by default
-  std::unordered_map<string,vector<string>> refGraph;
-  ParseInfo(){}
-  ParseInfo(const ParseInfo& other)
-  {
-    num_of_constants = other.num_of_constants;
-    refGraph = other.refGraph;
-  }
-  ParseInfo& operator=(const ParseInfo& other)
-  {
-    if(&other == this)
-      return *this;
-    num_of_constants = other.num_of_constants;
-    refGraph = other.refGraph;
-    return *this;
-  }
-};
 
 class Parser
 {
@@ -349,19 +331,19 @@ private:
     return (!infunc && !inclass && !inloop
      && !inif && !inelif && !inelse && !intry && !incatch);
   }
-  bool isValidCtxForFunc()
+  inline bool isValidCtxForFunc()
   {
         return (!infunc  && !inloop
      && !inif && !inelif && !inelse && !intry && !incatch);
   }
 public:
 
-  void init(ParseInfo& p,vector<string>* fnames,vector<string>* fsc,string fname)
+  void init(string fname,ProgramInfo& p)
   {
     num_of_constants = &p.num_of_constants;
     refGraph = &p.refGraph;
-    files = fnames;
-    sources = fsc;
+    files = &p.files;
+    sources = &p.sources;
     filename = fname;
     currSym = ".main";
     inclass = false;
@@ -372,6 +354,7 @@ public:
     inelse = false;
     intry = false;
     incatch = false;
+    foundYield = false;
   }
   void parseError(string type,string msg)
   {

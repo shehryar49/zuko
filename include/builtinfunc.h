@@ -207,7 +207,7 @@ PltObject print(PltObject* args,int32_t argc)
           printByteArray((vector<uint8_t>*)args[k].ptr);
         else if(args[k].type == PLT_OBJ)
         {
-          KlassInstance* ki = (KlassInstance*)args[k].ptr;
+          KlassObject* ki = (KlassObject*)args[k].ptr;
           PltObject r,ret;
           std::unordered_map<string,PltObject>::iterator it;
           if((it = ki->members.find("__print__"))!=ki->members.end())
@@ -315,7 +315,7 @@ PltObject println(PltObject* args,int32_t argc)
           printByteArray((vector<uint8_t>*)args[k].ptr);
         else if(args[k].type == PLT_OBJ)
         {
-          KlassInstance* ki = (KlassInstance*)args[k].ptr;
+          KlassObject* ki = (KlassObject*)args[k].ptr;
           PltObject r,ret;
           std::unordered_map<string,PltObject>::iterator it;
           if((it = ki->members.find("__print__"))!=ki->members.end())
@@ -389,7 +389,7 @@ PltObject isInstanceOf(PltObject* args,int32_t argc)
     ret.i = 0;
     return ret;
   }
-  KlassInstance* obj = (KlassInstance*)args[0].ptr;
+  KlassObject* obj = (KlassObject*)args[0].ptr;
   Klass* k = (Klass*)args[1].ptr;
   ret.i = obj->klass == k;
   return ret;
@@ -658,7 +658,7 @@ PltObject OBJINFO(PltObject* args,int32_t argc)
       return Plt_Err(ArgumentError,"Error obj_info() takes 1 argument!");
     if( args[0].type=='o')
     {
-      KlassInstance* k = (KlassInstance*)args[0].ptr;
+      KlassObject* k = (KlassObject*)args[0].ptr;
       for(auto e: k->members)
       {
             printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());

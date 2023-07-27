@@ -390,7 +390,7 @@ string PltObjectToStr(const PltObject& a)
 				  return "<Class "+*(string*)a.ptr+">";
 			  else if(a.type=='o')
         {
-				  return "<"+((KlassInstance*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
+				  return "<"+((KlassObject*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
         }
         else if(a.type=='q')
         {

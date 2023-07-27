@@ -25,14 +25,12 @@ SOFTWARE.*/
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
-using namespace std;
-struct HashFunction;
-struct PltObject;
+
 #define PltList vector<PltObject>
 #define Dictionary std::unordered_map<PltObject,PltObject,HashFunction>
-
 //
-//Types for different plutonium objects
+//Types for different plutonium datatypes
+
 #define PLT_LIST 'j'
 #define PLT_DICT 'a'
 #define PLT_INT 'i'
@@ -54,7 +52,10 @@ struct PltObject;
 #define PLT_ERROBJ 'e' //same as an object,just in thrown state
 #define PLT_BYTEARR 'c'
 //
+using namespace std;
 
+struct HashFunction;
+struct PltObject;
 struct FileObject
 {
   FILE* fp;
@@ -98,11 +99,11 @@ bool operator==(const PltObject& lhs,const PltObject& other)
           return lhs.i==other.i;
         else if(lhs.type==PLT_BOOL)
           return lhs.i==other.i;
-        else if(lhs.type=='u')
+        else if(lhs.type==PLT_FILESTREAM)
           return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);
-        else if(lhs.type=='s')
+        else if(lhs.type==PLT_STR)
           return *(string*)other.ptr==*(string*)lhs.ptr;
-        else if(lhs.type=='j')
+        else if(lhs.type==PLT_LIST)
             return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
         else if(other.type=='y' || other.type=='r' || other.type == PLT_CLASS)
           return lhs.ptr==other.ptr;
@@ -115,17 +116,17 @@ bool operator==(const PltObject& lhs,const PltObject& other)
 size_t hashPltObject(const PltObject& a)
 {
     char t = a.type;
-    if(t=='s')
+    if(t==PLT_STR)
         return std::hash<std::string>()(*(string*)a.ptr);
-    else if(t=='i')
+    else if(t==PLT_INT)
         return std::hash<int>()(a.i);
-    else if(t=='l')
+    else if(t==PLT_INT64)
         return std::hash<long long int>()(a.l);
-    else if(t=='f')
+    else if(t==PLT_FLOAT)
         return std::hash<double>()(a.f);
-    else if(t=='m')
+    else if(t==PLT_BYTE)
         return std::hash<unsigned char>()(a.i);
-    else if(t=='b')
+    else if(t==PLT_BOOL)
         return std::hash<bool>()(a.i);
     //other types not supported as keys in dictionaries
     return 0;
@@ -136,7 +137,7 @@ struct Klass
   std::unordered_map<string,PltObject> members;
   std::unordered_map<string,PltObject> privateMembers;
 };
-struct KlassInstance
+struct KlassObject
 {
   Klass* klass;
   std::unordered_map<string,PltObject> members;
@@ -278,7 +279,7 @@ inline PltObject PObjFromKlass(Klass* k)
   ret.ptr = (void*)k;
   return ret;
 }
-inline PltObject PObjFromKlassInst(KlassInstance* ki)
+inline PltObject PObjFromKlassInst(KlassObject* ki)
 {
   PltObject ret;
   ret.type = PLT_OBJ;
@@ -299,20 +300,38 @@ inline PltObject PObjFromFile(FileObject* file)
   ret.ptr = (void*)file;
   return ret;
 }
+inline bool AS_BOOL(PltObject x)
+{
+  return x.i;
+}
+#define AS_BOOL(x) x.i
+#define AS_INT(x) x.i
+#define AS_INT64(x) x.l
+#define AS_DOUBLE(x) x.f
+#define AS_BYTE(x) x.i
+#define AS_STR(x) *(string*)x.ptr
+#define AS_DICT(x) *(Dictionary*)x.ptr
+#define AS_LIST(x) *(PltList*)x.ptr
+#define AS_KLASS(x) *(Klass*)x.ptr
+#define AS_KlASSOBJECT(x) *(KlassObject*)x.ptr
+#define AS_BYTEARRAY(x) *(vector<uint8_t>*)x.ptr
+#define AS_FILEOBJECT(x) *(FileObject*)x.ptr
+#define AS_PTR(x) x.ptr
 
-typedef PltList*(*fn1)();
-typedef Dictionary*(*fn2)();
-typedef string*(*fn3)();
+
+typedef PltList*(*fn1)();//allocList
+typedef Dictionary*(*fn2)();//allocDictionary
+typedef string*(*fn3)();//allocString
 typedef void*(*fn4)();//unused for now
-typedef FileObject*(*fn5)();
-typedef Klass*(*fn6)();
-typedef KlassInstance*(*fn7)();
-typedef NativeFunction*(*fn8)();
-typedef Module*(*fn9)();
-typedef vector<uint8_t>*(*fn10)();
-typedef bool(*fn11)(PltObject*,PltObject*,int,PltObject*);
-typedef void(*fn12)(void*);
-typedef void(*fn13)(void*);
+typedef FileObject*(*fn5)();//allocFileObject
+typedef Klass*(*fn6)();//allocKlass
+typedef KlassObject*(*fn7)();//allocKlassObject
+typedef NativeFunction*(*fn8)();//allocNativeFunObj
+typedef Module*(*fn9)();//allocModule
+typedef vector<uint8_t>*(*fn10)();//allocBytearray
+typedef bool(*fn11)(PltObject*,PltObject*,int,PltObject*);//callobject
+typedef void(*fn12)(void*);//markImportant
+typedef void(*fn13)(void*);//unmarkImpotant
 
 //
 fn1 vm_allocList;
@@ -321,14 +340,15 @@ fn3 vm_allocString;
 //fn4 vm_allocErrObject;
 fn5 vm_allocFileObject;
 fn6 vm_allocKlass;
-fn7 vm_allocKlassInstance;
+fn7 vm_allocKlassObject;
 fn8 vm_allocNativeFunObj;
 fn9 vm_allocModule;
 fn10 vm_allocByteArray;
 fn11 vm_callObject;
 fn12 vm_markImportant;
 fn13 vm_unmarkImportant;
-inline PltObject PObjFromStr(string s)
+//The below helper functions make use of above function pointers
+inline PltObject PObjFromStr(const string& s)
 {
   string* ptr = vm_allocString();
   *ptr = s;
@@ -337,10 +357,11 @@ inline PltObject PObjFromStr(string s)
   ret.ptr = (void*)ptr;
   return ret;
 }
+
 PltObject Plt_Err(Klass* errKlass,string des)
 {
   PltObject ret;
-  KlassInstance* p = vm_allocKlassInstance();
+  KlassObject* p = vm_allocKlassObject();
   p->klass = errKlass;
   p->members = errKlass->members;
   p->privateMembers = errKlass->privateMembers;
@@ -408,7 +429,10 @@ extern "C"
 
   };
   #ifdef _WIN32
+  #ifndef PLUTONIUM_INTERPRETER // make sure this header is included in a shared library
+  //and not the plutonium interpreter
   __declspec(dllexport)
+  #endif
   #endif
   void api_setup(apiFuncions* p)
   {
@@ -418,7 +442,7 @@ extern "C"
   //  vm_allocErrObject = p->a4;
     vm_allocFileObject = p->a5;
     vm_allocKlass = p->a6;
-    vm_allocKlassInstance = p->a7;
+    vm_allocKlassObject = p->a7;
     vm_allocNativeFunObj = p->a8;
     vm_allocModule = p->a9;
     vm_allocByteArray = p->a10;

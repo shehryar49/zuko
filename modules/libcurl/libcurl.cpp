@@ -113,7 +113,7 @@ PltObject init()
 }
 PltObject curlklass__del__(PltObject* args,int n)//called by the VM so no typechecking required
 {
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     if(d->members[".handle"].type == 'n')
       return nil;
     CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
@@ -146,7 +146,7 @@ PltObject curlklass__construct__(PltObject* args,int n)
     return Plt_Err(ArgumentError,"1 arguments needed!");
     
   }
-  KlassInstance* curobj = (KlassInstance*)args[0].ptr;
+  KlassObject* curobj = (KlassObject*)args[0].ptr;
   CURL* curl = curl_easy_init();
   if(!curl)
   {
@@ -166,7 +166,7 @@ PltObject MIME__del__(PltObject* args,int n)
 {
     if(n!=1)
         return Plt_Err(ArgumentError,"1 argument needed!");
-    KlassInstance* k = (KlassInstance*)args[0].ptr;
+    KlassObject* k = (KlassObject*)args[0].ptr;
     curl_mime* obj = (curl_mime*)k->members[".handle"].ptr;
     curl_mime_free(obj);
     return nil;
@@ -178,13 +178,13 @@ PltObject mime__construct__(PltObject* args,int n)
     return Plt_Err(ArgumentError,"2 arguments needed!");
     
   }
-  if(args[1].type!='o' || ((KlassInstance*)args[1].ptr)->klass!=curlklass)
+  if(args[1].type!='o' || ((KlassObject*)args[1].ptr)->klass!=curlklass)
   {
     return Plt_Err(TypeError,"Curl Object needed!");
     
   }
-  KlassInstance* d = (KlassInstance*)args[0].ptr;
-  KlassInstance* cobj = (KlassInstance*)args[1].ptr;
+  KlassObject* d = (KlassObject*)args[0].ptr;
+  KlassObject* cobj = (KlassObject*)args[1].ptr;
   CurlObject*  curlobj = (CurlObject*)cobj->members[".handle"].ptr;
   curl_mime* mime = curl_mime_init(curlobj->handle);
   
@@ -198,9 +198,9 @@ PltObject MIME_NAME(PltObject* args,int n)
         return Plt_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
         return Plt_Err(TypeError,"Argument 2 must be string!");
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=mimepartklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
       return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
-  KlassInstance* d = (KlassInstance*)args[0].ptr;
+  KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_name(obj->mimepart,name.c_str());
@@ -212,9 +212,9 @@ PltObject MIME_FILENAME(PltObject* args,int n)
         return Plt_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
         return Plt_Err(TypeError,"Argument 2 must be string!");
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=mimepartklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
       return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
-  KlassInstance* d = (KlassInstance*)args[0].ptr;
+  KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_filename(obj->mimepart,name.c_str());
@@ -226,9 +226,9 @@ PltObject MIME_CONTENTTYPE(PltObject* args,int n)
         return Plt_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
         return Plt_Err(TypeError,"Argument 2 must be string!");
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=mimepartklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
       return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
-  KlassInstance* d = (KlassInstance*)args[0].ptr;
+  KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_type(obj->mimepart,name.c_str());
@@ -240,9 +240,9 @@ PltObject MIME_DATA(PltObject* args,int n)
         return Plt_Err(ArgumentError,"1 argument needed!");
     if(args[1].type!='c')
       return Plt_Err(TypeError,"Argument 2 must be a Byte array!");
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=mimepartklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
       return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
     auto l = *(vector<uint8_t>*)args[1].ptr;
     curl_mime_data(obj->mimepart,(const char*)&l[0],l.size());
@@ -253,15 +253,15 @@ PltObject addpart(PltObject* args,int n)
 {
     if(n!=1)
         return Plt_Err(ArgumentError,"1 arguments needed!");
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=mimeklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimeklass)
       return Plt_Err(TypeError,"Argument 1 must be a Mime object");
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     curl_mime* obj = (curl_mime*)(d->members)[".handle"].ptr;
     curl_mimepart* mimepart = curl_mime_addpart(obj);
     MimePart* mp = new MimePart;
     mp->mimepart = mimepart;
     //add methods to object
-    KlassInstance* part = vm_allocKlassInstance();
+    KlassObject* part = vm_allocKlassObject();
     part->klass = mimepartklass;
     part->members.emplace(("data"),PObjFromMethod("mimepart.data",&MIME_DATA,mimepartklass));
     part->members.emplace(("name"),PObjFromMethod("mimepart.name",&MIME_NAME,mimepartklass));
@@ -276,7 +276,7 @@ PltObject MIMEPART__del__(PltObject* args,int n)
 {
     if(n!=1)
         return Plt_Err(ArgumentError,"1 argument needed!");
-    KlassInstance* k = (KlassInstance*)args[0].ptr;
+    KlassObject* k = (KlassObject*)args[0].ptr;
     MimePart* obj = (MimePart*)k->members[".handle"].ptr;
     delete obj;
     return nil;
@@ -293,7 +293,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"Argument 2 must an Integer!");
         
     }
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=curlklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
       return Plt_Err(TypeError,"Argument 1 must be a Curl object");
       
@@ -306,7 +306,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"URL option requires a string value");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       obj->url = *(string*)args[2].ptr;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->url.c_str());
@@ -324,7 +324,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"FOLLOWLOCATION option requires an integer value");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
@@ -340,7 +340,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"VERBOSE option requires an integer value");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
@@ -356,7 +356,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"PORT option requires an integer value");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
@@ -372,9 +372,9 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"MIMEPOST option requires a MimeObject");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
-      KlassInstance* e = (KlassInstance*)args[2].ptr;
+      KlassObject* e = (KlassObject*)args[2].ptr;
       curl_mime* m = (curl_mime*)((e->members)[".handle"].ptr);
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,m);
       if( res!= CURLE_OK)
@@ -388,7 +388,7 @@ PltObject setopt(PltObject* args,int n)
       if(args[2].type == PLT_FUNC || args[2].type == PLT_NATIVE_FUNC)
       {
         //set callback
-        KlassInstance* d = (KlassInstance*)args[0].ptr;
+        KlassObject* d = (KlassObject*)args[0].ptr;
         d->members.emplace("wmcallback",args[2]);
         wmcallback = args[2];
         CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
@@ -401,7 +401,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"WRITEFUNCTION option requires an integer value");
       if(args[2].i!=0)
         return Plt_Err(TypeError,"Invalid option value "+to_string(args[2].i));
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       auto btArr = vm_allocByteArray();
       PltObject p1;
       p1.type = 'c';
@@ -423,7 +423,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(TypeError,"USERAGENT option requires a string value");
          
       }
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       obj->useragent = *(string*)args[2].ptr;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->useragent.c_str());
@@ -442,7 +442,7 @@ PltObject setopt(PltObject* args,int n)
         return Plt_Err(ValueError,"Empty bytearray");
       char* postfields = new char[l.size()];
       memcpy(postfields,&l[0],l.size());
-      KlassInstance* d = (KlassInstance*)args[0].ptr;
+      KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
       obj->postfields = postfields;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,postfields);
@@ -465,7 +465,7 @@ PltObject perform(PltObject* args,int n)
         return Plt_Err(ArgumentError,"1 argument needed!");
         
     }
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     string tmp = ".handle";
     CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
     CURLcode res;
@@ -479,7 +479,7 @@ PltObject getinfo(PltObject* args,int n)
         return Plt_Err(ArgumentError,"2 arguments needed!");
         
     }
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=curlklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
       return Plt_Err(TypeError,"Argument 1 must be a Curl object");
       
@@ -489,7 +489,7 @@ PltObject getinfo(PltObject* args,int n)
       return Plt_Err(TypeError,"Argument 2 must an Integer!");
       
     }
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     string tmp = ".handle";
     CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
     CURL* handle = obj->handle;
@@ -525,12 +525,12 @@ PltObject cleanup(PltObject* args,int n)
         return Plt_Err(ArgumentError,"1 arguments needed!");
         
     }
-    if(args[0].type!='o' || ((KlassInstance*)args[0].ptr)->klass!=curlklass)
+    if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
       return Plt_Err(TypeError,"Argument 1 must be a Curl object");
       
     }
-    KlassInstance* d = (KlassInstance*)args[0].ptr;
+    KlassObject* d = (KlassObject*)args[0].ptr;
     string tmp = ".handle";
     CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
     curl_easy_cleanup(obj->handle);
@@ -545,7 +545,7 @@ PltObject ESCAPE(PltObject* args,int n)
     return Plt_Err(ArgumentError,"2 Arguments required.");
     
   }
-  if(args[0].type != PLT_OBJ || ((KlassInstance*)args[0].ptr) -> klass !=curlklass)
+  if(args[0].type != PLT_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
   {
     return Plt_Err(TypeError,"Argument 1 must be a Curl Object");
     
@@ -555,7 +555,7 @@ PltObject ESCAPE(PltObject* args,int n)
     return Plt_Err(TypeError,"Argument 1 must be a string");
     
   }
-  KlassInstance* ki = (KlassInstance*)args[0].ptr;
+  KlassObject* ki = (KlassObject*)args[0].ptr;
   CurlObject* k = (CurlObject*)ki->members[".handle"].ptr;
   string& str = *(string*)args[1].ptr;
   string* res = vm_allocString();
@@ -576,7 +576,7 @@ PltObject UNESCAPE(PltObject* args,int n)
     return Plt_Err(ArgumentError,"2 Arguments required.");
     
   }
-  if(args[0].type != PLT_OBJ || ((KlassInstance*)args[0].ptr) -> klass !=curlklass)
+  if(args[0].type != PLT_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
   {
     return Plt_Err(TypeError,"Argument 1 must be a Curl Object");
     
@@ -586,7 +586,7 @@ PltObject UNESCAPE(PltObject* args,int n)
     return Plt_Err(TypeError,"Argument 1 must be a string");
     
   }
-  KlassInstance* ki = (KlassInstance*)args[0].ptr;
+  KlassObject* ki = (KlassObject*)args[0].ptr;
   CurlObject* k = (CurlObject*)ki->members[".handle"].ptr;
   string& str = *(string*)args[1].ptr;
   string* res = vm_allocString();

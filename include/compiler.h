@@ -120,15 +120,15 @@ public:
   //init function is used instead of constructor
   //this way the Compiler class becomes reusable
   //by initializing it again
-  void init(ParseInfo& p,vector<string>* fnames,vector<string>* fsc,unordered_map<size_t,ByteSrc>* ltable,string filename)
+  void init(string filename,ProgramInfo& p)
   {
     symRef.clear();
     extractSymRef(symRef,p.refGraph);
     num_of_constants = (int32_t*)&(p.num_of_constants);
-    files = fnames;
-    sources = fsc;
+    files = &p.files;
+    sources = &p.sources;
     fileTOP = (short)(std::find(files->begin(),files->end(),filename) - files->begin());
-    LineNumberTable = ltable;
+    LineNumberTable = &p.LineNumberTable;
     this->filename = filename;
     if(p.num_of_constants > 0 && !REPL_MODE)
     {

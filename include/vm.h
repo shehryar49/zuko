@@ -22,13 +22,7 @@ SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
 #include "plutonium.h"
-
 using namespace std;
-struct ByteSrc
-{
-  short fileIndex; // index of filename in files vector
-  size_t ln;
-}; // source of byte i.e it's filename and line number
 
 inline bool isNumeric(char t)
 {
@@ -125,7 +119,7 @@ struct MemInfo
 
 // Allocator functions
 Klass *allocKlass();
-KlassInstance *allocKlassInstance();
+KlassObject *allocKlassObject();
 PltList *allocList();
 vector<uint8_t>* allocByteArray();
 Dictionary *allocDict();
@@ -193,14 +187,14 @@ public:
   size_t instCount[sizeof(opNames)/sizeof(const char*)] = {0};
   #endif
   PltObject nil;
-  void load(vector<uint8_t>& b, std::unordered_map<size_t, ByteSrc> *ltable, vector<string> *a, vector<string> *c)
+  void load(vector<uint8_t>& bytecode,ProgramInfo& p)
   {
-    program = &b[0];
-    program_size = b.size();
-    GC_THRESHHOLD = 4196;
-    LineNumberTable = ltable;
-    files = a;
-    sources = c;
+    program = &bytecode[0];
+    program_size = bytecode.size();
+    GC_THRESHHOLD = 4196;//chosen at random
+    LineNumberTable = &p.LineNumberTable;
+    files = &p.files;
+    sources = &p.sources;
     nil.type = PLT_NIL;
     //initialise api functions for interpreter as well
     //in case a builtin function wants to use it
@@ -210,7 +204,7 @@ public:
 //    api.a4 = &allocErrObject; reuse later
     api.a5 = &allocFileObject;
     api.a6 = &allocKlass;
-    api.a7 = &allocKlassInstance;
+    api.a7 = &allocKlassObject;
     api.a8 = &allocNativeFun;
     api.a9 = &allocModule;
     api.a10 = &allocByteArray;
@@ -243,7 +237,7 @@ public:
     {
       size_t T = STACK.size() - tryStackCleanup.back();
       STACK.erase(STACK.end() - T, STACK.end());
-      KlassInstance *E = allocKlassInstance();
+      KlassObject *E = allocKlassObject();
       E->klass = e;
       E->members = e->members;
       E->privateMembers = e->privateMembers;
@@ -453,7 +447,7 @@ public:
       }
       else if (curr.type == PLT_OBJ)
       {
-        KlassInstance *k = (KlassInstance *)curr.ptr;
+        KlassObject *k = (KlassObject *)curr.ptr;
         Klass *kk = k->klass;
         it = memory.find((void *)kk);
         if (it != memory.end() && !(it->second.isMarked))
@@ -532,7 +526,7 @@ public:
         //call destructor of unmarked objects
         if (m.type == PLT_OBJ)
         {
-          KlassInstance *obj = (KlassInstance *)e.first;
+          KlassObject *obj = (KlassObject *)e.first;
           PltObject dummy;
           dummy.type = PLT_OBJ;
           dummy.ptr = e.first;
@@ -570,8 +564,8 @@ public:
       }
       else if (m.type == PLT_OBJ)
       {
-        delete (KlassInstance *)e;
-        allocated -= sizeof(KlassInstance);
+        delete (KlassObject *)e;
+        allocated -= sizeof(KlassObject);
       }
       else if (m.type == PLT_DICT)
       {
@@ -595,8 +589,8 @@ public:
       }
       else if (m.type == PLT_ERROBJ)
       {
-        delete (KlassInstance *)e;
-        allocated -= sizeof(KlassInstance);
+        delete (KlassObject *)e;
+        allocated -= sizeof(KlassObject);
       }
       else if (m.type == PLT_STR)
       {
@@ -626,7 +620,7 @@ public:
   }
   inline bool invokeOperator(string meth, PltObject A, size_t args, string op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
   {
-    KlassInstance *obj = (KlassInstance *)A.ptr;
+    KlassObject *obj = (KlassObject *)A.ptr;
     auto it = obj->members.find(meth);
     PltObject p3;
     string s1;
@@ -665,7 +659,7 @@ public:
         rr = M(argArr, args);
         if (rr.type == PLT_ERROBJ)
         {
-          KlassInstance *E = (KlassInstance*)rr.ptr;
+          KlassObject *E = (KlassObject*)rr.ptr;
           s1 = meth + "():  " + *(string*)(E->members["msg"].ptr);
           spitErr(E->klass, s1);
           return false;
@@ -957,7 +951,7 @@ public:
         p1=builtin[i1](&STACK[STACK.size() - howmany], howmany);
         if (p1.type == PLT_ERROBJ)
         {
-          KlassInstance* E = (KlassInstance*)p1.ptr;
+          KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
           continue;
         }
@@ -974,7 +968,7 @@ public:
         p1 = builtin[i1](&STACK[STACK.size() - i2], i2);
         if (p1.type == PLT_ERROBJ)
         {
-          KlassInstance* E = (KlassInstance*)p1.ptr;
+          KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
           continue;
         }
@@ -1010,7 +1004,7 @@ public:
             if (p4.type == PLT_ERROBJ)
             {
               // The module raised an error
-              KlassInstance* E = (KlassInstance*)p4.ptr;
+              KlassObject* E = (KlassObject*)p4.ptr;
               s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
               spitErr(E->klass,s1);
               continue;
@@ -1025,7 +1019,7 @@ public:
           }
           else if (p3.type == PLT_CLASS)
           {
-            KlassInstance *obj = allocKlassInstance(); // instance of class
+            KlassObject *obj = allocKlassObject(); // instance of class
             obj->members = ((Klass *)p3.ptr)->members;
             obj->privateMembers = ((Klass *)p3.ptr)->privateMembers;
 
@@ -1049,7 +1043,7 @@ public:
               if (p1.type == PLT_ERROBJ)
               {
                 // The module raised an error
-                KlassInstance* E = (KlassInstance*)p1.ptr;
+                KlassObject* E = (KlassObject*)p1.ptr;
                 s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
                 spitErr(E->klass, s1);
                 continue;
@@ -1070,7 +1064,7 @@ public:
           p3 = callmethod(method_name, &STACK[STACK.size()-i2-1], i2 + 1);
           if (p3.type == PLT_ERROBJ)
           {
-            KlassInstance* E = (KlassInstance*)p3.ptr;
+            KlassObject* E = (KlassObject*)p3.ptr;
             spitErr(E->klass, *(string *)(E->members["msg"].ptr));
             continue;
           }
@@ -1079,7 +1073,7 @@ public:
         }
         else if (p1.type == PLT_OBJ)
         {
-          KlassInstance *obj = (KlassInstance *)p1.ptr;
+          KlassObject *obj = (KlassObject *)p1.ptr;
           if (obj->members.find(method_name) == obj->members.end())
           {
             if (obj->privateMembers.find(method_name) != obj->privateMembers.end())
@@ -1142,7 +1136,7 @@ public:
             rr = R(args, i2 + 1);
             if (rr.type == PLT_ERROBJ)
             {
-              KlassInstance* E = (KlassInstance *)rr.ptr;
+              KlassObject* E = (KlassObject *)rr.ptr;
               spitErr(E->klass, fn->name + ": " + *(string*)(E->members["msg"].ptr));
               continue;
             }
@@ -1244,7 +1238,7 @@ public:
           spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
           continue;
         }
-        KlassInstance *ptr = (KlassInstance *)p1.ptr;
+        KlassObject *ptr = (KlassObject *)p1.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
         {
           if (p1.type == PLT_OBJ)
@@ -2322,7 +2316,7 @@ public:
         }
         else if(a.type == PLT_OBJ)
         {
-          KlassInstance *ptr = (KlassInstance *)a.ptr;
+          KlassObject *ptr = (KlassObject *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
           {
               if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
@@ -2677,7 +2671,7 @@ public:
         else if (fn.type == PLT_CLASS)
         {
 
-          KlassInstance *obj = allocKlassInstance(); // instance of class
+          KlassObject *obj = allocKlassObject(); // instance of class
           obj->members = ((Klass *)fn.ptr)->members;
           obj->privateMembers = ((Klass *)fn.ptr)->privateMembers;
           s1 = ((Klass*)fn.ptr) -> name;
@@ -2721,7 +2715,7 @@ public:
               STACK.erase(STACK.end() - (N + 1), STACK.end());
               if (p4.type == PLT_ERROBJ)
               {
-                const string& msg = *(string*)(((KlassInstance*)p4.ptr)->members["msg"].ptr);
+                const string& msg = *(string*)(((KlassObject*)p4.ptr)->members["msg"].ptr);
                 spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
                 continue;
               }
@@ -3117,7 +3111,7 @@ public:
           spitErr(TypeError,"Error value of type "+fullform(p3.type)+" not throwable!");
           continue;
         }
-        KlassInstance* ki = (KlassInstance*)p3.ptr;
+        KlassObject* ki = (KlassObject*)p3.ptr;
         std::unordered_map<string,PltObject>::iterator it;
         if( (it = ki->members.find("msg")) == ki->members.end() || (*it).second.type!=PLT_STR)
         {
@@ -3224,7 +3218,7 @@ public:
      
         if(a.type == PLT_OBJ)
         {
-          KlassInstance *ptr = (KlassInstance *)a.ptr;
+          KlassObject *ptr = (KlassObject *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
           {
               if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
@@ -3276,7 +3270,7 @@ public:
           spitErr(TypeError, "Error cannot access variable "+s1+" ,self is not a class object!");
           continue;
         }
-        KlassInstance *ptr = (KlassInstance *)Parent.ptr;
+        KlassObject *ptr = (KlassObject *)Parent.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
         {
           if (Parent.type == PLT_OBJ)
@@ -3353,7 +3347,7 @@ public:
       //call destructor for each object only once
       if (m.type == PLT_OBJ)
       {
-        KlassInstance *obj = (KlassInstance *)(*it).first;
+        KlassObject *obj = (KlassObject *)(*it).first;
         PltObject dummy;
         dummy.type = PLT_OBJ;
         dummy.ptr = (*it).first;
@@ -3391,7 +3385,7 @@ public:
     }
     for (auto e : toerase)
     {
-      delete (KlassInstance*)e;
+      delete (KlassObject*)e;
     }
     if(constants)
       delete[] constants;
@@ -3480,15 +3474,15 @@ Module *allocModule()
   vm.memory.emplace((void *)p, m);
   return p;
 }
-KlassInstance *allocKlassInstance()
+KlassObject *allocKlassObject()
 {
-  KlassInstance *p = new KlassInstance;
+  KlassObject *p = new KlassObject;
   if (!p)
   {
-    fprintf(stderr,"allocKlassInstance(): error allocating memory!\n");
+    fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(KlassInstance);
+  vm.allocated += sizeof(KlassObject);
   MemInfo m;
   m.type = PLT_OBJ;
   m.isMarked = false;

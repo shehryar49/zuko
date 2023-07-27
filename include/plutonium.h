@@ -1,6 +1,6 @@
 #ifndef PLUTONIUM_H_
 #define PLUTONIUM_H_
-
+#define PLUTONIUM_INTERPRETER
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,4 +38,6 @@ unsigned char tobyte(const string&);
 #include "vm.h"
 #include "lexer.h"
 #include "utility.h"
+#include "programinfo.h"
+#include "repl.h"
 #endif

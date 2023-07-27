@@ -66,3 +66,11 @@ add_library(libcurl SHARED modules/libcurl/libcurl.cpp modules/libcurl/libcurl.h
 target_include_directories(libcurl PUBLIC include)
 target_link_libraries(libcurl ${CURL_LIBRARIES})
 set_target_properties(libcurl PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
+
+#mysql module
+#find_package(MySQL)
+#add_library(mysql SHARED modules/mysql/mysql.cpp modules/mysql/mysql.h)
+#target_include_directories(mysql PUBLIC include)
+#target_link_libraries(mysql ${MYSQL_LIBRARY})
+#set_target_properties(mysql PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
+
