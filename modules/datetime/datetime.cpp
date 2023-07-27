@@ -72,7 +72,7 @@ PltObject LOCALTIME(PltObject* args,int32_t n)
     ki->members.emplace("wday",PObjFromInt(time->tm_wday));
     ki->members.emplace("yday",PObjFromInt(time->tm_yday));
 
-    return PObjFromKlassInst(ki);
+    return PObjFromKlassObj(ki);
 }
 PltObject GMTIME(PltObject* args,int32_t n)
 {
@@ -101,6 +101,6 @@ PltObject GMTIME(PltObject* args,int32_t n)
     ki->members.emplace("sec",PObjFromInt(time->tm_sec));
     ki->members.emplace("wday",PObjFromInt(time->tm_wday));
     ki->members.emplace("yday",PObjFromInt(time->tm_yday));
-    return PObjFromKlassInst(ki);
+    return PObjFromKlassObj(ki);
 }
 
