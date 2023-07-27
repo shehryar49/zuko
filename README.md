@@ -3,7 +3,6 @@
 Plutonium is a dynamically typed and lightweight programming language written in C++. Plutonium is compiled to bytecode and then interpreted by a virtual machine. This project has absolutely no external dependencies(except for some modules like MySQL and libCurl).
 
 # HOW TO COMPILE:
-
 ## Visual Studio:
     
 - Create an empty project
@@ -22,6 +21,11 @@ Just run the shell script install.sh it will build,test and install plutonium.
 Use the following command:
    
 ```g++ plutonium.cpp -o plutonium -DNDEBUG -O3 -m64```
+
+## CMake
+
+  The CMake script is in progress and will replace  all above methods once done.Just run CMake from the root directory and set BUILD_TYPE=Release . This will generate plutonium executable in the root directory and shared libraries in **modules** directory
+  
 ## Testing your build
 
 You can test your build using test_all tool (src in tests/) .You will have to build it from source. To use it to test your build just run it from command line and pass the plutonium interpreter's path.This is done by default when building on Linux using install.sh .On Windows you can also use this tool.

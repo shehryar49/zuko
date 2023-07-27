@@ -1,13 +1,23 @@
+
 /*
 Libcurl Binding for Plutonium(easy interface only)
 The original code of libcurl is not modified in anyway. This is just a wrapper around libcurl
 and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
+#ifdef _WIN32
+#define CURL_STATICLIB
+#pragma comment(lib,"crypt32.lib")
+#pragma comment(lib,"Normaliz.lib")
+#pragma comment(lib,"Ws2_32.lib")
+#pragma comment(lib,"Wldap32.lib")
+#pragma comment(lib,"libcurl_a.lib")
+#endif
 #include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include "libcurl.h"
 using namespace std;
 struct MemoryStruct
@@ -61,8 +71,7 @@ PltObject init()
     nil.type = PLT_NIL;
     Module* d = vm_allocModule();
     //
-    curlklass = new Klass;
-  
+    curlklass = vm_allocKlass();
     curlklass->name = "Curl";
     curlklass->members.emplace("__construct__",PObjFromMethod("Curl.__construct__",&curlklass__construct__,curlklass));
     curlklass->members.emplace("perform",PObjFromMethod("Curl.perform",&perform,curlklass));
@@ -73,10 +82,10 @@ PltObject init()
     curlklass->members.emplace("unescape",PObjFromFunction("Curl.unescape",&UNESCAPE,curlklass));
     
     //
-    mimepartklass = new Klass;
+    mimepartklass = vm_allocKlass();
     mimepartklass->name = "mimepart";
     //
-    mimeklass = new Klass;
+    mimeklass = vm_allocKlass();
     mimeklass->name = "mime";
     //add methods to object
     mimeklass->members.emplace("__construct__",PObjFromMethod("mime.__construct__",&mime__construct__,mimeklass));
@@ -108,7 +117,9 @@ PltObject init()
     d->members.emplace(("VERSION_MAJOR"),PObjFromInt(LIBCURL_VERSION_MAJOR));
     d->members.emplace(("VERSION_MINOR"),PObjFromInt(LIBCURL_VERSION_MINOR));
     
-
+    vm_markImportant(curlklass);
+    vm_markImportant(mimeklass);
+    vm_markImportant(mimepartklass);
     return PObjFromModule(d);
 }
 PltObject curlklass__del__(PltObject* args,int n)//called by the VM so no typechecking required
@@ -604,7 +615,7 @@ PltObject UNESCAPE(PltObject* args,int n)
 extern "C" void unload()
 {
   curl_global_cleanup();
-  delete curlklass;
-  delete mimeklass;
-  delete mimepartklass;
+  vm_unmarkImportant(curlklass);
+  vm_unmarkImportant(mimeklass);
+  vm_unmarkImportant(mimepartklass);
 }
