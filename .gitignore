@@ -11,3 +11,11 @@ out.txt
 Makefile
 CMakeCache.txt
 CMakeFiles/
+*.vcxproj
+*.sln
+*.filters
+Release
+Debug
+*.dir
+*.user
+.vs/

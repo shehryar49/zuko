@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "conio.h"
 #include <conio.h>
 PltObject init()
@@ -15,7 +14,7 @@ PltObject GETCH(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 		
 	}
 	return PObjFromInt(_getch());
@@ -25,7 +24,7 @@ PltObject GETCHE(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 		
 	}
 	return PObjFromInt(_getche());
@@ -34,7 +33,7 @@ PltObject KBHIT(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 
 	}
 	return PObjFromBool(_kbhit());

@@ -12,7 +12,7 @@ void signalHandler(int signum)
   {
     char buff[] = "Oops either the interpreter or one of the loaded modules just crashed.Please report this incident.\n";
     #ifdef _WIN32
-      _write(STDERR_FILENO,buff,sizeof(buff));
+      _write(_fileno(stderr),buff,sizeof(buff));
     #else
       write(STDERR_FILENO,buff,sizeof(buff));
     #endif

@@ -1,4 +1,4 @@
-#include "pch.h"
+
 #include "console.h"
 #include <Windows.h>
 PltObject nil;
@@ -20,12 +20,13 @@ PltObject setTextAttribute(PltObject* args, int n)
 {
 	if (n != 1)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "1 argument needed!");
+		return Plt_Err(ArgumentError, "1 argument needed!");
 		
 	}
+	
 	if (args[0].type != PLT_INT)
 	{
-		return Plt_Err(TYPE_ERROR, "Integer 32 bit needed!");
+		return Plt_Err(TypeError, "Integer 32 bit needed!");
 		
 	}
 	HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -36,7 +37,7 @@ PltObject show(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 		
 	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
@@ -46,7 +47,7 @@ PltObject hide(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 		
 	}
 	ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -56,7 +57,7 @@ PltObject getDimensions(PltObject* args, int n)
 {
 	if (n != 0)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "0 arguments needed!");
+		return Plt_Err(ArgumentError, "0 arguments needed!");
 		
 	}
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -74,12 +75,12 @@ PltObject gotoxy(PltObject* args, int n)
 {
 	if (n != 2)
 	{
-		return Plt_Err(ARGUMENT_ERROR, "2 arguments needed!");
+		return Plt_Err(ArgumentError, "2 arguments needed!");
 		
 	}
 	if (args[0].type != 'i' || args[1].type != 'i')
 	{
-		return Plt_Err(TYPE_ERROR, "Integer argument needed!");
+		return Plt_Err(TypeError, "Integer argument needed!");
 		
 	}
 	COORD pos = { args[0].i,args[1].i };

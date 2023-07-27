@@ -5,13 +5,11 @@ Written by Shahryar Ahmad
 The code is completely free to use and comes without any guarantee/warrantee
 */
 #ifdef _WIN32
-#include "C:\\plutonium\\PltObject.h"
 #define EXPORT __declspec(dllexport)
 #else
-#include "/opt/plutonium/PltObject.h"
 #define EXPORT 
 #endif
-
+#include "PltObject.h"
 extern "C"
 {
   EXPORT PltObject init();
