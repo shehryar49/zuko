@@ -55,7 +55,7 @@ PltObject LOCALTIME(PltObject* args,int32_t n)
     tm* time = localtime(&now);
     if(!time)
       return Plt_Err(Error,"C localtime() returned nullptr");
-    KlassInstance* ki = vm_allocKlassInstance();
+    KlassObject* ki = vm_allocKlassObject();
     ki->klass = tmklass;
     ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
     ki->members.emplace("hour",PObjFromInt(time->tm_hour));
@@ -79,7 +79,7 @@ PltObject GMTIME(PltObject* args,int32_t n)
     tm* time = localtime(&now);
     if(!time)
       return Plt_Err(Error,"C localtime() returned nullptr");
-    KlassInstance* ki = vm_allocKlassInstance();
+    KlassObject* ki = vm_allocKlassObject();
     ki->klass = tmklass;
     ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
     ki->members.emplace("hour",PObjFromInt(time->tm_hour));

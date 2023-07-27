@@ -239,7 +239,7 @@ Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadE
       else
       {
         //file content uploaded
-        KlassInstance* ki = vm_allocKlassInstance();
+        KlassObject* ki = vm_allocKlassObject();
         ki->klass = CgiFile;
         ki->members.emplace("filename",PObjFromStr(filename));
         if(headers.find("content-type")!=headers.end())
