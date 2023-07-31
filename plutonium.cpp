@@ -46,7 +46,7 @@ int main(int argc, const char* argv[])
       filename = argv[1];
       source_code = readfile(filename);
     }
-    //the resulting program currently consists of 1 file only
+    //the  program currently consists of 1 file only
     //unless this 1 file imports other plutonium files
     //add this 1 file's name and source to ProgramInfo 
     p.files.push_back(filename);//add filename
@@ -69,7 +69,7 @@ int main(int argc, const char* argv[])
       //  printAST(ast);
         Compiler compiler;
         compiler.init(filename,p);//init compiler with root filename and ProgramInfo
-        bytecode = compiler.compileProgram(ast,argc,argv); // compile AST
+        bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
    // WriteByteCode(bytecode,LineNumberTable,files);
