@@ -279,7 +279,7 @@ inline PltObject PObjFromKlass(Klass* k)
   ret.ptr = (void*)k;
   return ret;
 }
-inline PltObject PObjFromKlassInst(KlassObject* ki)
+inline PltObject PObjFromKlassObj(KlassObject* ki)
 {
   PltObject ret;
   ret.type = PLT_OBJ;

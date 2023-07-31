@@ -57,7 +57,12 @@ PltObject LOCALTIME(PltObject* args,int32_t n)
       return Plt_Err(Error,"C localtime() returned nullptr");
     KlassObject* ki = vm_allocKlassObject();
     ki->klass = tmklass;
-    ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
+    #ifdef _WIN32
+      //Fuck microsoft
+    #else
+      ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
+      ki->members.emplace("zone", PObjFromStr((std::string)time->tm_zone));
+    #endif
     ki->members.emplace("hour",PObjFromInt(time->tm_hour));
     ki->members.emplace("isdst",PObjFromInt(time->tm_isdst));
     ki->members.emplace("mday",PObjFromInt(time->tm_mday));
@@ -66,8 +71,8 @@ PltObject LOCALTIME(PltObject* args,int32_t n)
     ki->members.emplace("sec",PObjFromInt(time->tm_sec));
     ki->members.emplace("wday",PObjFromInt(time->tm_wday));
     ki->members.emplace("yday",PObjFromInt(time->tm_yday));
-    ki->members.emplace("zone",PObjFromStr((std::string)time->tm_zone));
-    return PObjFromKlassInst(ki);
+
+    return PObjFromKlassObj(ki);
 }
 PltObject GMTIME(PltObject* args,int32_t n)
 {
@@ -81,7 +86,13 @@ PltObject GMTIME(PltObject* args,int32_t n)
       return Plt_Err(Error,"C localtime() returned nullptr");
     KlassObject* ki = vm_allocKlassObject();
     ki->klass = tmklass;
-    ki->members.emplace("gmtoff",PObjFromInt64(time->tm_gmtoff));
+    #ifdef _WIN32
+      //Fuck microsoft
+    #else
+      ki->members.emplace("gmtoff", PObjFromInt64(time->tm_gmtoff));
+      ki->members.emplace("zone", PObjFromStr((std::string)time->tm_zone));
+    #endif
+    
     ki->members.emplace("hour",PObjFromInt(time->tm_hour));
     ki->members.emplace("isdst",PObjFromInt(time->tm_isdst));
     ki->members.emplace("mday",PObjFromInt(time->tm_mday));
@@ -90,7 +101,6 @@ PltObject GMTIME(PltObject* args,int32_t n)
     ki->members.emplace("sec",PObjFromInt(time->tm_sec));
     ki->members.emplace("wday",PObjFromInt(time->tm_wday));
     ki->members.emplace("yday",PObjFromInt(time->tm_yday));
-    ki->members.emplace("zone",PObjFromStr((std::string)time->tm_zone));
-    return PObjFromKlassInst(ki);
+    return PObjFromKlassObj(ki);
 }
 

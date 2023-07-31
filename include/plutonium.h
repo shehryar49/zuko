@@ -16,6 +16,8 @@
 #include <unistd.h>
 #else
 #include <windows.h>
+#include <io.h>
+#include <fcntl.h>
 #endif
 #include "PltObject.h"
 using namespace std;
