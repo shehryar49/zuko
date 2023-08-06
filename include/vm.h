@@ -784,6 +784,8 @@ public:
     //Dictionary pd1;
     PltObject alwaysi32;
     PltObject alwaysByte;
+    vector<PltObject> values;
+    vector<PltObject> names;
     alwaysi32.type = PLT_INT;
     alwaysByte.type = PLT_BYTE;
     int32_t* alwaysi32ptr = &alwaysi32.i;
@@ -1441,13 +1443,14 @@ public:
         executing.pop_back();
         p1 = STACK[STACK.size() - 1];//val
         STACK.pop_back();
-        PltList locals = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
+        //locals
+        values = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
 
         p2 = STACK.back();//genObj
         STACK.pop_back();
         Coroutine *g = (Coroutine *)p2.ptr;
-        g->locals = locals;
+        g->locals = values;
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = false;
@@ -1462,12 +1465,12 @@ public:
         executing.pop_back();
         p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltList locals = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
+        values = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
         p1 = STACK.back();
         STACK.pop_back();
         Coroutine *g = (Coroutine *)p1.ptr;
-        g->locals = locals;
+        g->locals = values;
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = true;
@@ -1488,12 +1491,12 @@ public:
         executing.pop_back();
         PltObject val = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltList locals = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
+        values = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
         PltObject genObj = STACK.back();
         STACK.pop_back();
         Coroutine *g = (Coroutine *)genObj.ptr;
-        g->locals = locals;
+        g->locals = values;
         g->curr = k - program + 1;
         g->state = STOPPED;
         frames.pop_back();
@@ -2179,14 +2182,14 @@ public:
         }
         else if (p2.type == PLT_DICT)
         {
-          Dictionary d = *(Dictionary *)p2.ptr;
-          if (d.find(p1) == d.end())
+          Dictionary* d = (Dictionary *)p2.ptr;
+          if (d->find(p1) == d->end())
           {
             orgk = k - program;
             spitErr(KeyError, "Error key " + PltObjectToStr(p1) + " not found in the dictionary!");
             NEXT_INST;
           }
-          PltObject res = d[p1];
+          PltObject res = (*d)[p1];
           STACK.push_back(res);
         }
         else if (p2.type == PLT_STR)
@@ -2529,9 +2532,8 @@ public:
         klass.type = PLT_CLASS;
         Klass *obj = allocKlass();
         obj->name = name;
-        vector<PltObject> values;
-        vector<PltObject> names;
-
+        values.clear();
+        names.clear();
         for (int32_t i = 1; i <= N; i++)
         {
           p1 = STACK.back();
@@ -2579,8 +2581,9 @@ public:
         klass.type = PLT_CLASS;
         Klass *d = allocKlass();
         d->name = name;
-        vector<PltObject> values;
-        vector<PltObject> names;
+
+        names.clear();
+        values.clear();
         for (int32_t i = 1; i <= N; i++)
         {
           p1 = STACK.back();
@@ -2617,8 +2620,8 @@ public:
           else
             d->members.emplace(s1, values[i]);
         }
-        string n;
-        for (auto e : Base->members)
+
+        for (const auto& e : Base->members)
         {
           const string &n = e.first;
           if (n == "super")//do not add base class's super to this class
@@ -2641,7 +2644,7 @@ public:
             }
           }
         }
-        for (auto e : Base->privateMembers)
+        for(const auto& e : Base->privateMembers)
         {
           const string &n = e.first;
           if (d->privateMembers.find(n) == d->privateMembers.end())
@@ -3497,7 +3500,7 @@ public:
 } vm;
 PltList *allocList()
 {
-  PltList *p = new PltList;
+  PltList *p = new(nothrow) PltList;
   if (!p)
   {
     fprintf(stderr,"allocList(): error allocating memory!\n");
@@ -3512,7 +3515,7 @@ PltList *allocList()
 }
 vector<uint8_t>* allocByteArray()
 {
-  auto p = new vector<uint8_t>;
+  auto p = new(nothrow) vector<uint8_t>;
   if (!p)
   {
     fprintf(stderr,"allocByteArray(): error allocating memory!\n");
@@ -3529,7 +3532,7 @@ vector<uint8_t>* allocByteArray()
 string *allocString()
 {
 
-  string *p = new string;
+  string *p = new(nothrow) string;
   if (!p)
   {
     fprintf(stderr,"allocString(): error allocating memory!\n");
@@ -3544,7 +3547,7 @@ string *allocString()
 }
 Klass *allocKlass()
 {
-  Klass* p = new Klass;
+  Klass* p = new(nothrow) Klass;
   if (!p)
   {
     fprintf(stderr,"allocKlass(): error allocating memory!\n");
@@ -3559,7 +3562,7 @@ Klass *allocKlass()
 }
 Module *allocModule()
 {
-  Module *p = new Module;
+  Module *p = new(nothrow) Module;
   if (!p)
   {
     fprintf(stderr,"allocModule(): error allocating memory!\n");
