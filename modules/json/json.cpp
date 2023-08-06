@@ -427,6 +427,8 @@ void PObjToStr(PltObject p,std::string& res,std::unordered_map<void*,bool>& seen
     res+= to_string(p.f);
   else if(p.type == PLT_STR)
     res+= "\""+(*(string*)p.ptr)+"\"";
+  else if(p.type == PLT_BOOL)
+    res += (p.i) ? "true" : "false";
   else if(p.type == PLT_NIL)
     res+="null";
   else if(p.type == PLT_LIST)
