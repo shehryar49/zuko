@@ -895,6 +895,7 @@ public:
   vector<uint8_t> compile(Node* ast)
   {
       vector<uint8_t> program;
+      //
       bool isGen = false;
       bool dfor = false;
       while (ast->type != NodeType::EOP && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
