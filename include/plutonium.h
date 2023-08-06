@@ -1,6 +1,8 @@
 #ifndef PLUTONIUM_H_
 #define PLUTONIUM_H_
 #define PLUTONIUM_INTERPRETER
+#define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
+//not defining this macro will always result in the simple switch based interpret loop
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,12 +14,12 @@
 #include <math.h>
 #include <cstdint>
 #ifdef __linux__
-#include <dlfcn.h>
-#include <unistd.h>
+    #include <dlfcn.h>
+    #include <unistd.h>
 #else
-#include <windows.h>
-#include <io.h>
-#include <fcntl.h>
+    #include <windows.h>
+    #include <io.h>
+    #include <fcntl.h>
 #endif
 #include "PltObject.h"
 using namespace std;

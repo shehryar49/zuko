@@ -22,6 +22,19 @@ SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
 #include "plutonium.h"
+#ifdef THREADED_INTERPRETER
+  #ifdef __GNUC__
+    #define NEXT_INST goto *targets[*k];
+    #define CASE_CP
+    #define ISTHREADED //threaded interpreter can be and will be implemented
+  #else
+    #define NEXT_INST continue
+    #define CASE_CP case
+  #endif
+#else
+  #define NEXT_INST continue
+  #define CASE_CP case
+#endif
 using namespace std;
 
 inline bool isNumeric(char t)
@@ -682,7 +695,84 @@ public:
     // Some registers
     int32_t i1;
     int32_t i2;
-
+    #ifdef ISTHREADED
+      #ifdef __GNUC__
+      void* targets[] = 
+      {
+          NULL,
+          &&LOAD,
+          &&CALLMETHOD,
+          &&ADD,
+          &&MUL,
+          &&DIV,
+          &&SUB,
+          &&JMP,
+          &&CALL,
+          &&XOR,
+          &&ASSIGN,
+          &&JMPIF,
+          &&EQ,
+          &&NOTEQ,
+          &&SMALLERTHAN,
+          &&GREATERTHAN,
+          &&CALLUDF,
+          &&INPLACE_INC,
+          &&LOAD_STR,
+          &&JMPIFFALSE,
+          &&NPOP_STACK,
+          &&MOD,
+          &&LOAD_NIL,
+          &&LOAD_INT32,
+          &&RETURN,
+          &&JMPNPOPSTACK,
+          &&GOTONPSTACK,
+          &&GOTO,
+          &&POP_STACK,
+          &&LOAD_CONST,
+          &&CO_STOP,
+          &&SMOREQ,
+          &&GROREQ,
+          &&NEG,
+          &&NOT,
+          &&INDEX,
+          &&ASSIGNINDEX,
+          &&IMPORT,
+          &&BREAK,
+          &&CALLFORVAL,
+          &&INC_GLOBAL,
+          &&CONT,
+          &&LOAD_GLOBAL,
+          &&MEMB,
+          &&JMPIFFALSENOPOP,
+          &&ASSIGNMEMB,
+          &&BUILD_CLASS,
+          &&ASSIGN_GLOBAL,
+          &&LOAD_FUNC,
+          &&OP_EXIT,
+          &&LSHIFT,
+          &&RSHIFT,
+          &&BITWISE_AND,
+          &&BITWISE_OR,
+          &&COMPLEMENT,
+          &&BUILD_DERIVED_CLASS,
+          &&LOAD_TRUE,
+          &&IS,
+          &&ONERR_GOTO,
+          &&POP_EXCEP_TARG,
+          &&THROW,
+          &&LOAD_CO,
+          &&YIELD,
+          &&YIELD_AND_EXPECTVAL,
+          &&LOAD_LOCAL,
+          &&GC,
+          &&NOPOPJMPIF,
+          &&SELFMEMB,
+          &&ASSIGNSELFMEMB,
+          &&LOAD_FALSE,
+          &&LOAD_BYTE
+      };
+      #endif
+    #endif
     PltObject p1;
     PltObject p2;
     PltObject p3;
@@ -702,32 +792,34 @@ public:
     vector<uint8_t>* bt_ptr1;
     k = program + offset;
     
+    #ifndef ISTHREADED
     uint8_t inst;
     while (*k != OP_EXIT)
     {
       inst = *k;
-      #ifdef PLUTONIUM_PROFILE
-        instCount[inst-1]+=1;
-      #endif
+
       switch (inst)
       {
-      case LOAD_GLOBAL:
+    #else
+      NEXT_INST;
+    #endif
+      CASE_CP LOAD_GLOBAL:
       {
         k += 1;
         memcpy(&i1, k, 4);
         STACK.push_back(STACK[i1]);
-        k += 3;
-        break;
+        k += 4;
+        NEXT_INST;
       }
-      case LOAD_LOCAL:
+      CASE_CP LOAD_LOCAL:
       {
         k += 1;
         memcpy(&i1, k, 4);
         STACK.push_back(STACK[frames.back() + i1]);
-        k += 3;
-        break;
+        k += 4;
+        NEXT_INST;
       }     
-      case INC_GLOBAL:
+      CASE_CP INC_GLOBAL:
       {
         orgk = k - program;
         k += 1;
@@ -749,7 +841,7 @@ public:
           if (STACK[i1].l == LLONG_MAX)
           {
             spitErr(OverflowError, "Error numeric overflow");
-            continue;
+            NEXT_INST;
           }
           STACK[i1].l += 1;
         }
@@ -758,18 +850,18 @@ public:
           if (STACK[i1].f == FLT_MAX)
           {
             spitErr(OverflowError, "Error numeric overflow");
-            continue;
+            NEXT_INST;
           }
           STACK[i1].f += 1;
         }
         else
         {
           spitErr(TypeError, "Error cannot add numeric constant to type " + fullform(c1));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }  
-      case LOAD:
+      CASE_CP LOAD:
       {
         orgk = k - program;
         k += 1;
@@ -803,12 +895,12 @@ public:
             if(p2.type!=PLT_INT && p2.type!=PLT_INT64 && p2.type!=PLT_FLOAT && p2.type!=PLT_STR && p2.type!=PLT_BYTE && p2.type!=PLT_BOOL)
             {
               spitErr(TypeError,"Error key of type "+fullform(p2.type)+" not allowed.");
-              continue;
+              NEXT_INST;
             }
             if (pd_ptr1->find(p2) != pd_ptr1->end())
             {
               spitErr(ValueError, "Error duplicate keys in dictionary!");
-              continue;
+              NEXT_INST;
             }
             pd_ptr1->emplace(p2, p1);
             i1 -= 1;
@@ -824,52 +916,52 @@ public:
           k += 3;
           STACK.push_back(STACK[frames.back() + i1]);
         }
-        break;
+        k++; NEXT_INST;
       }
-      case LOAD_CONST:
+      CASE_CP LOAD_CONST:
       {
         k += 1;
         memcpy(&i1, k, 4);
-        k += 3;
+        k += 4;
         STACK.push_back(constants[i1]);
-        break;
+        NEXT_INST;
       }
-      case LOAD_INT32:
+      CASE_CP LOAD_INT32:
       {
         k += 1;
         memcpy(alwaysi32ptr, k, 4);
-        k += 3;
+        k += 4;
         STACK.push_back(alwaysi32);
-        break;
+        NEXT_INST;
       }
-      case LOAD_BYTE:
+      CASE_CP LOAD_BYTE:
       {
         k += 1;
         alwaysByte.i = *k;
         STACK.push_back(alwaysByte);
-        break;
+        k++; NEXT_INST;
       }
-      case ASSIGN:
+      CASE_CP ASSIGN:
       {
         k += 1;
         memcpy(&i1, k, 4);
-        k += 3;
+        k += 4;
         p1 = STACK.back();
         STACK.pop_back();
         STACK[frames.back() + i1] = p1;
-        break;
+        NEXT_INST;
       }
-      case ASSIGN_GLOBAL:
+      CASE_CP ASSIGN_GLOBAL:
       {
         k += 1;
         memcpy(&i1, k, 4);
-        k += 3;
+        k += 4;
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
         STACK[i1] = p1;
-        break;
+        NEXT_INST;
       }
-      case ASSIGNINDEX:
+      CASE_CP ASSIGNINDEX:
       {
         orgk = k - program;
         p1 = STACK.back(); // the index
@@ -889,12 +981,12 @@ public:
           else
           {
             spitErr(TypeError, "Error type " + fullform(p1.type) + " cannot be used to index list!");
-            continue;
+            NEXT_INST;
           }
           if (idx < 0 || idx > (int64_t)pl_ptr1->size())
           {
             spitErr(ValueError, "Error index " + PltObjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size()));
-            continue;
+            NEXT_INST;
           }
           (*pl_ptr1)[idx] = p2;
         }
@@ -909,17 +1001,17 @@ public:
           else
           {
             spitErr(TypeError, "Error type " + fullform(p1.type) + " cannot be used to index bytearray!");
-            continue;
+            NEXT_INST;
           }
           if (idx < 0 || idx > (int64_t)bt_ptr1->size())
           {
             spitErr(IndexError, "Error index " + PltObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size()));
-            continue;
+            NEXT_INST;
           }
           if(p2.type!=PLT_BYTE)
           {
             spitErr(TypeError,"Error byte value required for bytearray!");
-            continue;
+            NEXT_INST;
           }
           (*bt_ptr1)[idx] = (uint8_t)p2.i;
         }
@@ -929,19 +1021,19 @@ public:
           if (pd_ptr1->find(p1) == pd_ptr1->end())
           {
             spitErr(ValueError, "Error given key is not present in dictionary!");
-            continue;
+            NEXT_INST;
           }
           (*pd_ptr1)[p1] = p2;
         }
         else
         {
           spitErr(TypeError, "Error indexed assignment unsupported for type " + fullform(p3.type));
-          continue;
+          NEXT_INST;
         }
 
-        break;
+        k++; NEXT_INST;
       }
-      case CALL:
+      CASE_CP CALL:
       {
         orgk = k - program;
         k += 1;
@@ -953,12 +1045,12 @@ public:
         {
           KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
-          continue;
+          NEXT_INST;
         }
         STACK.erase(STACK.end() - howmany, STACK.end());
-        break;
+        k++; NEXT_INST;
       }
-      case CALLFORVAL:
+      CASE_CP CALLFORVAL:
       {
         orgk = k - program;
         k += 1;
@@ -970,13 +1062,13 @@ public:
         {
           KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
-          continue;
+          NEXT_INST;
         }
         STACK.erase(STACK.end() - i2, STACK.end());
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case CALLMETHOD:
+      CASE_CP CALLMETHOD:
       {
         orgk = k - program;
         k++;
@@ -991,7 +1083,7 @@ public:
           if (m->members.find(method_name) == m->members.end())
           {
             spitErr(NameError, "Error the module has no member " + method_name + "!");
-            continue;
+            NEXT_INST;
           }
           p3 = m->members[method_name];
           if (p3.type == PLT_NATIVE_FUNC)
@@ -1007,12 +1099,12 @@ public:
               KlassObject* E = (KlassObject*)p4.ptr;
               s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
               spitErr(E->klass,s1);
-              continue;
+              NEXT_INST;
             }
             if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
             {
               spitErr(ValueError, "Error invalid response from module!");
-              continue;
+              NEXT_INST;
             }
             STACK.erase(STACK.end()-i2-1,STACK.end());
             STACK.push_back(p4);
@@ -1033,7 +1125,7 @@ public:
               if (construct.type != PLT_NATIVE_FUNC)
               {
                 spitErr(TypeError, "Error constructor of module's class " + ((Klass *)p3.ptr)->name + " is not a native function!");
-                continue;
+                NEXT_INST;
               }
               NativeFunction *fn = (NativeFunction *)construct.ptr;
               NativeFunPtr p = fn->addr;
@@ -1046,7 +1138,7 @@ public:
                 KlassObject* E = (KlassObject*)p1.ptr;
                 s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
                 spitErr(E->klass, s1);
-                continue;
+                NEXT_INST;
               }
             }
             STACK.erase(STACK.end()-i2,STACK.end());
@@ -1055,7 +1147,7 @@ public:
           else // that's it modules cannot have plutonium code functions (at least not right now)
           {
             spitErr(TypeError, "Error member of module is not a function so cannot be called.");
-            continue;
+            NEXT_INST;
           }
         }
         else if (p1.type == PLT_LIST || p1.type == PLT_DICT || p1.type == PLT_BYTEARR)
@@ -1066,7 +1158,7 @@ public:
           {
             KlassObject* E = (KlassObject*)p3.ptr;
             spitErr(E->klass, *(string *)(E->members["msg"].ptr));
-            continue;
+            NEXT_INST;
           }
           STACK.erase(STACK.end()-i2-1,STACK.end());
           STACK.push_back(p3);
@@ -1082,7 +1174,7 @@ public:
               if (p == NULL)
               {
                 spitErr(NameError, "Error " + method_name + " is private member of object!");
-                continue;
+                NEXT_INST;
               }
               if (p->klass == obj->klass)
               {
@@ -1091,13 +1183,13 @@ public:
               else
               {
                 spitErr(NameError, "Error " + method_name + " is private member of object!");
-                continue;
+                NEXT_INST;
               }
             }
             else
             {
               spitErr(NameError, "Error object has no member " + method_name);
-              continue;
+              NEXT_INST;
             }
           }
           else
@@ -1108,13 +1200,13 @@ public:
             if ((size_t)i2 + 1 + memFun->opt.size() < memFun->args || (size_t)i2 + 1 > memFun->args)
             {
               spitErr(ArgumentError, "Error function " + memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
-              continue;
+              NEXT_INST;
             }
             callstack.push_back(k + 1);
             if (callstack.size() >= 1000)
             {
               spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
-              continue;
+              NEXT_INST;
             }
             executing.push_back(memFun);
             frames.push_back(STACK.size()-i2-1);
@@ -1125,7 +1217,7 @@ public:
             }
             //
             k = program + memFun->i;
-            continue;
+            NEXT_INST;
           }
           else if (p4.type == PLT_NATIVE_FUNC)
           {
@@ -1138,7 +1230,7 @@ public:
             {
               KlassObject* E = (KlassObject *)rr.ptr;
               spitErr(E->klass, fn->name + ": " + *(string*)(E->members["msg"].ptr));
-              continue;
+              NEXT_INST;
             }
             STACK.erase(STACK.end()-i2-1,STACK.end());
             STACK.push_back(rr);
@@ -1146,7 +1238,7 @@ public:
           else
           {
             spitErr(NameError, "Error member " + method_name + " of object is not callable!");
-            continue;
+            NEXT_INST;
           }
         }
         else if (p1.type == 'z')
@@ -1159,7 +1251,7 @@ public:
             if(i2!=0)
             {
               spitErr(NameError,"Error coroutine member isAlive() takes 0 arguments!");
-              continue;
+              NEXT_INST;
             }
             PltObject isAlive;
             isAlive.type = PLT_BOOL;
@@ -1167,24 +1259,24 @@ public:
             STACK.pop_back();
             STACK.push_back(isAlive);
             k++;
-            continue;
+            NEXT_INST;
           }
           if (method_name != "resume")
           {
             spitErr(NameError, "Error couroutine object has no member " + method_name);
-            continue;
+            NEXT_INST;
           }
 
           if (g->state == STOPPED)
           {
             spitErr(ValueError, "Error the coroutine has terminated, cannot resume it!");
-            continue;
+            NEXT_INST;
           }
 
           if (g->state == RUNNING)
           {
             spitErr(ValueError, "Error the coroutine already running cannot resume it!");
-            continue;
+            NEXT_INST;
           }
 
           if (g->giveValOnResume)
@@ -1192,19 +1284,19 @@ public:
             if (i2 != 1)
             {
               spitErr(ValueError, "Error the coroutine expects one value to be resumed!");
-              continue;
+              NEXT_INST;
             }
           }
           else if(i2 != 0)
           {
             spitErr(ValueError, "Error the coroutine does not expect any value to resume it!");
-            continue;
+            NEXT_INST;
           }
           callstack.push_back(k + 1);
           if (callstack.size() >= 1000)
           {
             spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
-            continue;
+            NEXT_INST;
           }
           executing.push_back(NULL);
           frames.push_back(STACK.size()-i2);
@@ -1212,16 +1304,16 @@ public:
           g->state = RUNNING;
           g->giveValOnResume = false;
           k = program + g->curr;
-          continue;
+          NEXT_INST;
         }
         else
         {
           spitErr(TypeError, "Error member call not supported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case ASSIGNMEMB:
+      CASE_CP ASSIGNMEMB:
       {
         orgk = k - program;
         p2 = STACK.back();//value
@@ -1236,7 +1328,7 @@ public:
         if (p1.type != PLT_OBJ)
         {
           spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         KlassObject *ptr = (KlassObject *)p1.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
@@ -1250,34 +1342,34 @@ public:
               if (A == NULL)
               {
                 spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                continue;
+                NEXT_INST;
               }
               if (ptr->klass != A->klass)
               {
                 spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                continue;
+                NEXT_INST;
               }
               ptr->privateMembers[s1] = p2;
               k += 1;
-              continue;
+              NEXT_INST;
             }
             else
             {
               spitErr(NameError, "Error the object has no member named " + s1);
-              continue;
+              NEXT_INST;
             }
           }
           else
           {
             spitErr(NameError, "Error the object has no member named " + s1);
-            continue;
+            NEXT_INST;
           }
         }
 
         ptr->members[s1] = p2;
-        break;
+        k++; NEXT_INST;
       }
-      case IMPORT:
+      CASE_CP IMPORT:
       {
         orgk = k - program;
         k += 1;
@@ -1294,16 +1386,16 @@ public:
           if (!module)
           {
             spitErr(ImportError, "LoadLibrary() returned " + to_string(GetLastError()));
-            continue;
+            NEXT_INST;
           }
         #endif
-          #ifdef __linux__
+        #ifdef __linux__
           s1 = "/opt/plutonium/modules/" + s1 + ".so";
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {
             spitErr(ImportError, "dlopen(): " + (std::string)(dlerror()));
-            continue;
+            NEXT_INST;
           }
           initFun f = (initFun)dlsym(module, "init");
           apiFun a = (apiFun)dlsym(module, "api_setup");
@@ -1311,25 +1403,25 @@ public:
         if (!f)
         {
           spitErr(ImportError, "Error init() function not found in the module");
-          continue;
+          NEXT_INST;
         }
         if (!a)
         {
           spitErr(ImportError, "Error api_setup() function not found in the module");
-          continue;
+          NEXT_INST;
         }
         a(&api);
         p1 = f();
         if (p1.type != PLT_MODULE)
         {
           spitErr(ValueError, "Error module's init() should return a module object!");
-          continue;
+          NEXT_INST;
         }
         moduleHandles.push_back(module);
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case RETURN:
+      CASE_CP RETURN:
       {
         k = callstack[callstack.size() - 1];
         callstack.pop_back();
@@ -1343,9 +1435,9 @@ public:
         STACK.push_back(p1);
         if(!k)
           return;//return from interpret function
-        continue;
+        NEXT_INST;
       }
-      case YIELD:
+      CASE_CP YIELD:
       {
         executing.pop_back();
         p1 = STACK[STACK.size() - 1];//val
@@ -1364,9 +1456,9 @@ public:
         STACK.push_back(p1);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case YIELD_AND_EXPECTVAL:
+      CASE_CP YIELD_AND_EXPECTVAL:
       {
         executing.pop_back();
         p2 = STACK[STACK.size() - 1];
@@ -1384,15 +1476,15 @@ public:
         STACK.push_back(p2);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case LOAD_NIL:
+      CASE_CP LOAD_NIL:
       {
         p1.type = PLT_NIL;
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case CO_STOP:
+      CASE_CP CO_STOP:
       {
         executing.pop_back();
         PltObject val = STACK[STACK.size() - 1];
@@ -1409,36 +1501,36 @@ public:
         STACK.push_back(val);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case POP_STACK:
+      CASE_CP POP_STACK:
       {
         STACK.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case NPOP_STACK:
+      CASE_CP NPOP_STACK:
       {
         k += 1;
         memcpy(&i1, k, 4);
-        k += 3;
+        k += 4;
         STACK.erase(STACK.end() - i1, STACK.end());
-        break;
+        NEXT_INST;
       }
-      case LOAD_TRUE:
+      CASE_CP LOAD_TRUE:
       {
         p1.type = PLT_BOOL;
         p1.i = 1;
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case LOAD_FALSE:
+      CASE_CP LOAD_FALSE:
       {
         p1.type = PLT_BOOL;
         p1.i = 0;
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case LSHIFT:
+      CASE_CP LSHIFT:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1448,12 +1540,12 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__lshift__", p1, 2, "<<", &p2))
-            continue;
+            NEXT_INST;
         }
         if (p2.type != PLT_INT)
         {
           spitErr(TypeError, "Error rhs for '<<' must be an Integer 32 bit");
-          continue;
+          NEXT_INST;
         }
         p3.type = p1.type;
         if (p1.type == PLT_INT)
@@ -1473,12 +1565,12 @@ public:
         else
         {
           spitErr(TypeError, "Error operator << unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case RSHIFT:
+      CASE_CP RSHIFT:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1488,12 +1580,12 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__rshift__", p1, 2, ">>", &p2))
-            continue;
+            NEXT_INST;
         }
         if (p2.type != PLT_INT)
         {
           spitErr(TypeError, "Error rhs for '>>' must be an Integer 32 bit");
-          continue;
+          NEXT_INST;
         }
         p3.type = p1.type;
         if (p1.type == PLT_INT)
@@ -1513,12 +1605,12 @@ public:
         else
         {
           spitErr(TypeError, "Error operator >> unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case BITWISE_AND:
+      CASE_CP BITWISE_AND:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1528,12 +1620,12 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__bitwiseand__", p1, 2, "&", &p2))
-            continue;
+            NEXT_INST;
         }
         if (p1.type != p2.type)
         {
           spitErr(TypeError, "Error operands should have same type for '&' ");
-          continue;
+          NEXT_INST;
         }
         p3.type = p1.type;
         if (p1.type == PLT_INT)
@@ -1551,12 +1643,12 @@ public:
         else
         {
           spitErr(TypeError, "Error operator & unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case BITWISE_OR:
+      CASE_CP BITWISE_OR:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1566,12 +1658,12 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__bitwiseor__", p1, 2, "|", &p2))
-            continue;
+            NEXT_INST;
         }
         if (p1.type != p2.type)
         {
           spitErr(TypeError, "Error operands should have same type for '|' ");
-          continue;
+          NEXT_INST;
         }
         p3.type = p1.type;
         if (p1.type == PLT_INT)
@@ -1589,12 +1681,12 @@ public:
         else
         {
           spitErr(TypeError, "Error operator | unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case COMPLEMENT:
+      CASE_CP COMPLEMENT:
       {
         orgk = k - program;
         p1 = STACK.back();
@@ -1602,7 +1694,7 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__complement__", p1, 1, "~"))
-            continue;
+            NEXT_INST;
         }
         if (p1.type == PLT_INT)
         {
@@ -1628,11 +1720,11 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '~' unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case XOR:
+      CASE_CP XOR:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1642,12 +1734,12 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__xor__", p1, 2, "^", &p2))
-            continue;
+            NEXT_INST;
         }
         if (p1.type != p2.type)
         {
           spitErr(TypeError, "Error operands should have same type for operator '^' ");
-          continue;
+          NEXT_INST;
         }
         p3.type = p1.type;
         if (p1.type == PLT_INT)
@@ -1665,12 +1757,12 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '^' unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case ADD:
+      CASE_CP ADD:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1680,7 +1772,7 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__add__", p1, 2, "+", &p2))
-            continue;
+            NEXT_INST;
         }
         if(p1.type==p2.type)
           c1 = p1.type;
@@ -1698,7 +1790,7 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '+' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         if (c1 == PLT_LIST)
         {
@@ -1729,12 +1821,12 @@ public:
           {
             p3.i = p1.i + p2.i;
             STACK.push_back(p3);
-            break;
+            k++; NEXT_INST;
           }
           if (addition_overflows((int64_t)p1.i, (int64_t)p2.i))
           {
             spitErr(OverflowError, "Integer Overflow occurred");
-            continue;
+            NEXT_INST;
           }
           p3.type = PLT_INT64;
           p3.l = (int64_t)(p1.i) + (int64_t)(p2.i);
@@ -1746,7 +1838,7 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Floating point overflow during addition");
-            continue;
+            NEXT_INST;
           }
           p3.type = PLT_FLOAT;
           p3.f = p1.f + p2.f;
@@ -1758,21 +1850,21 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Error overflow during solving expression.");
-            continue;
+            NEXT_INST;
           }
           p3.type = PLT_INT64;
           p3.l = p1.l + p2.l;
           STACK.push_back(p3);
-          break;
+          k++; NEXT_INST;
         }
         else
         {
           spitErr(TypeError, "Error operator '+' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case SMALLERTHAN:
+      CASE_CP SMALLERTHAN:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1784,7 +1876,7 @@ public:
         else if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__smallerthan__", p1, 2, "<", &p2))
-            continue;
+            NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -1800,7 +1892,7 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '<' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT)
@@ -1811,9 +1903,9 @@ public:
           p3.i = (bool)(p1.f < p2.f);
         
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case GREATERTHAN:
+      CASE_CP GREATERTHAN:
       {
         p2 = STACK[STACK.size() - 1];
         STACK.pop_back();
@@ -1824,7 +1916,7 @@ public:
         else if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__greaterthan__", p1, 2, ">", &p2))
-            continue;
+            NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -1841,7 +1933,7 @@ public:
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '>' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT)
@@ -1852,10 +1944,9 @@ public:
           p3.i = (bool)(p1.f > p2.f);
         
         STACK.push_back(p3);
-        // exit(0);
-        break;
+        k++; NEXT_INST;
       }
-      case SMOREQ:
+      CASE_CP SMOREQ:
       {
         orgk = k - program;
         p2 = STACK.back();
@@ -1867,7 +1958,7 @@ public:
         else if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__smallerthaneq__", p1, 2, "<=", &p2))
-            continue;
+            NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -1883,7 +1974,7 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '<=' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT)
@@ -1894,9 +1985,9 @@ public:
           p3.i = (bool)(p1.f <= p2.f);
         
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case GROREQ:
+      CASE_CP GROREQ:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1908,7 +1999,7 @@ public:
         else if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__greaterthaneq__", p1, 2, ">=", &p2))
-            continue;
+            NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -1924,7 +2015,7 @@ public:
         else
         {
           spitErr(TypeError, "Error operator '>=' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT)
@@ -1935,10 +2026,9 @@ public:
           p3.i = (bool)(p1.f >= p2.f);
         
         STACK.push_back(p3);
-        // exit(0);
-        break;
+        k++; NEXT_INST;
       }
-      case EQ:
+      CASE_CP EQ:
       {
         orgk = k - program;
         p2 = STACK[STACK.size() - 1];
@@ -1952,14 +2042,14 @@ public:
         if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
           if (invokeOperator("__eq__", p1, 2, "==", &p2, 0))
-            continue;
+            NEXT_INST;
         }
         p3.type = PLT_BOOL;
         p3.i = (bool)(p1 == p2);
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case NOT:
+      CASE_CP NOT:
       {
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
@@ -1967,19 +2057,19 @@ public:
         {
           orgk = k-program;
           if (invokeOperator("__not__", p1, 1, "!"))
-            continue;
+            NEXT_INST;
         }
         if (p1.type != PLT_BOOL)
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '!' unsupported for type " + fullform(p1.type));
-          continue;
+          NEXT_INST;
         }
         p1.i = (bool)!(p1.i);
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case NEG:
+      CASE_CP NEG:
       {
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
@@ -1987,13 +2077,13 @@ public:
         {
           orgk = k - program;
           if (invokeOperator("__neg__", p1, 1, "-"))
-            continue;
+            NEXT_INST;
         }
         if (!isNumeric(p1.type))
         {
           orgk = k - program;
           spitErr(TypeError, "Error unary operator '-' unsupported for type " + fullform(p1.type));
-          exit(0);
+          NEXT_INST;
         };
         if (p1.type == PLT_INT)
         {
@@ -2011,7 +2101,7 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Error negation of INT64_MIN causes overflow!");
-            continue;
+            NEXT_INST;
           }
           else if (-p1.l == INT_MIN)
           {
@@ -2026,9 +2116,9 @@ public:
           p1.f = -p1.f;
         }
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case INDEX:
+      CASE_CP INDEX:
       {
         p1 = STACK[STACK.size() - 1];//index
         STACK.pop_back();
@@ -2040,14 +2130,14 @@ public:
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
-            continue;
+            NEXT_INST;
           }
           PromoteType(p1, PLT_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
-            continue;
+            NEXT_INST;
           }
 
           pl_ptr1 = (PltList *)p2.ptr;
@@ -2055,10 +2145,10 @@ public:
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
-            continue;
+            NEXT_INST;
           }
           STACK.push_back((*pl_ptr1)[p1.l]);
-          break;
+          k++; NEXT_INST;
         }
         else if (p2.type == PLT_BYTEARR)
         {
@@ -2066,14 +2156,14 @@ public:
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
-            continue;
+            NEXT_INST;
           }
           PromoteType(p1, PLT_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
-            continue;
+            NEXT_INST;
           }
 
           bt_ptr1 = (vector<uint8_t>*)p2.ptr;
@@ -2081,12 +2171,12 @@ public:
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
-            continue;
+            NEXT_INST;
           }
           p3.type = 'm';
           p3.i = (*bt_ptr1)[p1.l];
           STACK.push_back(p3);
-          break;
+          k++; NEXT_INST;
         }
         else if (p2.type == PLT_DICT)
         {
@@ -2095,7 +2185,7 @@ public:
           {
             orgk = k - program;
             spitErr(KeyError, "Error key " + PltObjectToStr(p1) + " not found in the dictionary!");
-            continue;
+            NEXT_INST;
           }
           PltObject res = d[p1];
           STACK.push_back(res);
@@ -2106,14 +2196,14 @@ public:
           {
             orgk = k - program;
             spitErr(TypeError, "Error index for string should be an integer!");
-            continue;
+            NEXT_INST;
           }
           PromoteType(p1, PLT_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index cannot be negative!");
-            continue;
+            NEXT_INST;
           }
           const string& s = *(string *)p2.ptr;
           if ((size_t)p1.l >= s.length())
@@ -2130,17 +2220,17 @@ public:
         else if (p2.type == PLT_OBJ)
         {
           if (invokeOperator("__index__", p2, 2, "[]", &p1))
-            continue;
+            NEXT_INST;
         }
         else
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case NOTEQ:
+      CASE_CP NOTEQ:
       {
 
         p2 = STACK[STACK.size() - 1];
@@ -2151,7 +2241,7 @@ public:
         if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
           if (invokeOperator("__noteq__", p1, 2, "!=", &p2, 0))
-            continue;
+            NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT && p2.type == PLT_INT64)
@@ -2160,9 +2250,9 @@ public:
           PromoteType(p2, PLT_INT64);
         p3.i = (bool)!(p1 == p2);
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case IS:
+      CASE_CP IS:
       {
 
         p2 = STACK[STACK.size() - 1];
@@ -2173,14 +2263,14 @@ public:
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         p3.i = (bool)(p1.ptr == p2.ptr);
         STACK.push_back(p3);
-        break;
+        k++; NEXT_INST;
       }
-      case MUL:
+      CASE_CP MUL:
       {
 
         p2 = STACK[STACK.size() - 1];
@@ -2190,7 +2280,7 @@ public:
         if (p1.type == PLT_OBJ)
         {
           if (invokeOperator("__mul__", p1, 2, "*", &p2))
-            continue;
+            NEXT_INST;
         }
         PltObject c;
         char t;
@@ -2221,7 +2311,7 @@ public:
           STACK.push_back(p1);
           DoThreshholdBusiness();
           ++k;
-          continue;
+          NEXT_INST;
         }
         else if(p1.type==PLT_STR && p2.type==PLT_INT)
         {
@@ -2237,13 +2327,13 @@ public:
           STACK.push_back(p1);
           DoThreshholdBusiness();
           ++k;
-          continue;
+          NEXT_INST;
         }
         else
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '*' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
-          continue;
+          NEXT_INST;
         }
 
         if (t == PLT_INT)
@@ -2253,13 +2343,13 @@ public:
           {
             c.i = p1.i * p2.i;
             STACK.push_back(c);
-            break;
+            k++; NEXT_INST;
           }
           orgk = k - program;
           if (multiplication_overflows((int64_t)p1.i, (int64_t)p2.i))
           {
             spitErr(OverflowError, "Overflow occurred");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT64;
           c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
@@ -2271,7 +2361,7 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Floating point overflow during multiplication");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_FLOAT;
           c.f = p1.f * p2.f;
@@ -2283,15 +2373,15 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Error overflow during solving expression.");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT64;
           c.l = p1.l * p2.l;
           STACK.push_back(c);
         }
-        break;
+        k++; NEXT_INST;
       }
-      case MEMB:
+      CASE_CP MEMB:
       {
         orgk = k - program;
         PltObject a = STACK[STACK.size() - 1];
@@ -2308,11 +2398,11 @@ public:
           if (m->members.find(mname) == m->members.end())
           {
             spitErr(NameError, "Error module object has no member named '" + mname + "' ");
-            continue;
+            NEXT_INST;
           }
           STACK.push_back(m->members[mname]);
           ++k;
-          continue;
+          NEXT_INST;
         }
         else if(a.type == PLT_OBJ)
         {
@@ -2325,21 +2415,21 @@ public:
                 if (A == NULL)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  continue;
+                  NEXT_INST;
                 }
                 if (ptr->klass != A->klass)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  continue;
+                  NEXT_INST;
                 }
                 STACK.push_back(ptr->privateMembers[mname]);
                 k += 1;
-                continue;
+                NEXT_INST;
               }
               else
               {
                 spitErr(NameError, "Error object has no member named " + mname);
-                continue;
+                NEXT_INST;
               }
           }
           PltObject ret = ptr->members[mname];
@@ -2356,21 +2446,21 @@ public:
                 if (A == NULL)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
-                  continue;
+                  NEXT_INST;
                 }
                 if (ptr != A->klass)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
-                  continue;
+                  NEXT_INST;
                 }
                 STACK.push_back(ptr->privateMembers[mname]);
                 k += 1;
-                continue;
+                NEXT_INST;
               }
               else
               {
                 spitErr(NameError, "Error class has no member named " + mname);
-                continue;
+                NEXT_INST;
               }
           }
           PltObject ret = ptr->members[mname];
@@ -2379,11 +2469,11 @@ public:
         else
         {
           spitErr(TypeError, "Error member operator unsupported for type "+fullform(a.type));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case LOAD_FUNC:
+      CASE_CP LOAD_FUNC:
       {
         k += 1;
         int32_t p;
@@ -2404,9 +2494,9 @@ public:
         STACK.erase(STACK.end() - i2, STACK.end());
         STACK.push_back(p1);
         DoThreshholdBusiness();
-        break;
+        k++; NEXT_INST;
       }
-      case LOAD_CO:
+      CASE_CP LOAD_CO:
       {
         k += 1;
         int32_t p;
@@ -2424,9 +2514,9 @@ public:
         co.type = 'g';
         co.ptr = (void*)fn;
         STACK.push_back(co);
-        break;
+        k++; NEXT_INST;
       }
-      case BUILD_CLASS:
+      CASE_CP BUILD_CLASS:
       {
         k += 1;
         int32_t N;
@@ -2472,9 +2562,9 @@ public:
         }
         klass.ptr = (void *)obj;
         STACK.push_back(klass);
-        break;
+        k++; NEXT_INST;
       }
-      case BUILD_DERIVED_CLASS:
+      CASE_CP BUILD_DERIVED_CLASS:
       {
         orgk = k - program;
         k += 1;
@@ -2513,7 +2603,7 @@ public:
         if (baseClass.type != PLT_CLASS)
         {
           spitErr(TypeError, "Error class can not be derived from object of non class type!");
-          continue;
+          NEXT_INST;
         }
         Klass *Base = (Klass *)baseClass.ptr;
 
@@ -2533,7 +2623,7 @@ public:
         {
           const string &n = e.first;
           if (n == "super")//do not add base class's super to this class
-            continue;
+            NEXT_INST;
           if (d->members.find(n) == d->members.end())
           {
             if (d->privateMembers.find(n) == d->privateMembers.end())
@@ -2577,9 +2667,9 @@ public:
         d->members.emplace("super",baseClass);
         klass.ptr = (void *)d;
         STACK.push_back(klass);
-        break;
+        k++; NEXT_INST;
       }
-      case JMPIFFALSENOPOP:
+      CASE_CP JMPIFFALSENOPOP:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -2588,12 +2678,12 @@ public:
         if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
         {
           k = k + i1 + 1;
-          continue;
+          NEXT_INST;
         }
         STACK.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case NOPOPJMPIF:
+      CASE_CP NOPOPJMPIF:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -2602,15 +2692,15 @@ public:
         if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
         {
           STACK.pop_back();
-          break;
+          k++; NEXT_INST;
         }
         else
         {
           k = k + i1 + 1;
-          continue;
+          NEXT_INST;
         }
       }
-      case LOAD_STR:
+      CASE_CP LOAD_STR:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -2618,9 +2708,9 @@ public:
         p1.type = PLT_STR;
         p1.ptr = (void *)&strings[i1];
         STACK.push_back(p1);
-        break;
+        k++; NEXT_INST;
       }
-      case CALLUDF:
+      CASE_CP CALLUDF:
       {
         orgk = k - program;
         PltObject fn = STACK.back();
@@ -2633,20 +2723,20 @@ public:
           if ((size_t)N + obj->opt.size() < obj->args || (size_t)N > obj->args)
           {
             spitErr(ArgumentError, "Error function " + obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
-            continue;
+            NEXT_INST;
           }
           callstack.push_back(k + 1);
           frames.push_back(STACK.size() - N);
           if (callstack.size() >= 1000)
           {
             spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
-            continue;
+            NEXT_INST;
           }
           for (size_t i = obj->opt.size() - (obj->args - N); i < obj->opt.size(); i++)
             STACK.push_back(obj->opt[i]);
           executing.push_back(obj);
           k = program + obj->i;
-          continue;
+          NEXT_INST;
         }
         else if (fn.type == PLT_NATIVE_FUNC)
         {
@@ -2658,12 +2748,12 @@ public:
           {
             s1 = "Native Function:  " + *(string *)p4.ptr;
             spitErr((Klass*)p4.ptr, s1);
-            continue;
+            NEXT_INST;
           }
           if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
           {
             spitErr(ValueError, "Error invalid response from module!");
-            continue;
+            NEXT_INST;
           }
           STACK.erase(STACK.end() - N, STACK.end());
           STACK.push_back(p4);
@@ -2685,7 +2775,7 @@ public:
               if ((size_t)N + p->opt.size() + 1 < p->args || (size_t)N + 1 > p->args)
               {
                 spitErr(ArgumentError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
-                continue;
+                NEXT_INST;
               }
               PltObject r;
               r.type = PLT_OBJ;
@@ -2700,7 +2790,7 @@ public:
               k = program + p->i;
               executing.push_back(p);
               DoThreshholdBusiness();
-              continue;
+              NEXT_INST;
             }
             else if (construct.type == PLT_NATIVE_FUNC)
             {
@@ -2717,17 +2807,17 @@ public:
               {
                 const string& msg = *(string*)(((KlassObject*)p4.ptr)->members["msg"].ptr);
                 spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
-                continue;
+                NEXT_INST;
               }
               STACK.push_back(r);
               DoThreshholdBusiness();
               k++;
-              continue;
+              NEXT_INST;
             }
             else
             {
               spitErr(TypeError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " is not a function!");
-              continue;
+              NEXT_INST;
             }
           }
           else
@@ -2735,7 +2825,7 @@ public:
             if (N != 0)
             {
               spitErr(ArgumentError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes 0 arguments!");
-              continue;
+              NEXT_INST;
             }
           }
           PltObject r;
@@ -2750,7 +2840,7 @@ public:
           if ((size_t)N != f->args)
           {
             spitErr(ArgumentError, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(f->args) + " arguments," + to_string(N) + " given!");
-            continue;
+            NEXT_INST;
           }
           Coroutine *g = allocCoObj();
           g->fun = f;
@@ -2769,11 +2859,11 @@ public:
         else
         {
           spitErr(TypeError, "Error type " + fullform(fn.type) + " not callable!");
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case MOD:
+      CASE_CP MOD:
       {
 
         PltObject b = STACK[STACK.size() - 1];
@@ -2783,7 +2873,7 @@ public:
         if (a.type == PLT_OBJ)
         {
           if (invokeOperator("__mod__", a, 2, "%", &b))
-            continue;
+            NEXT_INST;
         }
         PltObject c;
         char t;
@@ -2793,7 +2883,7 @@ public:
           {
             orgk = k - program;
             spitErr(TypeError, "Error modulo operator % unsupported for floats!");
-            continue;
+            NEXT_INST;
           }
           else if (a.type == PLT_INT64 || b.type == PLT_INT64)
           {
@@ -2808,7 +2898,7 @@ public:
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '%' unsupported for " + fullform(a.type) + " and " + fullform(b.type));
-          continue;
+          NEXT_INST;
         }
         //
 
@@ -2819,7 +2909,7 @@ public:
           {
             orgk = k - program;
             spitErr(MathError, "Error modulo by zero");
-            continue;
+            NEXT_INST;
           }
           if ((a.i == INT_MIN) && (b.i == -1))
           {
@@ -2838,20 +2928,20 @@ public:
           {
             orgk = k - program;
             spitErr(MathError, "Error modulo by zero");
-            continue;
+            NEXT_INST;
           }
           if ((a.l == LLONG_MIN) && (b.l == -1))
           {
             orgk = k - program;
             spitErr(OverflowError, "Error modulo of INT32_MIN by -1 causes overflow!");
-            continue;
+            NEXT_INST;
           }
           c.i = a.i % b.i;
           STACK.push_back(c);
         }
-        break;
+        k++; NEXT_INST;
       }
-      case INPLACE_INC:
+      CASE_CP INPLACE_INC:
       {
         orgk = k - program;
         k += 1;
@@ -2873,7 +2963,7 @@ public:
           if (STACK[frames.back() + i1].l == LLONG_MAX)
           {
             spitErr(OverflowError, "Error numeric overflow");
-            continue;
+            NEXT_INST;
           }
           STACK[frames.back() + i1].l += 1;
         }
@@ -2882,18 +2972,18 @@ public:
           if (STACK[frames.back() + i1].f == FLT_MAX)
           {
             spitErr(OverflowError, "Error numeric overflow");
-            continue;
+            NEXT_INST;
           }
           STACK[frames.back() + i1].f += 1;
         }
         else
         {
           spitErr(TypeError, "Error cannot add numeric constant to type " + fullform(t));
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case SUB:
+      CASE_CP SUB:
       {
 
         PltObject b = STACK[STACK.size() - 1];
@@ -2903,7 +2993,7 @@ public:
         if (a.type == PLT_OBJ)
         {
           if (invokeOperator("__sub__", a, 2, "-", &b))
-            continue;
+            NEXT_INST;
         }
         PltObject c;
         char t;
@@ -2925,7 +3015,7 @@ public:
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '-' unsupported for " + fullform(a.type) + " and " + fullform(b.type));
-          continue;
+          NEXT_INST;
         }
 
         //
@@ -2936,7 +3026,7 @@ public:
           {
             c.i = a.i - b.i;
             STACK.push_back(c);
-            break;
+            k++; NEXT_INST;
           }
           if (subtraction_overflows((int64_t)a.i, (int64_t)b.i))
           {
@@ -2953,7 +3043,7 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Floating point overflow during subtraction");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_FLOAT;
           c.f = a.f - b.f;
@@ -2965,15 +3055,15 @@ public:
           {
             orgk = k - program;
             spitErr(OverflowError, "Error overflow during solving expression.");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT64;
           c.l = a.l - b.l;
           STACK.push_back(c);
         }
-        break;
+        k++; NEXT_INST;
       }
-      case DIV:
+      CASE_CP DIV:
       {
         PltObject b = STACK[STACK.size() - 1];
         STACK.pop_back();
@@ -2982,7 +3072,7 @@ public:
         if (a.type == PLT_OBJ)
         {
           if (invokeOperator("__div__", a, 2, "/", &b))
-            continue;
+            NEXT_INST;
         }
         PltObject c;
         char t;
@@ -3003,7 +3093,7 @@ public:
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '/' unsupported for " + fullform(a.type) + " and " + fullform(b.type));
-          continue;
+          NEXT_INST;
         }
 
         if (t == PLT_INT)
@@ -3012,25 +3102,25 @@ public:
           {
             orgk = k - program;
             spitErr(MathError, "Error division by zero");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT;
           if (!division_overflows(a.i, b.i))
           {
             c.i = a.i / b.i;
             STACK.push_back(c);
-            break;
+            k++; NEXT_INST;
           }
           if (division_overflows((int64_t)a.i, (int64_t)b.i))
           {
             orgk = k - program;
             spitErr(OverflowError, "Overflow occurred");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT64;
           c.l = (int64_t)(a.i) / (int64_t)(b.i);
           STACK.push_back(c);
-          break;
+          k++; NEXT_INST;
         }
         else if (t == PLT_FLOAT)
         {
@@ -3038,7 +3128,7 @@ public:
           {
             orgk = k - program;
             spitErr(MathError, "Error division by zero");
-            continue;
+            NEXT_INST;
           }
 
           c.type = PLT_FLOAT;
@@ -3051,30 +3141,30 @@ public:
           {
             orgk = k - program;
             spitErr(MathError, "Error division by zero");
-            continue;
+            NEXT_INST;
           }
           if (division_overflows(a.l, b.l))
           {
             orgk = k - program;
             spitErr(OverflowError, "Error overflow during solving expression.");
-            continue;
+            NEXT_INST;
           }
           c.type = PLT_INT64;
           c.l = a.l / b.l;
           STACK.push_back(c);
         }
-        break;
+        k++; NEXT_INST;
       }
-      case JMP:
+      CASE_CP JMP:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         int32_t where = k - program + i1 + 1;
         k = program + where - 1;
-        break;
+        k++; NEXT_INST;
       }
-      case JMPNPOPSTACK:
+      CASE_CP JMPNPOPSTACK:
       {
         k += 1;
         int32_t N;
@@ -3085,9 +3175,9 @@ public:
         k += 3;
         int32_t where = k - program + i1;
         k = program + where;
-        break;
+        k++; NEXT_INST;
       }
-      case JMPIF:
+      CASE_CP JMPIF:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -3098,10 +3188,10 @@ public:
         if (p1.i && p1.type == PLT_BOOL)
           k = program + where - 1;
         else
-          break;
-        break;
+          k++; NEXT_INST;
+        k++; NEXT_INST;
       }
-      case THROW:
+      CASE_CP THROW:
       {
         orgk = k - program;
         p3 = STACK.back(); // val
@@ -3109,19 +3199,19 @@ public:
         if(p3.type != PLT_OBJ)
         {
           spitErr(TypeError,"Error value of type "+fullform(p3.type)+" not throwable!");
-          continue;
+          NEXT_INST;
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
         std::unordered_map<string,PltObject>::iterator it;
         if( (it = ki->members.find("msg")) == ki->members.end() || (*it).second.type!=PLT_STR)
         {
           spitErr(ThrowError,"The object does have member 'msg' or it is not a string!");
-          continue;
+          NEXT_INST;
         }
         if (except_targ.size() == 0)
         {
           spitErr(ki->klass,*(string*)((*it).second.ptr) );
-          continue;
+          NEXT_INST;
         }
         k = except_targ.back();
         i1 = STACK.size() - tryStackCleanup.back();
@@ -3133,10 +3223,10 @@ public:
         except_targ.pop_back();
         tryStackCleanup.pop_back();
         tryLimitCleanup.pop_back();
-        continue;
-        break;
+        NEXT_INST;
+        k++; NEXT_INST;
       }
-      case ONERR_GOTO:
+      CASE_CP ONERR_GOTO:
       {
         k += 1;
         memcpy(&i1, k, 4);
@@ -3144,22 +3234,22 @@ public:
         tryStackCleanup.push_back(STACK.size());
         tryLimitCleanup.push_back(frames.size());
         k += 3;
-        break;
+        k++; NEXT_INST;
       }
-      case POP_EXCEP_TARG:
+      CASE_CP POP_EXCEP_TARG:
       {
         except_targ.pop_back();
         tryStackCleanup.pop_back();
-        break;
+        k++; NEXT_INST;
       }
-      case GOTO:
+      CASE_CP GOTO:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
         k = program + i1 - 1;
-        break;
+        k++; NEXT_INST;
       }
-      case BREAK:
+      CASE_CP BREAK:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -3170,9 +3260,9 @@ public:
         k = program + p;
         p1.type = PLT_NIL;
         STACK.push_back(p1);
-        continue;
+        NEXT_INST;
       }
-      case CONT:
+      CASE_CP CONT:
       {
         k += 1;
         int32_t p;
@@ -3181,9 +3271,9 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         STACK.erase(STACK.end() - i1, STACK.end());
         k = program + p;
-        continue;
+        NEXT_INST;
       }
-      case GOTONPSTACK:
+      CASE_CP GOTONPSTACK:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -3191,9 +3281,9 @@ public:
         STACK.erase(STACK.end() - i1, STACK.end());
         memcpy(&i1, k, sizeof(int32_t));
         k = program + i1;
-        continue;
+        NEXT_INST;
       }
-      case JMPIFFALSE:
+      CASE_CP JMPIFFALSE:
       {
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
@@ -3203,11 +3293,11 @@ public:
         if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
         {
           k = k + i1 + 1;
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case SELFMEMB:
+      CASE_CP SELFMEMB:
       {
         orgk = k - program;
         PltObject a = STACK[frames.back()];
@@ -3227,21 +3317,21 @@ public:
                 if (A == NULL)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  continue;
+                  NEXT_INST;
                 }
                 if (ptr->klass != A->klass)
                 {
                   spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  continue;
+                  NEXT_INST;
                 }
                 STACK.push_back(ptr->privateMembers[mname]);
                 k += 1;
-                continue;
+                NEXT_INST;
               }
               else
               {
                 spitErr(NameError, "Error object 'self' has no member named " + mname);
-                continue;
+                NEXT_INST;
               }
           }
           PltObject ret = ptr->members[mname];
@@ -3250,11 +3340,11 @@ public:
         else
         {
           spitErr(TypeError, "Error can not access member "+mname+", self not an object!");
-          continue;
+          NEXT_INST;
         }
-        break;
+        k++; NEXT_INST;
       }
-      case ASSIGNSELFMEMB:
+      CASE_CP ASSIGNSELFMEMB:
       {
         orgk = k - program;
         PltObject val = STACK.back();
@@ -3268,7 +3358,7 @@ public:
         if (Parent.type != PLT_OBJ)
         {
           spitErr(TypeError, "Error cannot access variable "+s1+" ,self is not a class object!");
-          continue;
+          NEXT_INST;
         }
         KlassObject *ptr = (KlassObject *)Parent.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
@@ -3282,53 +3372,62 @@ public:
               if (A == NULL)
               {
                 spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                continue;
+                NEXT_INST;
               }
               if (ptr->klass != A->klass)
               {
                 spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                continue;
+                NEXT_INST;
               }
               ptr->privateMembers[s1] = val;
               k += 1;
-              continue;
+              NEXT_INST;
             }
             else
             {
               spitErr(NameError, "Error the object has no member named " + s1);
-              continue;
+              NEXT_INST;
             }
           }
           else
           {
             spitErr(NameError, "Error the object has no member named " + s1);
-            continue;
+            NEXT_INST;
           }
         }
 
         ptr->members[s1] = val;
-        break;
+        k++; NEXT_INST;
       }
-      case GC:
+      CASE_CP GC:
       {
         mark();
         collectGarbage();
-        break;
+        k++; NEXT_INST;
       }
-  
+      CASE_CP OP_EXIT:
+      {
+        #ifndef ISTHREADED
+          break;
+        #endif
+      }
+    #ifndef ISTHREADED
       default:
       {
         // unknown opcode
         // Faulty bytecode
         printf("An InternalError occurred.Error Code: 14\n");
         exit(1);
-        break;
+        
       }
-
+    
       } // end switch statement
       k += 1;
 
     } // end while loop
+    #endif
+    
+
     if (STACK.size() != 0 && panic)
     {
       fprintf(stderr,"An InternalError occurred.Error Code: 15\n");
