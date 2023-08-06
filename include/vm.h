@@ -697,6 +697,7 @@ public:
     int32_t i2;
     #ifdef ISTHREADED
       #ifdef __GNUC__
+      //label addresses to use with goto
       void* targets[] = 
       {
           NULL,
