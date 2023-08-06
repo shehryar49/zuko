@@ -196,9 +196,7 @@ public:
   PltObject *constants = NULL;
   int32_t total_constants = 0; // total constants stored in the array constants
   apiFuncions api;
-  #ifdef PLUTONIUM_PROFILE
-  size_t instCount[sizeof(opNames)/sizeof(const char*)] = {0};
-  #endif
+
   PltObject nil;
   void load(vector<uint8_t>& bytecode,ProgramInfo& p)
   {
