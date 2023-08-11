@@ -28,6 +28,10 @@ set_target_properties(regex PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 # datetime
 add_library(datetime SHARED modules/datetime/datetime.cpp modules/datetime/datetime.h)
 set_target_properties(datetime PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+# cgi
+add_library(cgi SHARED modules/cgi/cgi.cpp modules/cgi/cgi.h)
+set_target_properties(cgi PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+
 
 # linux specific modules
 if(UNIX)

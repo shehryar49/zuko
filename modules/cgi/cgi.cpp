@@ -254,7 +254,7 @@ Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadE
         rr.type = PLT_BYTEARR;
         rr.ptr = (void*)btArr;
         ki->members.emplace("content",rr);
-        d->emplace(PObjFromStr(name),PObjFromKlassInst(ki));
+        d->emplace(PObjFromStr(name),PObjFromKlassObj(ki));
       }
         
       headers.clear();
