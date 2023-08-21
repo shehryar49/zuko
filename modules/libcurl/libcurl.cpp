@@ -281,7 +281,7 @@ PltObject addpart(PltObject* args,int n)
     part->members.emplace(("__del__"),PObjFromMethod("mimepart.__del__",&MIMEPART__del__,mimepartklass));
     part->members.emplace((".handle"),PObjFromPtr((void*)mp));
 
-    return PObjFromKlassInst(part);
+    return PObjFromKlassObj(part);
 }
 PltObject MIMEPART__del__(PltObject* args,int n)
 {
