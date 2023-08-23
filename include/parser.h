@@ -1342,7 +1342,7 @@ public:
       }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
       {
-          Node* ast = NewNode(NodeType::RETURN);
+          Node* ast = NewNode(NodeType::RETURN_NODE);
           vector<Token> t = {tokens.begin()+1,tokens.end()};
           if(t.size()==0)
             parseError("SyntaxError","Error expected expression after return keyword");
@@ -2259,7 +2259,7 @@ public:
                 }
                 start = k+1;
               }
-              else if(ast->type==NodeType::RETURN)
+              else if(ast->type==NodeType::RETURN_NODE)
               {
                 if(!infunc)
                 {

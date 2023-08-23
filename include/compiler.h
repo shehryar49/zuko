@@ -1861,7 +1861,7 @@ public:
                         if(isGen)
                           funcBody.push_back(CO_STOP);
                         else
-                          funcBody.push_back(RETURN);
+                          funcBody.push_back(OP_RETURN);
                         bytes_done +=2;
                   }
                 }
@@ -1870,7 +1870,7 @@ public:
                   funcBody.push_back(LOAD_LOCAL);
                   foo = selfIdx;
                   addBytes(funcBody,foo);
-                  funcBody.push_back(RETURN);
+                  funcBody.push_back(OP_RETURN);
                   bytes_done+=6;
                 }
                 //program.push_back(JMP);
@@ -1951,7 +1951,7 @@ public:
 
 
           }
-          else if (ast->type == NodeType::RETURN)
+          else if (ast->type == NodeType::RETURN_NODE)
           {
               if(inConstructor)
                 compileError("SyntaxError","Error class constructors should not return anything!");
@@ -1964,7 +1964,7 @@ public:
               if(inGen)
                 program.push_back(CO_STOP);
               else
-                program.push_back(RETURN);
+                program.push_back(OP_RETURN);
               bytes_done += 1;
           }
           else if (ast->type == NodeType::THROW)
@@ -2221,7 +2221,7 @@ public:
       addBytes(bytecode,0);
       bytecode.push_back(LOAD_LOCAL);
       addBytes(bytecode,0);
-      bytecode.push_back(RETURN);
+      bytecode.push_back(OP_RETURN);
 
       bytes_done+=26;
       PltObject construct;

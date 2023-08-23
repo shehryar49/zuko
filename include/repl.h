@@ -30,14 +30,29 @@ void REPL()
   vector<Token> tokens;
   Node* ast;
   bool continued = false;
-
+  string prompt = ">>> ";
   while(true)
   {
+    char* ptr;
     if(!continued)
-      printf(">>> ");
+      prompt = ">>> ";
     else
-      printf("... ");
-    line = readline();
+      prompt = "... ";
+    #ifdef _WIN32
+      line = REPL_READLINE(prompt.c_str());
+    #else
+      ptr = REPL_READLINE(prompt.c_str());
+      if(!ptr)
+      {
+        puts("");
+        exit(0);
+      }
+      line = ptr;
+      if(ptr[0])
+        add_history(ptr);
+      free(ptr);  
+    #endif
+
     if(line=="exit" || line=="quit" || line=="baskardebhai" || line=="yawr")
       exit(0);
     else if(line == ".showstack")

@@ -722,7 +722,7 @@ public:
           &&MOD,
           &&LOAD_NIL,
           &&LOAD_INT32,
-          &&RETURN,
+          &&OP_RETURN,
           &&JMPNPOPSTACK,
           &&GOTONPSTACK,
           &&GOTO,
@@ -1422,7 +1422,7 @@ public:
         STACK.push_back(p1);
         k++; NEXT_INST;
       }
-      CASE_CP RETURN:
+      CASE_CP OP_RETURN:
       {
         k = callstack[callstack.size() - 1];
         callstack.pop_back();

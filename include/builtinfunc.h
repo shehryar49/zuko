@@ -55,7 +55,7 @@ bool validateArgTypes(string name,string e,PltObject* args,int32_t argc,PltObjec
     }
     return true;
 }
-PltObject ISALPHA(PltObject* args,int32_t argc)
+PltObject PLT_ISALPHA(PltObject* args,int32_t argc)
 {
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error isalpha() takes one argument!");
@@ -2307,7 +2307,7 @@ void initFunctions()
   funcs.emplace("clone",&COPY);
   funcs.emplace("pow",&POW);
   funcs.emplace("obj_info",&OBJINFO);
-  funcs.emplace("isalpha",&ISALPHA);
+  funcs.emplace("isalpha",&PLT_ISALPHA);
   funcs.emplace("ftell",&FTELL);
   funcs.emplace("rewind",&REWIND);
   funcs.emplace("clock",&CLOCK);

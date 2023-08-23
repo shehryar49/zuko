@@ -175,10 +175,12 @@ string addlnbreaks(string s,bool& hadErr)
    }
 	return r;
 }
-string readline()
+#ifdef _WIN32
+string REPL_READLINE(const char* msg)
 {
   signed char ch;
   string line;
+  printf("%s",msg);
   while((ch = fgetc(stdin))!='\n')
   {
     if(ch == EOF) // readline is used with REPL, so on EOF (CTRL+D) we exit
@@ -190,7 +192,10 @@ string readline()
   }
   return line;
 }
-
+#else
+  //use GNU Readline library
+  #define REPL_READLINE readline
+#endif
 string& readfile(string filename)
 {
   FILE* fp = fopen(filename.c_str(), "r");

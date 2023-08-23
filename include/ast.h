@@ -51,7 +51,7 @@ enum class NodeType
   CORO,
   CLASS,
   EXTCLASS,
-  RETURN,
+  RETURN_NODE,//RETURN name collides with some name in libreadline
   EOP, //end of program, also marks the end of tree
   YIELD,
   BREAK,

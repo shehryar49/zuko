@@ -16,6 +16,9 @@
 #ifdef __linux__
     #include <dlfcn.h>
     #include <unistd.h>
+    //For REPl
+    #include <readline/readline.h>
+    #include <readline/history.h>
 #else
     #include <windows.h>
     #include <io.h>

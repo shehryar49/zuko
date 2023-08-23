@@ -46,7 +46,7 @@ enum OPCODE
     MOD = 21,
     LOAD_NIL = 22,
     LOAD_INT32  = 23,
-    RETURN = 24,
+    OP_RETURN = 24,
     JMPNPOPSTACK=25,// jump to a certain number of bytes and pop n values from stack
     GOTONPSTACK=26,//goto a certain bytecode index and pop n values from stack
     GOTO=27,//goto a certain bytecode index
