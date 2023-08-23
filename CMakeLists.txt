@@ -5,6 +5,7 @@ add_executable(plutonium plutonium.cpp)
 include_directories(include/) # even modules use this (include/PltObject.h)
 if(UNIX)
   target_link_libraries(plutonium -ldl)
+  target_link_libraries(plutonium -lreadline) # GNU readline
 endif()
 message("BUILD TYPE = ${CMAKE_BUILD_TYPE}")
 #message("${CMAKE_CXX_FLAGS_RELEASE}")
