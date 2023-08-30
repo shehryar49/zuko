@@ -1120,6 +1120,7 @@ public:
             PltObject r;
             r.type = PLT_OBJ;
             r.ptr = (void *)obj;
+            STACK[STACK.size()-i2-1] = r;
             if (obj->members.find("__construct__") != obj->members.end())
             {
               PltObject construct = obj->members["__construct__"];
@@ -1130,7 +1131,7 @@ public:
               }
               NativeFunction *fn = (NativeFunction *)construct.ptr;
               NativeFunPtr p = fn->addr;
-              STACK[STACK.size()-i2-1] = r;
+
               PltObject *args = &STACK[STACK.size()-i2-1];
               p1 = p(args, i2 + 1);
               if (p1.type == PLT_ERROBJ)

@@ -425,7 +425,7 @@ int main(int argc,char** argv)
          {
            printf("%d  ASSIGNINDEX\n",k);
          }
-         else if(inst==RETURN)
+         else if(inst==OP_RETURN)
          {
              printf("%d  RETURN\n",k);
          }
