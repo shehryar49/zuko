@@ -428,7 +428,7 @@ public:
           {
 
             aux = (*it)+tokens[0].content;
-            if(done = addSymRef(aux))
+            if((done = addSymRef(aux)))
               break;
             it++;
           }
@@ -804,7 +804,7 @@ public:
       while(it != prefixes.rend())
       {
         aux = (*it)+tokens[0].content;
-        if(done = addSymRef(aux))
+        if((done = addSymRef(aux)))
           break;
         it++;
       }
@@ -1014,7 +1014,7 @@ public:
           while(it != prefixes.rend())
           {
             aux = (*it)+tokens[0].content;
-            if(done = addSymRef(aux))
+            if((done = addSymRef(aux)))
               break;
             it++;
           }
@@ -1623,6 +1623,7 @@ public:
       Node* e = nullptr;//e points to the lowest rightmost node of ast
       Node* Final = nullptr;
       line_num = 1;
+      bool a,b,c;
       while(k<(int)tokens.size())
       {
           if(tokens[k].type== TokenType::NEWLINE_TOKEN)
@@ -1636,8 +1637,53 @@ public:
                 continue;
               }
               line_num = line[0].ln;
-              if(line.size()!=1 && line[line.size()-1].type== TokenType::L_CURLY_BRACKET_TOKEN)
-                  line.pop_back();
+              //for ifelse and loop statements, we pop the curly bracket from line
+              //for multiline expressions we don't
+              //multiline expressions begin by adding '{' or '(' or '[' at the end
+              //of a line that is not a conditional statement or loop stmt
+              if
+                (
+                  (a = line.back().type == TokenType::L_CURLY_BRACKET_TOKEN) ||
+                  (b = line.back().type == TokenType::LParen_TOKEN) ||
+                  (c = line.back().type == TokenType::BEGIN_LIST_TOKEN)
+                )
+              {
+                if(line.size() == 1) ;//
+                else
+                {
+                  if( line[0].type != TokenType::KEYWORD_TOKEN ||
+                      (line[0].type == TokenType::KEYWORD_TOKEN &&
+                         (line[0].content == "var" || line[0].content=="return" || line[0].content=="yield")
+                      )
+                    )
+                  {
+                    int idx = (int)k -1;
+                    int rp = findRCB(idx,tokens);
+                    if(a)
+                      rp = findRCB(idx,tokens);
+                    else if(b)
+                      rp = matchRP(idx,tokens);
+                    else if(c)
+                      rp = findEndList(idx,tokens);
+                    if(rp == -1)
+                      parseError("SyntaxError","'"+line.back().content+"' at the end of line is unmatched.");
+                    //rp currently includes ending bracket on some line
+                    //that whole line should be included
+                    while(tokens[rp].type!=NEWLINE_TOKEN)
+                      rp++;
+                    size_t i = 0;
+                    for(i=k;i<(size_t)rp ;i++)
+                    {
+                      if(tokens[i].type != TokenType::NEWLINE_TOKEN)
+                        line.push_back(tokens[i]);
+                    }
+                    k = i;//tokens before ith idx are handled
+
+                  }
+                  else if(a)//pop curly bracket only
+                    line.pop_back();
+                }
+              }
               if(line.size()==0)
               {
                     start+=1;
