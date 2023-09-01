@@ -49,7 +49,8 @@ const char* tests[] =
     "coroutines",
     "addedReturn",
     "conversions",
-    "stdlist"
+    "stdlist",
+    "multiline-expr"
 };
 int main(int argc,const char* argv[])
 {
