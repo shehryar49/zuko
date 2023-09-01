@@ -694,7 +694,7 @@ public:
                     return {};
                 }
                 line_num = ln;
-                lexErr("SyntaxError","Invalid Syntax");
+                lexErr("SyntaxError",(string)"Illegal character '"+c+"'");
                 return {};
             }
             k+=1;
