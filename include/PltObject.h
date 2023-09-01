@@ -40,6 +40,7 @@ SOFTWARE.*/
 #define PLT_NATIVE_FUNC 'y'//native function
 #define PLT_MODULE 'q'
 #define PLT_STR 's'
+#define PLT_MSTR 'k' //mutable strings
 #define PLT_FILESTREAM 'u'
 #define PLT_NIL 'n'
 #define PLT_OBJ 'o' //objects created using plutonium code
@@ -199,6 +200,8 @@ Klass* ThrowError;
 Klass* MaxRecursionError;
 Klass* AccessError;
 //these classes are set by either the compiler or by the api_setup()
+
+//
 //Helper and extension API Functions
 inline PltObject PObjFromStrPtr(string* s)
 {
@@ -207,7 +210,13 @@ inline PltObject PObjFromStrPtr(string* s)
   ret.ptr = (void*)s;
   return ret;
 }
-
+inline PltObject PObjFromMStrPtr(string* s)
+{
+  PltObject ret;
+  ret.type = PLT_MSTR;
+  ret.ptr = (void*)s;
+  return ret;
+}
 inline PltObject PObjFromInt(int32_t x)
 {
   PltObject ret;
@@ -300,10 +309,7 @@ inline PltObject PObjFromFile(FileObject* file)
   ret.ptr = (void*)file;
   return ret;
 }
-inline bool AS_BOOL(PltObject x)
-{
-  return x.i;
-}
+
 #define AS_BOOL(x) x.i
 #define AS_INT(x) x.i
 #define AS_INT64(x) x.l
@@ -322,7 +328,7 @@ inline bool AS_BOOL(PltObject x)
 typedef PltList*(*fn1)();//allocList
 typedef Dictionary*(*fn2)();//allocDictionary
 typedef string*(*fn3)();//allocString
-typedef void*(*fn4)();//unused for now
+typedef string*(*fn4)();//allocMutString
 typedef FileObject*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
 typedef KlassObject*(*fn7)();//allocKlassObject
@@ -337,7 +343,7 @@ typedef void(*fn13)(void*);//unmarkImpotant
 fn1 vm_allocList;
 fn2 vm_allocDict;
 fn3 vm_allocString;
-//fn4 vm_allocErrObject;
+fn4 vm_allocMutString;
 fn5 vm_allocFileObject;
 fn6 vm_allocKlass;
 fn7 vm_allocKlassObject;
@@ -439,7 +445,7 @@ extern "C"
     vm_allocList = p->a1;
     vm_allocDict = p->a2;
     vm_allocString = p->a3;
-  //  vm_allocErrObject = p->a4;
+    vm_allocMutString = p->a4;
     vm_allocFileObject = p->a5;
     vm_allocKlass = p->a6;
     vm_allocKlassObject = p->a7;
