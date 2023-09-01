@@ -270,9 +270,9 @@ PltObject FORMAT(PltObject* args,int32_t argc)
 {
     if(argc < 1)
       return Plt_Err(ArgumentError,"At least one argument needed!");
-    if(args[0].type!='s')
+    if(args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
       return Plt_Err(TypeError,"Argument 1 must be a string!");
-    string& format = *(string*)args[0].ptr;
+    const string& format = *(string*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format.length();
     int32_t j = 1;
@@ -343,7 +343,7 @@ PltObject input(PltObject* args,int32_t argc)
     }
     if(argc==1)
     {
-      if(args[0].type!='s')
+      if(args[0].type!='s' && args[0].type!=PLT_MSTR)
         return Plt_Err(TypeError,"Error input() takes a string argument!");
       string& prompt = *(string*)args[0].ptr;
       printf("%s",prompt.c_str());
@@ -400,18 +400,18 @@ PltObject LEN(PltObject* args,int32_t argc)
         return Plt_Err(ArgumentError,"Error len() takes one argument!");
 
     PltObject ret = nil;
-    ret.type = 'i';
-    if(args[0].type=='s')
+    ret.type = PLT_INT64;
+    if(args[0].type=='s' || args[0].type == PLT_MSTR)
     {
       string& s = *(string*)args[0].ptr;
-      ret.i = s.length();
+      ret.l = s.length();
     }
     else if(args[0].type=='j')
-        ret.i = ((PltList*)args[0].ptr)->size();
+        ret.l = ((PltList*)args[0].ptr)->size();
     else if(args[0].type=='a')
-        ret.i = ((Dictionary*)args[0].ptr)->size();
+        ret.l = ((Dictionary*)args[0].ptr)->size();
     else if(args[0].type == 'c')
-        ret.i = ((vector<uint8_t>*)args[0].ptr)->size();
+        ret.l = ((vector<uint8_t>*)args[0].ptr)->size();
     else
         return Plt_Err(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
     return ret;
@@ -449,7 +449,7 @@ PltObject READ(PltObject* args,int32_t argc)
     char delim = EOF;
     if(argc==2)
     {
-      if(args[1].type!='s')
+      if(args[1].type!='s' && args[1].type!=PLT_MSTR)
         return Plt_Err(TypeError,"Error argument 2 to read() function should be of type string!");
       string& l = *(string*)args[1].ptr;
       if(l.length()!=1)
@@ -1819,6 +1819,15 @@ PltObject CLOCK(PltObject* args,int32_t argc)
   ret.f = static_cast<double> (clock());
   return ret;
 }
+PltObject MUTABLESTRING(PltObject* args,int32_t argc)
+{
+  if(argc!=1 || (args[0].type != PLT_STR && args[0].type!=PLT_MSTR))
+    return Plt_Err(ArgumentError,"Error mutableString() takes 1 string argument!");
+  const string& val = *(string*)args[0].ptr;
+  string* p = allocMutString();
+  *p = val;
+  return PObjFromMStrPtr(p);
+}
 ////////////////////
 //Builtin Methods
 //Methods work exactly like functions but their first argument should always
@@ -2317,7 +2326,7 @@ void initFunctions()
   funcs.emplace("bytearray",&BYTEARRAY);
   funcs.emplace("moduleInfo",&moduleInfo);
   funcs.emplace("format",&FORMAT);
-  
+  funcs.emplace("mutableString",&MUTABLESTRING);
 
 }
 std::unordered_map<string,BuiltinFunc> methods;
