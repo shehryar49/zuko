@@ -90,6 +90,8 @@ string fullform(char t)
     return "Float";
   else if (t == PLT_STR)
     return "String";
+  else if(t == PLT_MSTR)
+    return "Mutable String";
   else if (t == PLT_LIST)
     return "List";
   else if (t == PLT_BYTE)
@@ -137,6 +139,7 @@ PltList *allocList();
 vector<uint8_t>* allocByteArray();
 Dictionary *allocDict();
 string *allocString();
+string *allocMutString();
 FunObject *allocFunObject();
 FunObject *allocCoroutine();
 Coroutine *allocCoObj();
@@ -212,7 +215,7 @@ public:
     api.a1 = &allocList;
     api.a2 = &allocDict;
     api.a3 = &allocString;
-//    api.a4 = &allocErrObject; reuse later
+    api.a4 = &allocMutString;
     api.a5 = &allocFileObject;
     api.a6 = &allocKlass;
     api.a7 = &allocKlassObject;
@@ -608,6 +611,12 @@ public:
         delete (string *)e;
         allocated -= sizeof(string);
       }
+      else if (m.type == PLT_MSTR)
+      {
+        delete (string *)e;
+        allocated -= sizeof(string);
+      }
+      
       else if (m.type == PLT_NATIVE_FUNC)
       {
         delete (NativeFunction *)e;
@@ -893,7 +902,7 @@ public:
             STACK.pop_back();
             p2 = STACK[STACK.size() - 1];//key
             STACK.pop_back();
-            if(p2.type!=PLT_INT && p2.type!=PLT_INT64 && p2.type!=PLT_FLOAT && p2.type!=PLT_STR && p2.type!=PLT_BYTE && p2.type!=PLT_BOOL)
+            if(p2.type!=PLT_INT && p2.type!=PLT_INT64 && p2.type!=PLT_FLOAT && p2.type!=PLT_STR  && p2.type!=PLT_BYTE && p2.type!=PLT_BOOL)
             {
               spitErr(TypeError,"Error key of type "+fullform(p2.type)+" not allowed.");
               NEXT_INST;
@@ -1808,7 +1817,7 @@ public:
           STACK.push_back(p3);
           DoThreshholdBusiness();
         }
-        else if (c1 == PLT_STR)
+        else if (c1 == PLT_STR || c1 == PLT_MSTR)
         {
           string *p = allocString();
 
@@ -2193,7 +2202,7 @@ public:
           PltObject res = (*d)[p1];
           STACK.push_back(res);
         }
-        else if (p2.type == PLT_STR)
+        else if (p2.type == PLT_STR || p2.type == PLT_MSTR)
         {
           if (p1.type != PLT_INT && p1.type != PLT_INT64)
           {
@@ -2262,7 +2271,7 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if ((p1.type != PLT_DICT && p1.type != PLT_CLASS && p1.type != PLT_LIST && p1.type != PLT_OBJ && p1.type != PLT_STR && p1.type != PLT_MODULE && p1.type != PLT_FUNC) || (p2.type != PLT_CLASS && p2.type != PLT_DICT && p2.type != PLT_STR && p2.type != PLT_FUNC && p2.type != PLT_LIST && p2.type != PLT_OBJ && p2.type != PLT_MODULE))
+        if ((p1.type != PLT_DICT && p1.type != PLT_CLASS && p1.type != PLT_LIST && p1.type != PLT_OBJ && p1.type != PLT_STR && p1.type != PLT_MSTR && p1.type != PLT_MODULE && p1.type != PLT_FUNC) || (p2.type != PLT_CLASS && p2.type != PLT_DICT && p2.type != PLT_STR && p2.type!=PLT_MSTR && p2.type != PLT_FUNC && p2.type != PLT_LIST && p2.type != PLT_OBJ && p2.type != PLT_MODULE))
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
@@ -3206,7 +3215,7 @@ public:
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
         std::unordered_map<string,PltObject>::iterator it;
-        if( (it = ki->members.find("msg")) == ki->members.end() || (*it).second.type!=PLT_STR)
+        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=PLT_STR && (*it).second.type!=PLT_MSTR))
         {
           spitErr(ThrowError,"The object does have member 'msg' or it is not a string!");
           NEXT_INST;
@@ -3542,6 +3551,22 @@ string *allocString()
   vm.allocated += sizeof(string);
   MemInfo m;
   m.type = PLT_STR;
+  m.isMarked = false;
+  vm.memory.emplace((void *)p, m);
+  return p;
+}
+string *allocMutString()
+{
+
+  string *p = new(nothrow) string;
+  if (!p)
+  {
+    fprintf(stderr,"allocMutString(): error allocating memory!\n");
+    exit(0);
+  }
+  vm.allocated += sizeof(string);
+  MemInfo m;
+  m.type = PLT_MSTR;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
