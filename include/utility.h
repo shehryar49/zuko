@@ -423,7 +423,7 @@ string PltObjectToStr(const PltObject& a)
             PltList* p = (PltList*)a.ptr;
             return PltListToStr(p);
         }
-        else if(a.type=='s')
+        else if(a.type==PLT_STR || a.type==PLT_MSTR)
         {
           return *(string*)a.ptr;
         }
