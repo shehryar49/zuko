@@ -1,6 +1,6 @@
 # Test multiline expressions 
 
-# Dictionaries
+# Curly brackets
 
 var dict = {
     1 : 1,
@@ -16,3 +16,23 @@ println(dict[1])
 println(dict[2])
 println(dict[3])
 println(dict[4])
+
+# Test parenthesis
+println(
+    "hey"
+)
+# Test square brackets
+var k = [
+    1,
+    2,
+    3
+]
+println(k)
+# Test multiline return stmt
+function f()
+{
+    return (
+        1+1
+    )/2
+}
+println(f()) #should print 1
