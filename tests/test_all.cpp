@@ -51,7 +51,8 @@ const char* tests[] =
     "conversions",
     "stdlist",
     "multiline-expr",
-    "str"
+    "str",
+    "mstr"
 };
 int main(int argc,const char* argv[])
 {

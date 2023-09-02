@@ -1,4 +1,7 @@
 # Test strings
+println("h"*2 == "hh")
+println("h"*0 == "")
+println("h"*int64(2) == "hh")
 var str = "hello"
 println(find("el",str)) #1
 println(str.find("el")) #1
