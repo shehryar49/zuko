@@ -1817,7 +1817,7 @@ public:
           STACK.push_back(p3);
           DoThreshholdBusiness();
         }
-        else if (c1 == PLT_STR || c1 == PLT_MSTR)
+        else if (c1 == PLT_STR )
         {
           string *p = allocString();
 
@@ -2309,14 +2309,20 @@ public:
           PromoteType(p1, t);
           PromoteType(p2, t);
         }
-        else if(p1.type==PLT_LIST && p2.type==PLT_INT)
+        else if(p1.type==PLT_LIST && (p2.type==PLT_INT || p2.type == PLT_INT64))
         {
+          PromoteType(p2,PLT_INT64);
+          if(p2.l < 0)
+          {
+            orgk = k - program;
+            spitErr(ValueError,"Cannot multiply list by a negative integer!");
+          }
           PltList* src = (PltList*)p1.ptr;
           PltList* res = allocList();
           if(src->size()!=0)
           {
-          for(int32_t i=p2.i;i;--i)
-            res->insert(res->end(),src->begin(),src->end());
+            for(size_t i=1;i<=(size_t)p2.l;i++)
+              res->insert(res->end(),src->begin(),src->end());
           }
           p1.type = PLT_LIST;
           p1.ptr = (void*)res;
@@ -2325,13 +2331,19 @@ public:
           ++k;
           NEXT_INST;
         }
-        else if(p1.type==PLT_STR && p2.type==PLT_INT)
+        else if(p1.type==PLT_STR && (p2.type==PLT_INT || p2.type == PLT_INT64))
         {
+          PromoteType(p2,PLT_INT64);
+          if(p2.l < 0)
+          {
+            orgk = k - program;
+            spitErr(ValueError,"Cannot multiply string by a negative integer!");
+          }
           string* src = (string*)p1.ptr;
           string* res = allocString();
           if(src->size()!=0)
           {
-            for(int32_t i=p2.i;i;--i)
+            for(size_t i=1;i<=(size_t)p2.l;i++)
               res->insert(res->end(),src->begin(),src->end());
           }
           p1.type = PLT_STR;
