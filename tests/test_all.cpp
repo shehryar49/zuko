@@ -50,7 +50,8 @@ const char* tests[] =
     "addedReturn",
     "conversions",
     "stdlist",
-    "multiline-expr"
+    "multiline-expr",
+    "str"
 };
 int main(int argc,const char* argv[])
 {
