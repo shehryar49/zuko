@@ -7,6 +7,10 @@ if(UNIX)
   target_link_libraries(plutonium -ldl)
   target_link_libraries(plutonium -lreadline) # GNU readline
 endif()
+
+add_executable(test_all tests/test_all.cpp)
+set_target_properties(test_all PROPERTIES RUNTIME_OUTPUT_DIRECTORY tests/)
+
 message("BUILD TYPE = ${CMAKE_BUILD_TYPE}")
 #message("${CMAKE_CXX_FLAGS_RELEASE}")
 #message("${CMAKE_CXX_FLAGS_DEBUG}")

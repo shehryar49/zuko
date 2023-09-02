@@ -1,32 +1,35 @@
 #!/usr/bin/sh
-echo "[+] Creating /opt/plutonium"
-mkdir /opt/plutonium
-echo "[+] Creating /opt/plutonium/modules"
-mkdir /opt/plutonium/modules
 echo "[+] Starting compilation"
-g++ plutonium.cpp -o plutonium -ldl -DNDEBUG -O3 -w
-strip plutonium
-cp include/PltObject.h /opt/plutonium/
-cp -r std /opt/plutonium
-g++ -shared modules/math/math.cpp -o modules/math.so -I include/ -fPIC -DNDEBUG -O3
-g++ -shared modules/regex/regex.cpp -o modules/regex.so -I include/  -fPIC -DNDEBUG -O3
-g++ -shared modules/json/json.cpp -o modules/json.so -I include/  -fPIC -DNDEBUG -O3
-g++ -shared modules/cgi/cgi.cpp -o modules/cgi.so -I include/  -fPIC -DNDEBUG -O3
-g++ -shared modules/datetime/datetime.cpp -o modules/datetime.so -I include/  -fPIC -DNDEBUG -O3
-#g++ -shared modules/mysql/mysql.cpp -o modules/mysql.so -I include/  -fPIC $(mariadb_config --include --libs) -DNDEBUG -O3
+if cmake . -DCMAKE_BUILD_TYPE=Release;then
+  echo "[+] Cmake configure done."
+else
+  echo "[+] Cmake configure failed. Aborting install"
+  return
+fi
+if make; then
+  echo "[+] Build complete"
+else
+  echo "[-] Build failed. Aborting install"
+  return
+fi
 
-g++ tests/test_all.cpp -o tests/test_all
+echo "[+] Copying files"
+# sudo section
+sudo mkdir /opt/plutonium
+sudo mkdir /opt/plutonium/modules
+sudo cp plutonium /opt/plutonium/
+sudo cp -r std /opt/plutonium
+sudo cp modules/*.so /opt/plutonium/modules/
+sudo cp include/PltObject.h /opt/plutonium
+sudo cp include/c_api.h /opt/plutonium
+sudo cp include/c_api.cpp /opt/plutonium
+sudo ln -s /opt/plutonium/plutonium /usr/bin/plutonium
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then
-  echo "\nAll Tests passed."
+  echo "\n[+] Installation done and all tests passed!"
 else
-  echo "\nTests failed.\nAborting Install"
-  return
+  echo "\n[-] Installation was done but some tests failed."
+  
 fi
-cd ..
-echo "[+] Copying files"
-cp plutonium /opt/plutonium/
-cp -r std /opt/plutonium/
-cp modules/*.so /opt/plutonium/modules
-sudo ln -s /opt/plutonium/plutonium /usr/bin/plutonium 
+# Hasta la vista baby
