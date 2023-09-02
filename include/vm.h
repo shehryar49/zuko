@@ -161,6 +161,7 @@ private:
   uint8_t* program = NULL;
   uint32_t program_size;
   uint8_t *k;
+  bool viaCO = false;
   vector<size_t> tryStackCleanup;
   vector<int32_t> frames = {0}; // stores starting stack indexes of all stack frames
   size_t orgk = 0;
@@ -247,7 +248,7 @@ public:
   size_t spitErr(Klass* e, string msg) // used to show a runtime error
   {
     PltObject p1;
-    if (except_targ.size() != 0)
+    if (except_targ.size() != 0)//check if error catching is enabled
     {
       size_t T = STACK.size() - tryStackCleanup.back();
       STACK.erase(STACK.end() - T, STACK.end());
@@ -269,6 +270,30 @@ public:
       tryLimitCleanup.pop_back();
       return k - program;
     }
+    if(viaCO) //interpret was called via callObject, wrap the error in a nice object
+    //remove all values from stack starting from frame made by callObject
+    {
+      while(callstack.back() != NULL)//there must be a null
+      {
+        frames.pop_back();
+        callstack.pop_back();
+      }
+      int32_t start = frames.back();
+      STACK.erase(STACK.begin()+start,STACK.end());
+      KlassObject *E = allocKlassObject();
+      E->klass = e;
+      E->members = e->members;
+      E->privateMembers = e->privateMembers;
+      string* s = allocString();
+      *s = msg;
+      E->members["msg"] = PObjFromStrPtr(s);
+      p1.type = PLT_ERROBJ;
+      p1.ptr = (void*)E;
+      STACK.push_back(p1);
+      this->k = program + program_size - 1;
+      return k -program;
+    }
+    //Error catching is not enabled
     size_t line_num = (*LineNumberTable)[orgk].ln;
     string &filename = (*files)[(*LineNumberTable)[orgk].fileIndex];
     string type = e->name;
@@ -276,6 +301,7 @@ public:
     fprintf(stderr,"%s at line %ld\n", type.c_str(), line_num);
     auto it = std::find(files->begin(), files->end(), filename);
     size_t i = it - files->begin();
+    bool fromNativeCode = false;
     string source_code = (*sources)[i];
     size_t l = 1;
     string line = "";
@@ -300,11 +326,7 @@ public:
       while (callstack.size() != 0) // print stack trace
       {
         size_t L = callstack.back() - program;
-        if(callstack.back() == NULL)
-        {
-          fprintf(stderr,"  --by Native Module\n");
-          break;
-        }
+        
         L -= 1;
         while (L>0 && LineNumberTable->find(L) == LineNumberTable->end())
         {
@@ -318,8 +340,10 @@ public:
   
     this->k = program+program_size-1;//set instruction pointer to last instruction
     //which is always OP_EXIT
-    if(!REPL_MODE)
+   
+    if(!REPL_MODE)//nothing can be done, clear stack and exit
       STACK.clear();
+
     return this->k - program;
     
   }
@@ -2316,6 +2340,7 @@ public:
           {
             orgk = k - program;
             spitErr(ValueError,"Cannot multiply list by a negative integer!");
+            NEXT_INST;
           }
           PltList* src = (PltList*)p1.ptr;
           PltList* res = allocList();
@@ -2338,6 +2363,7 @@ public:
           {
             orgk = k - program;
             spitErr(ValueError,"Cannot multiply string by a negative integer!");
+            NEXT_INST;
           }
           string* src = (string*)p1.ptr;
           string* res = allocString();
@@ -3721,6 +3747,7 @@ NativeFunction *allocNativeFun()
   vm.memory.emplace((void *)p, m);
   return p;
 }
+//callObject also behaves as a kind of try/catch since v0.31
 bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
 {
 
@@ -3740,13 +3767,14 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
        vm.STACK.push_back(args[i]);
      for(size_t i = fn->opt.size() - (fn->args - N); i < fn->opt.size(); i++)
        vm.STACK.push_back(fn->opt[i]);
-
-     vm.interpret(fn->i);
-
+     bool a = vm.viaCO;
+     vm.viaCO = true;
+     vm.interpret(fn->i,false);
+     vm.viaCO = a;
      vm.k = prev;
      *rr = vm.STACK.back();
      vm.STACK.pop_back();
-     return true;
+     return (rr->type != PLT_ERROBJ);
   }
   else if (obj->type == PLT_NATIVE_FUNC)
   {

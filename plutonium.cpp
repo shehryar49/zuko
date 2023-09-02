@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "include/plutonium.h"
 
-#define PLUTONIUM_VER 0.3
+#define PLUTONIUM_VER 0.31
 
 void signalHandler(int signum)
 {
