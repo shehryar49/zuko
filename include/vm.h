@@ -1161,7 +1161,7 @@ public:
             NEXT_INST;
           }
         }
-        else if (p1.type == PLT_LIST || p1.type == PLT_DICT || p1.type == PLT_BYTEARR)
+        else if (p1.type == PLT_LIST || p1.type == PLT_DICT || p1.type == PLT_BYTEARR || p1.type == PLT_STR || p1.type == PLT_MSTR)
         {
           PltObject callmethod(string, PltObject *, int32_t);
           p3 = callmethod(method_name, &STACK[STACK.size()-i2-1], i2 + 1);

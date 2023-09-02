@@ -12,6 +12,8 @@ extern "C"
 {
 #endif
     //Types for different plutonium datatypes
+    //characters are used because this way we can specify a type string when unpacking 
+    //a list of bytes
     #define PLT_LIST 'j'
     #define PLT_DICT 'a'
     #define PLT_INT 'i'
@@ -21,6 +23,7 @@ extern "C"
     #define PLT_NATIVE_FUNC 'y'//native function
     #define PLT_MODULE 'q'
     #define PLT_STR 's'
+    #define PLT_MSTR 'k' //mutable strings
     #define PLT_FILESTREAM 'u'
     #define PLT_NIL 'n'
     #define PLT_OBJ 'o' //objects created using plutonium code

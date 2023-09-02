@@ -128,6 +128,14 @@ inline PltObject PObjFromStrPtr(string* s)
   ret.ptr = (void*)s;
   return ret;
 }
+inline PltObject PObjFromMStrPtr(string* s)
+{
+  PltObject ret;
+  ret.type = PLT_MSTR;
+  ret.ptr = (void*)s;
+  return ret;
+}
+
 inline PltObject PObjFromInt(int32_t x)
 {
   PltObject ret;
@@ -230,7 +238,7 @@ void foo()
 typedef PltList*(*fn1)();//allocList
 typedef Dictionary*(*fn2)();//allocDictionary
 typedef string*(*fn3)();//allocString
-typedef void*(*fn4)();//unused for now
+typedef string*(*fn4)();//allocMutString
 typedef FileObject*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
 typedef KlassObject*(*fn7)();//allocKlassObject
@@ -242,7 +250,7 @@ typedef vector<uint8_t>*(*fn10)();//allocBytearray
 fn1 vm_allocList;
 fn2 vm_allocDict;
 fn3 vm_allocString;
-//fn4 vm_allocErrObject;
+fn4 vm_allocMutString;
 fn5 vm_allocFileObject;
 fn6 vm_allocKlass;
 fn7 vm_allocKlassObject;
@@ -328,7 +336,7 @@ extern "C"
     vm_allocList = p->a1;
     vm_allocDict = p->a2;
     vm_allocString = p->a3;
-  //  vm_allocErrObject = p->a4;
+    vm_allocMutString = p->a4;
     vm_allocFileObject = p->a5;
     vm_allocKlass = p->a6;
     vm_allocKlassObject = p->a7;

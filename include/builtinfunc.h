@@ -59,7 +59,7 @@ PltObject PLT_ISALPHA(PltObject* args,int32_t argc)
 {
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error isalpha() takes one argument!");
-  if(args[0].type!='s')
+  if(args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
     return Plt_Err(TypeError,"Error isalpha() takes a string argument!");
   string s = *(string*)args[0].ptr;
   PltObject ret = nil;
@@ -78,7 +78,7 @@ PltObject ASCII(PltObject* args,int32_t argc)
 {
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error ascii() takes one argument!");
-  if(args[0].type!='s')
+  if(args[0].type!='s' || args[0].type!=PLT_MSTR)
     return Plt_Err(TypeError,"Error ascii() takes a string argument!");
   string s = *(string*)args[0].ptr;
   if(s.length()!=1)
@@ -230,7 +230,7 @@ PltObject PRINTF(PltObject* args,int32_t argc)
 {
     if(argc < 1)
       return Plt_Err(ArgumentError,"At least one argument needed!");
-    if(args[0].type!='s')
+    if(args[0].type!='s' && args[0].type!=PLT_MSTR)
       return Plt_Err(TypeError,"Argument 1 must be a string!");
     string& format = *(string*)args[0].ptr;
     int32_t k = 0;
@@ -626,7 +626,7 @@ PltObject BYTES(PltObject* args,int32_t argc)
       memcpy(&(*p)[0],&e.f,4);
       return ret;
     }
-    else if(e.type=='s')
+    else if(e.type=='s' || e.type == PLT_MSTR)
     {
        string& s = *(string*)e.ptr;
        for(auto ch: s)
@@ -875,15 +875,18 @@ PltObject SUBSTR(PltObject* args,int32_t argc)
         return Plt_Err(TypeError,"Error first argument of substr() should be an integer");
       if(args[1].type!='i' && args[1].type!='l')
         return Plt_Err(TypeError,"Error second argument of substr() should be an integer");
-			if(args[2].type=='s')
+			if(args[2].type=='s' || args[2].type==PLT_MSTR)
 			{
         string* q = allocString();
-        if(args[0].i<0 || args[1].i<0 )
+        PromoteType(args[0],'l');
+        PromoteType(args[1],'l');
+        
+        if(args[0].l<0 || args[1].l<0 )
         {
            return PObjFromStrPtr(q);
         }
         string& data = *(string*)args[2].ptr;
-        *q  = substr(args[0].i,args[1].i,data);
+        *q  = substr((int32_t)args[0].l,(int32_t)args[1].l,data);
         return PObjFromStrPtr(q);
 			}
 			else
@@ -950,7 +953,7 @@ PltObject SYSTEM(PltObject* args,int32_t argc)
 {
   if(argc!=1)
       return Plt_Err(ArgumentError,"Error system() takes 1 argument!");
-  if(args[0].type!='s')
+  if(args[0].type!='s' && args[0].type!=PLT_MSTR)
       return Plt_Err(TypeError,"Error system() takes a string argument!");
   string& command = *(string*)args[0].ptr;
   int32_t i = system(command.c_str());
@@ -960,7 +963,7 @@ PltObject SPLIT(PltObject* args,int32_t argc)
 {
     if(argc==2)
 		{
-			if(args[0].type=='s' && args[1].type=='s')
+			if( (args[0].type=='s' || args[0].type==PLT_MSTR) && (args[1].type == PLT_MSTR || args[1].type=='s'))
 			{
         string& data = *(string*)args[0].ptr;
         string& delim = *(string*)args[1].ptr;
@@ -995,7 +998,7 @@ PltObject GETENV(PltObject* args,int32_t argc)
   if(argc==1)
   {
 
-      if(args[0].type=='s')
+      if(args[0].type=='s' || args[0].type==PLT_MSTR)
       {
         string& vname = *(string*)args[0].ptr;
         char* c = getenv(vname.c_str());
@@ -1088,8 +1091,13 @@ PltObject STR(PltObject* args,int32_t argc)
 PltObject FIND(PltObject* args,int32_t argc)
 {
   PltObject ret = nil;
-  if(!validateArgTypes("find","ss",args,argc,ret))
-    return ret;  
+  if(argc != 2)
+    return Plt_Err(ArgumentError,"Error find() takes 2 arguments!");
+  if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
+    return Plt_Err(TypeError,"Error first argument given to find() must be a stirng!");
+  if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
+    return Plt_Err(TypeError,"Error second argument given to find() must be a stirng!");
+  
   ret.type = 'l';
   string& a = *(string*)args[0].ptr;
   string& b = *(string*)args[1].ptr;
@@ -1107,7 +1115,7 @@ PltObject TOINT(PltObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s')
+			if(args[0].type=='s' || args[0].type == PLT_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
 			    PltObject ret = nil;
@@ -1172,7 +1180,7 @@ PltObject TOINT32(PltObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s')
+			if(args[0].type=='s' || args[0].type == PLT_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
 			    PltObject ret = nil;
@@ -1245,7 +1253,7 @@ PltObject TOINT64(PltObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s')
+			if(args[0].type=='s' || args[0].type==PLT_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
 			    PltObject ret = nil;
@@ -1309,7 +1317,7 @@ PltObject TOFLOAT(PltObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s')
+			if(args[0].type=='s' || args[0].type == PLT_MSTR)
 			{
         string& q = *(string*)args[0].ptr;
         if(isnum(q))
@@ -1344,7 +1352,7 @@ PltObject tonumeric(PltObject* args,int32_t argc)
 {
     if(argc==1)
     {
-      if(args[0].type=='s')
+      if(args[0].type=='s' || args[0].type==PLT_MSTR)
       {
           string& q = *(string*)args[0].ptr;
           if(isnum(q))
@@ -1387,7 +1395,7 @@ PltObject isnumeric(PltObject* args,int32_t argc)
   ret.i = 1;
     if(argc==1)
     {
-            if(args[0].type=='s')
+            if(args[0].type=='s' || args[0].type == PLT_MSTR)
             {
                string& s = *(string*)args[0].ptr;
                if(isnum(s))
@@ -1518,7 +1526,7 @@ PltObject writelines(PltObject* args,int32_t argc)
                 while(f<lines.size())
                 {
                     m = (lines[f]);
-                    if(m.type!='s')
+                    if(m.type!='s' && m.type!=PLT_MSTR)
                       return Plt_Err(ValueError,"List provided to writelines should consist of string elements only!");
                     data+=*(string*)m.ptr;
                     if(f!=lines.size()-1)
@@ -1832,12 +1840,14 @@ PltObject MUTABLESTRING(PltObject* args,int32_t argc)
 //Builtin Methods
 //Methods work exactly like functions but their first argument should always
 //be an object
+//these are just functions that work on multiple supported types
+//for example POP functions works on both list,bytearrays and mutable strings
 PltObject POP(PltObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type!='c')
+  if(args[0].type!=PLT_LIST && args[0].type!=PLT_BYTEARR && args[0].type!=PLT_MSTR)
          return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error method pop() takes 1 arguments!");
+    return Plt_Err(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
   if(args[0].type == 'c')
   {
     PltObject ret = nil;
@@ -1852,25 +1862,48 @@ PltObject POP(PltObject* args,int32_t argc)
     }
     return ret;
   }
-  PltList* p = (PltList*)args[0].ptr;
-  PltObject ret = nil;
-  if(p->size()!=0)
+  else if(args[0].type == PLT_MSTR)
   {
-    ret = p->back();
+    string* p = (string*)args[0].ptr;
+    if(p->size() == 0)
+      return nil;
+    string* s = allocMutString();
+    (*s) += p->back();
     p->pop_back();
+    return PObjFromMStrPtr(s);
   }
   else
-    return Plt_Err(ValueError,"List is empty.No value to pop!");
-  return ret;
+  {
+    PltList* p = (PltList*)args[0].ptr;
+    PltObject ret = nil;
+    if(p->size()!=0)
+    {
+      ret = p->back();
+      p->pop_back();
+    }
+    else
+      return Plt_Err(ValueError,"List is empty.No value to pop!");
+    return ret;
+  }
+  return nil;
 }
+
 PltObject CLEAR(PltObject* args,int32_t argc)
 {
-  if(args[0].type!='j')
+  if(args[0].type!='j' && args[0].type!=PLT_MSTR)
          return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error method clear() takes 0 arguments!");
-  PltList* p = (PltList*)args[0].ptr;
-  p->clear();
+  if(args[0].type == PLT_MSTR)
+  {
+    string* p = (string*)args[0].ptr;
+    p->clear();
+  }
+  else
+  {
+    PltList* p = (PltList*)args[0].ptr;
+    p->clear();
+  }
   PltObject ret = nil;
   return ret;
 }
@@ -1900,7 +1933,7 @@ PltObject PUSH(PltObject* args,int32_t argc)
 }
 PltObject RESERVE(PltObject* args,int32_t argc)
 {
-  if(args[0].type!='j' || args[0].type!='c')
+  if(args[0].type!='j' && args[0].type!='c' && args[0].type!=PLT_MSTR)
          return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
   if(argc!=2)
     return Plt_Err(ArgumentError,"Error method reserve() takes 1 argument!");
@@ -1913,6 +1946,11 @@ PltObject RESERVE(PltObject* args,int32_t argc)
     PltList* p = (PltList*)args[0].ptr;
     p->reserve(x.l);
   }
+  else if(args[0].type == PLT_MSTR)
+  {
+    string* p = (string*) args[0].ptr;
+    p->reserve(x.l);
+  }
   else
   {
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
@@ -1922,10 +1960,10 @@ PltObject RESERVE(PltObject* args,int32_t argc)
   return ret;
 
 }
-PltObject FINDINLIST(PltObject* args,int32_t argc)
+PltObject FIND_METHOD(PltObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type!=PLT_BYTEARR)
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
+  if(args[0].type!='j' && args[0].type!=PLT_BYTEARR && args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
+    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
   if(argc!=2)
     return Plt_Err(ArgumentError,"Error method find() takes 1 arguments!");
   if(args[0].type == 'j')
@@ -1942,6 +1980,17 @@ PltObject FINDINLIST(PltObject* args,int32_t argc)
       }
     }
     return ret;
+  }
+  else if(args[0].type == PLT_STR || args[0].type == PLT_MSTR)
+  {
+    string* p = (string*)args[0].ptr;
+    if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
+      return Plt_Err(TypeError,"Argument 1 of str.find() must be a string!");
+    const string& tofind = *(string*)args[1].ptr;
+    size_t idx = p->find(tofind);
+    if(idx == std::string::npos)
+      return nil;
+    return PObjFromInt64((int64_t)idx);
   }
   else
   {
@@ -1988,12 +2037,71 @@ PltObject INSERTBYTEARRAY(PltObject* args,int32_t argc)
     return ret;
   }
   else
-    return Plt_Err(ArgumentError,"Error method insert() takes 3 arguments!");
+    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
 }
+PltObject INSERTMSTR(PltObject* args,int32_t argc)
+{
+  if(argc==3)
+  {
+    string* p = (string*)args[0].ptr;
+    PltObject idx = args[1];
+    PltObject val = args[2];
+    if(idx.type!='i' && idx.type!='l')
+      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+    PromoteType(idx,'l');
+    if(idx.l < 0)
+      return Plt_Err(ValueError,"Error insertion position is negative!");
+    if((size_t)idx.l > p->size())
+          return Plt_Err(ValueError,"Error insertion position out of range!");
+    if(val.type==PLT_STR || val.type == PLT_MSTR)
+    {
+      const string& sub = *(string*)val.ptr;
+      p->insert(p->begin()+idx.l,sub.begin(),sub.end());
+    }
+    else
+      return Plt_Err(TypeError,"Error method insert() takes a string argument!");
+    PltObject ret = nil;
+    return ret;
+  }
+  else
+    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+}
+PltObject INSERTSTR(PltObject* args,int32_t argc)
+{
+  if(argc==3)
+  {
+    string* p = allocString();
+    *p = *(string*)args[0].ptr;
+    PltObject idx = args[1];
+    PltObject val = args[2];
+    if(idx.type!='i' && idx.type!='l')
+      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+    PromoteType(idx,'l');
+    if(idx.l < 0)
+      return Plt_Err(ValueError,"Error insertion position is negative!");
+    if((size_t)idx.l > p->size())
+          return Plt_Err(ValueError,"Error insertion position out of range!");
+    if(val.type==PLT_STR || val.type == PLT_MSTR)
+    {
+      const string& sub = *(string*)val.ptr;
+      p->insert(p->begin()+idx.l,sub.begin(),sub.end());
+    }
+    else
+      return Plt_Err(TypeError,"Error method insert() takes a string argument!");
+    return PObjFromStrPtr(p);
+  }
+  else
+    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+}
+
 PltObject INSERT(PltObject* args,int32_t argc)
 {
   if(args[0].type == 'c')
     return INSERTBYTEARRAY(args,argc);
+  else if(args[0].type == PLT_MSTR)
+    return INSERTMSTR(args,argc);
+  else if(args[0].type == PLT_STR)
+    return INSERTSTR(args,argc);
   if(args[0].type!='j')
          return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
   if(argc==3)
@@ -2039,7 +2147,7 @@ PltObject ERASE(PltObject* args,int32_t argc)
     if(idx1.type!='i' && idx1.type!='l')
         return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
@@ -2088,6 +2196,58 @@ PltObject ERASE(PltObject* args,int32_t argc)
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
     PltObject ret = nil;
     return ret;
+  }
+  else if(args[0].type == PLT_MSTR)
+  {
+    if(argc!=2 && argc!=3)
+      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+    string* p = (string*)args[0].ptr;
+    PltObject idx1 = args[1];
+    PltObject idx2;
+    if(argc==3)
+     idx2 = args[2];
+    else
+      idx2 = idx1;
+    if(idx1.type!='i' && idx1.type!='l')
+        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+    if(idx2.type!='i' && idx2.type!='l')
+        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+    PromoteType(idx1,'l');
+    PromoteType(idx2,'l');
+    if(idx1.l < 0 || idx2.l < 0)
+        return Plt_Err(ValueError,"Error index is negative!");
+    if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
+        return Plt_Err(ValueError,"Error index out of range!");
+    p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
+    PltObject ret = nil;
+    return ret;
+  }
+  else if(args[0].type == PLT_STR)
+  {
+    if(argc!=2 && argc!=3)
+      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+    string* p = (string*)args[0].ptr;
+    PltObject idx1 = args[1];
+    PltObject idx2;
+    if(argc==3)
+     idx2 = args[2];
+    else
+      idx2 = idx1;
+    if(idx1.type!='i' && idx1.type!='l')
+        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+    if(idx2.type!='i' && idx2.type!='l')
+        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+    PromoteType(idx1,'l');
+    PromoteType(idx2,'l');
+    if(idx1.l < 0 || idx2.l < 0)
+        return Plt_Err(ValueError,"Error index is negative!");
+    if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
+        return Plt_Err(ValueError,"Error index out of range!");
+   
+    string* res = allocString();
+    *res = *p;
+    res->erase(res->begin()+idx1.l,res->begin()+idx2.l+1);
+    return PObjFromStrPtr(res);
   }
   else
   {
@@ -2139,16 +2299,32 @@ PltObject ASLIST(PltObject* args,int32_t argc)
     ret.ptr = (void*)list;
     return ret;
 }
-PltObject REVERSELIST(PltObject* args,int32_t argc)
+PltObject REVERSE_METHOD(PltObject* args,int32_t argc)
 {
-  if(args[0].type!='j')
+  if(args[0].type!='j' && args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
          return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error method reverse() takes 0 arguments!");
-  PltList* p = (PltList*)args[0].ptr;
-  PltList l = *p;
-  std::reverse(l.begin(),l.end());
-  *p = l;
+  if(args[0].type == PLT_STR)
+  {
+    string* p = allocString();
+    string* str = (string*)args[0].ptr;
+    *p = *str;
+    std::reverse(p->begin(),p->end());
+    return PObjFromStrPtr(p);
+  }
+  else if(args[0].type == PLT_MSTR)
+  {
+    string* str = (string*)args[0].ptr;
+    std::reverse(str->begin(),str->end());
+  }
+  else
+  {
+    PltList* p = (PltList*)args[0].ptr;
+    PltList l = *p;
+    std::reverse(l.begin(),l.end());
+    *p = l;
+  }
   PltObject ret = nil;
   return ret;
 }
@@ -2270,6 +2446,110 @@ PltObject UNPACK(PltObject* args,int32_t argc)
   }
   return PObjFromList(lp);
 }
+//String methods
+PltObject SUBSTR_METHOD(PltObject* args,int32_t argc)
+{
+  if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
+    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
+  if(argc!=3)
+    return Plt_Err(ArgumentError,"Error str.substr() takes 2 arguments");
+  if(args[1].type!='i' && args[1].type!='l')
+    return Plt_Err(TypeError,"Error first argument of str.substr() should be an integer");
+  if(args[2].type!='i' && args[2].type!='l')
+    return Plt_Err(TypeError,"Error second argument of str.substr() should be an integer");
+  bool a = false;
+  string* q = ((a = args[0].type == PLT_STR)) ? allocString() : allocMutString();
+
+  PromoteType(args[1],'l');
+  PromoteType(args[2],'l');
+  const string& data = *(string*)args[0].ptr;
+  if(args[1].l < 0 || args[2].l < 0)
+   ;
+  else
+    *q = substr((int32_t)args[1].l,(int32_t)args[2].l,data);
+  
+  return (a) ? PObjFromStrPtr(q) : PObjFromMStrPtr(q);
+  
+  
+}
+PltObject REPLACE_METHOD(PltObject* args,int32_t argc)
+{
+   if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
+    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+    if(argc==3)
+    {
+        if(args[1].type!='s' && args[1].type!=PLT_MSTR)
+            return Plt_Err(TypeError,"Error first argument given to replace() must be a string!");
+        if(args[2].type!='s' && args[2].type!=PLT_MSTR)
+            return Plt_Err(TypeError,"Error second argument given to replace() must be a string!");
+      
+        string& c = *(string*)args[0].ptr;
+        string& a = *(string*)args[1].ptr;
+        string& b = *(string*)args[2].ptr;
+        if(args[0].type == PLT_MSTR)
+        {
+          c = replace_all(a,b,c);
+          return nil;
+        }
+        else
+        {
+          string* z = allocString();
+          *z = replace_all(a,b,c);
+          return PObjFromStrPtr(z);
+        }
+    }
+    else
+    {
+        return Plt_Err(ArgumentError,"Error method replace() takes two arguments\n");
+    }
+    
+}
+PltObject REPLACE_ONCE_METHOD(PltObject* args,int32_t argc)
+{
+   if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
+    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+    if(argc==3)
+    {
+        if(args[1].type!='s')
+            return Plt_Err(TypeError,"Error first argument given to replace() must be a string!");
+        if(args[2].type!='s')
+            return Plt_Err(TypeError,"Error second argument given to replace() must be a string!");
+      
+        string& c = *(string*)args[0].ptr;
+        string& a = *(string*)args[1].ptr;
+        string& b = *(string*)args[2].ptr;
+        if(args[0].type == PLT_MSTR)
+        {
+          c = replace(a,b,c);
+          return nil;
+        }
+        else
+        {
+          string* z = allocString();
+          *z = replace(a,b,c);
+          return PObjFromStrPtr(z);
+        }
+    }
+    else
+    {
+        return Plt_Err(ArgumentError,"Error method replace() takes two arguments\n");
+    }
+}
+//Mutable String
+PltObject APPEND_METHOD(PltObject* args,int32_t argc)
+{
+  if(args[0].type!=PLT_MSTR)
+    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named append()");
+  if(argc!=2)
+    return Plt_Err(ArgumentError,"Error method append() takes 1 arguments!");
+  
+  string* p = (string*)args[0].ptr;
+  if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
+    return Plt_Err(TypeError,"Argument 1 of append() must be a string!");
+  const string& toappend = *(string*)args[1].ptr;
+  p->insert(p->length(),toappend);
+  return nil;
+}
 ////////////////////
 ///////////////
 void initFunctions()
@@ -2337,15 +2617,19 @@ void initMethods()
   methods.emplace("pop",&POP);
   methods.emplace("clear",&CLEAR);
   methods.emplace("insert",&INSERT);
-  methods.emplace("find",&FINDINLIST);
+  methods.emplace("find",&FIND_METHOD);
   methods.emplace("asMap",&asMap);
   methods.emplace("reserve",&RESERVE);
   methods.emplace("erase",&ERASE);
-  methods.emplace("reverse",&REVERSELIST);
+  methods.emplace("reverse",&REVERSE_METHOD);
   methods.emplace("emplace",&EMPLACE);
   methods.emplace("hasKey",&HASKEY);
   methods.emplace("asList",&ASLIST);
   methods.emplace("unpack",&UNPACK);
+  methods.emplace("substr",&SUBSTR_METHOD);
+  methods.emplace("replace",REPLACE_METHOD);
+  methods.emplace("replace_once",REPLACE_ONCE_METHOD);
+  methods.emplace("append",&APPEND_METHOD);
 
 }
 PltObject callmethod(string name,PltObject* args,int32_t argc)
