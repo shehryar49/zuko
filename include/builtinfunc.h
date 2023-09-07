@@ -78,7 +78,7 @@ PltObject ASCII(PltObject* args,int32_t argc)
 {
   if(argc!=1)
     return Plt_Err(ArgumentError,"Error ascii() takes one argument!");
-  if(args[0].type!='s' || args[0].type!=PLT_MSTR)
+  if(args[0].type!='s' && args[0].type!=PLT_MSTR)
     return Plt_Err(TypeError,"Error ascii() takes a string argument!");
   string s = *(string*)args[0].ptr;
   if(s.length()!=1)
