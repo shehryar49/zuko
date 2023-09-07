@@ -19,3 +19,4 @@ Debug
 *.dir
 *.user
 .vs/
+*.so
