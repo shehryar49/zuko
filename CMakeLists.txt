@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 add_executable(plutonium plutonium.cpp)
 include_directories(include/) # even modules use this (include/PltObject.h)
 if(UNIX)
-  target_link_libraries(plutonium -ldl)
+  target_link_libraries(plutonium ${CMAKE_DL_LIBRARIES})
   target_link_libraries(plutonium -lreadline) # GNU readline
 endif()
 
