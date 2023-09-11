@@ -4,13 +4,13 @@ if cmake . -DCMAKE_BUILD_TYPE=Release;then
   echo "[+] Cmake configure done."
 else
   echo "[+] Cmake configure failed. Aborting install"
-  return
+  exit
 fi
 if make; then
   echo "[+] Build complete"
 else
   echo "[-] Build failed. Aborting install"
-  return
+  exit
 fi
 
 echo "[+] Copying files"
