@@ -170,8 +170,7 @@ private:
   // int32_t Gc_Cycles = 0;
   #ifdef _WIN32
     vector<HINSTANCE> moduleHandles;
-  #endif // 
-  #ifdef __linux__
+  #else
     vector<void *> moduleHandles;
   #endif
 
@@ -1426,6 +1425,17 @@ public:
         #endif
         #ifdef __linux__
           s1 = "/opt/plutonium/modules/" + s1 + ".so";
+          void *module = dlopen(s1.c_str(), RTLD_LAZY);
+          if (!module)
+          {
+            spitErr(ImportError, "dlopen(): " + (std::string)(dlerror()));
+            NEXT_INST;
+          }
+          initFun f = (initFun)dlsym(module, "init");
+          apiFun a = (apiFun)dlsym(module, "api_setup");
+        #endif
+        #ifdef __APPLE__
+          s1 = "/opt/plutonium/modules"+s1+".dynlib";
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {
@@ -3524,8 +3534,7 @@ public:
       if (ufn)
         ufn();
       FreeLibrary(e);
-      #endif
-      #ifdef __linux__
+      #elsd
       unload ufn = (unload)dlsym(e, "unload");
       if (ufn)
         ufn();
