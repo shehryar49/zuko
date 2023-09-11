@@ -13,7 +13,7 @@
 #include <string.h>
 #include <math.h>
 #include <cstdint>
-#ifdef __linux__
+#ifdef __linux__ || __APPLE__
     #include <dlfcn.h>
     #include <unistd.h>
     //For REPl
