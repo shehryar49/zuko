@@ -1555,7 +1555,7 @@ PltObject readlines(PltObject* args,int32_t argc)
     {
       if(args[0].type!='u')
           return Plt_Err(TypeError,"Argument not a filestream!");
-      char ch;
+      signed char ch;
       FileObject fobj = *(FileObject*)args[0].ptr;
       if(!fobj.open)
         return Plt_Err(ValueError,"Error the file stream is closed!");
