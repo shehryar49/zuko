@@ -3534,7 +3534,7 @@ public:
       if (ufn)
         ufn();
       FreeLibrary(e);
-      #elsd
+      #else
       unload ufn = (unload)dlsym(e, "unload");
       if (ufn)
         ufn();
