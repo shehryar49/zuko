@@ -15,7 +15,7 @@ binaries distributed on plutonium's website. Because these are the options that 
 To install your build create C:\plutonium and copy plutonium.exe to it. **Note that binaries for Windows are already available on the [website](https://plutonium-lang.000webhostapp.com). So you don't really have to build plutonium from source on Windows unless you want to contribute.**
     
 ## Linux/Unix:
-Just run the shell script install.sh it will build,test and install plutonium. It uses CMake for the build process. Also make sure you have libreadline-dev installed on your system. This is used by the Plutonium REPL on Unix like systems.
+Just run the shell script install.sh it will build,test and install plutonium. It uses CMake for the build process. Also make sure you have libreadline-dev installed on your system. This is used by the Plutonium REPL on Unix like systems. The installation path is /opt/plutonium. The install.sh script also creates a symbolic link of /opt/plutonium/plutonium in /usr/bin . NOTE: Mac OS users will have to configure PATH manually because the symbolic link creation in /usr/bin is not allowed there.
    
 
 ## Testing your build
