@@ -26,4 +26,4 @@ You can test your build using test_all tool (src in tests/). You will have to bu
 The website: https://plutonium-lang.000webhostapp.com
 
 # Discord
-Discord Server: https://discord.gg/6CnnV4Es
+Discord Server: https://discord.gg/tk4VevKZ
