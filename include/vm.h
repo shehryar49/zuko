@@ -661,12 +661,16 @@ public:
       GC_THRESHHOLD *= 2;
     }
   }
-  inline bool invokeOperator(string meth, PltObject A, size_t args, string op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
+  inline bool invokeOperator(string meth, PltObject A, size_t args, const char* op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
   {
+    //Operators invoked by this function are either unary or binary
+    //So at max 1 argument is given that is PltObject rhs (non-NULL means usable)
+    //raiseErrOnNF = whether to raise error on not found or not ?
+
     KlassObject *obj = (KlassObject *)A.ptr;
     auto it = obj->members.find(meth);
     PltObject p3;
-    string s1;
+    static string s1;// to avoid multiple object creation across multiple invokeCalls
     if (it != obj->members.end())
     {
       p3 = it->second;
@@ -715,9 +719,9 @@ public:
     if (!raiseErrOnNF)
       return false;
     if (args == 2)
-      spitErr(TypeError, "Error operator '" + op + "' unsupported for types " + fullform(A.type) + " and " + fullform(rhs->type));
+      spitErr(TypeError, "Operator '" + (string)op + "' unsupported for types " + fullform(A.type) + " and " + fullform(rhs->type));
     else
-      spitErr(TypeError, "Error operator '" + op + "' unsupported for type " + fullform(A.type));
+      spitErr(TypeError, "Operator '" + (string)op + "' unsupported for type " + fullform(A.type));
     return false;
   }
   void interpret(size_t offset = 0, bool panic = true) //by default panic if stack is not empty when finished
@@ -1585,8 +1589,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__lshift__", p1, 2, "<<", &p2))
-            NEXT_INST;
+          invokeOperator("__lshift__", p1, 2, "<<", &p2);
+          NEXT_INST;
         }
         if (p2.type != PLT_INT)
         {
@@ -1625,8 +1629,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__rshift__", p1, 2, ">>", &p2))
-            NEXT_INST;
+          invokeOperator("__rshift__", p1, 2, ">>", &p2);
+          NEXT_INST;
         }
         if (p2.type != PLT_INT)
         {
@@ -1665,8 +1669,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__bitwiseand__", p1, 2, "&", &p2))
-            NEXT_INST;
+          invokeOperator("__bitwiseand__", p1, 2, "&", &p2);
+          NEXT_INST;
         }
         if (p1.type != p2.type)
         {
@@ -1703,8 +1707,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__bitwiseor__", p1, 2, "|", &p2))
-            NEXT_INST;
+          invokeOperator("__bitwiseor__", p1, 2, "|", &p2);
+          NEXT_INST;
         }
         if (p1.type != p2.type)
         {
@@ -1739,8 +1743,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__complement__", p1, 1, "~"))
-            NEXT_INST;
+          invokeOperator("__complement__", p1, 1, "~");
+          NEXT_INST;
         }
         if (p1.type == PLT_INT)
         {
@@ -1779,8 +1783,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__xor__", p1, 2, "^", &p2))
-            NEXT_INST;
+          invokeOperator("__xor__", p1, 2, "^", &p2);
+          NEXT_INST;
         }
         if (p1.type != p2.type)
         {
@@ -1817,8 +1821,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__add__", p1, 2, "+", &p2))
-            NEXT_INST;
+          invokeOperator("__add__", p1, 2, "+", &p2);
+          NEXT_INST;
         }
         if(p1.type==p2.type)
           c1 = p1.type;
@@ -1921,8 +1925,8 @@ public:
           c1 = p1.type;
         else if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__smallerthan__", p1, 2, "<", &p2))
-            NEXT_INST;
+          invokeOperator("__smallerthan__", p1, 2, "<", &p2);
+          NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -1961,8 +1965,8 @@ public:
           c1=p1.type;
         else if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__greaterthan__", p1, 2, ">", &p2))
-            NEXT_INST;
+          invokeOperator("__greaterthan__", p1, 2, ">", &p2);
+          NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -2003,8 +2007,8 @@ public:
           c1 = p1.type;
         else if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__smallerthaneq__", p1, 2, "<=", &p2))
-            NEXT_INST;
+          invokeOperator("__smallerthaneq__", p1, 2, "<=", &p2);
+          NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -2044,8 +2048,8 @@ public:
           c1 = p1.type;
         else if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__greaterthaneq__", p1, 2, ">=", &p2))
-            NEXT_INST;
+          invokeOperator("__greaterthaneq__", p1, 2, ">=", &p2);
+          NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
@@ -2087,7 +2091,7 @@ public:
           PromoteType(p2, PLT_INT64);
         if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
-          if (invokeOperator("__eq__", p1, 2, "==", &p2, 0))
+          if(invokeOperator("__eq__", p1, 2, "==", &p2, 0))
             NEXT_INST;
         }
         p3.type = PLT_BOOL;
@@ -2102,8 +2106,8 @@ public:
         if (p1.type == PLT_OBJ)
         {
           orgk = k-program;
-          if (invokeOperator("__not__", p1, 1, "!"))
-            NEXT_INST;
+          invokeOperator("__not__", p1, 1, "!");
+          NEXT_INST;
         }
         if (p1.type != PLT_BOOL)
         {
@@ -2122,8 +2126,8 @@ public:
         if (p1.type == PLT_OBJ)
         {
           orgk = k - program;
-          if (invokeOperator("__neg__", p1, 1, "-"))
-            NEXT_INST;
+          invokeOperator("__neg__", p1, 1, "-");
+          NEXT_INST;
         }
         if (!isNumeric(p1.type))
         {
@@ -2265,8 +2269,9 @@ public:
         }
         else if (p2.type == PLT_OBJ)
         {
-          if (invokeOperator("__index__", p2, 2, "[]", &p1))
-            NEXT_INST;
+          orgk = k - program;
+          invokeOperator("__index__", p2, 2, "[]", &p1);
+          NEXT_INST;
         }
         else
         {
@@ -2274,7 +2279,8 @@ public:
           spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(p2.type));
           NEXT_INST;
         }
-        k++; NEXT_INST;
+        k++;
+        NEXT_INST;
       }
       CASE_CP NOTEQ:
       {
@@ -2286,8 +2292,8 @@ public:
 
         if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
         {
-          if (invokeOperator("__noteq__", p1, 2, "!=", &p2, 0))
-            NEXT_INST;
+          invokeOperator("__noteq__", p1, 2, "!=", &p2, 0);
+          NEXT_INST;
         }
         p3.type = PLT_BOOL;
         if (p1.type == PLT_INT && p2.type == PLT_INT64)
@@ -2325,8 +2331,8 @@ public:
         STACK.pop_back();
         if (p1.type == PLT_OBJ)
         {
-          if (invokeOperator("__mul__", p1, 2, "*", &p2))
-            NEXT_INST;
+          invokeOperator("__mul__", p1, 2, "*", &p2);
+          NEXT_INST;
         }
         PltObject c;
         char t;
@@ -2932,8 +2938,8 @@ public:
         STACK.pop_back();
         if (a.type == PLT_OBJ)
         {
-          if (invokeOperator("__mod__", a, 2, "%", &b))
-            NEXT_INST;
+          invokeOperator("__mod__", a, 2, "%", &b);
+          NEXT_INST;
         }
         PltObject c;
         char t;
@@ -3052,8 +3058,8 @@ public:
         STACK.pop_back();
         if (a.type == PLT_OBJ)
         {
-          if (invokeOperator("__sub__", a, 2, "-", &b))
-            NEXT_INST;
+          invokeOperator("__sub__", a, 2, "-", &b);
+          NEXT_INST;
         }
         PltObject c;
         char t;
@@ -3131,8 +3137,8 @@ public:
         STACK.pop_back();
         if (a.type == PLT_OBJ)
         {
-          if (invokeOperator("__div__", a, 2, "/", &b))
-            NEXT_INST;
+          invokeOperator("__div__", a, 2, "/", &b);
+          NEXT_INST;
         }
         PltObject c;
         char t;

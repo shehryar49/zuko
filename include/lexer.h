@@ -230,12 +230,26 @@ public:
                     t+=s[j];
                     j+=1;
                 }
-                Token tok = resolveMacro(t);
-                if(tok.type == EOP_TOKEN)
+                Token tok;
+                if(t == "file")
                 {
+                  tok.type = TokenType::STRING_TOKEN;
+                  tok.content = filename;
+                }
+                else if(t == "lineno")
+                {
+                  tok.type = TokenType::NUM_TOKEN;
+                  tok.content = to_string(ln);
+                }
+                else
+                {
+                  tok = resolveMacro(t);
+                  if(tok.type == EOP_TOKEN)
+                  {
                     line_num = ln;
                     lexErr("NameError","Unknown macro "+t);
                     return {};
+                  }
                 }
                 tokenlist.push_back(tok);
                 k = j;

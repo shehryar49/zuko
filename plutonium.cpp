@@ -1,4 +1,3 @@
-//#define PLUTONIUM_PROFILE
 #include <signal.h>
 #include <time.h>
 #include <cstdint>
@@ -78,8 +77,6 @@ int main(int argc, const char* argv[])
    
     //it's showtime
     vm.interpret();
-    #ifdef PLUTONIUM_PROFILE
-     showProfileInfo();
-    #endif
+
     return 0;
 }
