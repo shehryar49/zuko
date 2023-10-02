@@ -772,10 +772,10 @@ public:
           &&INDEX,
           &&ASSIGNINDEX,
           &&IMPORT,
-          &&BREAK,
+          NULL, //unused for now
           &&CALLFORVAL,
           &&INC_GLOBAL,
-          &&CONT,
+          NULL, //unused for now
           &&LOAD_GLOBAL,
           &&MEMB,
           &&JMPIFFALSENOPOP,
@@ -3314,30 +3314,6 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         k = program + i1 - 1;
         k++; NEXT_INST;
-      }
-      CASE_CP BREAK:
-      {
-        k += 1;
-        memcpy(&i1, k, sizeof(int32_t));
-        k += 4;
-        int32_t p = i1;
-        memcpy(&i1, k, sizeof(int32_t));
-        STACK.erase(STACK.end() - i1, STACK.end());
-        k = program + p;
-        p1.type = PLT_NIL;
-        STACK.push_back(p1);
-        NEXT_INST;
-      }
-      CASE_CP CONT:
-      {
-        k += 1;
-        int32_t p;
-        memcpy(&p, k, sizeof(int32_t));
-        k += 4;
-        memcpy(&i1, k, sizeof(int32_t));
-        STACK.erase(STACK.end() - i1, STACK.end());
-        k = program + p;
-        NEXT_INST;
       }
       CASE_CP GOTONPSTACK:
       {

@@ -60,10 +60,10 @@ enum OPCODE
     INDEX = 35,//to index a list or dictionary
     ASSIGNINDEX = 36,
     IMPORT = 37,//imports a native module (a shared library)
-    BREAK = 38,
+    UNUSED1 = 38,
     CALLFORVAL = 39,//calls a builtin function and keeps it's return value on the stack
     INC_GLOBAL = 40,//increments a global variable
-    CONT = 41,
+    UNUSED2 = 41,
     LOAD_GLOBAL = 42,//loads a global variable
     MEMB = 43,//member operator '.'
     JMPIFFALSENOPOP = 44,//
