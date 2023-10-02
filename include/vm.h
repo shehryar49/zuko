@@ -684,7 +684,7 @@ public:
           callstack.push_back(k + 1);
           if (callstack.size() >= 1000)
           {
-            spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
+            spitErr(MaxRecursionError, "Max recursion limit 1000 reached.");
             return false;
           }
           executing.push_back(fn);
@@ -877,7 +877,7 @@ public:
         {
           if (STACK[i1].l == LLONG_MAX)
           {
-            spitErr(OverflowError, "Error numeric overflow");
+            spitErr(OverflowError, "Numeric overflow");
             NEXT_INST;
           }
           STACK[i1].l += 1;
@@ -886,14 +886,14 @@ public:
         {
           if (STACK[i1].f == FLT_MAX)
           {
-            spitErr(OverflowError, "Error numeric overflow");
+            spitErr(OverflowError, "Numeric overflow");
             NEXT_INST;
           }
           STACK[i1].f += 1;
         }
         else
         {
-          spitErr(TypeError, "Error cannot add numeric constant to type " + fullform(c1));
+          spitErr(TypeError, "Cannot add numeric constant to type " + fullform(c1));
           NEXT_INST;
         }
         k++; NEXT_INST;
@@ -931,12 +931,12 @@ public:
             STACK.pop_back();
             if(p2.type!=PLT_INT && p2.type!=PLT_INT64 && p2.type!=PLT_FLOAT && p2.type!=PLT_STR  && p2.type!=PLT_BYTE && p2.type!=PLT_BOOL)
             {
-              spitErr(TypeError,"Error key of type "+fullform(p2.type)+" not allowed.");
+              spitErr(TypeError,"Key of type "+fullform(p2.type)+" not allowed.");
               NEXT_INST;
             }
             if (pd_ptr1->find(p2) != pd_ptr1->end())
             {
-              spitErr(ValueError, "Error duplicate keys in dictionary!");
+              spitErr(ValueError, "Duplicate keys in dictionary not allowed!");
               NEXT_INST;
             }
             pd_ptr1->emplace(p2, p1);
@@ -3264,14 +3264,14 @@ public:
         STACK.pop_back();
         if(p3.type != PLT_OBJ)
         {
-          spitErr(TypeError,"Error value of type "+fullform(p3.type)+" not throwable!");
+          spitErr(TypeError,"Value of type "+fullform(p3.type)+" not throwable!");
           NEXT_INST;
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
         std::unordered_map<string,PltObject>::iterator it;
         if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=PLT_STR && (*it).second.type!=PLT_MSTR))
         {
-          spitErr(ThrowError,"The object does have member 'msg' or it is not a string!");
+          spitErr(ThrowError,"Object does not have member 'msg' or it is not a string!");
           NEXT_INST;
         }
         if (except_targ.size() == 0)
@@ -3382,12 +3382,12 @@ public:
                 FunObject *A = executing.back();
                 if (A == NULL)
                 {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  spitErr(AccessError, "Cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
                   NEXT_INST;
                 }
                 if (ptr->klass != A->klass)
                 {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  spitErr(AccessError, "Cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
                   NEXT_INST;
                 }
                 STACK.push_back(ptr->privateMembers[mname]);
@@ -3396,7 +3396,7 @@ public:
               }
               else
               {
-                spitErr(NameError, "Error object 'self' has no member named " + mname);
+                spitErr(NameError, "Object 'self' has no member named " + mname);
                 NEXT_INST;
               }
           }
@@ -3405,7 +3405,7 @@ public:
         }
         else
         {
-          spitErr(TypeError, "Error can not access member "+mname+", self not an object!");
+          spitErr(TypeError, "Can not access member "+mname+", self not an object!");
           NEXT_INST;
         }
         k++; NEXT_INST;
@@ -3423,7 +3423,7 @@ public:
         
         if (Parent.type != PLT_OBJ)
         {
-          spitErr(TypeError, "Error cannot access variable "+s1+" ,self is not a class object!");
+          spitErr(TypeError, "Cannot access variable "+s1+" ,self is not a class object!");
           NEXT_INST;
         }
         KlassObject *ptr = (KlassObject *)Parent.ptr;
@@ -3437,12 +3437,12 @@ public:
               FunObject *A = executing.back();
               if (A == NULL)
               {
-                spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
+                spitErr(AccessError, "Cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
                 NEXT_INST;
               }
               if (ptr->klass != A->klass)
               {
-                spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
+                spitErr(AccessError, "Cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
                 NEXT_INST;
               }
               ptr->privateMembers[s1] = val;
@@ -3451,13 +3451,13 @@ public:
             }
             else
             {
-              spitErr(NameError, "Error the object has no member named " + s1);
+              spitErr(NameError, "Object has no member named " + s1);
               NEXT_INST;
             }
           }
           else
           {
-            spitErr(NameError, "Error the object has no member named " + s1);
+            spitErr(NameError, "Object has no member named " + s1);
             NEXT_INST;
           }
         }
@@ -3771,7 +3771,7 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
      FunObject* fn = (FunObject*)obj->ptr;
      if ((size_t)N + fn->opt.size() < fn->args || (size_t)N > fn->args)
      {
-      *rr = Plt_Err(ArgumentError, "Error function " + fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
+      *rr = Plt_Err(ArgumentError, "Function " + fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
       return false;
      }
      uint8_t* prev = vm.k;
@@ -3806,7 +3806,7 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
     }
     if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
     {
-      *rr = Plt_Err(ValueError, "Error invalid response from native function!");
+      *rr = Plt_Err(ValueError, "Invalid response from native function!");
       return false;
     }
     *rr = p4;

@@ -25,6 +25,7 @@ SOFTWARE.*/
 #include "vm.h"
 #include "lexer.h"
 using namespace std;
+
 #define JUMPOFFSet_Size 4
 #define SymbolTable std::unordered_map<string,int32_t>
 extern unordered_map<string,BuiltinFunc> funcs;
@@ -81,6 +82,13 @@ inline void addBytes(vector<uint8_t>& vec,int32_t x)
   vec.resize(vec.size()+sizeof(int32_t));
   memcpy(&vec[sz],&x,sizeof(int32_t));
 }
+
+struct Pair
+{
+  int32_t x;
+  int32_t y;
+  Pair(int32_t a,int32_t b) : x(a) , y(b) {}
+};
 class Compiler
 {
 private:
@@ -107,12 +115,17 @@ private:
   bool inGen = false;
   bool inclass = false;
   bool infunc = false;
+  vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
+  // the enclosing loop to backpatch the offset
+  vector<int32_t> contIdx; // same as above
+  int32_t localsBegin;
   string className;
   vector<string> classMemb;
   int32_t foo = 0;
   int32_t fnScope;
   bool returnStmtAtFnScope;
   vector<uint8_t> bytecode;
+  vector<Pair> backpatches;
 public:
   friend void REPL();
   SymbolTable globals;
@@ -538,18 +551,19 @@ public:
               return bytes;
           }
           else
-          {
-              vector<uint8_t> a = exprByteCode(ast->childs[0]);
-              bytes.insert(bytes.end(), a.begin(), a.end());
-              addLnTableEntry(bytes_done);
-              bytes.push_back(MEMB);
-              if (ast->childs[1]->type != NodeType::ID)
-                  compileError("SyntaxError", "Invalid Syntax");
-              const string& name = ast->childs[1]->val;
-              foo = addToVMStringTable(name);
-              addBytes(bytes,foo);
-              bytes_done +=5;
-              return bytes;
+          { 
+
+            vector<uint8_t> a = exprByteCode(ast->childs[0]);
+            bytes.insert(bytes.end(), a.begin(), a.end());
+            addLnTableEntry(bytes_done);
+            bytes.push_back(MEMB);
+            if (ast->childs[1]->type != NodeType::ID)
+              compileError("SyntaxError", "Invalid Syntax");
+            const string& name = ast->childs[1]->val;
+            foo = addToVMStringTable(name);
+            addBytes(bytes,foo);
+            bytes_done +=5;
+            return bytes;
           }
       }
       if (ast->type == NodeType::AND)
@@ -895,7 +909,7 @@ public:
   vector<uint8_t> compile(Node* ast)
   {
       vector<uint8_t> program;
-      //
+      
       bool isGen = false;
       bool dfor = false;
       while (ast->type != NodeType::EOP && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
@@ -1053,29 +1067,27 @@ public:
           }
           else if (ast->type == NodeType::WHILE || ast->type == NodeType::DOWHILE)
           {
-              
               if(ast->type==NodeType::DOWHILE)
-                   bytes_done+=5;//do while uses one extra jump before the condition
-              contTargets.push_back(bytes_done);
+                bytes_done+=5;//do while uses one extra jump before the condition
+                //to skip the condition first time
               size_t L = bytes_done;
               vector<uint8_t> cond = exprByteCode(ast->childs[1]);
-              breakTargets.push_back(bytes_done);
-
               bytes_done += 1 + JUMPOFFSet_Size;//JMPFALSE <4 byte where>
-
-              indexOfLastWhileLocals.push_back(locals.size());
               scope += 1;
               int32_t before = STACK_SIZE;
               SymbolTable m;
               locals.push_back(m);
-
+              vector<int32_t> breakIdxCopy = breakIdx;
+              vector<int32_t> contIdxCopy = contIdx;
+              int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
+              //the locals of this loop begin
+              localsBegin = locals.size() - 1;
               vector<uint8_t> block = compile(ast->childs[2]);
-
+              localsBegin = localsBeginCopy; //backtrack
               STACK_SIZE = before;
               breakTargets.pop_back();
               contTargets.pop_back();
               scope -= 1;
-              indexOfLastWhileLocals.pop_back();
               int32_t whileLocals = locals.back().size();
               locals.pop_back();
               int32_t where = block.size() + 1 + JUMPOFFSet_Size;
@@ -1107,7 +1119,21 @@ public:
               foo = L;
               addBytes(program,foo);
               bytes_done += 1 + JUMPOFFSet_Size;
-
+              // backpatch break and continue offsets
+              int32_t a = (int)bytes_done;
+              int32_t b = (int)L;
+              
+              for(auto e: breakIdx)
+              {
+                 backpatches.push_back(Pair(e,a));  
+              }
+              for(auto e: contIdx)
+              {
+                 backpatches.push_back(Pair(e,b));
+              }
+              //backtrack
+              breakIdx = breakIdxCopy;
+              contIdx  = contIdxCopy;
           }
           else if (ast->type == NodeType::FOR || (dfor = ast->type == NodeType::DFOR))
           {  
@@ -1149,12 +1175,12 @@ public:
               bytes_done+=5;
             }
 
-            contTargets.push_back(bytes_done);
+
+            int32_t cont = (int32_t)bytes_done;
             bytes_done+=5;
 
             vector<uint8_t> finalValue = exprByteCode(ast->childs[4]);
             //
-            breakTargets.push_back(bytes_done+1);
             int32_t before = STACK_SIZE;
             if(decl)
             {
@@ -1166,28 +1192,30 @@ public:
               lcvIdx = STACK_SIZE;
               locals.back().emplace(loop_var_name,STACK_SIZE);
               STACK_SIZE+=1;
-              indexOfLastWhileLocals.push_back(locals.size());
               locals.push_back(m);
             }
             else
             {
               scope += 1;
               SymbolTable m;
-              indexOfLastWhileLocals.push_back(locals.size());
               locals.push_back(m);
             }
 
             bytes_done+=2+JUMPOFFSet_Size;//for jump before block
+            vector<int32_t> breakIdxCopy = breakIdx;
+            vector<int32_t> contIdxCopy = contIdx;
+            int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
+            //the locals of this loop begin
+            localsBegin = locals.size() - 1;
             vector<uint8_t> block = compile(ast->childs[6]);
-
+            //backtrack
+            localsBegin = localsBeginCopy;
             STACK_SIZE = before;
-            breakTargets.pop_back();
-            contTargets.pop_back();
+
             if(decl)
               scope -= 2;
             else
               scope-=1;
-            indexOfLastWhileLocals.pop_back();
             int32_t whileLocals = locals.back().size();
             locals.pop_back();
             if(decl)
@@ -1295,6 +1323,20 @@ public:
               STACK_SIZE-=1;
             }
             bytes_done += 1 + JUMPOFFSet_Size;
+            //backpatching
+            int32_t a = (int)bytes_done - 1;
+            
+            for(auto e: breakIdx)
+            {
+              backpatches.push_back(Pair(e,a));
+            }
+            for(auto e: contIdx)
+            {
+              backpatches.push_back(Pair(e,cont));
+            }
+            //backtrack
+            breakIdx = breakIdxCopy;
+            contIdx  = contIdxCopy;
           }
           else if (ast->type == NodeType::FOREACH)
           {
@@ -1318,20 +1360,24 @@ public:
               foo = E;
               program.push_back(INPLACE_INC);
               addBytes(program,foo);
-              contTargets.push_back(bytes_done);
+              int32_t cont = bytes_done;
               bytes_done+=5;
-  //////////
+  
               int32_t before = STACK_SIZE;
               scope+=1;
-              indexOfLastWhileLocals.push_back(locals.size());
               locals.push_back(m);
               locals.back().emplace(loop_var_name,STACK_SIZE);
               STACK_SIZE+=1;
               size_t L = bytes_done;
               addLnTableEntry(L+12);
               bytes_done+=20+6+1+JUMPOFFSet_Size+6;
-              breakTargets.push_back(bytes_done-1-JUMPOFFSet_Size-7-6);
+              vector<int32_t> breakIdxCopy = breakIdx;
+              vector<int32_t> contIdxCopy = contIdx;
+              int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
+              //the locals of this loop begin
+              localsBegin = locals.size() - 1;
               vector<uint8_t> block = compile(ast->childs[4]);
+              localsBegin = localsBeginCopy;
               program.push_back(LOAD);
               program.push_back('v');
               foo = E;
@@ -1357,7 +1403,7 @@ public:
               foo = where;
               addBytes(program,foo);
 
-            //  program.insert(program.end(),LIST.begin(),LIST.end());
+
               foo = ListStackIdx;
               program.push_back(LOAD);
               program.push_back('v');
@@ -1373,11 +1419,8 @@ public:
               addBytes(program,foo);
               bytes_done+=5;
               STACK_SIZE = before-2;
-              breakTargets.pop_back();
-              contTargets.pop_back();
-              scope -= 1;
-              indexOfLastWhileLocals.pop_back();
 
+              scope -= 1;
               locals.pop_back();
               if(whileLocals!=0)
               {
@@ -1390,10 +1433,25 @@ public:
                 program.push_back(GOTO);
               foo = L;
               addBytes(program,foo);
+
               program.push_back(NPOP_STACK);
               foo = 2;
               addBytes(program,foo);
               bytes_done += 1 + JUMPOFFSet_Size+JUMPOFFSet_Size+1;
+                            
+              //backpatching             
+              int32_t brk = bytes_done-5; 
+              for(auto e: breakIdx)
+              {
+                backpatches.push_back(Pair(e,brk));
+              }
+              for(auto e: contIdx)
+              {
+                backpatches.push_back(Pair(e,cont));
+              }
+              //backtrack
+              breakIdx = breakIdxCopy;
+              contIdx  = contIdxCopy;
           }
           else if(ast->type == NodeType::NAMESPACE)
           {
@@ -1614,8 +1672,7 @@ public:
               }
           }
           else if (ast->type == NodeType::IFELIF)
-          {
-            
+          {        
             vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
             bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
             scope += 1;
@@ -1703,8 +1760,7 @@ public:
             }
 
 
-          }
-          
+          }         
           else if(ast->type==NodeType::TRYCATCH)
           {
             program.push_back(ONERR_GOTO);
@@ -1988,13 +2044,13 @@ public:
           }
           else if (ast->type == NodeType::BREAK)
           {
-
-              program.push_back(BREAK);
-              foo = breakTargets.back();
+              program.push_back(GOTONPSTACK);
+              breakIdx.push_back(bytes_done+5);
+              foo = 0;
+              for(size_t i=localsBegin;i<locals.size();i++)
+                foo+=locals[i].size();
               addBytes(program,foo);
               foo = 0;
-              for(int32_t i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
-                foo += locals[i].size();
               addBytes(program,foo);
               bytes_done += 9;
           }
@@ -2005,15 +2061,13 @@ public:
           }
           else if (ast->type == NodeType::CONTINUE)
           {
-
-              program.push_back(CONT);
-              foo = contTargets.back();
-              addBytes(program,foo);
-
-          //    foo = scope - scopeOfLastWhile.back();
+              program.push_back(GOTONPSTACK);
+              contIdx.push_back(bytes_done+5);
               foo = 0;
-              for(int32_t i = locals.size()-1;i>=indexOfLastWhileLocals.back();i-=1)
-                foo += locals[i].size();
+              for(size_t i=localsBegin;i<locals.size();i++)
+                foo+=locals[i].size();
+              addBytes(program,foo);
+              foo = 0;
               addBytes(program,foo);
               bytes_done += 9;
           }
@@ -2164,6 +2218,7 @@ public:
     line_num = 1;
     andJMPS.clear();
     orJMPS.clear();
+    backpatches.clear();
     if(bytecode.size() == 0)
     {
       STACK_SIZE = 3;
@@ -2246,6 +2301,7 @@ public:
       MaxRecursionError =makeErrKlass("MaxRecursionError",Error);
       AccessError = makeErrKlass("AccessError",Error);
     }
+
     auto bt = compile(ast);
     bytecode.insert(bytecode.end(),bt.begin(),bt.end());
     if(globals.size()!=0 && popGlobals)
@@ -2264,6 +2320,11 @@ public:
         exit(EXIT_FAILURE);
     }
     //final phase
+    //apply backpatches
+    for(const Pair& p: backpatches)
+    {
+      memcpy(&bytecode[p.x],&p.y,sizeof(int32_t));
+    }
     //optimize short circuit jumps for 'and' and 'or' operators
     optimizeJMPS(bytecode);
     return bytecode;
