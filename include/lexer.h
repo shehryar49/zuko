@@ -42,6 +42,8 @@ string lstrip(string);
 void stripNewlines(vector<Token>&);
 extern bool REPL_MODE;
 void REPL();
+const char* getOS();
+
 class Lexer
 {
 private:
@@ -121,7 +123,6 @@ public:
           macro.content = to_string(LLONG_MAX);
         else if(name == "os")
         {
-          const char* getOS();
           macro.type = STRING_TOKEN;
           macro.content = getOS();
         }
@@ -149,7 +150,7 @@ public:
             {
                 size_t j = k+1;
                 string t;
-                bool match;
+                bool match = false;
                 bool escaped = false;
                 int LN = ln;
                 while(j<srcLen)

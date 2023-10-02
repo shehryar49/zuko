@@ -300,7 +300,7 @@ public:
     fprintf(stderr,"%s at line %ld\n", type.c_str(), line_num);
     auto it = std::find(files->begin(), files->end(), filename);
     size_t i = it - files->begin();
-    bool fromNativeCode = false;
+
     string source_code = (*sources)[i];
     size_t l = 1;
     string line = "";
