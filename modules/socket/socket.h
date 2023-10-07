@@ -13,6 +13,7 @@ extern "C"
 	EXPORT PltObject init();
 	//Methods
 	EXPORT PltObject socket__construct(PltObject*, int);
+	EXPORT PltObject socket_Setopt(PltObject*,int);
 	EXPORT PltObject socket_Bind( PltObject*,int);
 	EXPORT PltObject socket_Connect( PltObject*,int);
 	EXPORT PltObject socket_Send( PltObject*,int);

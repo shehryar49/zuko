@@ -386,6 +386,8 @@ EXPORT PltObject socket_Close( PltObject* args, int n)
     SOCKTYPE s = p->members[".sock"].i;
     #ifdef _WIN32
       closesocket(s);
+    #else
+      close(s);
     #endif
     return nil;
 }
