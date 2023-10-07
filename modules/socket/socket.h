@@ -1,10 +1,12 @@
 #ifndef SOCKET_PLT_H_
 #define SOCKET_PLT_H_
 #ifdef _WIN32
-#include "C:\plutonium\PltObject.h"
-#define EXPORT __declspec(dllexport)
+  #include "PltObject.h"
+  #define EXPORT __declspec(dllexport)
+#else
+  #define EXPORT
+  #include "PltObject.h"
 #endif
-#define EXPORT 0
 extern "C"
 {
 	//Functions
@@ -20,6 +22,6 @@ extern "C"
 	EXPORT PltObject socket_Close( PltObject*,int);
 	EXPORT PltObject socket_SendTo( PltObject*, int);
 	EXPORT PltObject socket_RecvFrom( PltObject*, int);
-	EXPORT PltObject socket_Destroy( PltObject*, int);
+	EXPORT PltObject socket_del__( PltObject*, int);
 }
 #endif
