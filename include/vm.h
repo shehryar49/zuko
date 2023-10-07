@@ -96,6 +96,8 @@ string fullform(char t)
     return "List";
   else if (t == PLT_BYTE)
     return "Byte";
+  else if(t == PLT_BYTEARR)
+    return "Byte Array";
   else if (t == PLT_BOOL)
     return "Boolean";
   else if (t == PLT_FILESTREAM)
