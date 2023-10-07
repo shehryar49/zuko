@@ -26,3 +26,8 @@ println(float(5.0) == 5.0)
 println(byte(255) == 0xff)
 println(byte(0xff) == 0xff)
 println(byte(true) == 0x1)
+
+println(str(255) == "255")
+println(str(0xff) == "0xff")
+println(str([1,2,3]) == "[1,2,3]")
+println(str(bytearray([0x41,0x42,0x43])) == "ABC")
