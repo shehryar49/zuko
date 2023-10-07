@@ -1022,54 +1022,57 @@ public:
           if(tokens.size()==3)
           {
             ast->childs.push_back(args);
-            return ast;
+          
           }
-          vector<Token> T;
-          vector<Token> Args = {tokens.begin()+2,tokens.end()-1};
-          for(int k = 0;k<(int)Args.size();k+=1)
+          else
           {
-            if(Args[k].type== TokenType::COMMA_TOKEN)
+            vector<Token> T;
+            vector<Token> Args = {tokens.begin()+2,tokens.end()-1};
+            for(int k = 0;k<(int)Args.size();k+=1)
             {
-              if(T.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-              args->childs.push_back(parseExpr(T));
-              T.clear();
+              if(Args[k].type== TokenType::COMMA_TOKEN)
+              {
+                if(T.size()==0)
+                  parseError("SyntaxError","Invalid Syntax");
+                args->childs.push_back(parseExpr(T));
+                T.clear();
+              }
+              else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
+              {
+                int i = findEndList(k,Args);
+                if(i==-1)
+                  parseError("SyntaxError","Invalid Syntax");
+                vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
+                T.insert(T.end(),P.begin(),P.end());
+                k = i;
+              }
+              else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
+              {
+                int i = findRCB(k,Args);
+                if(i==-1)
+                  parseError("SyntaxError","Invalid Syntax");
+                vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
+                T.insert(T.end(),P.begin(),P.end());
+                k = i;
+              }
+              else if(Args[k].type== TokenType::LParen_TOKEN)
+              {
+                int i = matchRP(k,Args);
+                if(i==-1)
+                  parseError("SyntaxError","Invalid Syntax");
+                vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
+                T.insert(T.end(),P.begin(),P.end());
+                k = i;
+              }
+              else
+                T.push_back(Args[k]);
             }
-            else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
-            {
-              int i = findEndList(k,Args);
-              if(i==-1)
-                parseError("SyntaxError","Invalid Syntax");
-              vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
-              T.insert(T.end(),P.begin(),P.end());
-              k = i;
-            }
-            else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
-            {
-              int i = findRCB(k,Args);
-              if(i==-1)
-                parseError("SyntaxError","Invalid Syntax");
-              vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
-              T.insert(T.end(),P.begin(),P.end());
-              k = i;
-            }
-            else if(Args[k].type== TokenType::LParen_TOKEN)
-            {
-              int i = matchRP(k,Args);
-              if(i==-1)
-                parseError("SyntaxError","Invalid Syntax");
-              vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
-              T.insert(T.end(),P.begin(),P.end());
-              k = i;
-            }
-            else
-              T.push_back(Args[k]);
+            if(T.size()==0)
+              parseError("SyntaxError","Invalid Syntax");
+            args->childs.push_back(parseExpr(T));
+            T.clear();
+            ast->childs.push_back(args);
           }
-          if(T.size()==0)
-            parseError("SyntaxError","Invalid Syntax");
-          args->childs.push_back(parseExpr(T));
-          T.clear();
-          ast->childs.push_back(args);
           if(wrapInPrint)
           {
             Node* p = NewNode(NodeType::call);
