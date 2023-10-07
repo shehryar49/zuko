@@ -1087,7 +1087,7 @@ PltObject STR(PltObject* args,int32_t argc)
       else if(args[0].type == PLT_BYTEARR)
       {
         string* s = allocString();
-        vector<uint8_t>& bytes = (vector<uint8_t>*)args[0].ptr;
+        vector<uint8_t>& bytes = *(vector<uint8_t>*)args[0].ptr;
         for(auto byte: bytes)
         {
           s->push_back((char)byte);
