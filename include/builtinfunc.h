@@ -1084,6 +1084,16 @@ PltObject STR(PltObject* args,int32_t argc)
           *s = PltObjectToStr(args[0]);
           return PObjFromStrPtr(s);
       }   
+      else if(args[0].type == PLT_BYTEARR)
+      {
+        string* s = allocString();
+        vector<uint8_t>& bytes = (vector<uint8_t>*)args[0].ptr;
+        for(auto byte: bytes)
+        {
+          s->push_back((char)byte);
+        }
+        return PObjFromStrPtr(s);
+      }
       return Plt_Err(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
 		}
     return Plt_Err(ArgumentError,"Error str() takes only one argument!");
