@@ -57,6 +57,7 @@ using namespace std;
 
 struct HashFunction;
 struct PltObject;
+
 struct FileObject
 {
   FILE* fp;
@@ -74,63 +75,64 @@ extern "C" struct PltObject
     char type;
 };
 struct HashFunction
-    {
-      size_t operator()(const PltObject& obj) const
-      {
-        size_t a = std::hash<char>()(obj.type);
-        size_t b;
-        size_t hashPltObject(const PltObject&);
-        b = hashPltObject(obj) << 1;
-        return a ^ b;
-      }
-  };
+{
+  size_t operator()(const PltObject& obj) const
+  {
+    size_t a = std::hash<char>()(obj.type);
+    size_t b;
+    size_t hashPltObject(const PltObject&);
+    b = hashPltObject(obj) << 1;
+    return a ^ b;
+  }
+};
 bool operator==(const PltObject& lhs,const PltObject& other)
-    {
-        if(other.type!=lhs.type)
-            return false;
-        if(lhs.type=='n')
-          return true;
-        else if(lhs.type==PLT_INT)
-          return lhs.i==other.i;
-        else if(lhs.type==PLT_INT64)
-          return lhs.l==other.l;
-        else if(lhs.type==PLT_FLOAT)
-          return lhs.f==other.f;
-        else if(lhs.type==PLT_BYTE)
-          return lhs.i==other.i;
-        else if(lhs.type==PLT_BOOL)
-          return lhs.i==other.i;
-        else if(lhs.type==PLT_FILESTREAM)
-          return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);
-        else if(lhs.type==PLT_STR)
-          return *(string*)other.ptr==*(string*)lhs.ptr;
-        else if(lhs.type==PLT_LIST)
-            return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
-        else if(other.type=='y' || other.type=='r' || other.type == PLT_CLASS)
-          return lhs.ptr==other.ptr;
-        else if(lhs.type=='q' || lhs.type=='z')
-          return lhs.ptr==other.ptr;
-        else if(lhs.type=='a')
-            return *(Dictionary*)lhs.ptr==*(Dictionary*)other.ptr;
-        return false;
-    }
+{
+  if(other.type!=lhs.type)
+      return false;
+    
+  if(lhs.type==PLT_NIL)
+    return true;
+  else if(lhs.type==PLT_INT)
+    return lhs.i==other.i;
+  else if(lhs.type==PLT_INT64)
+    return lhs.l==other.l;
+  else if(lhs.type==PLT_FLOAT)
+    return lhs.f==other.f;
+  else if(lhs.type==PLT_BYTE)
+    return lhs.i==other.i;
+  else if(lhs.type==PLT_BOOL)
+    return lhs.i==other.i;
+  else if(lhs.type==PLT_FILESTREAM)
+    return ((FileObject*)lhs.ptr)==((FileObject*)other.ptr);
+  else if(lhs.type==PLT_STR)
+    return *(string*)other.ptr==*(string*)lhs.ptr;
+  else if(lhs.type==PLT_LIST)
+      return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
+  else if(other.type=='y' || other.type=='r' || other.type == PLT_CLASS)
+    return lhs.ptr==other.ptr;
+  else if(lhs.type=='q' || lhs.type=='z')
+    return lhs.ptr==other.ptr;
+  else if(lhs.type==PLT_DICT)
+      return *(Dictionary*)lhs.ptr==*(Dictionary*)other.ptr;
+  return false;
+}
 size_t hashPltObject(const PltObject& a)
 {
-    char t = a.type;
-    if(t==PLT_STR)
-        return std::hash<std::string>()(*(string*)a.ptr);
-    else if(t==PLT_INT)
-        return std::hash<int>()(a.i);
-    else if(t==PLT_INT64)
-        return std::hash<long long int>()(a.l);
-    else if(t==PLT_FLOAT)
-        return std::hash<double>()(a.f);
-    else if(t==PLT_BYTE)
-        return std::hash<unsigned char>()(a.i);
-    else if(t==PLT_BOOL)
-        return std::hash<bool>()(a.i);
-    //other types not supported as keys in dictionaries
-    return 0;
+  char t = a.type;
+  if(t==PLT_STR)
+      return std::hash<std::string>()(*(string*)a.ptr);
+  else if(t==PLT_INT)
+      return std::hash<int>()(a.i);
+  else if(t==PLT_INT64)
+      return std::hash<long long int>()(a.l);
+  else if(t==PLT_FLOAT)
+      return std::hash<double>()(a.f);
+  else if(t==PLT_BYTE)
+      return std::hash<unsigned char>()(a.i);
+  else if(t==PLT_BOOL)
+      return std::hash<bool>()(a.i);
+  //other types not supported as keys in dictionaries
+  return 0;
 }
 struct Klass
 {
@@ -316,6 +318,7 @@ inline PltObject PObjFromFile(FileObject* file)
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) x.i
 #define AS_STR(x) *(string*)x.ptr
+#define AS_MSTR(x) *(string*)x.ptr
 #define AS_DICT(x) *(Dictionary*)x.ptr
 #define AS_LIST(x) *(PltList*)x.ptr
 #define AS_KLASS(x) *(Klass*)x.ptr
@@ -435,7 +438,7 @@ extern "C"
 
   };
   #ifdef _WIN32
-  #ifndef PLUTONIUM_INTERPRETER // make sure this header is included in a shared library
+  #ifndef PLUTONIUM_INTERPRETER //to make sure this header is included in a shared library
   //and not the plutonium interpreter
   __declspec(dllexport)
   #endif
