@@ -152,11 +152,21 @@ EXPORT PltObject socket_Listen( PltObject* args, int n)
     KlassObject* p = (KlassObject*)args[0].ptr;
     
     SOCKTYPE s = p->members[".sock"].i;
-    if (listen(s, args[0].i) < 0)
-    {
-        string errMsg = strerror(errno);
+    int i = listen(s, args[0].i);
+    #ifdef _WIN32
+      if (i == SOCKET_ERROR)
+      {
+        string errMsg = to_string(WSAGetLastError());
         return Plt_Err(Error, errMsg);
-    }
+      }
+    #else
+      if (i < 0)
+      {
+          string errMsg = strerror(errno);
+          return Plt_Err(Error, errMsg);
+      }
+    #endif
+    
     return nil;
 }
 EXPORT PltObject socket_Accept( PltObject* args, int n)
