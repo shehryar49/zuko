@@ -93,7 +93,7 @@ EXPORT PltObject socket__construct(PltObject* args, int n)
   KlassObject& ko = *(KlassObject*)args[0].ptr;
   SOCKTYPE sock = socket(args[1].i, args[2].i, 0);  
   #ifdef _WIN32
-    if (s->socket_desc == INVALID_SOCKET)
+    if (sock == INVALID_SOCKET)
     {
       string errMsg = "Error code " + to_string(WSAGetLastError());
       return Plt_Err(Error, errMsg);      
@@ -172,7 +172,11 @@ EXPORT PltObject socket_Accept( PltObject* args, int n)
     SOCKTYPE s = p->members[".sock"].i;
     struct sockaddr_in  client;
     int c = sizeof(client);
-    SOCKTYPE new_socket = accept(s, (struct sockaddr*)&client, (socklen_t*)&c);
+    #ifdef _WIN32
+        SOCKTYPE new_socket = accept(s, (struct sockaddr*)&client, &c);
+    #else
+        SOCKTYPE new_socket = accept(s, (struct sockaddr*)&client, (socklen_t*)&c);
+    #endif
     #ifdef _WIN32
       if (new_socket == INVALID_SOCKET)
       {
@@ -299,7 +303,11 @@ EXPORT PltObject socket_RecvFrom( PltObject* args, int n)
     int len;
     struct sockaddr_in cliaddr;
     len = sizeof(cliaddr);  //
-    int read = recvfrom(s,(char*)msg,args[1].i, 0, (struct sockaddr*)&cliaddr, (socklen_t*)&len); 
+    #ifdef _WIN32
+        int read = recvfrom(s, (char*)msg, args[1].i, 0, (struct sockaddr*)&cliaddr, &len);
+    #else
+        int read = recvfrom(s,(char*)msg,args[1].i, 0, (struct sockaddr*)&cliaddr, (socklen_t*)&len); 
+    #endif
     #ifdef _WIN32
       if (read == SOCKET_ERROR)
       {
