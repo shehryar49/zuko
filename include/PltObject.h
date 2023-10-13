@@ -150,7 +150,9 @@ struct Klass
   {
     privateMembers.emplace(name,val);
   }
-  inline void addNativeFunction(const string& name,NativeFunPtr r);
+  void addNativeFunction(const string& name,NativeFunPtr r);
+  void addNativeMethod(const string& name,NativeFunPtr r);
+  
 };
 struct KlassObject
 {
@@ -162,6 +164,7 @@ struct Module
 {
   std::string name;
   std::unordered_map<string,PltObject> members;
+  void addNativeFunction(const string& name,NativeFunPtr r);
 };
 struct FunObject
 {
@@ -413,6 +416,41 @@ inline PltObject PObjFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
   ret.ptr = (void*)fn;
   return ret;
 }
+void Klass::addNativeFunction(const string& name,NativeFunPtr r)
+{
+  NativeFunction* fn = vm_allocNativeFunObj();
+  fn->name = name;
+  fn->klass = NULL;
+  fn->addr = r;
+  PltObject tmp;
+  tmp.type = PLT_NATIVE_FUNC;
+  tmp.ptr = (void*)fn;
+  this->members.emplace(name,tmp);
+}
+void Klass::addNativeMethod(const string& name,NativeFunPtr r)
+{
+  NativeFunction* fn = vm_allocNativeFunObj();
+  fn->name = name;
+  fn->klass = this;
+  fn->addr = r;
+  PltObject tmp;
+  tmp.type = PLT_NATIVE_FUNC;
+  tmp.ptr = (void*)fn;
+  this->members.emplace(name,tmp);
+}
+////////
+void Module::addNativeFunction(const string& name,NativeFunPtr r)
+{
+  NativeFunction* fn = vm_allocNativeFunObj();
+  fn->name = name;
+  fn->klass = NULL;
+  fn->addr = r;
+  PltObject tmp;
+  tmp.type = PLT_NATIVE_FUNC;
+  tmp.ptr = (void*)fn;
+  this->members.emplace(name,tmp);
+}
+
 //
 extern "C"
 {

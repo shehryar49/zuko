@@ -12,26 +12,26 @@ PltObject init()
 
     ModuleObject->name = "math";//module name is math
     //Add functions to the module
-    ModuleObject->members.emplace("floor",PObjFromFunction("math.floor",&FLOOR));
-    ModuleObject->members.emplace("ceil",PObjFromFunction("math.ceil",&CEIL));
-    ModuleObject->members.emplace("round",PObjFromFunction("math.round",&ROUND));
-    ModuleObject->members.emplace("sin",PObjFromFunction("math.sin",&SIN));
-    ModuleObject->members.emplace("cos",PObjFromFunction("math.cos",&COS));
-    ModuleObject->members.emplace("tan",PObjFromFunction("math.tan",&TAN));
-    ModuleObject->members.emplace("asin",PObjFromFunction("math.asin",&ASIN));
-    ModuleObject->members.emplace("acos",PObjFromFunction("math.acos",&ACOS));
-    ModuleObject->members.emplace("atan",PObjFromFunction("math.atan",&ATAN));
-    ModuleObject->members.emplace("sinh",PObjFromFunction("math.sinh",&SINH));
-    ModuleObject->members.emplace("cosh",PObjFromFunction("math.cosh",&COSH));
-    ModuleObject->members.emplace("tanh",PObjFromFunction("math.tanh",&TANH));
-    ModuleObject->members.emplace("asinh",PObjFromFunction("math.asinh",&ASINH));
-    ModuleObject->members.emplace("acosh",PObjFromFunction("math.acosh",&ACOSH));
-    ModuleObject->members.emplace("atanh",PObjFromFunction("math.atanh",&ATANH));
-    ModuleObject->members.emplace("sqrt",PObjFromFunction("math.sqrt",&SQRT));
-    ModuleObject->members.emplace("trunc",PObjFromFunction("math.trunc",&TRUNC));
-    ModuleObject->members.emplace("radians",PObjFromFunction("math.radians",&RADIANS));
-    ModuleObject->members.emplace("log",PObjFromFunction("math.log",&LOG));
-    ModuleObject->members.emplace("log10",PObjFromFunction("math.log10",&LOG10));
+    ModuleObject->addNativeFunction("floor",&FLOOR);
+    ModuleObject->addNativeFunction("ceil",&CEIL);
+    ModuleObject->addNativeFunction("round",&ROUND);
+    ModuleObject->addNativeFunction("sin",&SIN);
+    ModuleObject->addNativeFunction("cos",&COS);
+    ModuleObject->addNativeFunction("tan",&TAN);
+    ModuleObject->addNativeFunction("asin",&ASIN);
+    ModuleObject->addNativeFunction("acos",&ACOS);
+    ModuleObject->addNativeFunction("atan",&ATAN);
+    ModuleObject->addNativeFunction("sinh",&SINH);
+    ModuleObject->addNativeFunction("cosh",&COSH);
+    ModuleObject->addNativeFunction("tanh",&TANH);
+    ModuleObject->addNativeFunction("asinh",&ASINH);
+    ModuleObject->addNativeFunction("acosh",&ACOSH);
+    ModuleObject->addNativeFunction("atanh",&ATANH);
+    ModuleObject->addNativeFunction("sqrt",&SQRT);
+    ModuleObject->addNativeFunction("trunc",&TRUNC);
+    ModuleObject->addNativeFunction("radians",&RADIANS);
+    ModuleObject->addNativeFunction("log",&LOG);
+    ModuleObject->addNativeFunction("log10",&LOG10);
     return PObjFromModule(ModuleObject);
 }
 
