@@ -57,6 +57,7 @@ using namespace std;
 
 struct HashFunction;
 struct PltObject;
+typedef PltObject(*NativeFunPtr)(PltObject*,int);
 
 struct FileObject
 {
@@ -108,6 +109,8 @@ bool operator==(const PltObject& lhs,const PltObject& other)
     return *(string*)other.ptr==*(string*)lhs.ptr;
   else if(lhs.type==PLT_LIST)
       return *(PltList*)lhs.ptr==*(PltList*)other.ptr;
+  else if(lhs.type == PLT_BYTEARR)
+    return *(vector<uint8_t>*)lhs.ptr == *(vector<uint8_t>*)other.ptr;
   else if(other.type=='y' || other.type=='r' || other.type == PLT_CLASS)
     return lhs.ptr==other.ptr;
   else if(lhs.type=='q' || lhs.type=='z')
@@ -139,6 +142,15 @@ struct Klass
   string name;
   std::unordered_map<string,PltObject> members;
   std::unordered_map<string,PltObject> privateMembers;
+  inline void addMember(const string& name,PltObject val)
+  {
+    members.emplace(name,val);
+  }
+  inline void addPrivateMember(const string& name,PltObject val)
+  {
+    privateMembers.emplace(name,val);
+  }
+  inline void addNativeFunction(const string& name,NativeFunPtr r);
 };
 struct KlassObject
 {
@@ -161,7 +173,7 @@ struct FunObject
   PltList opt; //default/optional parameters
 };
 
-typedef PltObject(*NativeFunPtr)(PltObject*,int);
+
 struct NativeFunction
 {
   Klass* klass;//address of class the function is member of (if any NULL otherwise)
