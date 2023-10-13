@@ -1,5 +1,5 @@
 #pragma once
-#include "C:\plutonium\PltObject.h"
+#include "PltObject.h"
 #define EXPORT __declspec(dllexport)
 
 extern "C"
