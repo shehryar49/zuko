@@ -359,7 +359,7 @@ public:
   void parseError(string type,string msg)
   {
     printf("\nFile %s\n",filename.c_str());
-    printf("%s at line %ld\n",type.c_str(),line_num);
+    printf("%s at line %zu\n",type.c_str(),line_num);
     auto it = std::find(files->begin(),files->end(),filename);
     size_t i = it-files->begin();
     string source_code = (*sources)[i];

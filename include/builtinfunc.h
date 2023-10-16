@@ -1773,6 +1773,7 @@ PltObject POW(PltObject* args,int32_t argc)
     PltObject a = args[0];
     PltObject b = args[1];
     PltObject c;
+    c.type = PLT_NIL;
     char t;
     if(isNumeric(a.type) && isNumeric(b.type))
     {

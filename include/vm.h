@@ -299,7 +299,7 @@ public:
     string &filename = (*files)[(*LineNumberTable)[orgk].fileIndex];
     string type = e->name;
     fprintf(stderr,"\nFile %s\n", filename.c_str());
-    fprintf(stderr,"%s at line %ld\n", type.c_str(), line_num);
+    fprintf(stderr,"%s at line %zu\n", type.c_str(), line_num);
     auto it = std::find(files->begin(), files->end(), filename);
     size_t i = it - files->begin();
 
@@ -334,7 +334,7 @@ public:
           L -= 1; // L is now the index of CALLUDF opcode now
         }
         // which is ofcourse present in the LineNumberTable
-        fprintf(stderr,"  --by %s line %ld\n", (*files)[(*LineNumberTable)[L].fileIndex].c_str(), (*LineNumberTable)[L].ln);
+        fprintf(stderr,"  --by %s line %zu\n", (*files)[(*LineNumberTable)[L].fileIndex].c_str(), (*LineNumberTable)[L].ln);
         callstack.pop_back();
       }
     }

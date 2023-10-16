@@ -53,7 +53,7 @@ private:
   void lexErr(string type,string msg)
   {
     fprintf(stderr,"\nFile %s\n",filename.c_str());
-    fprintf(stderr,"%s at line %ld\n",type.c_str(),line_num);
+    fprintf(stderr,"%s at line %zu\n",type.c_str(),line_num);
     size_t l = 1;
     string line = "";
     size_t k = 0;
