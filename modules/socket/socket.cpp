@@ -12,7 +12,7 @@
   #include <arpa/inet.h>
   #include <unistd.h>
   #define EXPORT
-  #define  SOCKTYPE int
+  #define SOCKTYPE int
 #endif
 using namespace std;
 
@@ -36,14 +36,14 @@ Klass* udpResKlass;
 PltObject nil;
 EXPORT PltObject init()
 {
-    nil.type = 'n';
+    nil.type = PLT_NIL;
     #ifdef _WIN32
-        WSADATA wsa;
-        if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        {
-            string errMsg = "Error code: " + to_string(WSAGetLastError());
-            return Plt_Err(Error, errMsg);
-        }
+      WSADATA wsa;
+      if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+      {
+          string errMsg = "Error code: " + to_string(WSAGetLastError());
+          return Plt_Err(Error, errMsg);
+      }
     #endif
     Module* d = vm_allocModule();
     socketKlass = vm_allocKlass();
@@ -60,6 +60,7 @@ EXPORT PltObject init()
     socketKlass->members.emplace(("recvfrom"), PObjFromMethod("recvfrom", &socket_RecvFrom, socketKlass));
     socketKlass->members.emplace(("close"), PObjFromMethod("close", & socket_Close, socketKlass));
     socketKlass->members.emplace(("__del__"), PObjFromMethod("__del__", &socket_del__, socketKlass));
+    
     
     udpResKlass = vm_allocKlass();
     udpResKlass->members.emplace(("addr"), nil);

@@ -3,7 +3,8 @@
 #include <cstdint>
 #include "include/plutonium.h"
 
-#define PLUTONIUM_VER 0.31
+#define PLUTONIUM_VER 0.3
+#define PLUTONIUM_VER_PATCH 1
 
 void signalHandler(int signum)
 {
@@ -28,7 +29,7 @@ int main(int argc, const char* argv[])
     signal(SIGSEGV,signalHandler);
     if (argc < 2)
     {
-      printf("Plutonium Programming Langauge v%.2f build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", PLUTONIUM_VER,__DATE__,__TIME__,getOS());
+      printf("Plutonium Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", PLUTONIUM_VER,PLUTONIUM_VER_PATCH,__DATE__,__TIME__,getOS());
       REPL();
       return 0;
     }
