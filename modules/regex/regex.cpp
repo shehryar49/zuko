@@ -48,11 +48,15 @@ PltObject search(PltObject* args,int n)
   smatch m;
   PltList* parts = vm_allocList();
   string& A = *(string*)args[0].ptr;
+  std::regex rgx(AS_STR(args[1]));
   try
   {
-    while (regex_search(*(string*)args[0].ptr, m, regex(*(string*)args[1].ptr)))
+    while (regex_search(*(string*)args[0].ptr, m, rgx))
     {
-        parts->push_back(PObjFromStr(m[0]));
+        PltList* match = vm_allocList();
+        for(auto x: m)
+          match->push_back(PObjFromStr(x));
+        parts->push_back(PObjFromList(match));
         A = m.suffix();
     }
   }
