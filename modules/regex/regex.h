@@ -6,11 +6,11 @@
 #endif
 extern "C"
 {
-    PltObject init();
+    EXPORT PltObject init();
 
     //
     //Functions
-    PltObject match(PltObject*,int);
-    PltObject search(PltObject*,int);
-    PltObject replace(PltObject*,int);
+    EXPORT PltObject match(PltObject*,int);
+    EXPORT PltObject search(PltObject*,int);
+    EXPORT PltObject replace(PltObject*,int);
 }
