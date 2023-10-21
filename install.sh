@@ -20,7 +20,7 @@ sudo mkdir /opt/plutonium/modules
 sudo cp plutonium /opt/plutonium/
 sudo cp -r std /opt/plutonium
 sudo cp -r fiza /opt/plutonium
-sudo cp fiza.plt /opt/plutonium/fiza
+sudo cp fiza.plt /opt/plutonium/
 sudo cp modules/*.so /opt/plutonium/modules/
 sudo cp include/PltObject.h /opt/plutonium
 sudo cp include/c_api.h /opt/plutonium
@@ -28,7 +28,7 @@ sudo cp include/c_api.cpp /opt/plutonium
 sudo chmod 777 /opt/plutonium/fiza/packages.txt
 sudo chmod +x /opt/plutonium/fiza
 sudo ln -s /opt/plutonium/plutonium /usr/bin/plutonium
-sudo ln -s /opt/plutonium/fiza /usr/bin/fiza
+sudo ln -s /opt/plutonium/fiza.plt /usr/bin/fiza
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then
