@@ -1421,13 +1421,14 @@ public:
         #ifdef _WIN32
           s1 = "C:\\plutonium\\modules\\" + s1 + ".dll";
           HINSTANCE module = LoadLibraryA(s1.c_str());
-          apiFun a = (apiFun)GetProcAddress(module, "api_setup");
-          initFun f = (initFun)GetProcAddress(module, "init");
           if (!module)
           {
             spitErr(ImportError, "LoadLibrary() returned " + to_string(GetLastError()));
             NEXT_INST;
           }
+          apiFun a = (apiFun)GetProcAddress(module, "api_setup");
+          initFun f = (initFun)GetProcAddress(module, "init");
+          
         #endif
         #ifdef __linux__
           s1 = "/opt/plutonium/modules/" + s1 + ".so";
