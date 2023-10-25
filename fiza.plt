@@ -30,6 +30,9 @@ function downloadFile(var url,var outputPath)
   var res = req.perform()
   if(res != libcurl.CURLE_OK)
     throw Error(libcurl.strerror(res))
+  var code = req.getinfo(libcurl.INFO_HTTP_CODE)
+  if(code != 200)
+    throw Error("HTTP Error: "+str(code))
   close(openedFile)
 }
 function installPackage(var name,var url,var ver)
@@ -70,7 +73,7 @@ function removePackage(var name)
 function listPackages()
 {
   if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-    system("dir C:\\plutonium\\modules")
+    system("dir /B C:\\plutonium\\modules")
   else 
     system("ls -1 /opt/plutonium/modules")
 }
