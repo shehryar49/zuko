@@ -150,7 +150,6 @@ struct Klass
   {
     privateMembers.emplace(name,val);
   }
-  void addNativeFunction(const string& name,NativeFunPtr r);
   void addNativeMethod(const string& name,NativeFunPtr r);
   
 };
@@ -327,11 +326,11 @@ inline PltObject PObjFromFile(FileObject* file)
   return ret;
 }
 
-#define AS_BOOL(x) x.i
+#define AS_BOOL(x) (bool)x.i
 #define AS_INT(x) x.i
 #define AS_INT64(x) x.l
 #define AS_DOUBLE(x) x.f
-#define AS_BYTE(x) x.i
+#define AS_BYTE(x) (uint8_t)x.i
 #define AS_STR(x) *(string*)x.ptr
 #define AS_MSTR(x) *(string*)x.ptr
 #define AS_DICT(x) *(Dictionary*)x.ptr
@@ -416,17 +415,7 @@ inline PltObject PObjFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
   ret.ptr = (void*)fn;
   return ret;
 }
-void Klass::addNativeFunction(const string& name,NativeFunPtr r)
-{
-  NativeFunction* fn = vm_allocNativeFunObj();
-  fn->name = name;
-  fn->klass = NULL;
-  fn->addr = r;
-  PltObject tmp;
-  tmp.type = PLT_NATIVE_FUNC;
-  tmp.ptr = (void*)fn;
-  this->members.emplace(name,tmp);
-}
+
 void Klass::addNativeMethod(const string& name,NativeFunPtr r)
 {
   NativeFunction* fn = vm_allocNativeFunObj();

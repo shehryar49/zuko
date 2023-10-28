@@ -6,12 +6,12 @@ and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
 #ifdef _WIN32
-#define CURL_STATICLIB
-#pragma comment(lib,"crypt32.lib")
-#pragma comment(lib,"Normaliz.lib")
-#pragma comment(lib,"Ws2_32.lib")
-#pragma comment(lib,"Wldap32.lib")
-#pragma comment(lib,"libcurl_a.lib")
+  #define CURL_STATICLIB
+  #pragma comment(lib,"crypt32.lib")
+  #pragma comment(lib,"Normaliz.lib")
+  #pragma comment(lib,"Ws2_32.lib")
+  #pragma comment(lib,"Wldap32.lib")
+  #pragma comment(lib,"libcurl_a.lib")
 #endif
 #include <curl/curl.h>
 #include <stdio.h>
@@ -24,7 +24,8 @@ struct MemoryStruct
 {
   vector<uint8_t>* memory;//bytearray of memory
 };
-
+//Default WriteMemory function
+//pushes all the bytes to a bytearray
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
@@ -34,6 +35,7 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
   memcpy(&(mem->at(prevsize)), contents, realsize);
   return realsize;
 }
+//WriteMemory function which calls plutonium callback and passes the bytes
 PltObject wmcallback;
 size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -56,6 +58,7 @@ struct CurlObject //Wrapper around the curl handle
   std::string useragent;
   char* postfields;
 };
+
 struct MimePart  //Wrapper around curl_mimepart
 {
   curl_mimepart* mimepart;
@@ -73,13 +76,14 @@ PltObject init()
     //
     curlklass = vm_allocKlass();
     curlklass->name = "Curl";
-    curlklass->members.emplace("__construct__",PObjFromMethod("Curl.__construct__",&curlklass__construct__,curlklass));
-    curlklass->members.emplace("perform",PObjFromMethod("Curl.perform",&perform,curlklass));
-    curlklass->members.emplace("setopt",PObjFromMethod("Curl.setopt",&setopt,curlklass));
-    curlklass->members.emplace("getinfo",PObjFromMethod("Curl.getinfo",&getinfo,curlklass));
-    curlklass->members.emplace("__del__",PObjFromMethod("Curl.__del__",&curlklass__del__,curlklass));
-    curlklass->members.emplace("escape",PObjFromFunction("Curl.escape",&ESCAPE,curlklass));
-    curlklass->members.emplace("unescape",PObjFromFunction("Curl.unescape",&UNESCAPE,curlklass));
+
+    curlklass->addNativeMethod("__construct__",&curlklass__construct__);
+    curlklass->addNativeMethod("perform",&perform);
+    curlklass->addNativeMethod("setopt",&setopt);
+    curlklass->addNativeMethod("getinfo",&getinfo);
+    curlklass->addNativeMethod("__del__",&curlklass__del__);
+    curlklass->addNativeMethod("escape",&ESCAPE);
+    curlklass->addNativeMethod("unescape",&UNESCAPE);
     
     //
     mimepartklass = vm_allocKlass();
@@ -88,18 +92,15 @@ PltObject init()
     mimeklass = vm_allocKlass();
     mimeklass->name = "mime";
     //add methods to object
-    mimeklass->members.emplace("__construct__",PObjFromMethod("mime.__construct__",&mime__construct__,mimeklass));
-    mimeklass->members.emplace("addpart",PObjFromMethod("mime.addpart",&addpart,mimeklass));
-    mimeklass->members.emplace("__del__",PObjFromMethod("mime.__del__",&MIME__del__,mimeklass));
+    mimeklass->addNativeMethod("__construct__",&mime__construct__);
+    mimeklass->addNativeMethod("addpart",&addpart);
+    mimeklass->addNativeMethod("__del__",&MIME__del__);
     
-    //
-    //these 3 classes are required during whole life of module
-    //so we manually manage their memory
-    //
+    
     
     d->members.emplace("Curl",PObjFromKlass(curlklass));
     d->members.emplace("mime",PObjFromKlass(mimeklass));
-    d->members.emplace(("strerror"),PObjFromFunction("libcurl.strerror",&STRERROR));
+    d->addNativeFunction("strerror",&STRERROR);
     d->members.emplace(("OPT_URL"),PObjFromInt64(CURLOPT_URL));
     d->members.emplace(("OPT_PORT"),PObjFromInt64(CURLOPT_PORT));
     d->members.emplace(("OPT_POSTFIELDS"),PObjFromInt64(CURLOPT_POSTFIELDS));
@@ -153,10 +154,8 @@ PltObject STRERROR(PltObject* args,int n)
 PltObject curlklass__construct__(PltObject* args,int n)
 {
   if(n!=1)
-  {
     return Plt_Err(ArgumentError,"1 arguments needed!");
     
-  }
   KlassObject* curobj = (KlassObject*)args[0].ptr;
   CURL* curl = curl_easy_init();
   if(!curl)

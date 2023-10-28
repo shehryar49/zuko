@@ -73,6 +73,8 @@ EXPORT PltObject init()
     d->members.emplace(("AF_INET6"), PObjFromInt(AF_INET6));
     d->members.emplace(("SOCK_STREAM"), PObjFromInt(SOCK_STREAM));
     d->members.emplace(("SOCK_DGRAM"), PObjFromInt(SOCK_DGRAM));
+    d->members.emplace(("SOCK_RAW"), PObjFromInt(SOCK_RAW));
+    
 
     return PObjFromModule(d);
 
