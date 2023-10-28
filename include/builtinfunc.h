@@ -1617,20 +1617,20 @@ void clean_stdin(void)
 PltObject FREAD(PltObject* args,int32_t argc)
 {
     PltObject ret = nil;
-    if(argc!=2)
-        return Plt_Err(ArgumentError,"Error fread() takes two arguments!");
-    if(args[0].type!='i' && args[0].type!='l')
-        return Plt_Err(TypeError,"Error first argument of fread() should be an integer!");
-    if(args[1].type!='u')
-      return Plt_Err(TypeError,"Error second argument of fread() should be a file stream!");
-    PltObject a = args[0];
+    if(argc!=3)
+        return Plt_Err(ArgumentError,"Error fread() takes 3 arguments!");
+    if (args[0].type != PLT_BYTEARR)
+        return Plt_Err(TypeError, "Error first argument to fread must be a bytearray!");
+    if(args[1].type!='i' && args[1].type!='l')
+        return Plt_Err(TypeError,"Error second argument of fread() should be an integer!");
+    if(args[2].type!='u')
+      return Plt_Err(TypeError,"Error third argument of fread() should be a file stream!");
+    PltObject a = args[1];
     PromoteType(a,'l');
     int64_t e = a.l;
-    auto p = allocByteArray();
-    ret.ptr = (void*)p;
-    ret.type = 'c';
+    auto p = (vector<uint8_t>*)args[0].ptr;
     p->resize(e);
-    FileObject fobj = *(FileObject*)args[1].ptr;
+    FileObject fobj = *(FileObject*)args[2].ptr;
     if(!fobj.open)
       return Plt_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
