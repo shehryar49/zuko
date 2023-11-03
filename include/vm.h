@@ -3005,7 +3005,7 @@ public:
             spitErr(OverflowError, "Error modulo of INT32_MIN by -1 causes overflow!");
             NEXT_INST;
           }
-          c.i = a.i % b.i;
+          c.l = a.l % b.l;
           STACK.push_back(c);
         }
         k++; NEXT_INST;
