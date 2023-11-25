@@ -20,7 +20,7 @@ sudo mkdir /opt/zuko/modules
 sudo cp zuko /opt/zuko/
 sudo cp -r std /opt/zuko
 sudo cp -r fiza /opt/zuko
-sudo cp fiza.zuko /opt/zuko/
+sudo cp fiza.zk /opt/zuko/
 sudo cp modules/*.so /opt/zuko/modules/
 sudo cp include/ZObject.h /opt/zuko
 #sudo cp include/c_api.h /opt/zuko
