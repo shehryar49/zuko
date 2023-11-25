@@ -28,7 +28,7 @@ sudo cp include/ZObject.h /opt/zuko
 sudo chmod 777 /opt/zuko/fiza/packages.txt
 sudo chmod +x /opt/zuko/fiza
 sudo ln -s /opt/zuko/zuko /usr/bin/zuko
-sudo ln -s /opt/zuko/fiza.plt /usr/bin/fiza
+sudo ln -s /opt/zuko/fiza.zk /usr/bin/fiza
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then
