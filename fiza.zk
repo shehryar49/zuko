@@ -45,7 +45,7 @@ function installPackage(var name,var url,var ver)
       url = url + "/releases/download/"+ver+"/"+name+"-win64.dll"
     else
       url = url + "/releases/download/"+ver+"/"+name+"-win32.dll"
-    downloadFile(url,"C:\\plutonium\\modules\\"+name+".dll")
+    downloadFile(url,"C:\\zuko\\modules\\"+name+".dll")
   }
   else # unix like systems (install from source)
   {
@@ -57,7 +57,7 @@ function installPackage(var name,var url,var ver)
     ret = system("cd fizatmp && cmake . -DCMAKE_BUILD_TYPE=Release && make && cd ..")
     if(ret != 0)
       throw Error("Build failed.")
-    ret = system("sudo cp fizatmp/"+name+".so /opt/plutonium/modules")
+    ret = system("sudo cp fizatmp/"+name+".so /opt/zuko/modules")
     if(ret != 0)
       throw Error("[-] Failed to copy files")
     ret = system("rm -rf fizatmp && rm fizatmp.tar.gz")
@@ -66,16 +66,16 @@ function installPackage(var name,var url,var ver)
 function removePackage(var name)
 {
   if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-    system("del /F /Q C:\\plutonium\\modules\\"+name+".dll")
+    system("del /F /Q C:\\zuko\\modules\\"+name+".dll")
   else
-    system("sudo rm /opt/plutonium/modules/"+name+".so")
+    system("sudo rm /opt/zuko/modules/"+name+".so")
 }
 function listPackages()
 {
   if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-    system("dir /B C:\\plutonium\\modules")
+    system("dir /B C:\\zuko\\modules")
   else 
-    system("ls -1 /opt/plutonium/modules")
+    system("ls -1 /opt/zuko/modules")
 }
 function updatePackageList()
 {
@@ -92,9 +92,9 @@ function updatePackageList()
   }
   var file = nil
   if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
-    file = open("C:\\plutonium\\fiza\\packages.txt","wb")
+    file = open("C:\\zuko\\fiza\\packages.txt","wb")
   else
-    file = open("/opt/plutonium/fiza/packages.txt","wb")
+    file = open("/opt/zuko/fiza/packages.txt","wb")
   fwrite(c.data,file)
   close(file)
   println("Updated package list successfully!")
@@ -116,12 +116,12 @@ else if(len(argv) == 2)
     var srcfile = nil
     if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
     {
-      srcfile = open("C:\\plutonium\\fiza\\packages.txt","r")
+      srcfile = open("C:\\zuko\\fiza\\packages.txt","r")
       clearCommand = "cls"
     }
     else
     {
-      srcfile = open("/opt/plutonium/fiza/packages.txt","r")
+      srcfile = open("/opt/zuko/fiza/packages.txt","r")
       clearCommand = "clear"
     }
     var lines = readlines(srcfile)
@@ -164,7 +164,7 @@ else if(len(argv) == 2)
 }
 else
 {
-  println("usage: plutonium fiza <action> [package]")
+  println("usage: fiza <action> [package]")
   println("Examples: ")
   println("\tinstall packageName")
   println("\tremove packageName")
