@@ -1,28 +1,28 @@
 #ifndef SOCKET_PLT_H_
 #define SOCKET_PLT_H_
 #ifdef _WIN32
-  #include "PltObject.h"
+  #include "ZObject.h"
   #define EXPORT __declspec(dllexport)
 #else
   #define EXPORT
-  #include "PltObject.h"
+  #include "ZObject.h"
 #endif
 extern "C"
 {
 	//Functions
-	EXPORT PltObject init();
+	EXPORT ZObject init();
 	//Methods
-	EXPORT PltObject socket__construct(PltObject*, int);
-	EXPORT PltObject socket_Setopt(PltObject*,int);
-	EXPORT PltObject socket_Bind( PltObject*,int);
-	EXPORT PltObject socket_Connect( PltObject*,int);
-	EXPORT PltObject socket_Send( PltObject*,int);
-	EXPORT PltObject socket_Recv( PltObject*,int);
-	EXPORT PltObject socket_Listen( PltObject*,int);
-	EXPORT PltObject socket_Accept( PltObject*,int);
-	EXPORT PltObject socket_Close( PltObject*,int);
-	EXPORT PltObject socket_SendTo( PltObject*, int);
-	EXPORT PltObject socket_RecvFrom( PltObject*, int);
-	EXPORT PltObject socket_del__( PltObject*, int);
+	EXPORT ZObject socket__construct(ZObject*, int);
+	EXPORT ZObject socket_Setopt(ZObject*,int);
+	EXPORT ZObject socket_Bind( ZObject*,int);
+	EXPORT ZObject socket_Connect( ZObject*,int);
+	EXPORT ZObject socket_Send( ZObject*,int);
+	EXPORT ZObject socket_Recv( ZObject*,int);
+	EXPORT ZObject socket_Listen( ZObject*,int);
+	EXPORT ZObject socket_Accept( ZObject*,int);
+	EXPORT ZObject socket_Close( ZObject*,int);
+	EXPORT ZObject socket_SendTo( ZObject*, int);
+	EXPORT ZObject socket_RecvFrom( ZObject*, int);
+	EXPORT ZObject socket_del__( ZObject*, int);
 }
 #endif

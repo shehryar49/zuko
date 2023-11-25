@@ -15,20 +15,20 @@ fi
 
 echo "[+] Copying files"
 # sudo section
-sudo mkdir /opt/plutonium
-sudo mkdir /opt/plutonium/modules
-sudo cp plutonium /opt/plutonium/
-sudo cp -r std /opt/plutonium
-sudo cp -r fiza /opt/plutonium
-sudo cp fiza.plt /opt/plutonium/
-sudo cp modules/*.so /opt/plutonium/modules/
-sudo cp include/PltObject.h /opt/plutonium
-sudo cp include/c_api.h /opt/plutonium
-sudo cp include/c_api.cpp /opt/plutonium
-sudo chmod 777 /opt/plutonium/fiza/packages.txt
-sudo chmod +x /opt/plutonium/fiza
-sudo ln -s /opt/plutonium/plutonium /usr/bin/plutonium
-sudo ln -s /opt/plutonium/fiza.plt /usr/bin/fiza
+sudo mkdir /opt/zuko
+sudo mkdir /opt/zuko/modules
+sudo cp zuko /opt/zuko/
+sudo cp -r std /opt/zuko
+sudo cp -r fiza /opt/zuko
+sudo cp fiza.zuko /opt/zuko/
+sudo cp modules/*.so /opt/zuko/modules/
+sudo cp include/ZObject.h /opt/zuko
+#sudo cp include/c_api.h /opt/zuko
+#sudo cp include/c_api.cpp /opt/zuko
+sudo chmod 777 /opt/zuko/fiza/packages.txt
+sudo chmod +x /opt/zuko/fiza
+sudo ln -s /opt/zuko/zuko /usr/bin/zuko
+sudo ln -s /opt/zuko/fiza.plt /usr/bin/fiza
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then

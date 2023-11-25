@@ -1,4 +1,4 @@
-#include "PltObject.h"
+#include "ZObject.h"
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else
@@ -6,11 +6,11 @@
 #endif
 extern "C"
 {
-    EXPORT PltObject init();
+    EXPORT ZObject init();
 
     //
     //Functions
-    EXPORT PltObject match(PltObject*,int);
-    EXPORT PltObject search(PltObject*,int);
-    EXPORT PltObject replace(PltObject*,int);
+    EXPORT ZObject match(ZObject*,int);
+    EXPORT ZObject search(ZObject*,int);
+    EXPORT ZObject replace(ZObject*,int);
 }

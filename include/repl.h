@@ -1,6 +1,6 @@
-#ifndef PLT_REPL_H_
-#define PLT_REPL_H_
-#include "plutonium.h"
+#ifndef ZUKO_REPL_H_
+#define ZUKO_REPL_H_
+#include "zuko.h"
 using namespace std;
 
 
@@ -58,7 +58,7 @@ void REPL()
     else if(line == ".showstack")
     {
       for(auto e: vm.STACK)
-        printf("%s\n",PltObjectToStr(e).c_str());
+        printf("%s\n",ZObjectToStr(e).c_str());
       continue;
     }
     else if(line == ".showconstants")
@@ -66,8 +66,8 @@ void REPL()
       printf("vm.total_constants = %d\n",vm.total_constants);
       for(int i=0;i<vm.total_constants;i++)
       {
-        PltObject e = vm.constants[i];
-        printf("%s\n",PltObjectToStr(e).c_str());
+        ZObject e = vm.constants[i];
+        printf("%s\n",ZObjectToStr(e).c_str());
       }
       continue;
     }
@@ -93,7 +93,7 @@ void REPL()
     parser.init(filename,p);
 
     ast = parser.parse(tokens);
-    PltObject* constants = new PltObject[p.num_of_constants];
+    ZObject* constants = new ZObject[p.num_of_constants];
     //copy previous constants
     for(int i=0;i<vm.total_constants;i++)
       constants[i] = vm.constants[i];

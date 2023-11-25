@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
-#include "plutonium.h"
+#include "zuko.h"
 #ifdef THREADED_INTERPRETER
   #ifdef __GNUC__
     #define NEXT_INST goto *targets[*k];
@@ -39,86 +39,86 @@ using namespace std;
 
 inline bool isNumeric(char t)
 {
-  return (t == PLT_INT || t == PLT_FLOAT || t == PLT_INT64);
+  return (t == Z_INT || t == Z_FLOAT || t == Z_INT64);
 }
-inline void PromoteType(PltObject &a, char t)
+inline void PromoteType(ZObject &a, char t)
 {
-  if (a.type == PLT_INT)
+  if (a.type == Z_INT)
   {
-    if (t == PLT_INT64) // promote to int64_t
+    if (t == Z_INT64) // promote to int64_t
     {
-      a.type = PLT_INT64;
+      a.type = Z_INT64;
       a.l = (int64_t)a.i;
     }
-    else if (t == PLT_FLOAT)
+    else if (t == Z_FLOAT)
     {
-      a.type = PLT_FLOAT;
+      a.type = Z_FLOAT;
       a.f = (double)a.i;
     }
   }
-  else if (a.type == PLT_FLOAT)
+  else if (a.type == Z_FLOAT)
   {
-    if (t == PLT_INT64) // promote to int64_t
+    if (t == Z_INT64) // promote to int64_t
     {
-      a.type = PLT_INT64;
+      a.type = Z_INT64;
       a.l = (int64_t)a.f;
     }
-    else if (t == PLT_INT)
+    else if (t == Z_INT)
     {
-      a.type = PLT_INT;
+      a.type = Z_INT;
       a.f = (int32_t)a.f;
     }
-    else if (t == PLT_FLOAT)
+    else if (t == Z_FLOAT)
       return;
   }
-  else if (a.type == PLT_INT64)
+  else if (a.type == Z_INT64)
   {
-    if (t == PLT_FLOAT) // only this one is needed
+    if (t == Z_FLOAT) // only this one is needed
     {
-      a.type = PLT_FLOAT;
+      a.type = Z_FLOAT;
       a.f = (double)a.l;
     }
   }
 }
 string fullform(char t)
 {
-  if (t == PLT_INT)
+  if (t == Z_INT)
     return "Integer 32 bit";
-  else if (t == PLT_INT64)
+  else if (t == Z_INT64)
     return "Integer 64 bit";
-  else if (t == PLT_FLOAT)
+  else if (t == Z_FLOAT)
     return "Float";
-  else if (t == PLT_STR)
+  else if (t == Z_STR)
     return "String";
-  else if(t == PLT_MSTR)
+  else if(t == Z_MSTR)
     return "Mutable String";
-  else if (t == PLT_LIST)
+  else if (t == Z_LIST)
     return "List";
-  else if (t == PLT_BYTE)
+  else if (t == Z_BYTE)
     return "Byte";
-  else if(t == PLT_BYTEARR)
+  else if(t == Z_BYTEARR)
     return "Byte Array";
-  else if (t == PLT_BOOL)
+  else if (t == Z_BOOL)
     return "Boolean";
-  else if (t == PLT_FILESTREAM)
+  else if (t == Z_FILESTREAM)
     return "File Stream";
-  else if (t == PLT_DICT)
+  else if (t == Z_DICT)
     return "Dictionary";
-  else if (t == PLT_MODULE)
+  else if (t == Z_MODULE)
     return "Module";
-  else if (t == PLT_FUNC)
+  else if (t == Z_FUNC)
     return "Function";
-  else if (t == PLT_CLASS)
+  else if (t == Z_CLASS)
     return "Class";
-  else if (t == PLT_OBJ)
+  else if (t == Z_OBJ)
     return "Class Object";
-  else if (t == PLT_NIL)
+  else if (t == Z_NIL)
     return "nil";
-  else if (t == PLT_NATIVE_FUNC)
+  else if (t == Z_NATIVE_FUNC)
     return "Native Function";
-  else if (t == PLT_POINTER)
+  else if (t == Z_POINTER)
     return "Native Pointer";
-  else if (t == PLT_ERROBJ)
+  else if (t == Z_ERROBJ)
     return "Error Object";
   else if (t == 'g')
     return "Coroutine";
@@ -137,7 +137,7 @@ struct MemInfo
 // Allocator functions
 Klass *allocKlass();
 KlassObject *allocKlassObject();
-PltList *allocList();
+ZList *allocList();
 vector<uint8_t>* allocByteArray();
 Dictionary *allocDict();
 string *allocString();
@@ -149,7 +149,7 @@ FileObject *allocFileObject();
 Module *allocModule();
 NativeFunction *allocNativeFun();
 FunObject* allocFunObject();
-bool callObject(PltObject*,PltObject*,int,PltObject*);
+bool callObject(ZObject*,ZObject*,int,ZObject*);
 void markImportant(void*);
 void unmarkImportant(void*);
 
@@ -184,13 +184,13 @@ private:
   std::unordered_map<size_t, ByteSrc> *LineNumberTable;
   vector<string> *files;
   vector<string> *sources;
-  PltList aux; // auxiliary space for markV2
-  vector<PltObject> STACK;
+  ZList aux; // auxiliary space for markV2
+  vector<ZObject> STACK;
   vector<void*> important;//important memory not to free even when not reachable
  
 public:
   friend class Compiler;
-  friend bool callObject(PltObject*,PltObject*,int,PltObject*);
+  friend bool callObject(ZObject*,ZObject*,int,ZObject*);
   friend void markImportant(void*);
   friend void unmarkImportant(void*);
   friend void REPL();
@@ -198,11 +198,11 @@ public:
   size_t allocated = 0;
   size_t GC_Cycles = 0;
   vector<string> strings; // string constants used in bytecode
-  PltObject *constants = NULL;
+  ZObject *constants = NULL;
   int32_t total_constants = 0; // total constants stored in the array constants
   apiFuncions api;
 
-  PltObject nil;
+  ZObject nil;
   void load(vector<uint8_t>& bytecode,ProgramInfo& p)
   {
     program = &bytecode[0];
@@ -211,7 +211,7 @@ public:
     LineNumberTable = &p.LineNumberTable;
     files = &p.files;
     sources = &p.sources;
-    nil.type = PLT_NIL;
+    nil.type = Z_NIL;
     //initialise api functions for interpreter as well
     //in case a builtin function wants to use it
     api.a1 = &allocList;
@@ -248,7 +248,7 @@ public:
   }
   size_t spitErr(Klass* e, string msg) // used to show a runtime error
   {
-    PltObject p1;
+    ZObject p1;
     if (except_targ.size() != 0)//check if error catching is enabled
     {
       size_t T = STACK.size() - tryStackCleanup.back();
@@ -259,8 +259,8 @@ public:
       E->privateMembers = e->privateMembers;
       string* s = allocString();
       *s = msg;
-      E->members["msg"] = PObjFromStrPtr(s);
-      p1.type = PLT_OBJ;
+      E->members["msg"] = ZObjFromStrPtr(s);
+      p1.type = Z_OBJ;
       p1.ptr = (void*)E;
       STACK.push_back(p1);
       T = frames.size() - tryLimitCleanup.back();
@@ -287,8 +287,8 @@ public:
       E->privateMembers = e->privateMembers;
       string* s = allocString();
       *s = msg;
-      E->members["msg"] = PObjFromStrPtr(s);
-      p1.type = PLT_ERROBJ;
+      E->members["msg"] = ZObjFromStrPtr(s);
+      p1.type = Z_ERROBJ;
       p1.ptr = (void*)E;
       STACK.push_back(p1);
       this->k = program + program_size - 1;
@@ -357,13 +357,13 @@ public:
     }
   }
 
-  inline static bool isHeapObj(const PltObject &obj)
+  inline static bool isHeapObj(const ZObject &obj)
   {
-    if (obj.type != PLT_INT && obj.type != PLT_INT64 && obj.type != PLT_FLOAT && obj.type != PLT_NIL && obj.type != PLT_BYTE && obj.type != 'p' && obj.type != PLT_BOOL)
+    if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != 'p' && obj.type != Z_BOOL)
       return true; // all other objects are on heap
     return false;
   }
-  void markV2(const PltObject &obj)
+  void markV2(const ZObject &obj)
   {
     aux.clear();
     std::unordered_map<void *, MemInfo>::iterator it;
@@ -379,14 +379,14 @@ public:
     //  - known to VM's memory pool i.e not from outside (any native module or something)
 
     // After following above constraints,aux will not have any duplicates or already marked objects
-    PltObject curr;
+    ZObject curr;
     while (aux.size() != 0)
     {
       curr = aux.back();
       aux.pop_back();
       // for each curr object we get ,it was already marked alive before pushing onto aux
       // so we only process objects referenced by it and not curr itself
-      if (curr.type == PLT_DICT)
+      if (curr.type == Z_DICT)
       {
         Dictionary &d = *(Dictionary *)curr.ptr;
         for (auto e : d)
@@ -405,9 +405,9 @@ public:
           }
         }
       }
-      else if (curr.type == PLT_LIST)
+      else if (curr.type == Z_LIST)
       {
-        PltList &d = *(PltList *)curr.ptr;
+        ZList &d = *(ZList *)curr.ptr;
         for (const auto &e : d)
         {
           if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
@@ -432,14 +432,14 @@ public:
         it = memory.find((void *)gf);
         if (it != memory.end() && !(it->second.isMarked))
         {
-          PltObject tmp;
-          tmp.type = PLT_FUNC;
+          ZObject tmp;
+          tmp.type = Z_FUNC;
           tmp.ptr = (void *)gf;
           it->second.isMarked = true;
           aux.push_back(tmp);
         }
       }
-      else if (curr.type == PLT_MODULE)
+      else if (curr.type == Z_MODULE)
       {
         Module *k = (Module *)curr.ptr;
         for (const auto &e : k->members)
@@ -451,7 +451,7 @@ public:
           }
         }
       }
-      else if (curr.type == PLT_CLASS)
+      else if (curr.type == Z_CLASS)
       {
         Klass *k = (Klass *)curr.ptr;
         for (auto e : k->members)
@@ -471,28 +471,28 @@ public:
           }
         }
       }
-      else if (curr.type == PLT_NATIVE_FUNC)
+      else if (curr.type == Z_NATIVE_FUNC)
       {
         NativeFunction *fn = (NativeFunction *)curr.ptr;
         it = memory.find((void *)fn->klass);
         if (it != memory.end() && !(it->second.isMarked))
         {
-          PltObject tmp;
-          tmp.type = PLT_CLASS;
+          ZObject tmp;
+          tmp.type = Z_CLASS;
           tmp.ptr = (void *)fn->klass;
           it->second.isMarked = true;
           aux.push_back(tmp);
         }
       }
-      else if (curr.type == PLT_OBJ)
+      else if (curr.type == Z_OBJ)
       {
         KlassObject *k = (KlassObject *)curr.ptr;
         Klass *kk = k->klass;
         it = memory.find((void *)kk);
         if (it != memory.end() && !(it->second.isMarked))
         {
-          PltObject tmp;
-          tmp.type = PLT_CLASS;
+          ZObject tmp;
+          tmp.type = Z_CLASS;
           tmp.ptr = (void *)kk;
           it->second.isMarked = true;
           aux.push_back(tmp);
@@ -514,14 +514,14 @@ public:
           }
         }
       }
-      else if (curr.type == PLT_FUNC || curr.type == 'g')
+      else if (curr.type == Z_FUNC || curr.type == 'g')
       {
         Klass *k = ((FunObject *)curr.ptr)->klass;
         it = memory.find((void *)k);
         if (it != memory.end() && !(it->second.isMarked))
         {
-          PltObject tmp;
-          tmp.type = PLT_CLASS;
+          ZObject tmp;
+          tmp.type = Z_CLASS;
           tmp.ptr = (void *)k;
           it->second.isMarked = true;
           aux.push_back(tmp);
@@ -543,7 +543,7 @@ public:
       markV2(e);
     for(auto e: important)
     {
-      PltObject p;
+      ZObject p;
       p.ptr = e;
       p.type = memory[e].type;
       markV2(p);
@@ -563,18 +563,18 @@ public:
       else
       {
         //call destructor of unmarked objects
-        if (m.type == PLT_OBJ)
+        if (m.type == Z_OBJ)
         {
           KlassObject *obj = (KlassObject *)e.first;
-          PltObject dummy;
-          dummy.type = PLT_OBJ;
+          ZObject dummy;
+          dummy.type = Z_OBJ;
           dummy.ptr = e.first;
           if (obj->members.find("__del__") != obj->members.end())
           {
-            PltObject p1 = obj->members["__del__"];
-            if(p1.type == PLT_NATIVE_FUNC || p1.type == PLT_FUNC)
+            ZObject p1 = obj->members["__del__"];
+            if(p1.type == Z_NATIVE_FUNC || p1.type == Z_FUNC)
             {
-              PltObject rr;
+              ZObject rr;
               callObject(&p1,&dummy,1,&rr);
             }
           }
@@ -586,37 +586,37 @@ public:
     {
       MemInfo m = memory[e];
       
-      if (m.type == PLT_LIST)
+      if (m.type == Z_LIST)
       {
-        delete (PltList *)e;
-        allocated -= sizeof(PltList);
+        delete (ZList *)e;
+        allocated -= sizeof(ZList);
       }
-      else if (m.type == PLT_MODULE)
+      else if (m.type == Z_MODULE)
       {
         delete (Module *)e;
         allocated -= sizeof(Module);
       }
-      else if (m.type == PLT_CLASS)
+      else if (m.type == Z_CLASS)
       {
         delete (Klass *)e;
         allocated -= sizeof(Klass);
       }
-      else if (m.type == PLT_OBJ)
+      else if (m.type == Z_OBJ)
       {
         delete (KlassObject *)e;
         allocated -= sizeof(KlassObject);
       }
-      else if (m.type == PLT_DICT)
+      else if (m.type == Z_DICT)
       {
         delete (Dictionary *)e;
         allocated -= sizeof(Dictionary);
       }
-      else if (m.type == PLT_FILESTREAM)
+      else if (m.type == Z_FILESTREAM)
       {
         delete (FileObject *)e;
         allocated -= sizeof(FileObject);
       }
-      else if (m.type == PLT_FUNC || m.type=='g')
+      else if (m.type == Z_FUNC || m.type=='g')
       {
         delete (FunObject *)e;
         allocated -= sizeof(FunObject);
@@ -626,28 +626,28 @@ public:
         delete (Coroutine *)e;
         allocated -= sizeof(Coroutine);
       }
-      else if (m.type == PLT_ERROBJ)
+      else if (m.type == Z_ERROBJ)
       {
         delete (KlassObject *)e;
         allocated -= sizeof(KlassObject);
       }
-      else if (m.type == PLT_STR)
+      else if (m.type == Z_STR)
       {
         delete (string *)e;
         allocated -= sizeof(string);
       }
-      else if (m.type == PLT_MSTR)
+      else if (m.type == Z_MSTR)
       {
         delete (string *)e;
         allocated -= sizeof(string);
       }
       
-      else if (m.type == PLT_NATIVE_FUNC)
+      else if (m.type == Z_NATIVE_FUNC)
       {
         delete (NativeFunction *)e;
         allocated -= sizeof(NativeFunction);
       }
-      else if(m.type == PLT_BYTEARR)
+      else if(m.type == Z_BYTEARR)
       {
         delete (vector<uint8_t>*)e;
         allocated -= sizeof(vector<uint8_t>);
@@ -663,20 +663,20 @@ public:
       GC_THRESHHOLD *= 2;
     }
   }
-  inline bool invokeOperator(string meth, PltObject A, size_t args, const char* op, PltObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
+  inline bool invokeOperator(string meth, ZObject A, size_t args, const char* op, ZObject *rhs = NULL, bool raiseErrOnNF = true) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
   {
     //Operators invoked by this function are either unary or binary
-    //So at max 1 argument is given that is PltObject rhs (non-NULL means usable)
+    //So at max 1 argument is given that is ZObject rhs (non-NULL means usable)
     //raiseErrOnNF = whether to raise error on not found or not ?
 
     KlassObject *obj = (KlassObject *)A.ptr;
     auto it = obj->members.find(meth);
-    PltObject p3;
+    ZObject p3;
     static string s1;// to avoid multiple object creation across multiple invokeCalls
     if (it != obj->members.end())
     {
       p3 = it->second;
-      if (p3.type == PLT_FUNC)
+      if (p3.type == Z_FUNC)
       {
         FunObject *fn = (FunObject *)p3.ptr;
         if (fn->opt.size() != 0)
@@ -698,15 +698,15 @@ public:
           return true;
         }
       }
-      else if (p3.type == PLT_NATIVE_FUNC)
+      else if (p3.type == Z_NATIVE_FUNC)
       {
         NativeFunction *fn = (NativeFunction *)p3.ptr;
         NativeFunPtr M = fn->addr;
-        PltObject rr;
+        ZObject rr;
         
-        PltObject argArr[2] = {A, (!rhs) ? nil : *rhs};
+        ZObject argArr[2] = {A, (!rhs) ? nil : *rhs};
         rr = M(argArr, args);
-        if (rr.type == PLT_ERROBJ)
+        if (rr.type == Z_ERROBJ)
         {
           KlassObject *E = (KlassObject*)rr.ptr;
           s1 = meth + "():  " + *(string*)(E->members["msg"].ptr);
@@ -810,22 +810,22 @@ public:
       };
       #endif
     #endif
-    PltObject p1;
-    PltObject p2;
-    PltObject p3;
-    PltObject p4;
+    ZObject p1;
+    ZObject p2;
+    ZObject p3;
+    ZObject p4;
     string s1;
     string s2;
     char c1;
-    //PltList pl1;      // plutonium list 1
-    PltList* pl_ptr1; // plutonium list pointer 1
+    //ZList pl1;      // plutonium list 1
+    ZList* pl_ptr1; // plutonium list pointer 1
     //Dictionary pd1;
-    PltObject alwaysi32;
-    PltObject alwaysByte;
-    vector<PltObject> values;
-    vector<PltObject> names;
-    alwaysi32.type = PLT_INT;
-    alwaysByte.type = PLT_BYTE;
+    ZObject alwaysi32;
+    ZObject alwaysByte;
+    vector<ZObject> values;
+    vector<ZObject> names;
+    alwaysi32.type = Z_INT;
+    alwaysByte.type = Z_BYTE;
     int32_t* alwaysi32ptr = &alwaysi32.i;
     Dictionary *pd_ptr1;
     vector<uint8_t>* bt_ptr1;
@@ -865,17 +865,17 @@ public:
         memcpy(&i1, k, 4);
         k += 3;
         c1 = STACK[i1].type;
-        if (c1 == PLT_INT)
+        if (c1 == Z_INT)
         {
           if (STACK[i1].i == INT_MAX)
           {
             STACK[i1].l = (int64_t)INT_MAX + 1;
-            STACK[i1].type = PLT_INT64;
+            STACK[i1].type = Z_INT64;
           }
           else
             STACK[i1].i += 1;
         }
-        else if (c1 == PLT_INT64)
+        else if (c1 == Z_INT64)
         {
           if (STACK[i1].l == LLONG_MAX)
           {
@@ -884,7 +884,7 @@ public:
           }
           STACK[i1].l += 1;
         }
-        else if (c1 == PLT_FLOAT)
+        else if (c1 == Z_FLOAT)
         {
           if (STACK[i1].f == FLT_MAX)
           {
@@ -906,7 +906,7 @@ public:
         k += 1;
         c1 = *k;
         k += 1;
-        if (c1 == PLT_LIST)
+        if (c1 == Z_LIST)
         {
           int32_t listSize;
           memcpy(&listSize, k, sizeof(int32_t));
@@ -914,12 +914,12 @@ public:
           pl_ptr1 = allocList();
           *pl_ptr1 = {STACK.end() - listSize, STACK.end()};
           STACK.erase(STACK.end() - listSize, STACK.end());
-          p1.type = PLT_LIST;
+          p1.type = Z_LIST;
           p1.ptr = (void *)pl_ptr1;
           STACK.push_back(p1);
           DoThreshholdBusiness();
         }
-        else if (c1 == PLT_DICT)
+        else if (c1 == Z_DICT)
         {
           memcpy(&i1, k, sizeof(int32_t));
           //i1 is dictionary size
@@ -931,7 +931,7 @@ public:
             STACK.pop_back();
             p2 = STACK[STACK.size() - 1];//key
             STACK.pop_back();
-            if(p2.type!=PLT_INT && p2.type!=PLT_INT64 && p2.type!=PLT_FLOAT && p2.type!=PLT_STR  && p2.type!=PLT_BYTE && p2.type!=PLT_BOOL)
+            if(p2.type!=Z_INT && p2.type!=Z_INT64 && p2.type!=Z_FLOAT && p2.type!=Z_STR  && p2.type!=Z_BYTE && p2.type!=Z_BOOL)
             {
               spitErr(TypeError,"Key of type "+fullform(p2.type)+" not allowed.");
               NEXT_INST;
@@ -945,7 +945,7 @@ public:
             i1 -= 1;
           }
           p1.ptr = (void *)pd_ptr1;
-          p1.type = PLT_DICT;
+          p1.type = Z_DICT;
           STACK.push_back(p1);
           DoThreshholdBusiness();
         }
@@ -1009,13 +1009,13 @@ public:
         STACK.pop_back();
         p3 = STACK.back();
         STACK.pop_back();
-        if (p3.type == PLT_LIST)
+        if (p3.type == Z_LIST)
         {
-          pl_ptr1 = (PltList *)p3.ptr;
+          pl_ptr1 = (ZList *)p3.ptr;
           int64_t idx = 0;
-          if (p1.type == PLT_INT)
+          if (p1.type == Z_INT)
             idx = p1.i;
-          else if (p1.type == PLT_INT64)
+          else if (p1.type == Z_INT64)
             idx = p1.l;
           else
           {
@@ -1024,18 +1024,18 @@ public:
           }
           if (idx < 0 || idx > (int64_t)pl_ptr1->size())
           {
-            spitErr(ValueError, "Error index " + PltObjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size()));
+            spitErr(ValueError, "Error index " + ZObjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size()));
             NEXT_INST;
           }
           (*pl_ptr1)[idx] = p2;
         }
-        else if (p3.type == PLT_BYTEARR)
+        else if (p3.type == Z_BYTEARR)
         {
           bt_ptr1 = (vector<uint8_t>*)p3.ptr;
           int64_t idx = 0;
-          if (p1.type == PLT_INT)
+          if (p1.type == Z_INT)
             idx = p1.i;
-          else if (p1.type == PLT_INT64)
+          else if (p1.type == Z_INT64)
             idx = p1.l;
           else
           {
@@ -1044,17 +1044,17 @@ public:
           }
           if (idx < 0 || idx > (int64_t)bt_ptr1->size())
           {
-            spitErr(IndexError, "Error index " + PltObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size()));
+            spitErr(IndexError, "Error index " + ZObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size()));
             NEXT_INST;
           }
-          if(p2.type!=PLT_BYTE)
+          if(p2.type!=Z_BYTE)
           {
             spitErr(TypeError,"Error byte value required for bytearray!");
             NEXT_INST;
           }
           (*bt_ptr1)[idx] = (uint8_t)p2.i;
         }
-        else if (p3.type == PLT_DICT)
+        else if (p3.type == Z_DICT)
         {
           pd_ptr1 = (Dictionary *)p3.ptr;
           if (pd_ptr1->find(p1) == pd_ptr1->end())
@@ -1080,7 +1080,7 @@ public:
         k += 4;
         int32_t howmany = *k;
         p1=builtin[i1](&STACK[STACK.size() - howmany], howmany);
-        if (p1.type == PLT_ERROBJ)
+        if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
@@ -1097,7 +1097,7 @@ public:
         k += 4;
         i2 = *k;
         p1 = builtin[i1](&STACK[STACK.size() - i2], i2);
-        if (p1.type == PLT_ERROBJ)
+        if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
           spitErr(E->klass, *(string*)(E->members["msg"].ptr));
@@ -1116,7 +1116,7 @@ public:
         const string& method_name = strings[i1];
         i2 = *k;
         p1 = STACK[STACK.size()-i2-1]; // Parent object from which member is being called
-        if (p1.type == PLT_MODULE)
+        if (p1.type == Z_MODULE)
         {
           Module *m = (Module *)p1.ptr;
           if (m->members.find(method_name) == m->members.end())
@@ -1125,14 +1125,14 @@ public:
             NEXT_INST;
           }
           p3 = m->members[method_name];
-          if (p3.type == PLT_NATIVE_FUNC)
+          if (p3.type == Z_NATIVE_FUNC)
           {
             NativeFunction *fn = (NativeFunction *)p3.ptr;
             NativeFunPtr f = fn->addr;
-            PltObject *argArr = &STACK[STACK.size()-i2];
+            ZObject *argArr = &STACK[STACK.size()-i2];
             p4 = f(argArr, i2);
 
-            if (p4.type == PLT_ERROBJ)
+            if (p4.type == Z_ERROBJ)
             {
               // The module raised an error
               KlassObject* E = (KlassObject*)p4.ptr;
@@ -1140,7 +1140,7 @@ public:
               spitErr(E->klass,s1);
               NEXT_INST;
             }
-            if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
+            if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
             {
               spitErr(ValueError, "Error invalid response from module!");
               NEXT_INST;
@@ -1148,21 +1148,21 @@ public:
             STACK.erase(STACK.end()-i2-1,STACK.end());
             STACK.push_back(p4);
           }
-          else if (p3.type == PLT_CLASS)
+          else if (p3.type == Z_CLASS)
           {
             KlassObject *obj = allocKlassObject(); // instance of class
             obj->members = ((Klass *)p3.ptr)->members;
             obj->privateMembers = ((Klass *)p3.ptr)->privateMembers;
 
             obj->klass = (Klass *)p3.ptr;
-            PltObject r;
-            r.type = PLT_OBJ;
+            ZObject r;
+            r.type = Z_OBJ;
             r.ptr = (void *)obj;
             STACK[STACK.size()-i2-1] = r;
             if (obj->members.find("__construct__") != obj->members.end())
             {
-              PltObject construct = obj->members["__construct__"];
-              if (construct.type != PLT_NATIVE_FUNC)
+              ZObject construct = obj->members["__construct__"];
+              if (construct.type != Z_NATIVE_FUNC)
               {
                 spitErr(TypeError, "Error constructor of module's class " + ((Klass *)p3.ptr)->name + " is not a native function!");
                 NEXT_INST;
@@ -1170,9 +1170,9 @@ public:
               NativeFunction *fn = (NativeFunction *)construct.ptr;
               NativeFunPtr p = fn->addr;
 
-              PltObject *args = &STACK[STACK.size()-i2-1];
+              ZObject *args = &STACK[STACK.size()-i2-1];
               p1 = p(args, i2 + 1);
-              if (p1.type == PLT_ERROBJ)
+              if (p1.type == Z_ERROBJ)
               {
                 // The module raised an error
                 KlassObject* E = (KlassObject*)p1.ptr;
@@ -1190,11 +1190,11 @@ public:
             NEXT_INST;
           }
         }
-        else if (p1.type == PLT_LIST || p1.type == PLT_DICT || p1.type == PLT_BYTEARR || p1.type == PLT_STR || p1.type == PLT_MSTR)
+        else if (p1.type == Z_LIST || p1.type == Z_DICT || p1.type == Z_BYTEARR || p1.type == Z_STR || p1.type == Z_MSTR)
         {
-          PltObject callmethod(string, PltObject *, int32_t);
+          ZObject callmethod(string, ZObject *, int32_t);
           p3 = callmethod(method_name, &STACK[STACK.size()-i2-1], i2 + 1);
-          if (p3.type == PLT_ERROBJ)
+          if (p3.type == Z_ERROBJ)
           {
             KlassObject* E = (KlassObject*)p3.ptr;
             spitErr(E->klass, *(string *)(E->members["msg"].ptr));
@@ -1203,7 +1203,7 @@ public:
           STACK.erase(STACK.end()-i2-1,STACK.end());
           STACK.push_back(p3);
         }
-        else if (p1.type == PLT_OBJ)
+        else if (p1.type == Z_OBJ)
         {
           KlassObject *obj = (KlassObject *)p1.ptr;
           if (obj->members.find(method_name) == obj->members.end())
@@ -1234,7 +1234,7 @@ public:
           }
           else
             p4 = obj->members[method_name];
-          if (p4.type == PLT_FUNC)
+          if (p4.type == Z_FUNC)
           {
             FunObject *memFun = (FunObject *)p4.ptr;
             if ((size_t)i2 + 1 + memFun->opt.size() < memFun->args || (size_t)i2 + 1 > memFun->args)
@@ -1259,14 +1259,14 @@ public:
             k = program + memFun->i;
             NEXT_INST;
           }
-          else if (p4.type == PLT_NATIVE_FUNC)
+          else if (p4.type == Z_NATIVE_FUNC)
           {
             NativeFunction *fn = (NativeFunction *)p4.ptr;
             NativeFunPtr R = fn->addr;
-            PltObject *args = &STACK[STACK.size()-i2-1];
-            PltObject rr;
+            ZObject *args = &STACK[STACK.size()-i2-1];
+            ZObject rr;
             rr = R(args, i2 + 1);
-            if (rr.type == PLT_ERROBJ)
+            if (rr.type == Z_ERROBJ)
             {
               KlassObject* E = (KlassObject *)rr.ptr;
               spitErr(E->klass, fn->name + ": " + *(string*)(E->members["msg"].ptr));
@@ -1293,8 +1293,8 @@ public:
               spitErr(NameError,"Error coroutine member isAlive() takes 0 arguments!");
               NEXT_INST;
             }
-            PltObject isAlive;
-            isAlive.type = PLT_BOOL;
+            ZObject isAlive;
+            isAlive.type = Z_BOOL;
             isAlive.i = (g->state != STOPPED);
             STACK.pop_back();
             STACK.push_back(isAlive);
@@ -1365,7 +1365,7 @@ public:
         k += 3;
         s1 = strings[i1];
         
-        if (p1.type != PLT_OBJ)
+        if (p1.type != Z_OBJ)
         {
           spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
           NEXT_INST;
@@ -1373,7 +1373,7 @@ public:
         KlassObject *ptr = (KlassObject *)p1.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
         {
-          if (p1.type == PLT_OBJ)
+          if (p1.type == Z_OBJ)
           {
             if (ptr->privateMembers.find(s1) != ptr->privateMembers.end())
             {
@@ -1416,7 +1416,7 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         s1 = strings[i1];
-        typedef PltObject (*initFun)();
+        typedef ZObject (*initFun)();
         typedef void (*apiFun)(apiFuncions *);
         #ifdef _WIN32
           s1 = "C:\\plutonium\\modules\\" + s1 + ".dll";
@@ -1464,7 +1464,7 @@ public:
         }
         a(&api);
         p1 = f();
-        if (p1.type != PLT_MODULE)
+        if (p1.type != Z_MODULE)
         {
           spitErr(ValueError, "Error module's init() should return a module object!");
           NEXT_INST;
@@ -1533,18 +1533,18 @@ public:
       }
       CASE_CP LOAD_NIL:
       {
-        p1.type = PLT_NIL;
+        p1.type = Z_NIL;
         STACK.push_back(p1);
         k++; NEXT_INST;
       }
       CASE_CP CO_STOP:
       {
         executing.pop_back();
-        PltObject val = STACK[STACK.size() - 1];
+        ZObject val = STACK[STACK.size() - 1];
         STACK.pop_back();
         values = {STACK.end() - (STACK.size() - frames.back()), STACK.end()};
         STACK.erase(STACK.end() - (STACK.size() - frames.back()), STACK.end());
-        PltObject genObj = STACK.back();
+        ZObject genObj = STACK.back();
         STACK.pop_back();
         Coroutine *g = (Coroutine *)genObj.ptr;
         g->locals = values;
@@ -1571,14 +1571,14 @@ public:
       }
       CASE_CP LOAD_TRUE:
       {
-        p1.type = PLT_BOOL;
+        p1.type = Z_BOOL;
         p1.i = 1;
         STACK.push_back(p1);
         k++; NEXT_INST;
       }
       CASE_CP LOAD_FALSE:
       {
-        p1.type = PLT_BOOL;
+        p1.type = Z_BOOL;
         p1.i = 0;
         STACK.push_back(p1);
         k++; NEXT_INST;
@@ -1590,26 +1590,26 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__lshift__", p1, 2, "<<", &p2);
           NEXT_INST;
         }
-        if (p2.type != PLT_INT)
+        if (p2.type != Z_INT)
         {
           spitErr(TypeError, "Error rhs for '<<' must be an Integer 32 bit");
           NEXT_INST;
         }
         p3.type = p1.type;
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           p3.i = p1.i << p2.i;
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           p3.l = p1.l << p2.i;
         }
-        else if(p1.type == PLT_BYTE)
+        else if(p1.type == Z_BYTE)
         {
           uint8_t p = p1.i;
           p<<=p2.i;
@@ -1630,26 +1630,26 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__rshift__", p1, 2, ">>", &p2);
           NEXT_INST;
         }
-        if (p2.type != PLT_INT)
+        if (p2.type != Z_INT)
         {
           spitErr(TypeError, "Error rhs for '>>' must be an Integer 32 bit");
           NEXT_INST;
         }
         p3.type = p1.type;
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           p3.i = p1.i >> p2.i;
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           p3.l = p1.l >> p2.i;
         }
-        else if(p1.type == PLT_BYTE)
+        else if(p1.type == Z_BYTE)
         {
           uint8_t p = p1.i;
           p>>=p2.i;
@@ -1670,7 +1670,7 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__bitwiseand__", p1, 2, "&", &p2);
           NEXT_INST;
@@ -1681,15 +1681,15 @@ public:
           NEXT_INST;
         }
         p3.type = p1.type;
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           p3.i = p1.i & p2.i;
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           p3.l = p1.l & p2.l;
         }
-        else if (p1.type == PLT_BYTE)
+        else if (p1.type == Z_BYTE)
         {
           p3.i = (uint8_t)p1.i & (uint8_t)p2.i;
         }
@@ -1708,7 +1708,7 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__bitwiseor__", p1, 2, "|", &p2);
           NEXT_INST;
@@ -1719,15 +1719,15 @@ public:
           NEXT_INST;
         }
         p3.type = p1.type;
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           p3.i = p1.i | p2.i;
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           p3.l = p1.l | p2.l;
         }
-        else if (p1.type == PLT_BYTE)
+        else if (p1.type == Z_BYTE)
         {
           p3.i = (uint8_t)p1.i | (uint8_t)p2.i;
         }
@@ -1744,27 +1744,27 @@ public:
         orgk = k - program;
         p1 = STACK.back();
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__complement__", p1, 1, "~");
           NEXT_INST;
         }
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
-          p2.type = PLT_INT;
+          p2.type = Z_INT;
           p2.i = ~p1.i;
           STACK.push_back(p2);
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
-          p2.type = PLT_INT64;
+          p2.type = Z_INT64;
           p2.l = ~p1.l;
           STACK.push_back(p2);
         }
-        else if (p1.type == PLT_BYTE)
+        else if (p1.type == Z_BYTE)
         {
           
-          p2.type = PLT_BYTE;
+          p2.type = Z_BYTE;
           uint8_t p = p1.i;
           p = ~p;
           p2.i = p; 
@@ -1784,7 +1784,7 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__xor__", p1, 2, "^", &p2);
           NEXT_INST;
@@ -1795,15 +1795,15 @@ public:
           NEXT_INST;
         }
         p3.type = p1.type;
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           p3.i = p1.i ^ p2.i;
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           p3.l = p1.l ^ p2.l;
         }
-        else if (p1.type == PLT_BYTE)
+        else if (p1.type == Z_BYTE)
         {
           p3.i = (uint8_t)p1.i ^ (uint8_t)p2.i;
         }
@@ -1822,7 +1822,7 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__add__", p1, 2, "+", &p2);
           NEXT_INST;
@@ -1831,12 +1831,12 @@ public:
           c1 = p1.type;
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            c1 = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            c1 = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            c1 = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            c1 = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            c1 = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            c1 = Z_INT;
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
@@ -1845,31 +1845,31 @@ public:
           spitErr(TypeError, "Error operator '+' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        if (c1 == PLT_LIST)
+        if (c1 == Z_LIST)
         {
-          p3.type = PLT_LIST;
-          PltList res;
-          PltList e = *(PltList *)p2.ptr;
-          res = *(PltList *)p1.ptr;
+          p3.type = Z_LIST;
+          ZList res;
+          ZList e = *(ZList *)p2.ptr;
+          res = *(ZList *)p1.ptr;
           res.insert(res.end(), e.begin(), e.end());
-          PltList *p = allocList();
+          ZList *p = allocList();
           *p = res;
           p3.ptr = (void *)p;
           STACK.push_back(p3);
           DoThreshholdBusiness();
         }
-        else if (c1 == PLT_STR )
+        else if (c1 == Z_STR )
         {
           string *p = allocString();
 
           *p = *(string *)p1.ptr + *(string *)p2.ptr;
-          p3 = PObjFromStrPtr(p);
+          p3 = ZObjFromStrPtr(p);
           STACK.push_back(p3);
           DoThreshholdBusiness();
         }
-        else if (c1 == PLT_INT)
+        else if (c1 == Z_INT)
         {
-          p3.type = PLT_INT;
+          p3.type = Z_INT;
           if (!addition_overflows(p1.i, p1.i))
           {
             p3.i = p1.i + p2.i;
@@ -1881,11 +1881,11 @@ public:
             spitErr(OverflowError, "Integer Overflow occurred");
             NEXT_INST;
           }
-          p3.type = PLT_INT64;
+          p3.type = Z_INT64;
           p3.l = (int64_t)(p1.i) + (int64_t)(p2.i);
           STACK.push_back(p3);
         }
-        else if (c1 == PLT_FLOAT)
+        else if (c1 == Z_FLOAT)
         {
           if (addition_overflows(p1.f, p2.f))
           {
@@ -1893,11 +1893,11 @@ public:
             spitErr(OverflowError, "Floating point overflow during addition");
             NEXT_INST;
           }
-          p3.type = PLT_FLOAT;
+          p3.type = Z_FLOAT;
           p3.f = p1.f + p2.f;
           STACK.push_back(p3);
         }
-        else if (c1 == PLT_INT64)
+        else if (c1 == Z_INT64)
         {
           if (addition_overflows(p1.l, p2.l))
           {
@@ -1905,7 +1905,7 @@ public:
             spitErr(OverflowError, "Error overflow during solving expression.");
             NEXT_INST;
           }
-          p3.type = PLT_INT64;
+          p3.type = Z_INT64;
           p3.l = p1.l + p2.l;
           STACK.push_back(p3);
           k++; NEXT_INST;
@@ -1926,19 +1926,19 @@ public:
         STACK.pop_back();
         if(p1.type == p2.type && isNumeric(p1.type))
           c1 = p1.type;
-        else if (p1.type == PLT_OBJ)
+        else if (p1.type == Z_OBJ)
         {
           invokeOperator("__smallerthan__", p1, 2, "<", &p2);
           NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            c1 = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            c1 = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            c1 = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            c1 = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            c1 = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            c1 = Z_INT;
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
@@ -1947,12 +1947,12 @@ public:
           spitErr(TypeError, "Error operator '<' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
-        if (p1.type == PLT_INT)
+        p3.type = Z_BOOL;
+        if (p1.type == Z_INT)
           p3.i = (bool)(p1.i < p2.i);
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
           p3.i = (bool)(p1.l < p2.l);
-        else if (p1.type == PLT_FLOAT)
+        else if (p1.type == Z_FLOAT)
           p3.i = (bool)(p1.f < p2.f);
         
         STACK.push_back(p3);
@@ -1966,19 +1966,19 @@ public:
         STACK.pop_back();
         if(p1.type == p2.type && isNumeric(p1.type))
           c1=p1.type;
-        else if (p1.type == PLT_OBJ)
+        else if (p1.type == Z_OBJ)
         {
           invokeOperator("__greaterthan__", p1, 2, ">", &p2);
           NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            c1 = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            c1 = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            c1 = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            c1 = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            c1 = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            c1 = Z_INT;
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
@@ -1988,12 +1988,12 @@ public:
           spitErr(TypeError, "Error operator '>' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
-        if (p1.type == PLT_INT)
+        p3.type = Z_BOOL;
+        if (p1.type == Z_INT)
           p3.i = (bool)(p1.i > p2.i);
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
           p3.i = (bool)(p1.l > p2.l);
-        else if (p1.type == PLT_FLOAT)
+        else if (p1.type == Z_FLOAT)
           p3.i = (bool)(p1.f > p2.f);
         
         STACK.push_back(p3);
@@ -2008,19 +2008,19 @@ public:
         STACK.pop_back();
         if(p1.type == p2.type && isNumeric(p1.type))
           c1 = p1.type;
-        else if (p1.type == PLT_OBJ)
+        else if (p1.type == Z_OBJ)
         {
           invokeOperator("__smallerthaneq__", p1, 2, "<=", &p2);
           NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            c1 = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            c1 = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            c1 = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            c1 = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            c1 = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            c1 = Z_INT;
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
@@ -2029,12 +2029,12 @@ public:
           spitErr(TypeError, "Error operator '<=' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
-        if (p1.type == PLT_INT)
+        p3.type = Z_BOOL;
+        if (p1.type == Z_INT)
           p3.i = (bool)(p1.i <= p2.i);
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
           p3.i = (bool)(p1.l <= p2.l);
-        else if (p1.type == PLT_FLOAT)
+        else if (p1.type == Z_FLOAT)
           p3.i = (bool)(p1.f <= p2.f);
         
         STACK.push_back(p3);
@@ -2049,19 +2049,19 @@ public:
         STACK.pop_back();
         if(p1.type == p2.type && isNumeric(p1.type))
           c1 = p1.type;
-        else if (p1.type == PLT_OBJ)
+        else if (p1.type == Z_OBJ)
         {
           invokeOperator("__greaterthaneq__", p1, 2, ">=", &p2);
           NEXT_INST;
         }
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            c1 = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            c1 = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            c1 = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            c1 = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            c1 = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            c1 = Z_INT;
           PromoteType(p1, c1);
           PromoteType(p2, c1);
         }
@@ -2070,12 +2070,12 @@ public:
           spitErr(TypeError, "Error operator '>=' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
-        if (p1.type == PLT_INT)
+        p3.type = Z_BOOL;
+        if (p1.type == Z_INT)
           p3.i = (bool)(p1.i >= p2.i);
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
           p3.i = (bool)(p1.l >= p2.l);
-        else if (p1.type == PLT_FLOAT)
+        else if (p1.type == Z_FLOAT)
           p3.i = (bool)(p1.f >= p2.f);
         
         STACK.push_back(p3);
@@ -2088,16 +2088,16 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_INT && p2.type == PLT_INT64)
-          PromoteType(p1, PLT_INT64);
-        else if (p1.type == PLT_INT64 && p2.type == PLT_INT)
-          PromoteType(p2, PLT_INT64);
-        if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
+        if (p1.type == Z_INT && p2.type == Z_INT64)
+          PromoteType(p1, Z_INT64);
+        else if (p1.type == Z_INT64 && p2.type == Z_INT)
+          PromoteType(p2, Z_INT64);
+        if (p1.type == Z_OBJ && p2.type != Z_NIL)
         {
           if(invokeOperator("__eq__", p1, 2, "==", &p2, 0))
             NEXT_INST;
         }
-        p3.type = PLT_BOOL;
+        p3.type = Z_BOOL;
         p3.i = (bool)(p1 == p2);
         STACK.push_back(p3);
         k++; NEXT_INST;
@@ -2106,13 +2106,13 @@ public:
       {
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           orgk = k-program;
           invokeOperator("__not__", p1, 1, "!");
           NEXT_INST;
         }
-        if (p1.type != PLT_BOOL)
+        if (p1.type != Z_BOOL)
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator '!' unsupported for type " + fullform(p1.type));
@@ -2126,7 +2126,7 @@ public:
       {
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           orgk = k - program;
           invokeOperator("__neg__", p1, 1, "-");
@@ -2138,17 +2138,17 @@ public:
           spitErr(TypeError, "Error unary operator '-' unsupported for type " + fullform(p1.type));
           NEXT_INST;
         };
-        if (p1.type == PLT_INT)
+        if (p1.type == Z_INT)
         {
           if (p1.i != INT_MIN)
             p1.i = -(p1.i);
           else
           {
-            p1.type = PLT_INT64;
+            p1.type = Z_INT64;
             p1.l = -(int64_t)(INT_MIN);
           }
         }
-        else if (p1.type == PLT_INT64)
+        else if (p1.type == Z_INT64)
         {
           if (p1.l == LLONG_MIN) // taking negative of LLONG_MIN results in LLONG_MAX+1 so we have to avoid it
           {
@@ -2158,13 +2158,13 @@ public:
           }
           else if (-p1.l == INT_MIN)
           {
-            p1.type = PLT_INT;
+            p1.type = Z_INT;
             p1.i = INT_MIN;
           }
           else
             p1.l = -p1.l;
         }
-        else if (p1.type == PLT_FLOAT)
+        else if (p1.type == Z_FLOAT)
         {
           p1.f = -p1.f;
         }
@@ -2177,15 +2177,15 @@ public:
         STACK.pop_back();
         p2 = STACK[STACK.size() - 1];//value
         STACK.pop_back();
-        if (p2.type == PLT_LIST)
+        if (p2.type == Z_LIST)
         {
-          if (p1.type != PLT_INT && p1.type != PLT_INT64)
+          if (p1.type != Z_INT && p1.type != Z_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
             NEXT_INST;
           }
-          PromoteType(p1, PLT_INT64);
+          PromoteType(p1, Z_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
@@ -2193,7 +2193,7 @@ public:
             NEXT_INST;
           }
 
-          pl_ptr1 = (PltList *)p2.ptr;
+          pl_ptr1 = (ZList *)p2.ptr;
           if ((size_t)p1.l >= pl_ptr1->size())
           {
             orgk = k - program;
@@ -2203,15 +2203,15 @@ public:
           STACK.push_back((*pl_ptr1)[p1.l]);
           k++; NEXT_INST;
         }
-        else if (p2.type == PLT_BYTEARR)
+        else if (p2.type == Z_BYTEARR)
         {
-          if (p1.type != PLT_INT && p1.type != PLT_INT64)
+          if (p1.type != Z_INT && p1.type != Z_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index should be integer!");
             NEXT_INST;
           }
-          PromoteType(p1, PLT_INT64);
+          PromoteType(p1, Z_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
@@ -2231,27 +2231,27 @@ public:
           STACK.push_back(p3);
           k++; NEXT_INST;
         }
-        else if (p2.type == PLT_DICT)
+        else if (p2.type == Z_DICT)
         {
           Dictionary* d = (Dictionary *)p2.ptr;
           if (d->find(p1) == d->end())
           {
             orgk = k - program;
-            spitErr(KeyError, "Error key " + PltObjectToStr(p1) + " not found in the dictionary!");
+            spitErr(KeyError, "Error key " + ZObjectToStr(p1) + " not found in the dictionary!");
             NEXT_INST;
           }
-          PltObject res = (*d)[p1];
+          ZObject res = (*d)[p1];
           STACK.push_back(res);
         }
-        else if (p2.type == PLT_STR || p2.type == PLT_MSTR)
+        else if (p2.type == Z_STR || p2.type == Z_MSTR)
         {
-          if (p1.type != PLT_INT && p1.type != PLT_INT64)
+          if (p1.type != Z_INT && p1.type != Z_INT64)
           {
             orgk = k - program;
             spitErr(TypeError, "Error index for string should be an integer!");
             NEXT_INST;
           }
-          PromoteType(p1, PLT_INT64);
+          PromoteType(p1, Z_INT64);
           if (p1.l < 0)
           {
             orgk = k - program;
@@ -2267,10 +2267,10 @@ public:
           char c = s[p1.l];
           string *p = allocString();
           *p += c;
-          STACK.push_back(PObjFromStrPtr(p));
+          STACK.push_back(ZObjFromStrPtr(p));
           DoThreshholdBusiness();
         }
-        else if (p2.type == PLT_OBJ)
+        else if (p2.type == Z_OBJ)
         {
           orgk = k - program;
           invokeOperator("__index__", p2, 2, "[]", &p1);
@@ -2293,16 +2293,16 @@ public:
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
 
-        if (p1.type == PLT_OBJ && p2.type != PLT_NIL)
+        if (p1.type == Z_OBJ && p2.type != Z_NIL)
         {
           invokeOperator("__noteq__", p1, 2, "!=", &p2, 0);
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
-        if (p1.type == PLT_INT && p2.type == PLT_INT64)
-          PromoteType(p1, PLT_INT64);
-        else if (p1.type == PLT_INT64 && p2.type == PLT_INT)
-          PromoteType(p2, PLT_INT64);
+        p3.type = Z_BOOL;
+        if (p1.type == Z_INT && p2.type == Z_INT64)
+          PromoteType(p1, Z_INT64);
+        else if (p1.type == Z_INT64 && p2.type == Z_INT)
+          PromoteType(p2, Z_INT64);
         p3.i = (bool)!(p1 == p2);
         STACK.push_back(p3);
         k++; NEXT_INST;
@@ -2314,13 +2314,13 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if ((p1.type != PLT_DICT && p1.type != PLT_CLASS && p1.type != PLT_LIST && p1.type != PLT_OBJ && p1.type != PLT_STR && p1.type != PLT_MSTR && p1.type != PLT_MODULE && p1.type != PLT_FUNC) || (p2.type != PLT_CLASS && p2.type != PLT_DICT && p2.type != PLT_STR && p2.type!=PLT_MSTR && p2.type != PLT_FUNC && p2.type != PLT_LIST && p2.type != PLT_OBJ && p2.type != PLT_MODULE))
+        if ((p1.type != Z_DICT && p1.type != Z_CLASS && p1.type != Z_LIST && p1.type != Z_OBJ && p1.type != Z_STR && p1.type != Z_MSTR && p1.type != Z_MODULE && p1.type != Z_FUNC) || (p2.type != Z_CLASS && p2.type != Z_DICT && p2.type != Z_STR && p2.type!=Z_MSTR && p2.type != Z_FUNC && p2.type != Z_LIST && p2.type != Z_OBJ && p2.type != Z_MODULE))
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
           NEXT_INST;
         }
-        p3.type = PLT_BOOL;
+        p3.type = Z_BOOL;
         p3.i = (bool)(p1.ptr == p2.ptr);
         STACK.push_back(p3);
         k++; NEXT_INST;
@@ -2332,52 +2332,52 @@ public:
         STACK.pop_back();
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.type == PLT_OBJ)
+        if (p1.type == Z_OBJ)
         {
           invokeOperator("__mul__", p1, 2, "*", &p2);
           NEXT_INST;
         }
-        PltObject c;
+        ZObject c;
         char t;
         if(p1.type==p2.type && isNumeric(p1.type))
           t = p1.type;
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
-          if (p1.type == PLT_FLOAT || p2.type == PLT_FLOAT)
-            t = PLT_FLOAT;
-          else if (p1.type == PLT_INT64 || p2.type == PLT_INT64)
-            t = PLT_INT64;
-          else if (p1.type == PLT_INT || p2.type == PLT_INT)
-            t = PLT_INT;
+          if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
+            t = Z_FLOAT;
+          else if (p1.type == Z_INT64 || p2.type == Z_INT64)
+            t = Z_INT64;
+          else if (p1.type == Z_INT || p2.type == Z_INT)
+            t = Z_INT;
           PromoteType(p1, t);
           PromoteType(p2, t);
         }
-        else if(p1.type==PLT_LIST && (p2.type==PLT_INT || p2.type == PLT_INT64))
+        else if(p1.type==Z_LIST && (p2.type==Z_INT || p2.type == Z_INT64))
         {
-          PromoteType(p2,PLT_INT64);
+          PromoteType(p2,Z_INT64);
           if(p2.l < 0)
           {
             orgk = k - program;
             spitErr(ValueError,"Cannot multiply list by a negative integer!");
             NEXT_INST;
           }
-          PltList* src = (PltList*)p1.ptr;
-          PltList* res = allocList();
+          ZList* src = (ZList*)p1.ptr;
+          ZList* res = allocList();
           if(src->size()!=0)
           {
             for(size_t i=1;i<=(size_t)p2.l;i++)
               res->insert(res->end(),src->begin(),src->end());
           }
-          p1.type = PLT_LIST;
+          p1.type = Z_LIST;
           p1.ptr = (void*)res;
           STACK.push_back(p1);
           DoThreshholdBusiness();
           ++k;
           NEXT_INST;
         }
-        else if(p1.type==PLT_STR && (p2.type==PLT_INT || p2.type == PLT_INT64))
+        else if(p1.type==Z_STR && (p2.type==Z_INT || p2.type == Z_INT64))
         {
-          PromoteType(p2,PLT_INT64);
+          PromoteType(p2,Z_INT64);
           if(p2.l < 0)
           {
             orgk = k - program;
@@ -2391,7 +2391,7 @@ public:
             for(size_t i=1;i<=(size_t)p2.l;i++)
               res->insert(res->end(),src->begin(),src->end());
           }
-          p1.type = PLT_STR;
+          p1.type = Z_STR;
           p1.ptr = (void*)res;
           STACK.push_back(p1);
           DoThreshholdBusiness();
@@ -2405,9 +2405,9 @@ public:
           NEXT_INST;
         }
 
-        if (t == PLT_INT)
+        if (t == Z_INT)
         {
-          c.type = PLT_INT;
+          c.type = Z_INT;
           if (!multiplication_overflows(p1.i, p2.i))
           {
             c.i = p1.i * p2.i;
@@ -2420,11 +2420,11 @@ public:
             spitErr(OverflowError, "Overflow occurred");
             NEXT_INST;
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
           STACK.push_back(c);
         }
-        else if (t == PLT_FLOAT)
+        else if (t == Z_FLOAT)
         {
           if (multiplication_overflows(p1.f, p2.f))
           {
@@ -2432,11 +2432,11 @@ public:
             spitErr(OverflowError, "Floating point overflow during multiplication");
             NEXT_INST;
           }
-          c.type = PLT_FLOAT;
+          c.type = Z_FLOAT;
           c.f = p1.f * p2.f;
           STACK.push_back(c);
         }
-        else if (t == PLT_INT64)
+        else if (t == Z_INT64)
         {
           if (multiplication_overflows(p1.l, p2.l))
           {
@@ -2444,7 +2444,7 @@ public:
             spitErr(OverflowError, "Error overflow during solving expression.");
             NEXT_INST;
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = p1.l * p2.l;
           STACK.push_back(c);
         }
@@ -2453,14 +2453,14 @@ public:
       CASE_CP MEMB:
       {
         orgk = k - program;
-        PltObject a = STACK[STACK.size() - 1];
+        ZObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         string& mname = strings[i1];
      
-        if (a.type == PLT_MODULE)
+        if (a.type == Z_MODULE)
         {
           Module *m = (Module *)a.ptr;
 
@@ -2473,7 +2473,7 @@ public:
           ++k;
           NEXT_INST;
         }
-        else if(a.type == PLT_OBJ)
+        else if(a.type == Z_OBJ)
         {
           KlassObject *ptr = (KlassObject *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
@@ -2501,10 +2501,10 @@ public:
                 NEXT_INST;
               }
           }
-          PltObject ret = ptr->members[mname];
+          ZObject ret = ptr->members[mname];
           STACK.push_back(ret);
         }
-        else if(a.type == PLT_CLASS)
+        else if(a.type == Z_CLASS)
         {
           Klass *ptr = (Klass *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
@@ -2532,7 +2532,7 @@ public:
                 NEXT_INST;
               }
           }
-          PltObject ret = ptr->members[mname];
+          ZObject ret = ptr->members[mname];
           STACK.push_back(ret);
         }
         else
@@ -2555,7 +2555,7 @@ public:
         fn->i = p;
         fn->args = *k;
         fn->name = strings[idx];
-        p1.type = PLT_FUNC;
+        p1.type = Z_FUNC;
         p1.ptr = (void *)fn;
         k++;
         i2 = (int32_t)*k;
@@ -2574,7 +2574,7 @@ public:
         int32_t idx;
         memcpy(&idx, k, sizeof(int32_t));
         k += 4;
-        PltObject co;
+        ZObject co;
         FunObject* fn = allocCoroutine();
         fn->args = *k;
         fn->i = p;
@@ -2595,8 +2595,8 @@ public:
         memcpy(&idx, k, sizeof(int32_t));
         k += 3;
         const string& name = strings[idx];
-        PltObject klass;
-        klass.type = PLT_CLASS;
+        ZObject klass;
+        klass.type = Z_CLASS;
         Klass *obj = allocKlass();
         obj->name = name;
         values.clear();
@@ -2604,7 +2604,7 @@ public:
         for (int32_t i = 1; i <= N; i++)
         {
           p1 = STACK.back();
-          if (p1.type == PLT_FUNC)
+          if (p1.type == Z_FUNC)
           {
             FunObject *ptr = (FunObject *)p1.ptr;
             ptr->klass = obj;
@@ -2644,8 +2644,8 @@ public:
         // N is total new class members
         // i1 is idx of class name in strings array
         const string& name = strings[i1];
-        PltObject klass;
-        klass.type = PLT_CLASS;
+        ZObject klass;
+        klass.type = Z_CLASS;
         Klass *d = allocKlass();
         d->name = name;
 
@@ -2654,7 +2654,7 @@ public:
         for (int32_t i = 1; i <= N; i++)
         {
           p1 = STACK.back();
-          if (p1.type == PLT_FUNC)
+          if (p1.type == Z_FUNC)
           {
             FunObject *ptr = (FunObject *)p1.ptr;
             ptr->klass = d;
@@ -2667,9 +2667,9 @@ public:
           names.push_back(STACK.back());
           STACK.pop_back();
         }
-        PltObject baseClass = STACK.back();
+        ZObject baseClass = STACK.back();
         STACK.pop_back();
-        if (baseClass.type != PLT_CLASS)
+        if (baseClass.type != Z_CLASS)
         {
           spitErr(TypeError, "Error class can not be derived from object of non class type!");
           NEXT_INST;
@@ -2698,13 +2698,13 @@ public:
             if (d->privateMembers.find(n) == d->privateMembers.end())
             {
               p1 = e.second;
-              if (p1.type == PLT_FUNC)
+              if (p1.type == Z_FUNC)
               {
                 FunObject *p = (FunObject *)p1.ptr;
                 FunObject *rep = allocFunObject();
                 *rep = *p;
                 rep->klass = d;
-                p1.type = PLT_FUNC;
+                p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }
               d->members.emplace(e.first, p1);
@@ -2719,13 +2719,13 @@ public:
             if (d->members.find(n) == d->members.end())
             {
               p1 = e.second;
-              if (p1.type == PLT_FUNC)
+              if (p1.type == Z_FUNC)
               {
                 FunObject *p = (FunObject *)p1.ptr;
                 FunObject *rep = allocFunObject();
                 *rep = *p;
                 rep->klass = d;
-                p1.type = PLT_FUNC;
+                p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }
               d->privateMembers.emplace(n, p1);
@@ -2744,7 +2744,7 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         p1 = STACK[STACK.size() - 1];
-        if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
+        if (p1.type == Z_NIL || (p1.type == Z_BOOL && p1.i == 0))
         {
           k = k + i1 + 1;
           NEXT_INST;
@@ -2758,7 +2758,7 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         p1 = STACK[STACK.size() - 1];
-        if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
+        if (p1.type == Z_NIL || (p1.type == Z_BOOL && p1.i == 0))
         {
           STACK.pop_back();
           k++; NEXT_INST;
@@ -2774,7 +2774,7 @@ public:
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        p1.type = PLT_STR;
+        p1.type = Z_STR;
         p1.ptr = (void *)&strings[i1];
         STACK.push_back(p1);
         k++; NEXT_INST;
@@ -2782,11 +2782,11 @@ public:
       CASE_CP CALLUDF:
       {
         orgk = k - program;
-        PltObject fn = STACK.back();
+        ZObject fn = STACK.back();
         STACK.pop_back();
         k += 1;
         int32_t N = *k;
-        if (fn.type == PLT_FUNC)
+        if (fn.type == Z_FUNC)
         {
           FunObject *obj = (FunObject *)fn.ptr;
           if ((size_t)N + obj->opt.size() < obj->args || (size_t)N > obj->args)
@@ -2807,19 +2807,19 @@ public:
           k = program + obj->i;
           NEXT_INST;
         }
-        else if (fn.type == PLT_NATIVE_FUNC)
+        else if (fn.type == Z_NATIVE_FUNC)
         {
           NativeFunction *A = (NativeFunction *)fn.ptr;
           NativeFunPtr f = A->addr;
-          p4.type = PLT_NIL;
+          p4.type = Z_NIL;
           p4 = f(&(STACK[STACK.size() - N]), N);
-          if (p4.type == PLT_ERROBJ)
+          if (p4.type == Z_ERROBJ)
           {
             s1 = "Native Function:  " + *(string *)p4.ptr;
             spitErr((Klass*)p4.ptr, s1);
             NEXT_INST;
           }
-          if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
+          if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
           {
             spitErr(ValueError, "Error invalid response from module!");
             NEXT_INST;
@@ -2827,7 +2827,7 @@ public:
           STACK.erase(STACK.end() - N, STACK.end());
           STACK.push_back(p4);
         }
-        else if (fn.type == PLT_CLASS)
+        else if (fn.type == Z_CLASS)
         {
 
           KlassObject *obj = allocKlassObject(); // instance of class
@@ -2837,8 +2837,8 @@ public:
           obj->klass = (Klass *)fn.ptr;
           if (obj->members.find("__construct__") != obj->members.end())
           {
-            PltObject construct = obj->members["__construct__"];
-            if (construct.type == PLT_FUNC)
+            ZObject construct = obj->members["__construct__"];
+            if (construct.type == Z_FUNC)
             {
               FunObject *p = (FunObject *)construct.ptr;
               if ((size_t)N + p->opt.size() + 1 < p->args || (size_t)N + 1 > p->args)
@@ -2846,8 +2846,8 @@ public:
                 spitErr(ArgumentError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
                 NEXT_INST;
               }
-              PltObject r;
-              r.type = PLT_OBJ;
+              ZObject r;
+              r.type = Z_OBJ;
               r.ptr = (void *)obj;
               callstack.push_back(k + 1);
               STACK.insert(STACK.end()-N,r);
@@ -2861,18 +2861,18 @@ public:
               DoThreshholdBusiness();
               NEXT_INST;
             }
-            else if (construct.type == PLT_NATIVE_FUNC)
+            else if (construct.type == Z_NATIVE_FUNC)
             {
               NativeFunction *M = (NativeFunction *)construct.ptr;
-              PltObject *args = NULL;
-              PltObject r;
-              r.type = PLT_OBJ;
+              ZObject *args = NULL;
+              ZObject r;
+              r.type = Z_OBJ;
               r.ptr = (void *)obj;
               STACK.insert(STACK.end() - N, r);
               args = &STACK[STACK.size() - (N + 1)];
               p4 = M->addr(args, N + 1);
               STACK.erase(STACK.end() - (N + 1), STACK.end());
-              if (p4.type == PLT_ERROBJ)
+              if (p4.type == Z_ERROBJ)
               {
                 const string& msg = *(string*)(((KlassObject*)p4.ptr)->members["msg"].ptr);
                 spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
@@ -2897,8 +2897,8 @@ public:
               NEXT_INST;
             }
           }
-          PltObject r;
-          r.type = PLT_OBJ;
+          ZObject r;
+          r.type = Z_OBJ;
           r.ptr = (void *)obj;
           STACK.push_back(r);
           DoThreshholdBusiness();
@@ -2915,11 +2915,11 @@ public:
           g->fun = f;
           g->curr = f->i;
           g->state = SUSPENDED;
-          vector<PltObject> locals = {STACK.end() - N, STACK.end()};
+          vector<ZObject> locals = {STACK.end() - N, STACK.end()};
           STACK.erase(STACK.end() - N, STACK.end());
           g->locals = locals;
           g->giveValOnResume = false;
-          PltObject T;
+          ZObject T;
           T.type = 'z';
           T.ptr = g;
           STACK.push_back(T);
@@ -2935,31 +2935,31 @@ public:
       CASE_CP MOD:
       {
 
-        PltObject b = STACK[STACK.size() - 1];
+        ZObject b = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        ZObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (a.type == Z_OBJ)
         {
           invokeOperator("__mod__", a, 2, "%", &b);
           NEXT_INST;
         }
-        PltObject c;
+        ZObject c;
         char t;
         if (isNumeric(a.type) && isNumeric(b.type))
         {
-          if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
+          if (a.type == Z_FLOAT || b.type == Z_FLOAT)
           {
             orgk = k - program;
             spitErr(TypeError, "Error modulo operator % unsupported for floats!");
             NEXT_INST;
           }
-          else if (a.type == PLT_INT64 || b.type == PLT_INT64)
+          else if (a.type == Z_INT64 || b.type == Z_INT64)
           {
-            t = PLT_INT64;
+            t = Z_INT64;
           }
-          else if (a.type == PLT_INT || b.type == PLT_INT)
-            t = PLT_INT;
+          else if (a.type == Z_INT || b.type == Z_INT)
+            t = Z_INT;
           PromoteType(a, t);
           PromoteType(b, t);
         }
@@ -2971,9 +2971,9 @@ public:
         }
         //
 
-        if (t == PLT_INT)
+        if (t == Z_INT)
         {
-          c.type = PLT_INT;
+          c.type = Z_INT;
           if (b.i == 0)
           {
             orgk = k - program;
@@ -2983,16 +2983,16 @@ public:
           if ((a.i == INT_MIN) && (b.i == -1))
           {
             /* handle error condition */
-            c.type = PLT_INT64;
+            c.type = Z_INT64;
             c.l = (int64_t)a.i % (int64_t)b.i;
             STACK.push_back(c);
           }
           c.i = a.i % b.i;
           STACK.push_back(c);
         }
-        else if (t == PLT_INT64)
+        else if (t == Z_INT64)
         {
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           if (b.l == 0)
           {
             orgk = k - program;
@@ -3017,17 +3017,17 @@ public:
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         char t = STACK[frames.back() + i1].type;
-        if (t == PLT_INT)
+        if (t == Z_INT)
         {
           if (STACK[frames.back() + i1].i == INT_MAX)
           {
             STACK[frames.back() + i1].l = (int64_t)INT_MAX + 1;
-            STACK[frames.back() + i1].type = PLT_INT64;
+            STACK[frames.back() + i1].type = Z_INT64;
           }
           else
             STACK[frames.back() + i1].i += 1;
         }
-        else if (t == PLT_INT64)
+        else if (t == Z_INT64)
         {
           if (STACK[frames.back() + i1].l == LLONG_MAX)
           {
@@ -3036,7 +3036,7 @@ public:
           }
           STACK[frames.back() + i1].l += 1;
         }
-        else if (t == PLT_FLOAT)
+        else if (t == Z_FLOAT)
         {
           if (STACK[frames.back() + i1].f == FLT_MAX)
           {
@@ -3055,27 +3055,27 @@ public:
       CASE_CP SUB:
       {
 
-        PltObject b = STACK[STACK.size() - 1];
+        ZObject b = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        ZObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (a.type == Z_OBJ)
         {
           invokeOperator("__sub__", a, 2, "-", &b);
           NEXT_INST;
         }
-        PltObject c;
+        ZObject c;
         char t;
         if(a.type == b.type && isNumeric(a.type))
           t = a.type;
         else if (isNumeric(a.type) && isNumeric(b.type))
         {
-          if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
-            t = PLT_FLOAT;
-          else if (a.type == PLT_INT64 || b.type == PLT_INT64)
-            t = PLT_INT64;
-          else if (a.type == PLT_INT || b.type == PLT_INT)
-            t = PLT_INT;
+          if (a.type == Z_FLOAT || b.type == Z_FLOAT)
+            t = Z_FLOAT;
+          else if (a.type == Z_INT64 || b.type == Z_INT64)
+            t = Z_INT64;
+          else if (a.type == Z_INT || b.type == Z_INT)
+            t = Z_INT;
           PromoteType(a, t);
           PromoteType(b, t);
           
@@ -3088,9 +3088,9 @@ public:
         }
 
         //
-        if (t == PLT_INT)
+        if (t == Z_INT)
         {
-          c.type = PLT_INT;
+          c.type = Z_INT;
           if (!subtraction_overflows(a.i, b.i))
           {
             c.i = a.i - b.i;
@@ -3102,11 +3102,11 @@ public:
             orgk = k - program;
             spitErr(OverflowError, "Overflow occurred");
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = (int64_t)(a.i) - (int64_t)(b.i);
           STACK.push_back(c);
         }
-        else if (t == PLT_FLOAT)
+        else if (t == Z_FLOAT)
         {
           if (subtraction_overflows(a.f, b.f))
           {
@@ -3114,11 +3114,11 @@ public:
             spitErr(OverflowError, "Floating point overflow during subtraction");
             NEXT_INST;
           }
-          c.type = PLT_FLOAT;
+          c.type = Z_FLOAT;
           c.f = a.f - b.f;
           STACK.push_back(c);
         }
-        else if (t == PLT_INT64)
+        else if (t == Z_INT64)
         {
           if (subtraction_overflows(a.l, b.l))
           {
@@ -3126,7 +3126,7 @@ public:
             spitErr(OverflowError, "Error overflow during solving expression.");
             NEXT_INST;
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = a.l - b.l;
           STACK.push_back(c);
         }
@@ -3134,27 +3134,27 @@ public:
       }
       CASE_CP DIV:
       {
-        PltObject b = STACK[STACK.size() - 1];
+        ZObject b = STACK[STACK.size() - 1];
         STACK.pop_back();
-        PltObject a = STACK[STACK.size() - 1];
+        ZObject a = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (a.type == PLT_OBJ)
+        if (a.type == Z_OBJ)
         {
           invokeOperator("__div__", a, 2, "/", &b);
           NEXT_INST;
         }
-        PltObject c;
+        ZObject c;
         char t;
         if(a.type == b.type && isNumeric(a.type))
           t = a.type;
         else if (isNumeric(a.type) && isNumeric(b.type))
         {
-          if (a.type == PLT_FLOAT || b.type == PLT_FLOAT)
-            t = PLT_FLOAT;
-          else if (a.type == PLT_INT64 || b.type == PLT_INT64)
-            t = PLT_INT64;
-          else if (a.type == PLT_INT || b.type == PLT_INT)
-            t = PLT_INT;
+          if (a.type == Z_FLOAT || b.type == Z_FLOAT)
+            t = Z_FLOAT;
+          else if (a.type == Z_INT64 || b.type == Z_INT64)
+            t = Z_INT64;
+          else if (a.type == Z_INT || b.type == Z_INT)
+            t = Z_INT;
           PromoteType(a, t);
           PromoteType(b, t);
         }
@@ -3165,7 +3165,7 @@ public:
           NEXT_INST;
         }
 
-        if (t == PLT_INT)
+        if (t == Z_INT)
         {
           if (b.i == 0)
           {
@@ -3173,7 +3173,7 @@ public:
             spitErr(MathError, "Error division by zero");
             NEXT_INST;
           }
-          c.type = PLT_INT;
+          c.type = Z_INT;
           if (!division_overflows(a.i, b.i))
           {
             c.i = a.i / b.i;
@@ -3186,12 +3186,12 @@ public:
             spitErr(OverflowError, "Overflow occurred");
             NEXT_INST;
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = (int64_t)(a.i) / (int64_t)(b.i);
           STACK.push_back(c);
           k++; NEXT_INST;
         }
-        else if (t == PLT_FLOAT)
+        else if (t == Z_FLOAT)
         {
           if (b.f == 0)
           {
@@ -3200,11 +3200,11 @@ public:
             NEXT_INST;
           }
 
-          c.type = PLT_FLOAT;
+          c.type = Z_FLOAT;
           c.f = a.f / b.f;
           STACK.push_back(c);
         }
-        else if (t == PLT_INT64)
+        else if (t == Z_INT64)
         {
           if (b.l == 0)
           {
@@ -3218,7 +3218,7 @@ public:
             spitErr(OverflowError, "Error overflow during solving expression.");
             NEXT_INST;
           }
-          c.type = PLT_INT64;
+          c.type = Z_INT64;
           c.l = a.l / b.l;
           STACK.push_back(c);
         }
@@ -3254,7 +3254,7 @@ public:
         int32_t where = k - program + i1 + 1;
         p1 = STACK[STACK.size() - 1];
         STACK.pop_back();
-        if (p1.i && p1.type == PLT_BOOL)
+        if (p1.i && p1.type == Z_BOOL)
           k = program + where - 1;
         else
           k++; NEXT_INST;
@@ -3265,14 +3265,14 @@ public:
         orgk = k - program;
         p3 = STACK.back(); // val
         STACK.pop_back();
-        if(p3.type != PLT_OBJ)
+        if(p3.type != Z_OBJ)
         {
           spitErr(TypeError,"Value of type "+fullform(p3.type)+" not throwable!");
           NEXT_INST;
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
-        std::unordered_map<string,PltObject>::iterator it;
-        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=PLT_STR && (*it).second.type!=PLT_MSTR))
+        std::unordered_map<string,ZObject>::iterator it;
+        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=Z_STR && (*it).second.type!=Z_MSTR))
         {
           spitErr(ThrowError,"Object does not have member 'msg' or it is not a string!");
           NEXT_INST;
@@ -3335,7 +3335,7 @@ public:
         k += 3;
         p1 = STACK.back();
         STACK.pop_back();
-        if (p1.type == PLT_NIL || (p1.type == PLT_BOOL && p1.i == 0))
+        if (p1.type == Z_NIL || (p1.type == Z_BOOL && p1.i == 0))
         {
           k = k + i1 + 1;
           NEXT_INST;
@@ -3345,13 +3345,13 @@ public:
       CASE_CP SELFMEMB:
       {
         orgk = k - program;
-        PltObject a = STACK[frames.back()];
+        ZObject a = STACK[frames.back()];
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
         string& mname = strings[i1];
      
-        if(a.type == PLT_OBJ)
+        if(a.type == Z_OBJ)
         {
           KlassObject *ptr = (KlassObject *)a.ptr;
           if (ptr->members.find(mname) == ptr->members.end())
@@ -3379,7 +3379,7 @@ public:
                 NEXT_INST;
               }
           }
-          PltObject ret = ptr->members[mname];
+          ZObject ret = ptr->members[mname];
           STACK.push_back(ret);
         }
         else
@@ -3392,15 +3392,15 @@ public:
       CASE_CP ASSIGNSELFMEMB:
       {
         orgk = k - program;
-        PltObject val = STACK.back();
+        ZObject val = STACK.back();
         STACK.pop_back();
-        PltObject Parent = STACK[frames.back()];
+        ZObject Parent = STACK[frames.back()];
         k++;
         memcpy(&i1, k, 4);
         k += 3;
         s1 = strings[i1];
         
-        if (Parent.type != PLT_OBJ)
+        if (Parent.type != Z_OBJ)
         {
           spitErr(TypeError, "Cannot access variable "+s1+" ,self is not a class object!");
           NEXT_INST;
@@ -3408,7 +3408,7 @@ public:
         KlassObject *ptr = (KlassObject *)Parent.ptr;
         if (ptr->members.find(s1) == ptr->members.end())
         {
-          if (Parent.type == PLT_OBJ)
+          if (Parent.type == Z_OBJ)
           {
             if (ptr->privateMembers.find(s1) != ptr->privateMembers.end())
             {
@@ -3489,17 +3489,17 @@ public:
     {
       MemInfo m = (*it).second;
       //call destructor for each object only once
-      if (m.type == PLT_OBJ)
+      if (m.type == Z_OBJ)
       {
         KlassObject *obj = (KlassObject *)(*it).first;
-        PltObject dummy;
-        dummy.type = PLT_OBJ;
+        ZObject dummy;
+        dummy.type = Z_OBJ;
         dummy.ptr = (*it).first;
-        PltObject rr;
+        ZObject rr;
         if (obj->members.find("__del__") != obj->members.end())
         {
-          PltObject p1 = obj->members["__del__"];
-          if(p1.type == PLT_FUNC || p1.type==PLT_NATIVE_FUNC)
+          ZObject p1 = obj->members["__del__"];
+          if(p1.type == Z_FUNC || p1.type==Z_NATIVE_FUNC)
           {
             callObject(&p1,&dummy,1,&rr);
           }
@@ -3540,17 +3540,17 @@ public:
     
   }
 } vm;
-PltList *allocList()
+ZList *allocList()
 {
-  PltList *p = new(nothrow) PltList;
+  ZList *p = new(nothrow) ZList;
   if (!p)
   {
     fprintf(stderr,"allocList(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(PltList);
+  vm.allocated += sizeof(ZList);
   MemInfo m;
-  m.type = PLT_LIST;
+  m.type = Z_LIST;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3565,7 +3565,7 @@ vector<uint8_t>* allocByteArray()
   }
   vm.allocated += sizeof(std::vector<uint8_t>);
   MemInfo m;
-  m.type = PLT_BYTEARR;
+  m.type = Z_BYTEARR;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3582,7 +3582,7 @@ string *allocString()
   }
   vm.allocated += sizeof(string);
   MemInfo m;
-  m.type = PLT_STR;
+  m.type = Z_STR;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3598,7 +3598,7 @@ string *allocMutString()
   }
   vm.allocated += sizeof(string);
   MemInfo m;
-  m.type = PLT_MSTR;
+  m.type = Z_MSTR;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3613,7 +3613,7 @@ Klass *allocKlass()
   }
   vm.allocated += sizeof(Klass);
   MemInfo m;
-  m.type = PLT_CLASS;
+  m.type = Z_CLASS;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3628,7 +3628,7 @@ Module *allocModule()
   }
   vm.allocated += sizeof(Module);
   MemInfo m;
-  m.type = PLT_MODULE;
+  m.type = Z_MODULE;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3643,7 +3643,7 @@ KlassObject *allocKlassObject()
   }
   vm.allocated += sizeof(KlassObject);
   MemInfo m;
-  m.type = PLT_OBJ;
+  m.type = Z_OBJ;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3674,7 +3674,7 @@ FunObject *allocFunObject()
   p->klass = NULL;
   vm.allocated += sizeof(FunObject);
   MemInfo m;
-  m.type = PLT_FUNC;
+  m.type = Z_FUNC;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3704,9 +3704,9 @@ FileObject *allocFileObject()
     fprintf(stderr,"allocFileObject(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(PltList);
+  vm.allocated += sizeof(ZList);
   MemInfo m;
-  m.type = PLT_FILESTREAM;
+  m.type = Z_FILESTREAM;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3721,7 +3721,7 @@ Dictionary *allocDict()
   }
   vm.allocated += sizeof(Dictionary);
   MemInfo m;
-  m.type = PLT_DICT;
+  m.type = Z_DICT;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
@@ -3736,21 +3736,21 @@ NativeFunction *allocNativeFun()
   }
   vm.allocated += sizeof(NativeFunction);
   MemInfo m;
-  m.type = PLT_NATIVE_FUNC;
+  m.type = Z_NATIVE_FUNC;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
 //callObject also behaves as a kind of try/catch since v0.31
-bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
+bool callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
 {
 
-  if(obj->type == PLT_FUNC)
+  if(obj->type == Z_FUNC)
   {
      FunObject* fn = (FunObject*)obj->ptr;
      if ((size_t)N + fn->opt.size() < fn->args || (size_t)N > fn->args)
      {
-      *rr = Plt_Err(ArgumentError, "Function " + fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
+      *rr = Z_Err(ArgumentError, "Function " + fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
       return false;
      }
      uint8_t* prev = vm.k;
@@ -3768,30 +3768,30 @@ bool callObject(PltObject* obj,PltObject* args,int N,PltObject* rr)
      vm.k = prev;
      *rr = vm.STACK.back();
      vm.STACK.pop_back();
-     return (rr->type != PLT_ERROBJ);
+     return (rr->type != Z_ERROBJ);
   }
-  else if (obj->type == PLT_NATIVE_FUNC)
+  else if (obj->type == Z_NATIVE_FUNC)
   {
     NativeFunction *A = (NativeFunction *)obj->ptr;
     NativeFunPtr f = A->addr;
-    PltObject p4;
+    ZObject p4;
 
     p4 = f(args, N);
 
-    if (p4.type == PLT_ERROBJ)
+    if (p4.type == Z_ERROBJ)
     {
       *rr = p4;
       return false;
     }
-    if (fullform(p4.type) == "Unknown" && p4.type != PLT_NIL)
+    if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
     {
-      *rr = Plt_Err(ValueError, "Invalid response from native function!");
+      *rr = Z_Err(ValueError, "Invalid response from native function!");
       return false;
     }
     *rr = p4;
     return true;
   }
-  *rr = Plt_Err(TypeError,"Object not callable!");
+  *rr = Z_Err(TypeError,"Object not callable!");
   return false;
 }
 void markImportant(void* mem)

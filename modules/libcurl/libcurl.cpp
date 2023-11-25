@@ -36,7 +36,7 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
   return realsize;
 }
 //WriteMemory function which calls plutonium callback and passes the bytes
-PltObject wmcallback;
+ZObject wmcallback;
 size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
@@ -44,9 +44,9 @@ size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
   auto btArr = vm_allocByteArray();
   btArr->resize(realsize);
   memcpy(&btArr->at(0), contents, realsize);
-  PltObject rr;
-  PltObject p1;
-  p1.type = PLT_BYTEARR;
+  ZObject rr;
+  ZObject p1;
+  p1.type = Z_BYTEARR;
   p1.ptr = (void*)btArr;
   vm_callObject(&wmcallback,&p1,1,&rr);
   return realsize;
@@ -63,15 +63,15 @@ struct MimePart  //Wrapper around curl_mimepart
 {
   curl_mimepart* mimepart;
 };
-PltObject nil;
+ZObject nil;
 Klass* curlklass;
 Klass* mimeklass;
 Klass* mimepartklass;
-PltObject callback;//write function callback
-PltObject init()
+ZObject callback;//write function callback
+ZObject init()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    nil.type = PLT_NIL;
+    nil.type = Z_NIL;
     Module* d = vm_allocModule();
     //
     curlklass = vm_allocKlass();
@@ -98,32 +98,32 @@ PltObject init()
     
     
     
-    d->members.emplace("Curl",PObjFromKlass(curlklass));
-    d->members.emplace("mime",PObjFromKlass(mimeklass));
+    d->members.emplace("Curl",ZObjFromKlass(curlklass));
+    d->members.emplace("mime",ZObjFromKlass(mimeklass));
     d->addNativeFunction("strerror",&STRERROR);
-    d->members.emplace(("OPT_URL"),PObjFromInt64(CURLOPT_URL));
-    d->members.emplace(("OPT_PORT"),PObjFromInt64(CURLOPT_PORT));
-    d->members.emplace(("OPT_POSTFIELDS"),PObjFromInt64(CURLOPT_POSTFIELDS));
-    d->members.emplace(("OPT_USERAGENT"),PObjFromInt64(CURLOPT_USERAGENT));
-    d->members.emplace(("OPT_FOLLOWLOCATION"),PObjFromInt64(CURLOPT_FOLLOWLOCATION));
-    d->members.emplace(("OPT_WRITEFUNCTION"),PObjFromInt64(CURLOPT_WRITEFUNCTION));
-    d->members.emplace(("OPT_MIMEPOST"),PObjFromInt64(CURLOPT_MIMEPOST));
-    d->members.emplace(("OPT_VERBOSE"),PObjFromInt64(CURLOPT_VERBOSE));
+    d->members.emplace(("OPT_URL"),ZObjFromInt64(CURLOPT_URL));
+    d->members.emplace(("OPT_PORT"),ZObjFromInt64(CURLOPT_PORT));
+    d->members.emplace(("OPT_POSTFIELDS"),ZObjFromInt64(CURLOPT_POSTFIELDS));
+    d->members.emplace(("OPT_USERAGENT"),ZObjFromInt64(CURLOPT_USERAGENT));
+    d->members.emplace(("OPT_FOLLOWLOCATION"),ZObjFromInt64(CURLOPT_FOLLOWLOCATION));
+    d->members.emplace(("OPT_WRITEFUNCTION"),ZObjFromInt64(CURLOPT_WRITEFUNCTION));
+    d->members.emplace(("OPT_MIMEPOST"),ZObjFromInt64(CURLOPT_MIMEPOST));
+    d->members.emplace(("OPT_VERBOSE"),ZObjFromInt64(CURLOPT_VERBOSE));
     
-    d->members.emplace(("CURLE_OK"),PObjFromInt64(CURLE_OK));
-    d->members.emplace(("WriteMemory"),PObjFromInt(0));
-    d->members.emplace(("INFO_CONTENT_TYPE"),PObjFromInt64((long long int)CURLINFO_CONTENT_TYPE));
-    d->members.emplace(("INFO_HTTP_CODE"),PObjFromInt64((long long int)CURLINFO_HTTP_CODE));
-    d->members.emplace(("VERSION_NUM"),PObjFromInt(LIBCURL_VERSION_NUM));
-    d->members.emplace(("VERSION_MAJOR"),PObjFromInt(LIBCURL_VERSION_MAJOR));
-    d->members.emplace(("VERSION_MINOR"),PObjFromInt(LIBCURL_VERSION_MINOR));
+    d->members.emplace(("CURLE_OK"),ZObjFromInt64(CURLE_OK));
+    d->members.emplace(("WriteMemory"),ZObjFromInt(0));
+    d->members.emplace(("INFO_CONTENT_TYPE"),ZObjFromInt64((long long int)CURLINFO_CONTENT_TYPE));
+    d->members.emplace(("INFO_HTTP_CODE"),ZObjFromInt64((long long int)CURLINFO_HTTP_CODE));
+    d->members.emplace(("VERSION_NUM"),ZObjFromInt(LIBCURL_VERSION_NUM));
+    d->members.emplace(("VERSION_MAJOR"),ZObjFromInt(LIBCURL_VERSION_MAJOR));
+    d->members.emplace(("VERSION_MINOR"),ZObjFromInt(LIBCURL_VERSION_MINOR));
     
     vm_markImportant(curlklass);
     vm_markImportant(mimeklass);
     vm_markImportant(mimepartklass);
-    return PObjFromModule(d);
+    return ZObjFromModule(d);
 }
-PltObject curlklass__del__(PltObject* args,int n)//called by the VM so no typechecking required
+ZObject curlklass__del__(ZObject* args,int n)//called by the VM so no typechecking required
 {
     KlassObject* d = (KlassObject*)args[0].ptr;
     if(d->members[".handle"].type == 'n')
@@ -136,31 +136,31 @@ PltObject curlklass__del__(PltObject* args,int n)//called by the VM so no typech
     (d->members)[".handle"] = nil;
     return nil;
 }
-PltObject STRERROR(PltObject* args,int n)
+ZObject STRERROR(ZObject* args,int n)
 {
   if(n!=1)
   {
-    return Plt_Err(ArgumentError,"1 argument needed!");
+    return Z_Err(ArgumentError,"1 argument needed!");
     
   }
   if(args[0].type!='l')
   {
-    return Plt_Err(TypeError,"Integer argument needed!");
+    return Z_Err(TypeError,"Integer argument needed!");
     
   }
   string s = curl_easy_strerror((CURLcode)args[0].l);
-  return PObjFromStr(s);
+  return ZObjFromStr(s);
 }
-PltObject curlklass__construct__(PltObject* args,int n)
+ZObject curlklass__construct__(ZObject* args,int n)
 {
   if(n!=1)
-    return Plt_Err(ArgumentError,"1 arguments needed!");
+    return Z_Err(ArgumentError,"1 arguments needed!");
     
   KlassObject* curobj = (KlassObject*)args[0].ptr;
   CURL* curl = curl_easy_init();
   if(!curl)
   {
-    return Plt_Err(Error,"failed");
+    return Z_Err(Error,"failed");
     
   }
   //Return an object
@@ -168,29 +168,29 @@ PltObject curlklass__construct__(PltObject* args,int n)
   CurlObject* obj = new CurlObject;
   obj->handle = curl;
   obj->postfields = NULL;
-  curobj->members.emplace((".handle"),PObjFromPtr(obj));
+  curobj->members.emplace((".handle"),ZObjFromPtr(obj));
   return nil;
  
 }
-PltObject MIME__del__(PltObject* args,int n)
+ZObject MIME__del__(ZObject* args,int n)
 {
     if(n!=1)
-        return Plt_Err(ArgumentError,"1 argument needed!");
+        return Z_Err(ArgumentError,"1 argument needed!");
     KlassObject* k = (KlassObject*)args[0].ptr;
     curl_mime* obj = (curl_mime*)k->members[".handle"].ptr;
     curl_mime_free(obj);
     return nil;
 }
-PltObject mime__construct__(PltObject* args,int n)
+ZObject mime__construct__(ZObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ArgumentError,"2 arguments needed!");
+    return Z_Err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[1].type!='o' || ((KlassObject*)args[1].ptr)->klass!=curlklass)
   {
-    return Plt_Err(TypeError,"Curl Object needed!");
+    return Z_Err(TypeError,"Curl Object needed!");
     
   }
   KlassObject* d = (KlassObject*)args[0].ptr;
@@ -199,59 +199,59 @@ PltObject mime__construct__(PltObject* args,int n)
   curl_mime* mime = curl_mime_init(curlobj->handle);
   
   //Add the mime handle to mime object
-  d->members.emplace((".handle"),PObjFromPtr((void*)mime));
+  d->members.emplace((".handle"),ZObjFromPtr((void*)mime));
   return nil;
 }
-PltObject MIME_NAME(PltObject* args,int n)
+ZObject MIME_NAME(ZObject* args,int n)
 {
     if(n!=2)
-        return Plt_Err(ArgumentError,"2 argument needed!");
+        return Z_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Plt_Err(TypeError,"Argument 2 must be string!");
+        return Z_Err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
-      return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
+      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
   KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_name(obj->mimepart,name.c_str());
   return nil;
 }
-PltObject MIME_FILENAME(PltObject* args,int n)
+ZObject MIME_FILENAME(ZObject* args,int n)
 {
     if(n!=2)
-        return Plt_Err(ArgumentError,"2 argument needed!");
+        return Z_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Plt_Err(TypeError,"Argument 2 must be string!");
+        return Z_Err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
-      return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
+      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
   KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_filename(obj->mimepart,name.c_str());
   return nil;
 }
-PltObject MIME_CONTENTTYPE(PltObject* args,int n)
+ZObject MIME_CONTENTTYPE(ZObject* args,int n)
 {
     if(n!=2)
-        return Plt_Err(ArgumentError,"2 argument needed!");
+        return Z_Err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Plt_Err(TypeError,"Argument 2 must be string!");
+        return Z_Err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
-      return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
+      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
   KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
   string& name = *(string*)args[1].ptr;
   curl_mime_type(obj->mimepart,name.c_str());
   return nil;
 }
-PltObject MIME_DATA(PltObject* args,int n)
+ZObject MIME_DATA(ZObject* args,int n)
 {
     if(n!=2)
-        return Plt_Err(ArgumentError,"1 argument needed!");
+        return Z_Err(ArgumentError,"1 argument needed!");
     if(args[1].type!='c')
-      return Plt_Err(TypeError,"Argument 2 must be a Byte array!");
+      return Z_Err(TypeError,"Argument 2 must be a Byte array!");
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimepartklass)
-      return Plt_Err(TypeError,"Argument 1 must be a MimePart object");
+      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
     KlassObject* d = (KlassObject*)args[0].ptr;
     MimePart* obj = (MimePart*)(d->members)[".handle"].ptr;
     auto l = *(vector<uint8_t>*)args[1].ptr;
@@ -259,12 +259,12 @@ PltObject MIME_DATA(PltObject* args,int n)
     return nil;
 }
 
-PltObject addpart(PltObject* args,int n)
+ZObject addpart(ZObject* args,int n)
 {
     if(n!=1)
-        return Plt_Err(ArgumentError,"1 arguments needed!");
+        return Z_Err(ArgumentError,"1 arguments needed!");
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=mimeklass)
-      return Plt_Err(TypeError,"Argument 1 must be a Mime object");
+      return Z_Err(TypeError,"Argument 1 must be a Mime object");
     KlassObject* d = (KlassObject*)args[0].ptr;
     curl_mime* obj = (curl_mime*)(d->members)[".handle"].ptr;
     curl_mimepart* mimepart = curl_mime_addpart(obj);
@@ -273,47 +273,47 @@ PltObject addpart(PltObject* args,int n)
     //add methods to object
     KlassObject* part = vm_allocKlassObject();
     part->klass = mimepartklass;
-    part->members.emplace(("data"),PObjFromMethod("mimepart.data",&MIME_DATA,mimepartklass));
-    part->members.emplace(("name"),PObjFromMethod("mimepart.name",&MIME_NAME,mimepartklass));
-    part->members.emplace(("filename"),PObjFromMethod("mimepart.filename",&MIME_FILENAME,mimepartklass));
-    part->members.emplace(("type"),PObjFromMethod("mimepart.type",&MIME_CONTENTTYPE,mimepartklass));
-    part->members.emplace(("__del__"),PObjFromMethod("mimepart.__del__",&MIMEPART__del__,mimepartklass));
-    part->members.emplace((".handle"),PObjFromPtr((void*)mp));
+    part->members.emplace(("data"),ZObjFromMethod("mimepart.data",&MIME_DATA,mimepartklass));
+    part->members.emplace(("name"),ZObjFromMethod("mimepart.name",&MIME_NAME,mimepartklass));
+    part->members.emplace(("filename"),ZObjFromMethod("mimepart.filename",&MIME_FILENAME,mimepartklass));
+    part->members.emplace(("type"),ZObjFromMethod("mimepart.type",&MIME_CONTENTTYPE,mimepartklass));
+    part->members.emplace(("__del__"),ZObjFromMethod("mimepart.__del__",&MIMEPART__del__,mimepartklass));
+    part->members.emplace((".handle"),ZObjFromPtr((void*)mp));
 
-    return PObjFromKlassObj(part);
+    return ZObjFromKlassObj(part);
 }
-PltObject MIMEPART__del__(PltObject* args,int n)
+ZObject MIMEPART__del__(ZObject* args,int n)
 {
     if(n!=1)
-        return Plt_Err(ArgumentError,"1 argument needed!");
+        return Z_Err(ArgumentError,"1 argument needed!");
     KlassObject* k = (KlassObject*)args[0].ptr;
     MimePart* obj = (MimePart*)k->members[".handle"].ptr;
     delete obj;
     return nil;
 }
-PltObject setopt(PltObject* args,int n)
+ZObject setopt(ZObject* args,int n)
 {
     if(n!=3)
     {
-        return Plt_Err(ArgumentError,"3 arguments needed!");
+        return Z_Err(ArgumentError,"3 arguments needed!");
         
     }
-    if(args[1].type!=PLT_INT64)
+    if(args[1].type!=Z_INT64)
     {
-        return Plt_Err(TypeError,"Argument 2 must an Integer!");
+        return Z_Err(TypeError,"Argument 2 must an Integer!");
         
     }
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
-      return Plt_Err(TypeError,"Argument 1 must be a Curl object");
+      return Z_Err(TypeError,"Argument 1 must be a Curl object");
       
     }
     long long int opt = args[1].l;
     if(opt==CURLOPT_URL)
     {
-      if(args[2].type!=PLT_STR)
+      if(args[2].type!=Z_STR)
       {
-        return Plt_Err(TypeError,"URL option requires a string value");
+        return Z_Err(TypeError,"URL option requires a string value");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -322,16 +322,16 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->url.c_str());
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
       
     }
     else if(opt==CURLOPT_FOLLOWLOCATION)
     {
-      if(args[2].type!=PLT_INT)
+      if(args[2].type!=Z_INT)
       {
-        return Plt_Err(TypeError,"FOLLOWLOCATION option requires an integer value");
+        return Z_Err(TypeError,"FOLLOWLOCATION option requires an integer value");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -339,15 +339,15 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
     }
     else if(opt==CURLOPT_VERBOSE)
     {
-      if(args[2].type!=PLT_INT)
+      if(args[2].type!=Z_INT)
       {
-        return Plt_Err(TypeError,"VERBOSE option requires an integer value");
+        return Z_Err(TypeError,"VERBOSE option requires an integer value");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -355,15 +355,15 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
     }
     else if(opt==CURLOPT_PORT)
     {
-      if(args[2].type!=PLT_INT)
+      if(args[2].type!=Z_INT)
       {
-        return Plt_Err(TypeError,"PORT option requires an integer value");
+        return Z_Err(TypeError,"PORT option requires an integer value");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -371,15 +371,15 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
     }
     else if(opt==CURLOPT_MIMEPOST)
     {
-      if(args[2].type!=PLT_OBJ)
+      if(args[2].type!=Z_OBJ)
       {
-        return Plt_Err(TypeError,"MIMEPOST option requires a MimeObject");
+        return Z_Err(TypeError,"MIMEPOST option requires a MimeObject");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -389,13 +389,13 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,m);
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
     }
     else if(opt==CURLOPT_WRITEFUNCTION)
     {
-      if(args[2].type == PLT_FUNC || args[2].type == PLT_NATIVE_FUNC)
+      if(args[2].type == Z_FUNC || args[2].type == Z_NATIVE_FUNC)
       {
         //set callback
         KlassObject* d = (KlassObject*)args[0].ptr;
@@ -404,16 +404,16 @@ PltObject setopt(PltObject* args,int n)
         CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
         CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,&WMCallbackHandler);
         if( res!= CURLE_OK)
-          return Plt_Err(Error,(string)curl_easy_strerror(res));
+          return Z_Err(Error,(string)curl_easy_strerror(res));
         return nil;
       }
-      if(args[2].type!=PLT_INT )
-        return Plt_Err(TypeError,"WRITEFUNCTION option requires an integer value");
+      if(args[2].type!=Z_INT )
+        return Z_Err(TypeError,"WRITEFUNCTION option requires an integer value");
       if(args[2].i!=0)
-        return Plt_Err(TypeError,"Invalid option value "+to_string(args[2].i));
+        return Z_Err(TypeError,"Invalid option value "+to_string(args[2].i));
       KlassObject* d = (KlassObject*)args[0].ptr;
       auto btArr = vm_allocByteArray();
-      PltObject p1;
+      ZObject p1;
       p1.type = 'c';
       p1.ptr = (void*)btArr;
       d->members.emplace("data",p1);
@@ -421,16 +421,16 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,&WriteMemoryCallback);
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
       curl_easy_setopt(obj->handle,CURLOPT_WRITEDATA,btArr);
     }
     else if(opt==CURLOPT_USERAGENT)
     {
-      if(args[2].type!=PLT_STR)
+      if(args[2].type!=Z_STR)
       {
-        return Plt_Err(TypeError,"USERAGENT option requires a string value");
+        return Z_Err(TypeError,"USERAGENT option requires a string value");
          
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -439,17 +439,17 @@ PltObject setopt(PltObject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->useragent.c_str());
       if( res!= CURLE_OK)
       {
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
     }
     else if(opt==CURLOPT_POSTFIELDS)
     {
-      if(args[2].type!=PLT_BYTEARR)
-        return Plt_Err(TypeError,"POSTFIELDS option requires a byte array!");
+      if(args[2].type!=Z_BYTEARR)
+        return Z_Err(TypeError,"POSTFIELDS option requires a byte array!");
       vector<uint8_t>& l = *(vector<uint8_t>*)args[2].ptr;
       if(l.size()==0)
-        return Plt_Err(ValueError,"Empty bytearray");
+        return Z_Err(ValueError,"Empty bytearray");
       char* postfields = new char[l.size()];
       memcpy(postfields,&l[0],l.size());
       KlassObject* d = (KlassObject*)args[0].ptr;
@@ -457,22 +457,22 @@ PltObject setopt(PltObject* args,int n)
       obj->postfields = postfields;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,postfields);
       if( res!= CURLE_OK)
-        return Plt_Err(Error,(string)curl_easy_strerror(res));
+        return Z_Err(Error,(string)curl_easy_strerror(res));
       res = curl_easy_setopt(obj->handle,CURLOPT_POSTFIELDSIZE,l.size());
       
     }
     else
     {
-      return Plt_Err(ValueError,"Unknown option used");
+      return Z_Err(ValueError,"Unknown option used");
       
     }
     return nil;
 }
-PltObject perform(PltObject* args,int n)
+ZObject perform(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed!");
+        return Z_Err(ArgumentError,"1 argument needed!");
         
     }
     KlassObject* d = (KlassObject*)args[0].ptr;
@@ -480,23 +480,23 @@ PltObject perform(PltObject* args,int n)
     CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
     CURLcode res;
     res = curl_easy_perform(obj->handle);
-    return PObjFromInt64((long long int)res);
+    return ZObjFromInt64((long long int)res);
 }
-PltObject getinfo(PltObject* args,int n)
+ZObject getinfo(ZObject* args,int n)
 {
     if(n!=2)
     {
-        return Plt_Err(ArgumentError,"2 arguments needed!");
+        return Z_Err(ArgumentError,"2 arguments needed!");
         
     }
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
-      return Plt_Err(TypeError,"Argument 1 must be a Curl object");
+      return Z_Err(TypeError,"Argument 1 must be a Curl object");
       
     }
     if(args[1].type!='l')
     {
-      return Plt_Err(TypeError,"Argument 2 must an Integer!");
+      return Z_Err(TypeError,"Argument 2 must an Integer!");
       
     }
     KlassObject* d = (KlassObject*)args[0].ptr;
@@ -511,7 +511,7 @@ PltObject getinfo(PltObject* args,int n)
       {
         return nil;
       }
-      return PObjFromStr(out);
+      return ZObjFromStr(out);
 
     }
     else if(args[1].l==CURLINFO_HTTP_CODE)
@@ -520,24 +520,24 @@ PltObject getinfo(PltObject* args,int n)
       CURLcode res = curl_easy_getinfo(handle,(CURLINFO)args[1].l,&out);
       if(res!=CURLE_OK)
       {
-        return Plt_Err(Error,curl_easy_strerror(res));
+        return Z_Err(Error,curl_easy_strerror(res));
         
       }
-      return PObjFromInt64((long long int)out);
+      return ZObjFromInt64((long long int)out);
     }
     return nil;
 }
 /*curl__del__ does the cleanup as well
-PltObject cleanup(PltObject* args,int n)
+ZObject cleanup(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 arguments needed!");
+        return Z_Err(ArgumentError,"1 arguments needed!");
         
     }
     if(args[0].type!='o' || ((KlassObject*)args[0].ptr)->klass!=curlklass)
     {
-      return Plt_Err(TypeError,"Argument 1 must be a Curl object");
+      return Z_Err(TypeError,"Argument 1 must be a Curl object");
       
     }
     KlassObject* d = (KlassObject*)args[0].ptr;
@@ -548,21 +548,21 @@ PltObject cleanup(PltObject* args,int n)
 }*/
 
 
-PltObject ESCAPE(PltObject* args,int n)
+ZObject ESCAPE(ZObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ArgumentError,"2 Arguments required.");
+    return Z_Err(ArgumentError,"2 Arguments required.");
     
   }
-  if(args[0].type != PLT_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
+  if(args[0].type != Z_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
   {
-    return Plt_Err(TypeError,"Argument 1 must be a Curl Object");
+    return Z_Err(TypeError,"Argument 1 must be a Curl Object");
     
   }
-  if(args[1].type!=PLT_STR)
+  if(args[1].type!=Z_STR)
   {
-    return Plt_Err(TypeError,"Argument 1 must be a string");
+    return Z_Err(TypeError,"Argument 1 must be a string");
     
   }
   KlassObject* ki = (KlassObject*)args[0].ptr;
@@ -577,23 +577,23 @@ PltObject ESCAPE(PltObject* args,int n)
     ++i;
   }
   curl_free(output);
-  return PObjFromStrPtr(res);
+  return ZObjFromStrPtr(res);
 }
-PltObject UNESCAPE(PltObject* args,int n)
+ZObject UNESCAPE(ZObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ArgumentError,"2 Arguments required.");
+    return Z_Err(ArgumentError,"2 Arguments required.");
     
   }
-  if(args[0].type != PLT_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
+  if(args[0].type != Z_OBJ || ((KlassObject*)args[0].ptr) -> klass !=curlklass)
   {
-    return Plt_Err(TypeError,"Argument 1 must be a Curl Object");
+    return Z_Err(TypeError,"Argument 1 must be a Curl Object");
     
   }
-  if(args[1].type!=PLT_STR)
+  if(args[1].type!=Z_STR)
   {
-    return Plt_Err(TypeError,"Argument 1 must be a string");
+    return Z_Err(TypeError,"Argument 1 must be a string");
     
   }
   KlassObject* ki = (KlassObject*)args[0].ptr;
@@ -609,7 +609,7 @@ PltObject UNESCAPE(PltObject* args,int n)
     ++i;
   }
   curl_free(output);
-  return PObjFromStrPtr(res);
+  return ZObjFromStrPtr(res);
 }
 extern "C" void unload()
 {

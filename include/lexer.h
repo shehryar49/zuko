@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef LEXER_H_
 #define LEXER_H_
-#include "plutonium.h"
+#include "zuko.h"
 using namespace std;
 int32_t hexToInt32(const string&);
 int64_t hexToInt64(const string&);

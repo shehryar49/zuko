@@ -26,43 +26,43 @@ SOFTWARE.*/
 #ifndef BUILTIN_FUNC_H_
 #define BUILTIN_FUNC_H_
 #include "vm.h"
-#include "plutonium.h"
+#include "zuko.h"
 using namespace std;
 
 std::unordered_map<string,BuiltinFunc> funcs;
 
 int32_t f;
 string fullform(char);
-void PromoteType(PltObject&,char);
+void PromoteType(ZObject&,char);
 
-PltObject nil;
-bool validateArgTypes(string name,string e,PltObject* args,int32_t argc,PltObject& x)
+ZObject nil;
+bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x)
 {
     if(e.length()!=(size_t)argc)
     {
-      x = Plt_Err(ArgumentError,"Error "+name+"() takes "+str((int64_t)e.length())+" arguments!");
+      x = Z_Err(ArgumentError,"Error "+name+"() takes "+str((int64_t)e.length())+" arguments!");
       return false;
     }
     for(int32_t f=1;f<=argc;f++)
     {
-        PltObject k = args[f-1];
+        ZObject k = args[f-1];
         if(k.type!=e[f-1])
             {
-           x = Plt_Err(TypeError,"Error argument "+str(f)+" of "+name+"() should be of type "+fullform(e[f-1]));
+           x = Z_Err(TypeError,"Error argument "+str(f)+" of "+name+"() should be of type "+fullform(e[f-1]));
             return false;
             }
         
     }
     return true;
 }
-PltObject PLT_ISALPHA(PltObject* args,int32_t argc)
+ZObject Z_ISALPHA(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error isalpha() takes one argument!");
-  if(args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(TypeError,"Error isalpha() takes a string argument!");
+    return Z_Err(ArgumentError,"Error isalpha() takes one argument!");
+  if(args[0].type!=Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(TypeError,"Error isalpha() takes a string argument!");
   string s = *(string*)args[0].ptr;
-  PltObject ret = nil;
+  ZObject ret = nil;
   ret.type = 'b';
   ret.i = 0;
   for(auto e: s)
@@ -74,34 +74,34 @@ PltObject PLT_ISALPHA(PltObject* args,int32_t argc)
   return ret;
 }
 
-PltObject ASCII(PltObject* args,int32_t argc)
+ZObject ASCII(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error ascii() takes one argument!");
-  if(args[0].type!='s' && args[0].type!=PLT_MSTR)
-    return Plt_Err(TypeError,"Error ascii() takes a string argument!");
+    return Z_Err(ArgumentError,"Error ascii() takes one argument!");
+  if(args[0].type!='s' && args[0].type!=Z_MSTR)
+    return Z_Err(TypeError,"Error ascii() takes a string argument!");
   string s = *(string*)args[0].ptr;
   if(s.length()!=1)
-      return Plt_Err(ValueError,"Error ascii() takes a string argument of length 1!");
+      return Z_Err(ValueError,"Error ascii() takes a string argument of length 1!");
  
-  PltObject ret = nil;
+  ZObject ret = nil;
   ret.type = 'i';
   ret.i = s[0];
   return ret;
 }
-PltObject TOCHAR(PltObject* args,int32_t argc)
+ZObject TOCHAR(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error char() takes one argument!");
+    return Z_Err(ArgumentError,"Error char() takes one argument!");
   if(args[0].type!='i')
-    return Plt_Err(TypeError,"Error char() takes an integer argument!");
+    return Z_Err(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
   string s;
   s+=ch;
-  PltObject ret = nil;
+  ZObject ret = nil;
   string* p = allocString();
   *p = s;
-  return PObjFromStrPtr(p);
+  return ZObjFromStrPtr(p);
 }
 string unescape(string);
 void printDictionary(Dictionary* l,vector<void*> seen = {})
@@ -113,16 +113,16 @@ void printDictionary(Dictionary* l,vector<void*> seen = {})
   }
   seen.push_back((void*)l);
   Dictionary d = *l;
-  PltObject val;
+  ZObject val;
   size_t k = l->size();
   size_t i = 0;
   printf("{");
   for(auto e: d)
   {
-    void printList(PltList*,vector<void*> = {});
+    void printList(ZList*,vector<void*> = {});
 
     if(e.first.type=='j')
-      printList((PltList*)e.first.ptr,seen);
+      printList((ZList*)e.first.ptr,seen);
     else if(e.first.type=='a')
       printDictionary((Dictionary*)e.first.ptr,seen);
     else if(e.first.type=='s')
@@ -130,11 +130,11 @@ void printDictionary(Dictionary* l,vector<void*> seen = {})
       printf("\"%s\"",unescape(*(string*)e.first.ptr).c_str());
     }
     else
-      printf("%s",PltObjectToStr(e.first).c_str());
+      printf("%s",ZObjectToStr(e.first).c_str());
     printf(" : ");
     //
     if(e.second.type=='j')
-      printList((PltList*)e.second.ptr,seen);
+      printList((ZList*)e.second.ptr,seen);
     else if(e.second.type=='a')
       printDictionary((Dictionary*)e.second.ptr,seen);
     else if(e.second.type=='s')
@@ -142,14 +142,14 @@ void printDictionary(Dictionary* l,vector<void*> seen = {})
       printf("\"%s\"",unescape(*(string*)e.second.ptr).c_str());
     }
     else
-      printf("%s",PltObjectToStr(e.second).c_str());
+      printf("%s",ZObjectToStr(e.second).c_str());
     if(i!=k-1)
       printf(",");
     i+=1;
   }
   printf("}");
 }
-void printList(PltList* l,vector<void*> seen = {})
+void printList(ZList* l,vector<void*> seen = {})
 {
   if(std::find(seen.begin(),seen.end(),(void*)l)!=seen.end())
   {
@@ -158,13 +158,13 @@ void printList(PltList* l,vector<void*> seen = {})
   }
   seen.push_back((void*)l);
   size_t k = l->size();
-  PltObject val;
+  ZObject val;
   printf("[");
   for(size_t i=0;i<k;i+=1)
   {
     val = l->at(i);
     if(val.type=='j')
-      printList((PltList*)val.ptr,seen);
+      printList((ZList*)val.ptr,seen);
     else if(val.type=='a')
       printDictionary((Dictionary*)val.ptr,seen);
     else if(val.type=='s')
@@ -173,7 +173,7 @@ void printList(PltList* l,vector<void*> seen = {})
     }
     else
     {
-      printf("%s",PltObjectToStr(val).c_str());
+      printf("%s",ZObjectToStr(val).c_str());
     }
     if(i!=k-1)
       printf(",");
@@ -194,44 +194,44 @@ void printByteArray(vector<uint8_t>* arr)
   }
   printf("])");
 }
-PltObject print(PltObject* args,int32_t argc)
+ZObject print(ZObject* args,int32_t argc)
 {
     int32_t k = 0;
     while(k<argc)
     {
         if(args[k].type=='j')
-           printList((PltList*)args[k].ptr);
+           printList((ZList*)args[k].ptr);
         else if(args[k].type=='a')
            printDictionary((Dictionary*)args[k].ptr);
-        else if(args[k].type==PLT_BYTEARR)
+        else if(args[k].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[k].ptr);
-        else if(args[k].type == PLT_OBJ)
+        else if(args[k].type == Z_OBJ)
         {
           KlassObject* ki = (KlassObject*)args[k].ptr;
-          PltObject r,ret;
-          std::unordered_map<string,PltObject>::iterator it;
+          ZObject r,ret;
+          std::unordered_map<string,ZObject>::iterator it;
           if((it = ki->members.find("__print__"))!=ki->members.end())
           {
             r = (*it).second;
             vm_callObject(&r,&r,1,&ret);
           }
           else
-            printf("%s",PltObjectToStr(args[k]).c_str());
+            printf("%s",ZObjectToStr(args[k]).c_str());
         }
         else
-          printf("%s",PltObjectToStr(args[k]).c_str());
+          printf("%s",ZObjectToStr(args[k]).c_str());
         k+=1;
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type = 'n';
     return ret;
 }
-PltObject PRINTF(PltObject* args,int32_t argc)
+ZObject PRINTF(ZObject* args,int32_t argc)
 {
     if(argc < 1)
-      return Plt_Err(ArgumentError,"At least one argument needed!");
-    if(args[0].type!='s' && args[0].type!=PLT_MSTR)
-      return Plt_Err(TypeError,"Argument 1 must be a string!");
+      return Z_Err(ArgumentError,"At least one argument needed!");
+    if(args[0].type!='s' && args[0].type!=Z_MSTR)
+      return Z_Err(TypeError,"Argument 1 must be a string!");
     string& format = *(string*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format.length();
@@ -247,31 +247,31 @@ PltObject PRINTF(PltObject* args,int32_t argc)
             continue;
           }
           if(j>=argc)
-            return Plt_Err(ArgumentError,"String format requires more arguments!");
+            return Z_Err(ArgumentError,"String format requires more arguments!");
           if(args[j].type=='j')
-           printList((PltList*)args[j].ptr);
+           printList((ZList*)args[j].ptr);
           else if(args[j].type=='a')
            printDictionary((Dictionary*)args[j].ptr);
-          else if(args[j].type==PLT_BYTEARR)
+          else if(args[j].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[j].ptr);
           else
-           printf("%s",PltObjectToStr(args[j]).c_str());
+           printf("%s",ZObjectToStr(args[j]).c_str());
           j+=1;
         }
         else
           printf("%c",format[k]);
         k+=1;
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type = 'n';
     return ret;
 }
-PltObject FORMAT(PltObject* args,int32_t argc)
+ZObject FORMAT(ZObject* args,int32_t argc)
 {
     if(argc < 1)
-      return Plt_Err(ArgumentError,"At least one argument needed!");
-    if(args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
-      return Plt_Err(TypeError,"Argument 1 must be a string!");
+      return Z_Err(ArgumentError,"At least one argument needed!");
+    if(args[0].type!=Z_STR && args[0].type!=Z_MSTR)
+      return Z_Err(TypeError,"Argument 1 must be a string!");
     const string& format = *(string*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format.length();
@@ -288,8 +288,8 @@ PltObject FORMAT(PltObject* args,int32_t argc)
             continue;
           }
           if(j>=argc)
-            return Plt_Err(ArgumentError,"String format requires more arguments!");
-          *p += PltObjectToStr(args[j]);
+            return Z_Err(ArgumentError,"String format requires more arguments!");
+          *p += ZObjectToStr(args[j]);
           j+=1;
         }
         else
@@ -297,58 +297,58 @@ PltObject FORMAT(PltObject* args,int32_t argc)
         k+=1;
     }
 
-    return PObjFromStrPtr(p);
+    return ZObjFromStrPtr(p);
 }
 
-//void printList(PltList);
+//void printList(ZList);
 
-PltObject println(PltObject* args,int32_t argc)
+ZObject println(ZObject* args,int32_t argc)
 {
     int32_t k = 0;
     while(k<argc)
     {
         if(args[k].type=='j')
-          printList((PltList*)args[k].ptr);
+          printList((ZList*)args[k].ptr);
         else if(args[k].type=='a')
           printDictionary((Dictionary*)args[k].ptr);
-        else if(args[k].type==PLT_BYTEARR)
+        else if(args[k].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[k].ptr);
-        else if(args[k].type == PLT_OBJ)
+        else if(args[k].type == Z_OBJ)
         {
           KlassObject* ki = (KlassObject*)args[k].ptr;
-          PltObject r,ret;
-          std::unordered_map<string,PltObject>::iterator it;
+          ZObject r,ret;
+          std::unordered_map<string,ZObject>::iterator it;
           if((it = ki->members.find("__print__"))!=ki->members.end())
           {
             r = (*it).second;
             vm_callObject(&r,&r,1,&ret);
           }
           else
-            printf("%s",PltObjectToStr(args[k]).c_str());
+            printf("%s",ZObjectToStr(args[k]).c_str());
         }
         else
-          printf("%s",PltObjectToStr(args[k]).c_str());
+          printf("%s",ZObjectToStr(args[k]).c_str());
         k+=1;
     }
     puts("");
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
 }
 
-PltObject input(PltObject* args,int32_t argc)
+ZObject input(ZObject* args,int32_t argc)
 {
     if(argc!=0 && argc!=1)
     {
-        return Plt_Err(ArgumentError,"Error input() takes 1 or 0 arguments!");
+        return Z_Err(ArgumentError,"Error input() takes 1 or 0 arguments!");
     }
     if(argc==1)
     {
-      if(args[0].type!='s' && args[0].type!=PLT_MSTR)
-        return Plt_Err(TypeError,"Error input() takes a string argument!");
+      if(args[0].type!='s' && args[0].type!=Z_MSTR)
+        return Z_Err(TypeError,"Error input() takes a string argument!");
       string& prompt = *(string*)args[0].ptr;
       printf("%s",prompt.c_str());
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     string s;
     char ch;
     while(true)
@@ -363,26 +363,26 @@ PltObject input(PltObject* args,int32_t argc)
     }
     string* p = allocString();
     *p = s;
-    return PObjFromStrPtr(p);
+    return ZObjFromStrPtr(p);
 }
-PltObject TYPEOF(PltObject* args,int32_t argc)
+ZObject TYPEOF(ZObject* args,int32_t argc)
 {
   if(argc!=1)
   {
-      return Plt_Err(TypeError,"Error typeof() takes one argument only!");
+      return Z_Err(TypeError,"Error typeof() takes one argument only!");
   }
   string fullform(char);
   string* p = allocString();
   *p = fullform(args[0].type);
-  return PObjFromStrPtr(p);
+  return ZObjFromStrPtr(p);
 }
-PltObject isInstanceOf(PltObject* args,int32_t argc)
+ZObject isInstanceOf(ZObject* args,int32_t argc)
 {
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
+    return Z_Err(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
   if(args[1].type!='v')
-    return Plt_Err(TypeError,"Error second argument to  isInstanceOf() should be a class!");
-  PltObject ret = nil;
+    return Z_Err(TypeError,"Error second argument to  isInstanceOf() should be a class!");
+  ZObject ret = nil;
   ret.type = 'b';
   if(args[0].type!='o')
   {
@@ -394,44 +394,44 @@ PltObject isInstanceOf(PltObject* args,int32_t argc)
   ret.i = obj->klass == k;
   return ret;
 }
-PltObject LEN(PltObject* args,int32_t argc)
+ZObject LEN(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Plt_Err(ArgumentError,"Error len() takes one argument!");
+        return Z_Err(ArgumentError,"Error len() takes one argument!");
 
-    PltObject ret = nil;
-    ret.type = PLT_INT64;
-    if(args[0].type=='s' || args[0].type == PLT_MSTR)
+    ZObject ret = nil;
+    ret.type = Z_INT64;
+    if(args[0].type=='s' || args[0].type == Z_MSTR)
     {
       string& s = *(string*)args[0].ptr;
       ret.l = s.length();
     }
     else if(args[0].type=='j')
-        ret.l = ((PltList*)args[0].ptr)->size();
+        ret.l = ((ZList*)args[0].ptr)->size();
     else if(args[0].type=='a')
         ret.l = ((Dictionary*)args[0].ptr)->size();
     else if(args[0].type == 'c')
         ret.l = ((vector<uint8_t>*)args[0].ptr)->size();
     else
-        return Plt_Err(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
+        return Z_Err(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
     return ret;
 }
 //////////
-PltObject OPEN(PltObject* args,int32_t argc)
+ZObject OPEN(ZObject* args,int32_t argc)
 {
     string patt = "ss";
-    PltObject ret = nil;
+    ZObject ret = nil;
     if(!validateArgTypes("open",patt,args,argc,ret))
       return ret;
     string& filename = *(string*)args[0].ptr;
     string& mode = *(string*)args[1].ptr;
     if(mode!="r" && mode!="w" && mode!="a" && mode!="rw" && mode!="rw+" && mode!="rb" && mode!="wb")
-        return Plt_Err(ValueError,"Error unknown mode: \""+mode+"\"");
+        return Z_Err(ValueError,"Error unknown mode: \""+mode+"\"");
     FILE* fp = fopen(filename.c_str(), mode.c_str());
     if(!fp)
     {
 
-        return Plt_Err(FileOpenError,strerror(errno));
+        return Z_Err(FileOpenError,strerror(errno));
     }
     FileObject* f = allocFileObject();
     f->fp = fp;
@@ -440,28 +440,28 @@ PltObject OPEN(PltObject* args,int32_t argc)
     ret.ptr = (void*)f;
     return ret;
 }
-PltObject READ(PltObject* args,int32_t argc)
+ZObject READ(ZObject* args,int32_t argc)
 {
     if(argc!=2 && argc!=1)
-        return Plt_Err(ArgumentError,"Error read() function takes one or two arguments!");
+        return Z_Err(ArgumentError,"Error read() function takes one or two arguments!");
     if(args[0].type!='u')
-        return Plt_Err(TypeError,"Error read() needs a file stream to read from!");
+        return Z_Err(TypeError,"Error read() needs a file stream to read from!");
     char delim = EOF;
     if(argc==2)
     {
-      if(args[1].type!='s' && args[1].type!=PLT_MSTR)
-        return Plt_Err(TypeError,"Error argument 2 to read() function should be of type string!");
+      if(args[1].type!='s' && args[1].type!=Z_MSTR)
+        return Z_Err(TypeError,"Error argument 2 to read() function should be of type string!");
       string& l = *(string*)args[1].ptr;
       if(l.length()!=1)
-        return Plt_Err(ValueError,"Error optional delimeter argument to read() should be string of length 1");
+        return Z_Err(ValueError,"Error optional delimeter argument to read() should be string of length 1");
       delim = l[0];  
     }
     FileObject fobj = *(FileObject*)args[0].ptr;
     if(!fobj.open)
-      return Plt_Err(ValueError,"Error the file stream is closed!");
+      return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* fp = fobj.fp;
     if(!fp)
-        return Plt_Err(FileIOError,"Error can't read from a closed file stream!");
+        return Z_Err(FileIOError,"Error can't read from a closed file stream!");
     char ch;
     string* p = allocString();
     while((ch = fgetc(fp))!=EOF)
@@ -470,111 +470,111 @@ PltObject READ(PltObject* args,int32_t argc)
           break;
         (*p)+=ch;
     }
-    return PObjFromStrPtr(p);
+    return ZObjFromStrPtr(p);
 }
-PltObject CLOSE(PltObject* args,int32_t argc)
+ZObject CLOSE(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Plt_Err(ArgumentError,"Error close() takes 1 argument!");
+        return Z_Err(ArgumentError,"Error close() takes 1 argument!");
   //  printf("args[0].type = %c\n",args[0].type);
     if(args[0].type!='u')
-        return Plt_Err(TypeError,"Error close() takes a file stream as an argument!");
+        return Z_Err(TypeError,"Error close() takes a file stream as an argument!");
     FileObject* fobj = (FileObject*)args[0].ptr;
     if(!fobj->open)
     {
-      return Plt_Err(ValueError,"Error file already closed!");
+      return Z_Err(ValueError,"Error file already closed!");
     }
     FILE* f = fobj->fp;
     if(f==stdin || f==stdout)
-      return Plt_Err(ValueError,"Are you nuts?You should not close stdin or stdout!");
+      return Z_Err(ValueError,"Are you nuts?You should not close stdin or stdout!");
     fclose(f);
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type='n';
     fobj->open = false;
     return ret;
 }
-PltObject RAND(PltObject* args,int32_t argc)
+ZObject RAND(ZObject* args,int32_t argc)
 {
     if(argc!=0)
-        return Plt_Err(ArgumentError,"Error rand() takes 0 arguments!");
-    PltObject ret = nil;
+        return Z_Err(ArgumentError,"Error rand() takes 0 arguments!");
+    ZObject ret = nil;
     ret.i = rand();
     ret.type= 'i';
     return ret;
 }
 //////////////
-PltObject BYTEARRAY(PltObject* args,int32_t argc)
+ZObject BYTEARRAY(ZObject* args,int32_t argc)
 {
-  PltObject ret = nil;
+  ZObject ret = nil;
   if(argc==0)
   {
     vector<uint8_t>* arr = allocByteArray();
-    ret.type = PLT_BYTEARR;
+    ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     return ret;
   }
   else if(argc == 1)
   {
-    if(args[0].type != PLT_LIST)
+    if(args[0].type != Z_LIST)
     {
-      return Plt_Err(TypeError,"Error bytearray() takes a list argument!");
+      return Z_Err(TypeError,"Error bytearray() takes a list argument!");
     }
-    PltList* p = (PltList*)args[0].ptr;
+    ZList* p = (ZList*)args[0].ptr;
     size_t len = p->size();
     vector<uint8_t>* arr = allocByteArray();
-    ret.type = PLT_BYTEARR;
+    ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     for(size_t i=0;i<len;i++)
     {
-      if((*p)[i].type!=PLT_BYTE)
-        return Plt_Err(TypeError,"Error argument list given to bytearray() must contain only bytes!");
+      if((*p)[i].type!=Z_BYTE)
+        return Z_Err(TypeError,"Error argument list given to bytearray() must contain only bytes!");
       arr->push_back((*p)[i].i);
     }
     return ret;
   }
-  return Plt_Err(ArgumentError,"Error bytearray() takes 0 or 1 arguments!");
+  return Z_Err(ArgumentError,"Error bytearray() takes 0 or 1 arguments!");
 }
 
-PltObject WRITE(PltObject* args,int32_t argc)
+ZObject WRITE(ZObject* args,int32_t argc)
 {
   //printf("writing %s\n",args[0].s.c_str());
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error write() takes two arguments!");
+    return Z_Err(ArgumentError,"Error write() takes two arguments!");
   string patt = "su";
-  PltObject ret = nil;
+  ZObject ret = nil;
   if(!validateArgTypes("write",patt,args,argc,ret))
     return ret;
   string& data = *(string*)args[0].ptr;
   FileObject* p = (FileObject*)args[1].ptr;
   FILE* fp = p->fp;
   if(fputs(data.c_str(),fp)==EOF)
-    return Plt_Err(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
+    return Z_Err(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
   ret.type = 'n';
   //printf("done\n");
   return ret;
 }
-PltObject EXIT(PltObject* args,int32_t argc)
+ZObject EXIT(ZObject* args,int32_t argc)
 {
     int ret =  0;
     if(argc == 1)
     {
-      if(args[0].type!=PLT_INT)
-        return Plt_Err(TypeError,"Integer argument required!");
+      if(args[0].type!=Z_INT)
+        return Z_Err(TypeError,"Integer argument required!");
       ret = args[0].i;
     }
     else if(argc == 0);
     else
-        return Plt_Err(ArgumentError,"Error exit() takes either 0 or 1 argument!");
+        return Z_Err(ArgumentError,"Error exit() takes either 0 or 1 argument!");
     exit(ret);
 }
 ////////////////
-PltObject REVERSE(PltObject* args,int32_t argc)
+ZObject REVERSE(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Plt_Err(ArgumentError,"Error reverse() takes 1 argument!");
-    const PltObject& q  = args[0];
+        return Z_Err(ArgumentError,"Error reverse() takes 1 argument!");
+    const ZObject& q  = args[0];
     if(q.type!='s' && q.type!='j')
-        return Plt_Err(TypeError,"Error reverse() takes a string or list argument!");
+        return Z_Err(TypeError,"Error reverse() takes a string or list argument!");
     if(q.type=='s')
     {
         string* l = allocString();
@@ -583,30 +583,30 @@ PltObject REVERSE(PltObject* args,int32_t argc)
         {
             *l+=data[k];
         }
-        return PObjFromStrPtr(l);
+        return ZObjFromStrPtr(l);
     }
-    PltList l;
-    PltList currList = *(PltList*)q.ptr;
+    ZList l;
+    ZList currList = *(ZList*)q.ptr;
     for(int32_t k =currList.size()-1;k>=0;k--)
     {
         l.push_back(currList[k]);
     }
-    PltObject ret = nil;// = l;
-    PltList* p = allocList();
+    ZObject ret = nil;// = l;
+    ZList* p = allocList();
     *p = l;
     ret.type = 'j';
     ret.ptr = (void*)p;
     return ret;
 }///////
 /////////
-PltObject BYTES(PltObject* args,int32_t argc)
+ZObject BYTES(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-      return Plt_Err(ArgumentError,"Error bytes() takes one argument!");
+      return Z_Err(ArgumentError,"Error bytes() takes one argument!");
     auto p = allocByteArray();
-    const PltObject& e = args[0];
-    PltObject ret = nil;
-    ret.type = PLT_BYTEARR;
+    const ZObject& e = args[0];
+    ZObject ret = nil;
+    ret.type = Z_BYTEARR;
     ret.ptr = (void*)p;
     if(e.type=='i')
     {
@@ -626,7 +626,7 @@ PltObject BYTES(PltObject* args,int32_t argc)
       memcpy(&(*p)[0],&e.f,4);
       return ret;
     }
-    else if(e.type=='s' || e.type == PLT_MSTR)
+    else if(e.type=='s' || e.type == Z_MSTR)
     {
        string& s = *(string*)e.ptr;
        for(auto ch: s)
@@ -641,21 +641,21 @@ PltObject BYTES(PltObject* args,int32_t argc)
         p->push_back(0);
       return ret;
     }
-    else if(e.type == PLT_BYTE)
+    else if(e.type == Z_BYTE)
     {
       p->push_back(e.i);
       return ret;
     }
     else
     {
-        return Plt_Err(TypeError,"Error cannot convert "+fullform(e.type)+" type to bytes!");
+        return Z_Err(TypeError,"Error cannot convert "+fullform(e.type)+" type to bytes!");
     }
 }
 ///////////////
-PltObject OBJINFO(PltObject* args,int32_t argc)
+ZObject OBJINFO(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-      return Plt_Err(ArgumentError,"Error obj_info() takes 1 argument!");
+      return Z_Err(ArgumentError,"Error obj_info() takes 1 argument!");
     if( args[0].type=='o')
     {
       KlassObject* k = (KlassObject*)args[0].ptr;
@@ -668,20 +668,20 @@ PltObject OBJINFO(PltObject* args,int32_t argc)
       {
           printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
       }
-      PltObject ret = nil;
+      ZObject ret = nil;
       return ret;
     }
     else
     {
-        return Plt_Err(TypeError,"Error argument is not an object of any class!");
+        return Z_Err(TypeError,"Error argument is not an object of any class!");
     }
 }
-PltObject moduleInfo(PltObject* args,int32_t argc)
+ZObject moduleInfo(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error moduleInfo takes 1 argument!");
-  if(args[0].type!=PLT_MODULE)
-    return Plt_Err(TypeError,"Argument must be a module object!");
+    return Z_Err(ArgumentError,"Error moduleInfo takes 1 argument!");
+  if(args[0].type!=Z_MODULE)
+    return Z_Err(TypeError,"Argument must be a module object!");
   Module* mod = (Module*)args[0].ptr;
   printf("Module %s\n",mod->name.c_str());
   printf("------------\n");
@@ -690,7 +690,7 @@ PltObject moduleInfo(PltObject* args,int32_t argc)
     printf("%s  %s\n",e.first.c_str(),fullform(e.second.type).c_str());
 
   }
-  PltObject ret = nil;
+  ZObject ret = nil;
   return ret;
 }
 union FOO
@@ -708,28 +708,28 @@ union FOO2
   double f;
   unsigned char bytes[sizeof(f)];
 }FOO2;
-PltObject makeList(PltObject* args,int32_t argc)
+ZObject makeList(ZObject* args,int32_t argc)
 {
-        PltObject ret = nil;
+        ZObject ret = nil;
         if(!validateArgTypes("makeList","js",args,argc,ret))
           return ret;
         string& pattern = *(string*)args[1].ptr;
         size_t k = 0;
-        PltList res;
+        ZList res;
         size_t i = 0;
         
         
-        PltList currList = *(PltList*)args[0].ptr;
+        ZList currList = *(ZList*)args[0].ptr;
         while(k<currList.size())
         {
             if(i>pattern.length()-1)
             {
-               return Plt_Err(ValueError,"Error no pattern specified for the remaining bytes!");
+               return Z_Err(ValueError,"Error no pattern specified for the remaining bytes!");
             }
-            PltObject l = currList[k];
+            ZObject l = currList[k];
             if(l.type!='m')
             {
-                return Plt_Err(ValueError,"Error list should only contain bytes!");
+                return Z_Err(ValueError,"Error list should only contain bytes!");
             }
             int32_t b = l.i;
             if(pattern[i]=='i')
@@ -737,7 +737,7 @@ PltObject makeList(PltObject* args,int32_t argc)
                FOO.bytes[0] = b;
                if(k+3 >=currList.size())
                {
-                   return Plt_Err(ValueError,"Error the list is missing some bytes!");
+                   return Z_Err(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList[k];
@@ -748,7 +748,7 @@ PltObject makeList(PltObject* args,int32_t argc)
                k+=1;
                l = currList[k];
                FOO.bytes[3] = l.i;
-               PltObject e;
+               ZObject e;
                e.type = 'i';
                e.i =(int32_t) FOO.x;
                res.push_back(e);
@@ -756,7 +756,7 @@ PltObject makeList(PltObject* args,int32_t argc)
             else if(pattern[i]=='b')
             {
 
-               PltObject e;
+               ZObject e;
                e.type = 'b';
                e.i = b;
                res.push_back(e);
@@ -766,7 +766,7 @@ PltObject makeList(PltObject* args,int32_t argc)
                FOO1.bytes[0] = b;
                if(k+7 >=currList.size())
                {
-                   return Plt_Err(ValueError,"Error the list is missing some bytes!");
+                   return Z_Err(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList[k];
@@ -789,7 +789,7 @@ PltObject makeList(PltObject* args,int32_t argc)
                k+=1;
                l = currList[k];
                FOO1.bytes[7] = l.i;
-               PltObject e;
+               ZObject e;
                e.type = 'l';
                e.l = FOO1.l;
                res.push_back(e);
@@ -797,18 +797,18 @@ PltObject makeList(PltObject* args,int32_t argc)
             else if(pattern[i]=='s')
             {
                 size_t j = k;
-                PltObject e;
+                ZObject e;
                 string* f = allocString();
                 bool terminated = false;
                 while(true)
                 {
                     if(j>=currList.size())
                     {
-                        return Plt_Err(ValueError,"Ran out of bytes!");
+                        return Z_Err(ValueError,"Ran out of bytes!");
                     }
                     e = currList[j];
                     if(e.type!='m')
-                        return Plt_Err(ValueError,"Error the list should only contain bytes!");
+                        return Z_Err(ValueError,"Error the list should only contain bytes!");
                     if(e.i==0)
                     {
                         terminated = true;
@@ -819,9 +819,9 @@ PltObject makeList(PltObject* args,int32_t argc)
                 }
                 if(!terminated)
                 {
-                    return Plt_Err(ValueError,"Error the bytes are invalid to be converted to string!");
+                    return Z_Err(ValueError,"Error the bytes are invalid to be converted to string!");
                 }
-                res.push_back(PObjFromStrPtr(f));
+                res.push_back(ZObjFromStrPtr(f));
                 k  = j;
             }
             else if(pattern[i]=='f')
@@ -829,7 +829,7 @@ PltObject makeList(PltObject* args,int32_t argc)
                FOO2.bytes[0] = b;
                if(k+3 >=currList.size())
                {
-                   return Plt_Err(ValueError,"Error the list is missing some bytes!");
+                   return Z_Err(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList[k];
@@ -840,24 +840,24 @@ PltObject makeList(PltObject* args,int32_t argc)
                k+=1;
                l = currList[k];
                FOO2.bytes[3] = l.i;
-               PltObject e;
+               ZObject e;
                e.type = 'f';
                e.f = FOO2.f;
                res.push_back(e);
             }
             else
             {
-                return Plt_Err(TypeError,"Error unknown type used in pattern!");
+                return Z_Err(TypeError,"Error unknown type used in pattern!");
             }
             i+=1;
             k+=1;
         }
         if(i!=pattern.length())
         {
-            return Plt_Err(ValueError,"Error the list does not have enough bytes to follow the pattern!");
+            return Z_Err(ValueError,"Error the list does not have enough bytes to follow the pattern!");
         }
 
-        PltList* p = allocList();
+        ZList* p = allocList();
         *p =  (res);
         ret.ptr = (void*)p;
         ret.type = 'j';
@@ -867,15 +867,15 @@ PltObject makeList(PltObject* args,int32_t argc)
 ///////
 /////////
 
-PltObject SUBSTR(PltObject* args,int32_t argc)
+ZObject SUBSTR(ZObject* args,int32_t argc)
 {
     if(argc==3)
 		{
 			if(args[0].type!='i' && args[0].type!='l')
-        return Plt_Err(TypeError,"Error first argument of substr() should be an integer");
+        return Z_Err(TypeError,"Error first argument of substr() should be an integer");
       if(args[1].type!='i' && args[1].type!='l')
-        return Plt_Err(TypeError,"Error second argument of substr() should be an integer");
-			if(args[2].type=='s' || args[2].type==PLT_MSTR)
+        return Z_Err(TypeError,"Error second argument of substr() should be an integer");
+			if(args[2].type=='s' || args[2].type==Z_MSTR)
 			{
         string* q = allocString();
         PromoteType(args[0],'l');
@@ -883,162 +883,162 @@ PltObject SUBSTR(PltObject* args,int32_t argc)
         
         if(args[0].l<0 || args[1].l<0 )
         {
-           return PObjFromStrPtr(q);
+           return ZObjFromStrPtr(q);
         }
         string& data = *(string*)args[2].ptr;
         *q  = substr((int32_t)args[0].l,(int32_t)args[1].l,data);
-        return PObjFromStrPtr(q);
+        return ZObjFromStrPtr(q);
 			}
 			else
       {
-      return Plt_Err(TypeError,"Error third argument of substr() should be a string!\n");
+      return Z_Err(TypeError,"Error third argument of substr() should be a string!\n");
       }
 		}
-		return Plt_Err(ArgumentError,"Error substr() takes three arguments!");
+		return Z_Err(ArgumentError,"Error substr() takes three arguments!");
 }
-PltObject getFileSize(PltObject* args,int32_t argc)
+ZObject getFileSize(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Plt_Err(TypeError,"Error getFileSize() takes an open file as argument!");
+        return Z_Err(TypeError,"Error getFileSize() takes an open file as argument!");
   
     FileObject* p = (FileObject*)args[0].ptr;
     if(!p->open)
-      return Plt_Err(FileIOError,"Unable to get size of closed file!");
+      return Z_Err(FileIOError,"Unable to get size of closed file!");
     FILE* currF = p->fp;
     fseek(currF,0,SEEK_END);
     int64_t n = ftell(currF);
     rewind(currF);
-    return PObjFromInt64(n);
+    return ZObjFromInt64(n);
   }
-  return Plt_Err(ArgumentError,"Error getFileSize() takes 1 argument!");
+  return Z_Err(ArgumentError,"Error getFileSize() takes 1 argument!");
 }
-PltObject FTELL(PltObject* args,int32_t argc)
+ZObject FTELL(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Plt_Err(TypeError,"Error ftell() takes an open file as argument!");
+        return Z_Err(TypeError,"Error ftell() takes an open file as argument!");
     FileObject* p = (FileObject*)args[0].ptr;
     if(!p->open)
-      return Plt_Err(FileIOError,"Error file is closed!");
+      return Z_Err(FileIOError,"Error file is closed!");
     FILE* currF = p->fp;
     int64_t n = ftell(currF);
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type = 'l';
     ret.l = (int64_t)n;
     return ret;
   }
-  return Plt_Err(ArgumentError,"Error ftell() takes 1 argument!");
+  return Z_Err(ArgumentError,"Error ftell() takes 1 argument!");
 }
-PltObject REWIND(PltObject* args,int32_t argc)
+ZObject REWIND(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Plt_Err(TypeError,"Error rewind() takes an open file as argument!");
+        return Z_Err(TypeError,"Error rewind() takes an open file as argument!");
   
     FileObject* p = (FileObject*)args[0].ptr;
     if(!p->open)
-      return Plt_Err(FileIOError,"Unable to rewind closed file!");
+      return Z_Err(FileIOError,"Unable to rewind closed file!");
     FILE* currF = p->fp;
     rewind(currF);
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
-  return Plt_Err(ArgumentError,"Error rewind() takes 1 argument!");
+  return Z_Err(ArgumentError,"Error rewind() takes 1 argument!");
 }
-PltObject SYSTEM(PltObject* args,int32_t argc)
+ZObject SYSTEM(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-      return Plt_Err(ArgumentError,"Error system() takes 1 argument!");
-  if(args[0].type!='s' && args[0].type!=PLT_MSTR)
-      return Plt_Err(TypeError,"Error system() takes a string argument!");
+      return Z_Err(ArgumentError,"Error system() takes 1 argument!");
+  if(args[0].type!='s' && args[0].type!=Z_MSTR)
+      return Z_Err(TypeError,"Error system() takes a string argument!");
   string& command = *(string*)args[0].ptr;
   int32_t i = system(command.c_str());
-  return PObjFromInt(i);
+  return ZObjFromInt(i);
 }
-PltObject SPLIT(PltObject* args,int32_t argc)
+ZObject SPLIT(ZObject* args,int32_t argc)
 {
     if(argc==2)
 		{
-			if( (args[0].type=='s' || args[0].type==PLT_MSTR) && (args[1].type == PLT_MSTR || args[1].type=='s'))
+			if( (args[0].type=='s' || args[0].type==Z_MSTR) && (args[1].type == Z_MSTR || args[1].type=='s'))
 			{
         string& data = *(string*)args[0].ptr;
         string& delim = *(string*)args[1].ptr;
 				vector<string> list = split(data,delim);
 				uint32_t  o = 0;
-				PltList l;
+				ZList l;
 				string* value;
 				while(o<list.size())
         {
           value = allocString();
           *value = list[o];
-          l.push_back(PObjFromStrPtr(value));
+          l.push_back(ZObjFromStrPtr(value));
           o+=1;
         }
-        PltList* p = vm_allocList();
+        ZList* p = vm_allocList();
         *p = l;
-        PltObject ret = nil;
+        ZObject ret = nil;
         ret.type = 'j';
         ret.ptr = p;
         return ret;
 			}
 			else
       {
-        return Plt_Err(TypeError,"Error split() takes both string arguments!\n");
+        return Z_Err(TypeError,"Error split() takes both string arguments!\n");
         exit(0);
       }
 		}
-		return Plt_Err(ArgumentError,"Error split() takes two arguments!");
+		return Z_Err(ArgumentError,"Error split() takes two arguments!");
 }
-PltObject GETENV(PltObject* args,int32_t argc)
+ZObject GETENV(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
 
-      if(args[0].type=='s' || args[0].type==PLT_MSTR)
+      if(args[0].type=='s' || args[0].type==Z_MSTR)
       {
         string& vname = *(string*)args[0].ptr;
         char* c = getenv(vname.c_str());
         if(!c)
         {
-          //   return Plt_Err(NameError,"Unknown environment variable!\n");
-          PltObject ret = nil;
+          //   return Z_Err(NameError,"Unknown environment variable!\n");
+          ZObject ret = nil;
           return ret;
         }
         string* s = allocString();
         *s = c;
 
-        return PObjFromStrPtr(s);
+        return ZObjFromStrPtr(s);
       }
       else
       {
-        return Plt_Err(TypeError,"Error getenv() takes a string argument!");
+        return Z_Err(TypeError,"Error getenv() takes a string argument!");
       }
   }
-  return Plt_Err(ArgumentError,"Error getenv() takes one argument!");
+  return Z_Err(ArgumentError,"Error getenv() takes one argument!");
 }
-PltObject SHUFFLE(PltObject* args,int32_t argc)
+ZObject SHUFFLE(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='j')
 			{
-			  PltList* a = (PltList*)args[0].ptr;
+			  ZList* a = (ZList*)args[0].ptr;
 				std::random_shuffle(a->begin(),a->end());
-				PltObject ret = nil;
+				ZObject ret = nil;
 				return ret;
 			}
 			else
       {
-        return Plt_Err(TypeError,"Error shuffle takes a list as an argument!");
+        return Z_Err(TypeError,"Error shuffle takes a list as an argument!");
       }
 		}
-		return Plt_Err(ArgumentError,"Error shuffle() takes exactly one argument!");
+		return Z_Err(ArgumentError,"Error shuffle() takes exactly one argument!");
 }
-PltObject STR(PltObject* args,int32_t argc)
+ZObject STR(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
@@ -1046,45 +1046,45 @@ PltObject STR(PltObject* args,int32_t argc)
 			{
         string* s = allocString();
         *s = str(args[0].i);
-        return PObjFromStrPtr(s);
+        return ZObjFromStrPtr(s);
 			}
 			else if(args[0].type=='f')
 			{
         string* s = allocString();
         *s = str(args[0].f);
-        return PObjFromStrPtr(s);
+        return ZObjFromStrPtr(s);
 			}
       else if(args[0].type=='l')
       {
           string* s = allocString();
           *s = str(args[0].l);
-          return PObjFromStrPtr(s);
+          return ZObjFromStrPtr(s);
       }
-      else if(args[0].type == PLT_BYTE)
+      else if(args[0].type == Z_BYTE)
       {
         string* s = allocString();
-        *s = PltObjectToStr(args[0]);
-        return PObjFromStrPtr(s);
+        *s = ZObjectToStr(args[0]);
+        return ZObjFromStrPtr(s);
       }
       else if(args[0].type == 'b')
       {
           string* s = allocString();
           *s = (args[0].i) ? "true" : "false";
-          return PObjFromStrPtr(s);
+          return ZObjFromStrPtr(s);
       }
       else if(args[0].type == 'j')
       {
           string* s = allocString();
-          *s = PltObjectToStr(args[0]);
-          return PObjFromStrPtr(s);
+          *s = ZObjectToStr(args[0]);
+          return ZObjFromStrPtr(s);
       }
       else if(args[0].type == 'a')
       {
           string* s = allocString();
-          *s = PltObjectToStr(args[0]);
-          return PObjFromStrPtr(s);
+          *s = ZObjectToStr(args[0]);
+          return ZObjFromStrPtr(s);
       }   
-      else if(args[0].type == PLT_BYTEARR)
+      else if(args[0].type == Z_BYTEARR)
       {
         string* s = allocString();
         vector<uint8_t>& bytes = *(vector<uint8_t>*)args[0].ptr;
@@ -1092,21 +1092,21 @@ PltObject STR(PltObject* args,int32_t argc)
         {
           s->push_back((char)byte);
         }
-        return PObjFromStrPtr(s);
+        return ZObjFromStrPtr(s);
       }
-      return Plt_Err(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
+      return Z_Err(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
 		}
-    return Plt_Err(ArgumentError,"Error str() takes only one argument!");
+    return Z_Err(ArgumentError,"Error str() takes only one argument!");
 }
-PltObject FIND(PltObject* args,int32_t argc)
+ZObject FIND(ZObject* args,int32_t argc)
 {
-  PltObject ret = nil;
+  ZObject ret = nil;
   if(argc != 2)
-    return Plt_Err(ArgumentError,"Error find() takes 2 arguments!");
-  if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(TypeError,"Error first argument given to find() must be a stirng!");
-  if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
-    return Plt_Err(TypeError,"Error second argument given to find() must be a stirng!");
+    return Z_Err(ArgumentError,"Error find() takes 2 arguments!");
+  if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(TypeError,"Error first argument given to find() must be a stirng!");
+  if(args[1].type != Z_STR && args[1].type!=Z_MSTR)
+    return Z_Err(TypeError,"Error second argument given to find() must be a stirng!");
   
   ret.type = 'l';
   string& a = *(string*)args[0].ptr;
@@ -1121,14 +1121,14 @@ PltObject FIND(PltObject* args,int32_t argc)
     ret.l = static_cast<int64_t>(y);
   return ret;
 }
-PltObject TOINT(PltObject* args,int32_t argc)
+ZObject TOINT(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s' || args[0].type == PLT_MSTR)
+			if(args[0].type=='s' || args[0].type == Z_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret = nil;
+			    ZObject ret = nil;
           if(isnum(q))
           {
               ret.i = Int(q);
@@ -1142,28 +1142,28 @@ PltObject TOINT(PltObject* args,int32_t argc)
           else if(isaFloat(q))
           {
               q = q.substr(0,q.find('.'));
-              ret.type = PLT_INT;
+              ret.type = Z_INT;
               if(isnum(q))
                 ret.i = Int(q);
               else if(isInt64(q))
               {
-                ret.type = PLT_INT64;
+                ret.type = Z_INT64;
                 ret.l = toInt64(q);
               }
               else
               {
-                ret.type = PLT_INT64;
+                ret.type = Z_INT64;
                 ret.l =  LLONG_MAX;
               }
               return ret;
           }
           else
-              return Plt_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
+              return Z_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
 			{
-               PltObject ret = nil;
+               ZObject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1174,26 +1174,26 @@ PltObject TOINT(PltObject* args,int32_t argc)
                ret.type = 'l';
                return ret;
 			}
-      else if(args[0].type == 'm' || args[0].type == PLT_BOOL)
+      else if(args[0].type == 'm' || args[0].type == Z_BOOL)
       {
-        args[0].type = PLT_INT;
+        args[0].type = Z_INT;
         return args[0];
       }
-      else if(args[0].type == PLT_INT || args[0].type == PLT_INT64)
+      else if(args[0].type == Z_INT || args[0].type == Z_INT64)
         return args[0];
-      return Plt_Err(TypeError,"Error int() unsupported for type "+fullform(args[0].type));
+      return Z_Err(TypeError,"Error int() unsupported for type "+fullform(args[0].type));
 		}
-		return Plt_Err(ArgumentError,"Error int() takes exactly one argument!");
+		return Z_Err(ArgumentError,"Error int() takes exactly one argument!");
 		exit(0);
 }
-PltObject TOINT32(PltObject* args,int32_t argc)
+ZObject TOINT32(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s' || args[0].type == PLT_MSTR)
+			if(args[0].type=='s' || args[0].type == Z_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret = nil;
+			    ZObject ret = nil;
           if(isnum(q))
           {
               ret.i = Int(q);
@@ -1202,33 +1202,33 @@ PltObject TOINT32(PltObject* args,int32_t argc)
           else if(isInt64(q))
           {
               ret.i = INT_MAX;
-              ret.type = PLT_INT;
+              ret.type = Z_INT;
           }
           else if(isaFloat(q))
           {
               q = q.substr(0,q.find('.'));
-              ret.type = PLT_INT;
+              ret.type = Z_INT;
               if(isnum(q))
                 ret.i = Int(q);
               else if(isInt64(q))
               {
-                ret.type = PLT_INT;
+                ret.type = Z_INT;
                 ret.i = INT_MAX;
               }
               else
               {
-                ret.type = PLT_INT;
+                ret.type = Z_INT;
                 ret.i =  INT_MAX;
               }
               return ret;
           }
           else
-              return Plt_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
+              return Z_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
 			{
-        PltObject ret = nil;
+        ZObject ret = nil;
         double d = args[0].f;
         if(d<(double)INT_MIN)
           ret.i = INT_MIN;
@@ -1239,38 +1239,38 @@ PltObject TOINT32(PltObject* args,int32_t argc)
         ret.type = 'i';
         return ret;
 			}
-      else if(args[0].type == 'm' || args[0].type == PLT_BOOL)
+      else if(args[0].type == 'm' || args[0].type == Z_BOOL)
       {
-        args[0].type = PLT_INT;
+        args[0].type = Z_INT;
         return args[0];
       }
-      else if(args[0].type == PLT_INT)
+      else if(args[0].type == Z_INT)
         return args[0];
-      else if(args[0].type == PLT_INT64)
+      else if(args[0].type == Z_INT64)
       {
         if(args[0].l > INT_MAX)
-          return PObjFromInt(INT_MAX);
+          return ZObjFromInt(INT_MAX);
         else if(args[0].l < INT_MIN)
-          return PObjFromInt(INT_MIN);
-        return PObjFromInt(static_cast<int32_t>(args[0].l)); 
+          return ZObjFromInt(INT_MIN);
+        return ZObjFromInt(static_cast<int32_t>(args[0].l)); 
       }
-      return Plt_Err(TypeError,"Error int32() unsupported for type "+fullform(args[0].type));
+      return Z_Err(TypeError,"Error int32() unsupported for type "+fullform(args[0].type));
 		}
-		return Plt_Err(ArgumentError,"Error int32() takes exactly one argument!");
+		return Z_Err(ArgumentError,"Error int32() takes exactly one argument!");
 		exit(0);
 }
-PltObject TOINT64(PltObject* args,int32_t argc)
+ZObject TOINT64(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s' || args[0].type==PLT_MSTR)
+			if(args[0].type=='s' || args[0].type==Z_MSTR)
 			{
 			    string& q = *(string*)args[0].ptr;
-			    PltObject ret = nil;
+			    ZObject ret = nil;
           if(isnum(q))
           {
               ret.l = Int(q);
-              ret.type = PLT_INT64;
+              ret.type = Z_INT64;
           }
           else if(isInt64(q))
           {
@@ -1280,26 +1280,26 @@ PltObject TOINT64(PltObject* args,int32_t argc)
           else if(isaFloat(q))
           {
               q = q.substr(0,q.find('.'));
-              ret.type = PLT_INT;
+              ret.type = Z_INT;
               if(isInt64(q))
               {
-                ret.type = PLT_INT64;
+                ret.type = Z_INT64;
                 ret.l = toInt64(q);
               }
               else
               {
-                ret.type = PLT_INT64;
+                ret.type = Z_INT64;
                 ret.l =  LLONG_MAX;
               }
               return ret;
           }
           else
-              return Plt_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
+              return Z_Err(ValueError,"Error the string "+q+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
 			{
-               PltObject ret = nil;
+               ZObject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1310,102 +1310,102 @@ PltObject TOINT64(PltObject* args,int32_t argc)
                ret.type = 'l';
                return ret;
 			}
-      else if(args[0].type == 'm' || args[0].type == PLT_BOOL || args[0].type == PLT_INT)
+      else if(args[0].type == 'm' || args[0].type == Z_BOOL || args[0].type == Z_INT)
       {
-        args[0].type = PLT_INT64;
+        args[0].type = Z_INT64;
         args[0].l = args[0].i;
         return args[0];
       }
-      else if(args[0].type == PLT_INT64)
+      else if(args[0].type == Z_INT64)
         return args[0];
-      return Plt_Err(TypeError,"Error int64() unsupported for type "+fullform(args[0].type));
+      return Z_Err(TypeError,"Error int64() unsupported for type "+fullform(args[0].type));
 		}
-		return Plt_Err(ArgumentError,"Error int64() takes exactly one argument!");
+		return Z_Err(ArgumentError,"Error int64() takes exactly one argument!");
 		exit(0);
 }
-PltObject TOFLOAT(PltObject* args,int32_t argc)
+ZObject TOFLOAT(ZObject* args,int32_t argc)
 {
     if(argc==1)
 		{
-			if(args[0].type=='s' || args[0].type == PLT_MSTR)
+			if(args[0].type=='s' || args[0].type == Z_MSTR)
 			{
         string& q = *(string*)args[0].ptr;
         if(isnum(q))
-          return PObjFromDouble((double)Int(q));
+          return ZObjFromDouble((double)Int(q));
         else if(isInt64(q))
-          return PObjFromDouble((double)toInt64(q));
+          return ZObjFromDouble((double)toInt64(q));
         else if(isaFloat(q))
-          return PObjFromDouble(Float(q));
+          return ZObjFromDouble(Float(q));
         else
-          return Plt_Err(ValueError,"The string cannot be converted to a float!\n");
+          return Z_Err(ValueError,"The string cannot be converted to a float!\n");
 			}
       else if(args[0].type == 'i')
       {
         args[0].f = (double)args[0].i;
-        args[0].type = PLT_FLOAT;
+        args[0].type = Z_FLOAT;
         return args[0];
       }
       else if(args[0].type == 'l')
       {
         args[0].f = (double)args[0].l;
-        args[0].type = PLT_FLOAT;
+        args[0].type = Z_FLOAT;
         return args[0];
       }
-      else if(args[0].type == PLT_FLOAT)
+      else if(args[0].type == Z_FLOAT)
         return args[0];
-      return Plt_Err(TypeError,"Error float() unsupported for type "+fullform(args[0].type));
+      return Z_Err(TypeError,"Error float() unsupported for type "+fullform(args[0].type));
 		}
-		return Plt_Err(ArgumentError,"Error float() takes exactly one argument!");
+		return Z_Err(ArgumentError,"Error float() takes exactly one argument!");
 		exit(0);
 }
-PltObject tonumeric(PltObject* args,int32_t argc)
+ZObject tonumeric(ZObject* args,int32_t argc)
 {
     if(argc==1)
     {
-      if(args[0].type=='s' || args[0].type==PLT_MSTR)
+      if(args[0].type=='s' || args[0].type==Z_MSTR)
       {
           string& q = *(string*)args[0].ptr;
           if(isnum(q))
           {
-              PltObject ret = nil;
+              ZObject ret = nil;
               ret.type='i';
               ret.i = Int(q);
               return ret;
           }
           else if(isInt64(q))
           {
-              PltObject ret = nil;
+              ZObject ret = nil;
               ret.type = 'l';
               ret.l = toInt64(q);
               return ret;
           }
           else if(isaFloat(q))
           {
-              PltObject ret = nil;
+              ZObject ret = nil;
               ret.type = 'f';
               ret.f = Float(q);
               return ret;
           }
           else
           {
-              return Plt_Err(ValueError,"Error cannot convert the string \""+q+"\" to numeric type!");
+              return Z_Err(ValueError,"Error cannot convert the string \""+q+"\" to numeric type!");
           }
       }
       else
       {
-          return Plt_Err(TypeError,"Error tonumeric() takes a string argument!");
+          return Z_Err(TypeError,"Error tonumeric() takes a string argument!");
       }
 		}
-    return Plt_Err(ArgumentError,"Error tonumeric() takes one argument!");
+    return Z_Err(ArgumentError,"Error tonumeric() takes one argument!");
 }
-PltObject isnumeric(PltObject* args,int32_t argc)
+ZObject isnumeric(ZObject* args,int32_t argc)
 {
-  PltObject ret = nil;
+  ZObject ret = nil;
   ret.type = 'b';
   ret.i = 1;
     if(argc==1)
     {
-            if(args[0].type=='s' || args[0].type == PLT_MSTR)
+            if(args[0].type=='s' || args[0].type == Z_MSTR)
             {
                string& s = *(string*)args[0].ptr;
                if(isnum(s))
@@ -1422,63 +1422,63 @@ PltObject isnumeric(PltObject* args,int32_t argc)
             }
             else
             {
-                return Plt_Err(TypeError,"Error isnumeric() takes a string argument!");
+                return Z_Err(TypeError,"Error isnumeric() takes a string argument!");
             }
     }
-    return Plt_Err(ArgumentError,"Error isnumeric() takes 1 argument!");
+    return Z_Err(ArgumentError,"Error isnumeric() takes 1 argument!");
 }
-PltObject REPLACE(PltObject* args,int32_t argc)
+ZObject REPLACE(ZObject* args,int32_t argc)
 {
         if(argc==3)
         {
            if(args[0].type!='s')
-               return Plt_Err(TypeError,"Error first argument given to replace() must be a string!");
+               return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
            if(args[1].type!='s')
-               return Plt_Err(TypeError,"Error second argument given to replace() must be a string!");
+               return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
            if(args[2].type!='s')
-               return Plt_Err(TypeError,"Error third argument given to replace() must be a string!");
+               return Z_Err(TypeError,"Error third argument given to replace() must be a string!");
            string& a = *(string*)args[0].ptr;
            string& b = *(string*)args[1].ptr;
            string& c = *(string*)args[2].ptr;
            
            string* z = allocString();
            *z = replace_all(a,b,c);
-           return PObjFromStrPtr(z);
+           return ZObjFromStrPtr(z);
         }
         else
         {
-            return Plt_Err(ArgumentError,"Error replace() takes three arguments\n");
+            return Z_Err(ArgumentError,"Error replace() takes three arguments\n");
         }
 }
-PltObject REPLACE_ONCE(PltObject* args,int32_t argc)
+ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
 {
         if(argc==3)
         {
            if(args[0].type!='s')
-               return Plt_Err(TypeError,"Error first argument given to replace_once() must be a string!");
+               return Z_Err(TypeError,"Error first argument given to replace_once() must be a string!");
            if(args[1].type!='s')
-               return Plt_Err(TypeError,"Error second argument given to replace_once() must be a string!");
+               return Z_Err(TypeError,"Error second argument given to replace_once() must be a string!");
            if(args[2].type!='s')
-               return Plt_Err(TypeError,"Error third argument given to replace_once() must be a string!");
+               return Z_Err(TypeError,"Error third argument given to replace_once() must be a string!");
            string& a = *(string*)args[0].ptr;
            string& b = *(string*)args[1].ptr;
            string& c = *(string*)args[2].ptr;
            string* z = allocString();
            *z = replace(a,b,c);
-           return PObjFromStrPtr(z);
+           return ZObjFromStrPtr(z);
         }
         else
         {
-            return Plt_Err(ArgumentError,"Error replace_once() takes three arguments\n");
+            return Z_Err(ArgumentError,"Error replace_once() takes three arguments\n");
         }
 }
-PltObject SLEEP(PltObject* args,int32_t argc)
+ZObject SLEEP(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Plt_Err(ArgumentError,"Error sleep() takes 1 argument!");
+        return Z_Err(ArgumentError,"Error sleep() takes 1 argument!");
     if(args[0].type=='i' && args[0].type!='l')
     {
-      PltObject r = args[0];
+      ZObject r = args[0];
       PromoteType(r,'l');
       #ifdef _WIN32
       #include <windows.h>
@@ -1486,58 +1486,58 @@ PltObject SLEEP(PltObject* args,int32_t argc)
       #else
         usleep(r.l*1000);
       #endif
-      PltObject ret = nil;
+      ZObject ret = nil;
       return ret;
     }
     else
     {
-      return Plt_Err(TypeError,"Error sleep() takes an integer argument!");
+      return Z_Err(TypeError,"Error sleep() takes an integer argument!");
     }
 }
 
 
-PltObject TOBYTE(PltObject* args,int32_t argc)
+ZObject TOBYTE(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error byte() takes 1 argument!");
-  if(args[0].type == PLT_INT)
+    return Z_Err(ArgumentError,"Error byte() takes 1 argument!");
+  if(args[0].type == Z_INT)
   {
     if(args[0].i>255 || args[0].i<0)
-      return Plt_Err(ValueError,"The integer must be in range 0 to 255!");
+      return Z_Err(ValueError,"The integer must be in range 0 to 255!");
   }
-  else if(args[0].type == PLT_INT64)
+  else if(args[0].type == Z_INT64)
   {
     if(args[0].l>255 || args[0].l<0)
-      return Plt_Err(ValueError,"The integer must be in range 0 to 255!");
+      return Z_Err(ValueError,"The integer must be in range 0 to 255!");
     args[0].i = args[0].l;
   }
-  else if(args[0].type == PLT_BYTE || args[0].type == PLT_BOOL)
+  else if(args[0].type == Z_BYTE || args[0].type == Z_BOOL)
   {
-    args[0].type = PLT_BYTE;
+    args[0].type = Z_BYTE;
     return args[0];
   }
   else
-    return Plt_Err(TypeError,"Cannot convert type "+fullform(args[0].type)+" to byte!");
-  args[0].type = PLT_BYTE;
+    return Z_Err(TypeError,"Cannot convert type "+fullform(args[0].type)+" to byte!");
+  args[0].type = Z_BYTE;
   return args[0];
 }
-PltObject writelines(PltObject* args,int32_t argc)
+ZObject writelines(ZObject* args,int32_t argc)
 {
      if(argc==2)
         {
             if(args[0].type!='j')
-                return Plt_Err(TypeError,"Error first argument of writelines() should be a list!");
+                return Z_Err(TypeError,"Error first argument of writelines() should be a list!");
             if(args[1].type=='u')
             {
-                const PltList& lines = *(PltList*)args[0].ptr;
+                const ZList& lines = *(ZList*)args[0].ptr;
                 uint32_t f = 0;
                 string data = "";
-                PltObject m;
+                ZObject m;
                 while(f<lines.size())
                 {
                     m = (lines[f]);
-                    if(m.type!='s' && m.type!=PLT_MSTR)
-                      return Plt_Err(ValueError,"List provided to writelines should consist of string elements only!");
+                    if(m.type!='s' && m.type!=Z_MSTR)
+                      return Z_Err(ValueError,"List provided to writelines should consist of string elements only!");
                     data+=*(string*)m.ptr;
                     if(f!=lines.size()-1)
                     {
@@ -1548,31 +1548,31 @@ PltObject writelines(PltObject* args,int32_t argc)
                 FileObject* p = (FileObject*)args[1].ptr;
                 FILE* currF = p->fp;
                 fputs(data.c_str(),currF);
-                PltObject ret = nil;
+                ZObject ret = nil;
                 return ret;
             }
-            return Plt_Err(ArgumentError,"Error writelines() needs a filestream to write!");
+            return Z_Err(ArgumentError,"Error writelines() needs a filestream to write!");
         }
         else
         {
-            return Plt_Err(ValueError,"Error writelines() takes two arguments!");
+            return Z_Err(ValueError,"Error writelines() takes two arguments!");
             exit(0);
         }
 }
-PltObject readlines(PltObject* args,int32_t argc)
+ZObject readlines(ZObject* args,int32_t argc)
 {
     if(argc==1)
     {
       if(args[0].type!='u')
-          return Plt_Err(TypeError,"Argument not a filestream!");
+          return Z_Err(TypeError,"Argument not a filestream!");
       signed char ch;
       FileObject fobj = *(FileObject*)args[0].ptr;
       if(!fobj.open)
-        return Plt_Err(ValueError,"Error the file stream is closed!");
+        return Z_Err(ValueError,"Error the file stream is closed!");
       FILE* currF = fobj.fp;
-      PltList lines;
+      ZList lines;
       string* reg = allocString();
-      lines.push_back(PObjFromStrPtr(reg));
+      lines.push_back(ZObjFromStrPtr(reg));
       int32_t k = 0;
 
       while(true)
@@ -1586,15 +1586,15 @@ PltObject readlines(PltObject* args,int32_t argc)
           {
               k+=1;
               reg = allocString();
-              lines.push_back(PObjFromStrPtr(reg));
+              lines.push_back(ZObjFromStrPtr(reg));
           }
           else
           {
             *reg+=ch;
           }
       }
-      PltObject ret = nil;
-      PltList* p = allocList();
+      ZObject ret = nil;
+      ZList* p = allocList();
       *p = lines;
       ret.type = 'j';
       ret.ptr = (void*)p;
@@ -1602,7 +1602,7 @@ PltObject readlines(PltObject* args,int32_t argc)
     }
     else
     {
-        return Plt_Err(ArgumentError,"Error readlines() takes one argument!");
+        return Z_Err(ArgumentError,"Error readlines() takes one argument!");
         exit(0);
     }
 }
@@ -1614,36 +1614,36 @@ void clean_stdin(void)
         c = getchar();
     }
 }
-PltObject FREAD(PltObject* args,int32_t argc)
+ZObject FREAD(ZObject* args,int32_t argc)
 {
-    PltObject ret = nil;
+    ZObject ret = nil;
     if(argc!=3)
-        return Plt_Err(ArgumentError,"Error fread() takes 3 arguments!");
-    if (args[0].type != PLT_BYTEARR)
-        return Plt_Err(TypeError, "Error first argument to fread must be a bytearray!");
+        return Z_Err(ArgumentError,"Error fread() takes 3 arguments!");
+    if (args[0].type != Z_BYTEARR)
+        return Z_Err(TypeError, "Error first argument to fread must be a bytearray!");
     if(args[1].type!='i' && args[1].type!='l')
-        return Plt_Err(TypeError,"Error second argument of fread() should be an integer!");
+        return Z_Err(TypeError,"Error second argument of fread() should be an integer!");
     if(args[2].type!='u')
-      return Plt_Err(TypeError,"Error third argument of fread() should be a file stream!");
-    PltObject a = args[1];
+      return Z_Err(TypeError,"Error third argument of fread() should be a file stream!");
+    ZObject a = args[1];
     PromoteType(a,'l');
     int64_t e = a.l;
     auto p = (vector<uint8_t>*)args[0].ptr;
     p->resize(e);
     FileObject fobj = *(FileObject*)args[2].ptr;
     if(!fobj.open)
-      return Plt_Err(ValueError,"Error the file stream is closed!");
+      return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     unsigned long long int read = 0;
     if((read = fread(&(p->at(0)),1,e,currF))!=(size_t)e)
-        return Plt_Err(FileIOError,"Error unable to read specified bytes from the file.");
+        return Z_Err(FileIOError,"Error unable to read specified bytes from the file.");
     if(currF == stdin)
       clean_stdin();//the newline character can cause problem with future inputs or REPL
-    return PObjFromInt64(read);;
+    return ZObjFromInt64(read);;
 }
-PltObject FWRITE(PltObject* args,int32_t argc)
+ZObject FWRITE(ZObject* args,int32_t argc)
 {
-    PltObject ret = nil;
+    ZObject ret = nil;
     size_t S = 0;
     if(argc==2)
     {
@@ -1654,7 +1654,7 @@ PltObject FWRITE(PltObject* args,int32_t argc)
     else if(argc==3)
     {
        if(args[0].type!='j' || args[1].type!='u' || (args[2].type!='i' && args[2].type!='l'))
-         return Plt_Err(TypeError,"Invalid Argument types");
+         return Z_Err(TypeError,"Invalid Argument types");
        if(args[2].type=='i')
          S = (size_t)args[2].i;
         else
@@ -1662,38 +1662,38 @@ PltObject FWRITE(PltObject* args,int32_t argc)
     }
     else
     {
-      return Plt_Err(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
+      return Z_Err(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
     }
     auto l = (vector<uint8_t>*)args[0].ptr;
     if(S > l->size())
-      return Plt_Err(ValueError,"Error the bytearray needs to have specified number of bytes!");
+      return Z_Err(ValueError,"Error the bytearray needs to have specified number of bytes!");
     if(l->size() == 0)
       return ret;
     FileObject fobj = *(FileObject*)args[1].ptr;
     if(!fobj.open)
-      return Plt_Err(ValueError,"Error the file stream is closed!");
+      return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     int64_t written = 0;
     if((written = fwrite(&(l->at(0)),1,S,currF))!=(int64_t)S)
     {
         string what = strerror(errno);
-        return Plt_Err(FileIOError,"Error unable to write the bytes to file!");
+        return Z_Err(FileIOError,"Error unable to write the bytes to file!");
 
     }
-    return PObjFromInt64(written);
+    return ZObjFromInt64(written);
 }
-PltObject FSEEK(PltObject* args,int32_t argc)
+ZObject FSEEK(ZObject* args,int32_t argc)
 {
     if(argc!=3)
-        return Plt_Err(ArgumentError,"Error fseek() takes 3 arguments!");
-    PltObject ret = nil;
+        return Z_Err(ArgumentError,"Error fseek() takes 3 arguments!");
+    ZObject ret = nil;
     if(!validateArgTypes("fseek","uii",args,argc,ret))
       return ret;
     int32_t w = 0;
     int32_t whence = args[2].i;
     FileObject fobj = *(FileObject*)args[0].ptr;
     if(!fobj.open)
-      return Plt_Err(ValueError,"Error the file stream is closed!");
+      return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     int32_t where = args[1].i;
     if(whence==SEEK_SET)
@@ -1705,16 +1705,16 @@ PltObject FSEEK(PltObject* args,int32_t argc)
     else if(whence==SEEK_CUR)
         w = SEEK_CUR;
     else
-        return Plt_Err(ValueError,"Error invalid option "+to_string(whence));
+        return Z_Err(ValueError,"Error invalid option "+to_string(whence));
     if(fseek(currF,where,w)!=0)
       {
         string what = strerror(errno);
-        return Plt_Err(FileSeekError,what);
+        return Z_Err(FileSeekError,what);
       }
     return ret;
 }
 //
-PltList* makeListCopy(PltList);
+ZList* makeListCopy(ZList);
 Dictionary* makeDictCopy(Dictionary);
 //
 Dictionary* makeDictCopy(Dictionary v)
@@ -1722,32 +1722,32 @@ Dictionary* makeDictCopy(Dictionary v)
   Dictionary* d = allocDict();
   for(auto e: v)
   {
-    PltObject key,val;
+    ZObject key,val;
     key = e.first;
     val = e.second;
     d->emplace(key,val);
   }
   return d;
 }
-PltList* makeListCopy(PltList v)
+ZList* makeListCopy(ZList v)
 {
-  PltList* p = allocList();
+  ZList* p = allocList();
   for(auto e: v)
   {
-    PltObject elem;
+    ZObject elem;
     elem = e;
     p->push_back(elem);
   }
   return p;
 }
-PltObject COPY(PltObject* args,int32_t argc)
+ZObject COPY(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-      return Plt_Err(ArgumentError,"Error clone() takes one argument!");
+      return Z_Err(ArgumentError,"Error clone() takes one argument!");
   if(args[0].type=='a')
   {
      Dictionary v = *(Dictionary*)args[0].ptr;
-     PltObject ret = nil;
+     ZObject ret = nil;
      ret.type = 'a';
      ret.ptr = (void*)makeDictCopy(v);
      return ret;
@@ -1755,25 +1755,25 @@ PltObject COPY(PltObject* args,int32_t argc)
   }
   else if(args[0].type=='j')
   {
-    PltList v = *(PltList*)args[0].ptr;
-    PltObject ret = nil;
+    ZList v = *(ZList*)args[0].ptr;
+    ZObject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)makeListCopy(v);
     return ret;
   }
   else
-    return Plt_Err(TypeError,"Error clone() takes a list or dictionary as an argument!");
+    return Z_Err(TypeError,"Error clone() takes a list or dictionary as an argument!");
 }
-PltObject POW(PltObject* args,int32_t argc)
+ZObject POW(ZObject* args,int32_t argc)
 {
     if(argc!=2)
     {
-        return Plt_Err(ArgumentError,"pow() takes 2 arguments!");
+        return Z_Err(ArgumentError,"pow() takes 2 arguments!");
     }
-    PltObject a = args[0];
-    PltObject b = args[1];
-    PltObject c;
-    c.type = PLT_NIL;
+    ZObject a = args[0];
+    ZObject b = args[1];
+    ZObject c;
+    c.type = Z_NIL;
     char t;
     if(isNumeric(a.type) && isNumeric(b.type))
     {
@@ -1788,7 +1788,7 @@ PltObject POW(PltObject* args,int32_t argc)
     }
     else
     {
-      return Plt_Err(TypeError,"Error pow() unsupported for "+fullform(a.type)+" and "+fullform(b.type));
+      return Z_Err(TypeError,"Error pow() unsupported for "+fullform(a.type)+" and "+fullform(b.type));
     }
       if(t=='i')
       {
@@ -1801,7 +1801,7 @@ PltObject POW(PltObject* args,int32_t argc)
 
         if(exponen_overflows((int64_t)a.i,(int64_t)b.i))
         {
-          return Plt_Err(OverflowError,"Integer Overflow occurred in pow()");
+          return Z_Err(OverflowError,"Integer Overflow occurred in pow()");
         }
         c.type = 'l';
         c.l = pow((int64_t)(a.i) , (int64_t)(b.i));
@@ -1811,7 +1811,7 @@ PltObject POW(PltObject* args,int32_t argc)
       {
         if(exponen_overflows(a.f,b.f))
         {
-              return Plt_Err(OverflowError,"Floating Point Overflow occurred in pow()");
+              return Z_Err(OverflowError,"Floating Point Overflow occurred in pow()");
         }
         c.type = 'f';
         c.f = pow(a.f,b.f);
@@ -1821,7 +1821,7 @@ PltObject POW(PltObject* args,int32_t argc)
       {
           if(exponen_overflows(a.l,b.l))
           {
-              return Plt_Err(OverflowError,"Integer Overflow occurred in pow().");
+              return Z_Err(OverflowError,"Integer Overflow occurred in pow().");
           }
           c.type = 'l';
           c.l = pow(a.l,b.l);
@@ -1829,23 +1829,23 @@ PltObject POW(PltObject* args,int32_t argc)
       }
         return c;//to avoid warning otherwise this stmt is never executed
 }
-PltObject CLOCK(PltObject* args,int32_t argc)
+ZObject CLOCK(ZObject* args,int32_t argc)
 {
   if(argc!=0)
-    return Plt_Err(ArgumentError,"Error clock() takes 0 arguments!");
-  PltObject ret = nil;
+    return Z_Err(ArgumentError,"Error clock() takes 0 arguments!");
+  ZObject ret = nil;
   ret.type = 'f';
   ret.f = static_cast<double> (clock());
   return ret;
 }
-PltObject MUTABLESTRING(PltObject* args,int32_t argc)
+ZObject MUTABLESTRING(ZObject* args,int32_t argc)
 {
-  if(argc!=1 || (args[0].type != PLT_STR && args[0].type!=PLT_MSTR))
-    return Plt_Err(ArgumentError,"Error mutableString() takes 1 string argument!");
+  if(argc!=1 || (args[0].type != Z_STR && args[0].type!=Z_MSTR))
+    return Z_Err(ArgumentError,"Error mutableString() takes 1 string argument!");
   const string& val = *(string*)args[0].ptr;
   string* p = allocMutString();
   *p = val;
-  return PObjFromMStrPtr(p);
+  return ZObjFromMStrPtr(p);
 }
 ////////////////////
 //Builtin Methods
@@ -1853,27 +1853,27 @@ PltObject MUTABLESTRING(PltObject* args,int32_t argc)
 //be an object
 //these are just functions that work on multiple supported types
 //for example POP functions works on both list,bytearrays and mutable strings
-PltObject POP(PltObject* args,int32_t argc)
+ZObject POP(ZObject* args,int32_t argc)
 {
-  if(args[0].type!=PLT_LIST && args[0].type!=PLT_BYTEARR && args[0].type!=PLT_MSTR)
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
+  if(args[0].type!=Z_LIST && args[0].type!=Z_BYTEARR && args[0].type!=Z_MSTR)
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
+    return Z_Err(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
   if(args[0].type == 'c')
   {
-    PltObject ret = nil;
+    ZObject ret = nil;
 
     auto p = (vector<uint8_t>*)args[0].ptr;
     if(p->size() != 0)
     {
-      ret.type = PLT_BYTE;
+      ret.type = Z_BYTE;
       ret.i = p->back();
       p->pop_back();
       return ret;
     }
     return ret;
   }
-  else if(args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_MSTR)
   {
     string* p = (string*)args[0].ptr;
     if(p->size() == 0)
@@ -1881,83 +1881,83 @@ PltObject POP(PltObject* args,int32_t argc)
     string* s = allocMutString();
     (*s) += p->back();
     p->pop_back();
-    return PObjFromMStrPtr(s);
+    return ZObjFromMStrPtr(s);
   }
   else
   {
-    PltList* p = (PltList*)args[0].ptr;
-    PltObject ret = nil;
+    ZList* p = (ZList*)args[0].ptr;
+    ZObject ret = nil;
     if(p->size()!=0)
     {
       ret = p->back();
       p->pop_back();
     }
     else
-      return Plt_Err(ValueError,"List is empty.No value to pop!");
+      return Z_Err(ValueError,"List is empty.No value to pop!");
     return ret;
   }
   return nil;
 }
 
-PltObject CLEAR(PltObject* args,int32_t argc)
+ZObject CLEAR(ZObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type!=PLT_MSTR)
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
+  if(args[0].type!='j' && args[0].type!=Z_MSTR)
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error method clear() takes 0 arguments!");
-  if(args[0].type == PLT_MSTR)
+    return Z_Err(ArgumentError,"Error method clear() takes 0 arguments!");
+  if(args[0].type == Z_MSTR)
   {
     string* p = (string*)args[0].ptr;
     p->clear();
   }
   else
   {
-    PltList* p = (PltList*)args[0].ptr;
+    ZList* p = (ZList*)args[0].ptr;
     p->clear();
   }
-  PltObject ret = nil;
+  ZObject ret = nil;
   return ret;
 }
-PltObject PUSH(PltObject* args,int32_t argc)
+ZObject PUSH(ZObject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type!='c')
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error method push() takes 1 argument!");
+    return Z_Err(ArgumentError,"Error method push() takes 1 argument!");
   if(args[0].type == 'j')
   {
-    PltList* p = (PltList*)args[0].ptr;
+    ZList* p = (ZList*)args[0].ptr;
   // p->push_back(args[1]);
     p->emplace_back(args[1]); //faster
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
   else
   {
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
-    if(args[1].type != PLT_BYTE)
-     return Plt_Err(TypeError,"Can only push a byte to a bytearray!");
+    if(args[1].type != Z_BYTE)
+     return Z_Err(TypeError,"Can only push a byte to a bytearray!");
     p->emplace_back((uint8_t)args[1].i); //faster
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
 }
-PltObject RESERVE(PltObject* args,int32_t argc)
+ZObject RESERVE(ZObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type!='c' && args[0].type!=PLT_MSTR)
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
+  if(args[0].type!='j' && args[0].type!='c' && args[0].type!=Z_MSTR)
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error method reserve() takes 1 argument!");
+    return Z_Err(ArgumentError,"Error method reserve() takes 1 argument!");
   if(args[1].type!='i' && args[1].type!='l')
-    return Plt_Err(TypeError,"Error reserve() takes an integer argument!");
-  PltObject x = args[1];
+    return Z_Err(TypeError,"Error reserve() takes an integer argument!");
+  ZObject x = args[1];
   PromoteType(x,'l');
-  if(args[0].type == PLT_LIST)
+  if(args[0].type == Z_LIST)
   {
-    PltList* p = (PltList*)args[0].ptr;
+    ZList* p = (ZList*)args[0].ptr;
     p->reserve(x.l);
   }
-  else if(args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_MSTR)
   {
     string* p = (string*) args[0].ptr;
     p->reserve(x.l);
@@ -1967,20 +1967,20 @@ PltObject RESERVE(PltObject* args,int32_t argc)
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
     p->reserve(x.l);
   }
-  PltObject ret = nil;
+  ZObject ret = nil;
   return ret;
 
 }
-PltObject FIND_METHOD(PltObject* args,int32_t argc)
+ZObject FIND_METHOD(ZObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type!=PLT_BYTEARR && args[0].type!=PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
+  if(args[0].type!='j' && args[0].type!=Z_BYTEARR && args[0].type!=Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error method find() takes 1 arguments!");
+    return Z_Err(ArgumentError,"Error method find() takes 1 arguments!");
   if(args[0].type == 'j')
   {
-    PltList* p = (PltList*)args[0].ptr;
-    PltObject ret = nil;
+    ZList* p = (ZList*)args[0].ptr;
+    ZObject ret = nil;
     for(size_t k=0;k<p->size();k+=1)
     {
       if((*p)[k]==args[1])
@@ -1992,21 +1992,21 @@ PltObject FIND_METHOD(PltObject* args,int32_t argc)
     }
     return ret;
   }
-  else if(args[0].type == PLT_STR || args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_STR || args[0].type == Z_MSTR)
   {
     string* p = (string*)args[0].ptr;
-    if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
-      return Plt_Err(TypeError,"Argument 1 of str.find() must be a string!");
+    if(args[1].type != Z_STR && args[1].type!=Z_MSTR)
+      return Z_Err(TypeError,"Argument 1 of str.find() must be a string!");
     const string& tofind = *(string*)args[1].ptr;
     size_t idx = p->find(tofind);
     if(idx == std::string::npos)
       return nil;
-    return PObjFromInt64((int64_t)idx);
+    return ZObjFromInt64((int64_t)idx);
   }
   else
   {
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
-    PltObject ret = nil;
+    ZObject ret = nil;
     for(size_t k=0;k<p->size();k+=1)
     {
       if((*p)[k]==(uint8_t)args[1].i)
@@ -2019,260 +2019,260 @@ PltObject FIND_METHOD(PltObject* args,int32_t argc)
     return ret;
   }
 }
-PltObject INSERTBYTEARRAY(PltObject* args,int32_t argc)
+ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
 {
   if(argc==3)
   {
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
-    PltObject idx = args[1];
-    PltObject val = args[2];
+    ZObject idx = args[1];
+    ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Plt_Err(ValueError,"Error insertion position is negative!");
+      return Z_Err(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size())
-          return Plt_Err(ValueError,"Error insertion position out of range!");
+          return Z_Err(ValueError,"Error insertion position out of range!");
     if(val.type=='c')
     {
       auto subarr = *(vector<uint8_t>*)val.ptr;
       p->insert(p->begin()+idx.l,subarr.begin(),subarr.end());
     }
-    else if(val.type == PLT_BYTE)
+    else if(val.type == Z_BYTE)
     {
       p->insert(p->begin()+idx.l,(uint8_t)val.i);
     }
     else
-      return Plt_Err(TypeError,"Error method insert() takes a byte or bytearray argument!");
-    PltObject ret = nil;
+      return Z_Err(TypeError,"Error method insert() takes a byte or bytearray argument!");
+    ZObject ret = nil;
     return ret;
   }
   else
-    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
 }
-PltObject INSERTMSTR(PltObject* args,int32_t argc)
+ZObject INSERTMSTR(ZObject* args,int32_t argc)
 {
   if(argc==3)
   {
     string* p = (string*)args[0].ptr;
-    PltObject idx = args[1];
-    PltObject val = args[2];
+    ZObject idx = args[1];
+    ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Plt_Err(ValueError,"Error insertion position is negative!");
+      return Z_Err(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size())
-          return Plt_Err(ValueError,"Error insertion position out of range!");
-    if(val.type==PLT_STR || val.type == PLT_MSTR)
+          return Z_Err(ValueError,"Error insertion position out of range!");
+    if(val.type==Z_STR || val.type == Z_MSTR)
     {
       const string& sub = *(string*)val.ptr;
       p->insert(p->begin()+idx.l,sub.begin(),sub.end());
     }
     else
-      return Plt_Err(TypeError,"Error method insert() takes a string argument!");
-    PltObject ret = nil;
+      return Z_Err(TypeError,"Error method insert() takes a string argument!");
+    ZObject ret = nil;
     return ret;
   }
   else
-    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
 }
-PltObject INSERTSTR(PltObject* args,int32_t argc)
+ZObject INSERTSTR(ZObject* args,int32_t argc)
 {
   if(argc==3)
   {
     string* p = allocString();
     *p = *(string*)args[0].ptr;
-    PltObject idx = args[1];
-    PltObject val = args[2];
+    ZObject idx = args[1];
+    ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Plt_Err(ValueError,"Error insertion position is negative!");
+      return Z_Err(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size())
-          return Plt_Err(ValueError,"Error insertion position out of range!");
-    if(val.type==PLT_STR || val.type == PLT_MSTR)
+          return Z_Err(ValueError,"Error insertion position out of range!");
+    if(val.type==Z_STR || val.type == Z_MSTR)
     {
       const string& sub = *(string*)val.ptr;
       p->insert(p->begin()+idx.l,sub.begin(),sub.end());
     }
     else
-      return Plt_Err(TypeError,"Error method insert() takes a string argument!");
-    return PObjFromStrPtr(p);
+      return Z_Err(TypeError,"Error method insert() takes a string argument!");
+    return ZObjFromStrPtr(p);
   }
   else
-    return Plt_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
 }
 
-PltObject INSERT(PltObject* args,int32_t argc)
+ZObject INSERT(ZObject* args,int32_t argc)
 {
   if(args[0].type == 'c')
     return INSERTBYTEARRAY(args,argc);
-  else if(args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_MSTR)
     return INSERTMSTR(args,argc);
-  else if(args[0].type == PLT_STR)
+  else if(args[0].type == Z_STR)
     return INSERTSTR(args,argc);
   if(args[0].type!='j')
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
   if(argc==3)
   {
-    PltList* p = (PltList*)args[0].ptr;
-    PltObject idx = args[1];
-    PltObject val = args[2];
+    ZList* p = (ZList*)args[0].ptr;
+    ZObject idx = args[1];
+    ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Plt_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Plt_Err(ValueError,"Error insertion position is negative!");
+      return Z_Err(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size())
-          return Plt_Err(ValueError,"Error insertion position out of range!");
+          return Z_Err(ValueError,"Error insertion position out of range!");
     if(val.type=='j')
     {
-      PltList sublist = *(PltList*)val.ptr;
+      ZList sublist = *(ZList*)val.ptr;
       p->insert(p->begin()+idx.l,sublist.begin(),sublist.end());
     }
     else
     {
       p->insert(p->begin()+idx.l,val);
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
   else
-    return Plt_Err(ArgumentError,"Error method insert() takes 3 arguments!");
+    return Z_Err(ArgumentError,"Error method insert() takes 3 arguments!");
 }
-PltObject ERASE(PltObject* args,int32_t argc)
+ZObject ERASE(ZObject* args,int32_t argc)
 {
   if(args[0].type=='j')
   {
     if(argc!=2 && argc!=3)
-      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
-    PltList* p = (PltList*)args[0].ptr;
-    PltObject idx1 = args[1];
-    PltObject idx2;
+      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+    ZList* p = (ZList*)args[0].ptr;
+    ZObject idx1 = args[1];
+    ZObject idx2;
     if(argc==3)
      idx2 = args[2];
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Plt_Err(ValueError,"Error index is negative!");
+        return Z_Err(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
-        return Plt_Err(ValueError,"Error index out of range!");
+        return Z_Err(ValueError,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
   else if(args[0].type=='a')
   {
      if(argc!=2)
-       return Plt_Err(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
+       return Z_Err(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
     Dictionary* d = (Dictionary*)args[0].ptr;
-    PltObject key = args[1];
+    ZObject key = args[1];
     if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
-      return Plt_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
+      return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
     if(d->find(key)==d->end())
-      return Plt_Err(KeyError,"Error cannot erase value,key not found in the dictionary!");
+      return Z_Err(KeyError,"Error cannot erase value,key not found in the dictionary!");
     d->erase(key);
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
   else if(args[0].type == 'c')
   {
     if(argc!=2 && argc!=3)
-      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
-    PltObject idx1 = args[1];
-    PltObject idx2;
+    ZObject idx1 = args[1];
+    ZObject idx2;
     if(argc==3)
      idx2 = args[2];
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Plt_Err(ValueError,"Error index is negative!");
+        return Z_Err(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
-        return Plt_Err(ValueError,"Error index out of range!");
+        return Z_Err(ValueError,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
-  else if(args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_MSTR)
   {
     if(argc!=2 && argc!=3)
-      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     string* p = (string*)args[0].ptr;
-    PltObject idx1 = args[1];
-    PltObject idx2;
+    ZObject idx1 = args[1];
+    ZObject idx2;
     if(argc==3)
      idx2 = args[2];
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Plt_Err(ValueError,"Error index is negative!");
+        return Z_Err(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
-        return Plt_Err(ValueError,"Error index out of range!");
+        return Z_Err(ValueError,"Error index out of range!");
     p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
-    PltObject ret = nil;
+    ZObject ret = nil;
     return ret;
   }
-  else if(args[0].type == PLT_STR)
+  else if(args[0].type == Z_STR)
   {
     if(argc!=2 && argc!=3)
-      return Plt_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     string* p = (string*)args[0].ptr;
-    PltObject idx1 = args[1];
-    PltObject idx2;
+    ZObject idx1 = args[1];
+    ZObject idx2;
     if(argc==3)
      idx2 = args[2];
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Plt_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Plt_Err(ValueError,"Error index is negative!");
+        return Z_Err(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
-        return Plt_Err(ValueError,"Error index out of range!");
+        return Z_Err(ValueError,"Error index out of range!");
    
     string* res = allocString();
     *res = *p;
     res->erase(res->begin()+idx1.l,res->begin()+idx2.l+1);
-    return PObjFromStrPtr(res);
+    return ZObjFromStrPtr(res);
   }
   else
   {
-      return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
+      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
   }
 }
-PltObject asMap(PltObject* args,int32_t argc)
+ZObject asMap(ZObject* args,int32_t argc)
 {
     if(args[0].type!='j')
-      return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
+      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
     if(argc!=1)
-      return Plt_Err(ArgumentError,"Error list member asMap() takes 0 arguments!");
-    PltList l = *(PltList*)args[0].ptr;
-    PltObject x;
+      return Z_Err(ArgumentError,"Error list member asMap() takes 0 arguments!");
+    ZList l = *(ZList*)args[0].ptr;
+    ZObject x;
     x.type = 'l';
     size_t i = 0;
     Dictionary* d = allocDict();
@@ -2282,100 +2282,100 @@ PltObject asMap(PltObject* args,int32_t argc)
        x.l = i;
        d->emplace(x,l[i]);
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type = 'a';
     ret.ptr = (void*)d;
     return ret;
 }
-PltObject ASLIST(PltObject* args,int32_t argc)
+ZObject ASLIST(ZObject* args,int32_t argc)
 {
     if(args[0].type!='a')
-      return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
+      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
     if(argc!=1)
-      return Plt_Err(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
+      return Z_Err(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
     Dictionary d = *(Dictionary*)args[0].ptr;
-    PltList* list = allocList();
+    ZList* list = allocList();
     for(auto e: d)
     {
-      PltList* sub = allocList();
+      ZList* sub = allocList();
       sub->push_back(e.first);
       sub->push_back(e.second);
-      PltObject x;
+      ZObject x;
       x.type = 'j';
       x.ptr = (void*)sub;
       list->push_back(x);
     }
-    PltObject ret = nil;
+    ZObject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)list;
     return ret;
 }
-PltObject REVERSE_METHOD(PltObject* args,int32_t argc)
+ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
 {
-  if(args[0].type!='j' && args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
+  if(args[0].type!='j' && args[0].type != Z_STR && args[0].type!=Z_MSTR)
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
   if(argc!=1)
-    return Plt_Err(ArgumentError,"Error method reverse() takes 0 arguments!");
-  if(args[0].type == PLT_STR)
+    return Z_Err(ArgumentError,"Error method reverse() takes 0 arguments!");
+  if(args[0].type == Z_STR)
   {
     string* p = allocString();
     string* str = (string*)args[0].ptr;
     *p = *str;
     std::reverse(p->begin(),p->end());
-    return PObjFromStrPtr(p);
+    return ZObjFromStrPtr(p);
   }
-  else if(args[0].type == PLT_MSTR)
+  else if(args[0].type == Z_MSTR)
   {
     string* str = (string*)args[0].ptr;
     std::reverse(str->begin(),str->end());
   }
   else
   {
-    PltList* p = (PltList*)args[0].ptr;
-    PltList l = *p;
+    ZList* p = (ZList*)args[0].ptr;
+    ZList l = *p;
     std::reverse(l.begin(),l.end());
     *p = l;
   }
-  PltObject ret = nil;
+  ZObject ret = nil;
   return ret;
 }
-PltObject EMPLACE(PltObject* args,int32_t argc)
+ZObject EMPLACE(ZObject* args,int32_t argc)
 {
   if(args[0].type!='a')
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
   if(argc!=3)
-    return Plt_Err(ArgumentError,"Error method emplace() takes 2 arguments!");
+    return Z_Err(ArgumentError,"Error method emplace() takes 2 arguments!");
   Dictionary* p = (Dictionary*)args[0].ptr;
-  PltObject& key = args[1];
+  ZObject& key = args[1];
   if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
-    return Plt_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
+    return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
   p->emplace(key,args[2]);
-  PltObject ret = nil;
+  ZObject ret = nil;
   return ret;
 
 }
-PltObject HASKEY(PltObject* args,int32_t argc)
+ZObject HASKEY(ZObject* args,int32_t argc)
 {
   if(args[0].type!='a')
-         return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
+         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error method hasKey() takes 1 argument!");
+    return Z_Err(ArgumentError,"Error method hasKey() takes 1 argument!");
   Dictionary* p = (Dictionary*)args[0].ptr;
 
-  PltObject ret = nil;
+  ZObject ret = nil;
   ret.type= 'b';
   ret.i = (p->find(args[1])!=p->end());
   return ret;
 
 }
-PltObject UNPACK(PltObject* args,int32_t argc)
+ZObject UNPACK(ZObject* args,int32_t argc)
 {
-  if(args[0].type!=PLT_BYTEARR)
-    return Plt_Err(NameError,"Error object has no member unpack()");
+  if(args[0].type!=Z_BYTEARR)
+    return Z_Err(NameError,"Error object has no member unpack()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error unpack() takes 2 arguments!");
-  if(args[1].type!=PLT_STR)
-    return Plt_Err(TypeError,"Error unpack() takes a string argument!");
+    return Z_Err(ArgumentError,"Error unpack() takes 2 arguments!");
+  if(args[1].type!=Z_STR)
+    return Z_Err(TypeError,"Error unpack() takes a string argument!");
   auto arr = (vector<uint8_t>*)args[0].ptr;
   string& pattern = *(string*)args[1].ptr;
   size_t k = 0;
@@ -2384,49 +2384,49 @@ PltObject UNPACK(PltObject* args,int32_t argc)
   double d;
   bool b;
   string str;
-  vector<PltObject>* lp = allocList();
-  vector<PltObject>& res = *lp;
+  vector<ZObject>* lp = allocList();
+  vector<ZObject>& res = *lp;
   for(size_t i=0;i<pattern.length();i++)
   {
     char ch = pattern[i];
     if(ch == 'i')
     {
       if(k+3 >= arr->size())
-         return Plt_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
+         return Z_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
       memcpy(&int32,&arr->at(k),4);
-      res.push_back(PObjFromInt(int32));
+      res.push_back(ZObjFromInt(int32));
       k+=4;
     }
     else if(ch == 'l')
     {
       if(k+7 >= arr->size())
-         return Plt_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
+         return Z_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
       memcpy(&int64,&arr->at(k),8);
-      res.push_back(PObjFromInt64(int64));      
+      res.push_back(ZObjFromInt64(int64));      
       k+=8;
     }
     else if(ch == 'f')
     {
       if(k+7 >= arr->size())
-         return Plt_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
+         return Z_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
       memcpy(&d,&arr->at(k),8);
-      res.push_back(PObjFromDouble(d));
+      res.push_back(ZObjFromDouble(d));
       k+=8;
     }
     else if(ch == 'b')
     {
       if(k >= arr->size())
-         return Plt_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
+         return Z_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
       memcpy(&b,&arr->at(k),1);
-      res.push_back(PObjFromBool(b));
+      res.push_back(ZObjFromBool(b));
       k+=1;
     }
     else if(ch == 's')
     {
       if(i+1>=pattern.length())
-        return Plt_Err(ValueError,"Error in pattern,required length after 's' ");
+        return Z_Err(ValueError,"Error in pattern,required length after 's' ");
       if(!isdigit(pattern[i+1]))
-        return Plt_Err(ValueError,"Error in pattern,required length after 's' ");
+        return Z_Err(ValueError,"Error in pattern,required length after 's' ");
       string l;
       i+=1;
       l+=pattern[i];
@@ -2437,10 +2437,10 @@ PltObject UNPACK(PltObject* args,int32_t argc)
         i++;
       }
       if(!isnum(l) && !isInt64(l))
-        return Plt_Err(OverflowError,"Error given string length too large!");
+        return Z_Err(OverflowError,"Error given string length too large!");
       long long int len = atoll(l.c_str());
       if((long long int)k+len-1 >= (long long int)arr->size())
-         return Plt_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
+         return Z_Err(ValueError,"Error making element "+to_string(res.size())+" from bytearray(not enough bytes)!");
       str = "";
       size_t f = k+(size_t)len;
       for(;k!=f;++k)
@@ -2450,26 +2450,26 @@ PltObject UNPACK(PltObject* args,int32_t argc)
       }
       auto p = allocString();
       *p = str;
-      res.push_back(PObjFromStrPtr(p));
+      res.push_back(ZObjFromStrPtr(p));
     }
     else
-      return Plt_Err(ValueError,"Error invalid char in pattern string!"); 
+      return Z_Err(ValueError,"Error invalid char in pattern string!"); 
   }
-  return PObjFromList(lp);
+  return ZObjFromList(lp);
 }
 //String methods
-PltObject SUBSTR_METHOD(PltObject* args,int32_t argc)
+ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
 {
-  if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
+  if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
   if(argc!=3)
-    return Plt_Err(ArgumentError,"Error str.substr() takes 2 arguments");
+    return Z_Err(ArgumentError,"Error str.substr() takes 2 arguments");
   if(args[1].type!='i' && args[1].type!='l')
-    return Plt_Err(TypeError,"Error first argument of str.substr() should be an integer");
+    return Z_Err(TypeError,"Error first argument of str.substr() should be an integer");
   if(args[2].type!='i' && args[2].type!='l')
-    return Plt_Err(TypeError,"Error second argument of str.substr() should be an integer");
+    return Z_Err(TypeError,"Error second argument of str.substr() should be an integer");
   bool a = false;
-  string* q = ((a = args[0].type == PLT_STR)) ? allocString() : allocMutString();
+  string* q = ((a = args[0].type == Z_STR)) ? allocString() : allocMutString();
 
   PromoteType(args[1],'l');
   PromoteType(args[2],'l');
@@ -2479,25 +2479,25 @@ PltObject SUBSTR_METHOD(PltObject* args,int32_t argc)
   else
     *q = substr((int32_t)args[1].l,(int32_t)args[2].l,data);
   
-  return (a) ? PObjFromStrPtr(q) : PObjFromMStrPtr(q);
+  return (a) ? ZObjFromStrPtr(q) : ZObjFromMStrPtr(q);
   
   
 }
-PltObject REPLACE_METHOD(PltObject* args,int32_t argc)
+ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
 {
-   if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+   if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
     if(argc==3)
     {
-        if(args[1].type!='s' && args[1].type!=PLT_MSTR)
-            return Plt_Err(TypeError,"Error first argument given to replace() must be a string!");
-        if(args[2].type!='s' && args[2].type!=PLT_MSTR)
-            return Plt_Err(TypeError,"Error second argument given to replace() must be a string!");
+        if(args[1].type!='s' && args[1].type!=Z_MSTR)
+            return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
+        if(args[2].type!='s' && args[2].type!=Z_MSTR)
+            return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
       
         string& c = *(string*)args[0].ptr;
         string& a = *(string*)args[1].ptr;
         string& b = *(string*)args[2].ptr;
-        if(args[0].type == PLT_MSTR)
+        if(args[0].type == Z_MSTR)
         {
           c = replace_all(a,b,c);
           return nil;
@@ -2506,30 +2506,30 @@ PltObject REPLACE_METHOD(PltObject* args,int32_t argc)
         {
           string* z = allocString();
           *z = replace_all(a,b,c);
-          return PObjFromStrPtr(z);
+          return ZObjFromStrPtr(z);
         }
     }
     else
     {
-        return Plt_Err(ArgumentError,"Error method replace() takes two arguments\n");
+        return Z_Err(ArgumentError,"Error method replace() takes two arguments\n");
     }
     
 }
-PltObject REPLACE_ONCE_METHOD(PltObject* args,int32_t argc)
+ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
 {
-   if(args[0].type != PLT_STR && args[0].type!=PLT_MSTR)
-    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+   if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
     if(argc==3)
     {
         if(args[1].type!='s')
-            return Plt_Err(TypeError,"Error first argument given to replace() must be a string!");
+            return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
         if(args[2].type!='s')
-            return Plt_Err(TypeError,"Error second argument given to replace() must be a string!");
+            return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
       
         string& c = *(string*)args[0].ptr;
         string& a = *(string*)args[1].ptr;
         string& b = *(string*)args[2].ptr;
-        if(args[0].type == PLT_MSTR)
+        if(args[0].type == Z_MSTR)
         {
           c = replace(a,b,c);
           return nil;
@@ -2538,25 +2538,25 @@ PltObject REPLACE_ONCE_METHOD(PltObject* args,int32_t argc)
         {
           string* z = allocString();
           *z = replace(a,b,c);
-          return PObjFromStrPtr(z);
+          return ZObjFromStrPtr(z);
         }
     }
     else
     {
-        return Plt_Err(ArgumentError,"Error method replace() takes two arguments\n");
+        return Z_Err(ArgumentError,"Error method replace() takes two arguments\n");
     }
 }
 //Mutable String
-PltObject APPEND_METHOD(PltObject* args,int32_t argc)
+ZObject APPEND_METHOD(ZObject* args,int32_t argc)
 {
-  if(args[0].type!=PLT_MSTR)
-    return Plt_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named append()");
+  if(args[0].type!=Z_MSTR)
+    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named append()");
   if(argc!=2)
-    return Plt_Err(ArgumentError,"Error method append() takes 1 arguments!");
+    return Z_Err(ArgumentError,"Error method append() takes 1 arguments!");
   
   string* p = (string*)args[0].ptr;
-  if(args[1].type != PLT_STR && args[1].type!=PLT_MSTR)
-    return Plt_Err(TypeError,"Argument 1 of append() must be a string!");
+  if(args[1].type != Z_STR && args[1].type!=Z_MSTR)
+    return Z_Err(TypeError,"Argument 1 of append() must be a string!");
   const string& toappend = *(string*)args[1].ptr;
   p->insert(p->length(),toappend);
   return nil;
@@ -2565,7 +2565,7 @@ PltObject APPEND_METHOD(PltObject* args,int32_t argc)
 ///////////////
 void initFunctions()
 {
-  nil.type = PLT_NIL;
+  nil.type = Z_NIL;
   funcs.emplace("print",&print);
   funcs.emplace("println",&println);
   funcs.emplace("printf",&PRINTF);
@@ -2607,7 +2607,7 @@ void initFunctions()
   funcs.emplace("clone",&COPY);
   funcs.emplace("pow",&POW);
   funcs.emplace("obj_info",&OBJINFO);
-  funcs.emplace("isalpha",&PLT_ISALPHA);
+  funcs.emplace("isalpha",&Z_ISALPHA);
   funcs.emplace("ftell",&FTELL);
   funcs.emplace("rewind",&REWIND);
   funcs.emplace("clock",&CLOCK);
@@ -2623,7 +2623,7 @@ void initFunctions()
 std::unordered_map<string,BuiltinFunc> methods;
 void initMethods()
 {
-  nil.type = PLT_NIL;
+  nil.type = Z_NIL;
   methods.emplace("push",&PUSH);
   methods.emplace("pop",&POP);
   methods.emplace("clear",&CLEAR);
@@ -2643,10 +2643,10 @@ void initMethods()
   methods.emplace("append",&APPEND_METHOD);
 
 }
-PltObject callmethod(string name,PltObject* args,int32_t argc)
+ZObject callmethod(string name,ZObject* args,int32_t argc)
 {
      if(methods.find(name)==methods.end())
-       return Plt_Err(NameError,"Error "+fullform(args[0].type)+" type has no method named "+name+"()");
+       return Z_Err(NameError,"Error "+fullform(args[0].type)+" type has no method named "+name+"()");
      return methods[name](args,argc);
 }
 bool function_exists(string name)

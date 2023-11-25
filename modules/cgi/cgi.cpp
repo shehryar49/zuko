@@ -235,26 +235,26 @@ Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadE
           return nullptr;
       }
       if(filename =="")
-        d->emplace(PObjFromStr(name),PObjFromStr(content));
+        d->emplace(ZObjFromStr(name),ZObjFromStr(content));
       else
       {
         //file content uploaded
         KlassObject* ki = vm_allocKlassObject();
         ki->klass = CgiFile;
-        ki->members.emplace("filename",PObjFromStr(filename));
+        ki->members.emplace("filename",ZObjFromStr(filename));
         if(headers.find("content-type")!=headers.end())
         {
           aux = headers["content-type"];
-          ki->members.emplace("type",PObjFromStr(aux));
+          ki->members.emplace("type",ZObjFromStr(aux));
         }
         auto btArr = vm_allocByteArray();
         btArr->resize(content.length());
         memcpy(&btArr->at(0),&content[0],content.length());
-        PltObject rr;
-        rr.type = PLT_BYTEARR;
+        ZObject rr;
+        rr.type = Z_BYTEARR;
         rr.ptr = (void*)btArr;
         ki->members.emplace("content",rr);
-        d->emplace(PObjFromStr(name),PObjFromKlassObj(ki));
+        d->emplace(ZObjFromStr(name),ZObjFromKlassObj(ki));
       }
         
       headers.clear();
@@ -280,7 +280,7 @@ Dictionary* GET()
              return nullptr;
            eq[0] = url_decode(eq[0]);
            eq[1] = url_decode(eq[1]);
-           m->emplace(PObjFromStr(eq[0]),PObjFromStr(eq[1]));
+           m->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
        }
        return m;
 }
@@ -362,7 +362,7 @@ Dictionary* POST(bool& err)
                return nullptr;
              eq[0] = url_decode(eq[0]);
              eq[1] = url_decode(eq[1]);
-             m->emplace(PObjFromStr(eq[0]),PObjFromStr(eq[1]));
+             m->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
          }
          return m;
        }
@@ -373,20 +373,20 @@ Dictionary* POST(bool& err)
        }
 
 }
-PltObject FormData(PltObject* args,int n)
+ZObject FormData(ZObject* args,int n)
 {
     if(n!=0)
-        return Plt_Err(ArgumentError,"0 arguments needed!");
+        return Z_Err(ArgumentError,"0 arguments needed!");
     char* method = getenv("REQUEST_METHOD");
     if(!method)
-        return Plt_Err(Error,"Environment variable REQUEST_METHOD not found!");
+        return Z_Err(Error,"Environment variable REQUEST_METHOD not found!");
     if(string(method)=="GET")
     {
        Dictionary* d = vm_allocDict();
        d = GET();
        if(!d)
-          return Plt_Err(Error,"Error parsing request(bad or unsupported format)");
-       return PObjFromDict(d);
+          return Z_Err(Error,"Error parsing request(bad or unsupported format)");
+       return ZObjFromDict(d);
        
     }
     else if(string(method)=="POST")
@@ -394,14 +394,14 @@ PltObject FormData(PltObject* args,int n)
        bool hadErr=false;
        Dictionary* d = POST(hadErr);
        if(!d || hadErr)
-          return Plt_Err(Error,"Error parsing request(bad or unsupported format)");
-       return PObjFromDict(d);
+          return Z_Err(Error,"Error parsing request(bad or unsupported format)");
+       return ZObjFromDict(d);
     }
     else
-      return Plt_Err(ValueError,"Unknown method "+(string)method);
+      return Z_Err(ValueError,"Unknown method "+(string)method);
 }
-PltObject nil;
-PltObject init()
+ZObject nil;
+ZObject init()
 {
     #ifdef _WIN32
     _setmode(_fileno(stdin), _O_BINARY);//we dont want CRLF replaced by LF when
@@ -414,22 +414,22 @@ PltObject init()
     CgiFile->members[(string)"content"] = nil;
     CgiFile->members[(string)"contentType"] = nil;
     CgiFile->name = "cgi.File";
-    d->members.emplace("FormData",PObjFromMethod("cgi.FormData",&FormData,CgiFile));
-    d->members.emplace("cookies",PObjFromFunction("cgi.cookies",&cookies));
+    d->members.emplace("FormData",ZObjFromMethod("cgi.FormData",&FormData,CgiFile));
+    d->members.emplace("cookies",ZObjFromFunction("cgi.cookies",&cookies));
     
     //Function FormData is not a member of CgiFile class but we want the class  not to be
     //garbage collected when FormData function object is reachable 
-    d->members.emplace("File",PObjFromKlass(CgiFile));
-    return PObjFromModule(d);
+    d->members.emplace("File",ZObjFromKlass(CgiFile));
+    return ZObjFromModule(d);
 }
 
-PltObject cookies(PltObject* args,int n)
+ZObject cookies(ZObject* args,int n)
 {
   if(n!=0)
-    return Plt_Err(ArgumentError,"0 arguments needed!");
+    return Z_Err(ArgumentError,"0 arguments needed!");
   char* cookie = getenv("HTTP_COOKIE");
   if(!cookie)
-    return Plt_Err(ValueError,"No cookies!");
+    return Z_Err(ValueError,"No cookies!");
   string data = cookie;
   vector<string> parts = split(data,"; ");
   Dictionary* dict = vm_allocDict();
@@ -437,10 +437,10 @@ PltObject cookies(PltObject* args,int n)
   {
     vector<string> eq = split(e,"=");
     if(eq.size()!=2)
-      return Plt_Err(ValueError,"Bad or unsupported format");
-    dict->emplace(PObjFromStr(eq[0]),PObjFromStr(eq[1]));
+      return Z_Err(ValueError,"Bad or unsupported format");
+    dict->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
   }
-  return PObjFromDict(dict);
+  return ZObjFromDict(dict);
 }
 extern "C" void unload()
 {

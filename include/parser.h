@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef PARSER_H_
 #define PARSER_H_
-#include "plutonium.h"
+#include "zuko.h"
 #include "token.h"
 #include "lexer.h"
 #include "ast.h"

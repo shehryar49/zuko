@@ -1,11 +1,11 @@
 #ifndef PROCESS_PLT_H_
 #define PROCESS_PLT_H_
-#include "PltObject.h"
+#include "ZObject.h"
 
 extern "C"
 {
-    PltObject init(PltObject*);
-    PltObject FORK(PltObject*,int32_t);
-    PltObject GETPID(PltObject*,int32_t);  
+    ZObject init(ZObject*);
+    ZObject FORK(ZObject*,int32_t);
+    ZObject GETPID(ZObject*,int32_t);  
 }
 #endif

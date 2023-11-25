@@ -19,12 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-#ifndef PLT_UTILITY_H_
-#define PLT_UTILITY_H_
+#ifndef Z_UTILITY_H_
+#define Z_UTILITY_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include "PltObject.h"
+#include "zuko.h"
 using namespace std;
 
 string IntToHex(int i)
@@ -250,7 +250,7 @@ void WriteByteCode(vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>&
    fwrite(&total,sizeof(int),1,f);
    for(int i=0;i<vm.total_constants;i+=1)
    {
-     string s = PltObjectToStr(vm.constants[i]);
+     string s = ZObjectToStr(vm.constants[i]);
     // printf("writing constant %s\n",s.c_str());
      int L = s.length();
      fwrite(&L,sizeof(int),1,f);
@@ -354,7 +354,7 @@ string unescape(string s)
 	  return s;
 }
 
-string PltObjectToStr(const PltObject& a)
+string ZObjectToStr(const ZObject& a)
 {
         string IntToHex(int);
         if(a.type=='i')
@@ -419,17 +419,17 @@ string PltObjectToStr(const PltObject& a)
         else if(a.type=='j')
         {
 
-            string PltListToStr(PltList*,vector<void*>* = nullptr);
-            PltList* p = (PltList*)a.ptr;
-            return PltListToStr(p);
+            string ZListToStr(ZList*,vector<void*>* = nullptr);
+            ZList* p = (ZList*)a.ptr;
+            return ZListToStr(p);
         }
-        else if(a.type==PLT_STR || a.type==PLT_MSTR)
+        else if(a.type==Z_STR || a.type==Z_MSTR)
         {
           return *(string*)a.ptr;
         }
         else if(a.type=='a')
         {
-            //printf("returning PltObjectToStr of dictionary\n");
+            //printf("returning ZObjectToStr of dictionary\n");
 						string DictToStr(Dictionary*,vector<void*>* = nullptr);
             Dictionary* p = (Dictionary*)a.ptr;
             return DictToStr(p);
@@ -437,9 +437,9 @@ string PltObjectToStr(const PltObject& a)
         return "nil";
     }
 
-string PltListToStr(PltList* p,vector<void*>* prev=nullptr)
+string ZListToStr(ZList* p,vector<void*>* prev=nullptr)
 {
-  PltList l = *p;
+  ZList l = *p;
   vector<void*> seen;
   if(prev!=nullptr)
     seen = *prev;
@@ -453,7 +453,7 @@ string PltListToStr(PltList* p,vector<void*>* prev=nullptr)
            res+="[...]";
          else
          {
-            res+=PltListToStr((PltList*)l[k].ptr,&seen);
+            res+=ZListToStr((ZList*)l[k].ptr,&seen);
          }
       }
 			else if(l[k].type=='a')
@@ -473,7 +473,7 @@ string PltListToStr(PltList* p,vector<void*>* prev=nullptr)
 			}
       else
       {
-        res+=PltObjectToStr(l[k]);
+        res+=ZObjectToStr(l[k]);
       }
       if(k!=l.size()-1)
         res+=",";
@@ -493,8 +493,8 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 		Dictionary d = *p;
     for(auto e: d)
     {
-       PltObject key = e.first;
-       PltObject val = e.second;
+       ZObject key = e.first;
+       ZObject val = e.second;
        if(key.type=='s')
           res+= "\""+unescape(*(string*)key.ptr)+"\"";
        else if(key.type=='a')
@@ -511,10 +511,10 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),key.ptr)!=seen.end())
 				   res+="[...]";
 				 else
-				   res+=PltListToStr((PltList*)key.ptr,&seen);
+				   res+=ZListToStr((ZList*)key.ptr,&seen);
 			 }
 			 else
-          res+=PltObjectToStr(key);
+          res+=ZObjectToStr(key);
 					/////////////////
        res+=(" : ");
 			 //////////////
@@ -534,10 +534,10 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),val.ptr)!=seen.end())
 					 res+="[...]";
 				 else
-					 res+=PltListToStr((PltList*)val.ptr,&seen);
+					 res+=ZListToStr((ZList*)val.ptr,&seen);
 			 }
        else
-          res+=PltObjectToStr(val);
+          res+=ZObjectToStr(val);
        if(k!=d.size()-1)
          res+=(",");
        k+=1;

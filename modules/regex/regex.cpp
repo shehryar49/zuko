@@ -1,27 +1,27 @@
 #include "regex.h"
 #include <regex>
-PltObject init()
+ZObject init()
 {
     Module* d = vm_allocModule();
     d->name = "regex";
-    d->members.emplace("match",PObjFromFunction("regex.match",&match));
-    d->members.emplace("search",PObjFromFunction("regex.search",&search));
-    d->members.emplace("replace",PObjFromFunction("regex.replace",&replace));
-    return PObjFromModule(d);
+    d->members.emplace("match",ZObjFromFunction("regex.match",&match));
+    d->members.emplace("search",ZObjFromFunction("regex.search",&search));
+    d->members.emplace("replace",ZObjFromFunction("regex.replace",&replace));
+    return ZObjFromModule(d);
 }
-PltObject match(PltObject* args,int n)
+ZObject match(ZObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ArgumentError,"2 arguments needed!");
+    return Z_Err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s')
   {
-    return Plt_Err(TypeError,"2 string arguments needed!");
+    return Z_Err(TypeError,"2 string arguments needed!");
     
   }
-  PltObject rr;
+  ZObject rr;
   rr.type = 'b';
   try
   {
@@ -29,61 +29,61 @@ PltObject match(PltObject* args,int n)
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(ValueError,e.what());
+    return Z_Err(ValueError,e.what());
   }
   return rr;
 }
-PltObject search(PltObject* args,int n)
+ZObject search(ZObject* args,int n)
 {
   if(n!=2)
   {
-    return Plt_Err(ArgumentError,"2 arguments needed!");
+    return Z_Err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s')
   {
-    return Plt_Err(TypeError,"2 string arguments needed!");
+    return Z_Err(TypeError,"2 string arguments needed!");
     
   }
   smatch m;
-  PltList* parts = vm_allocList();
+  ZList* parts = vm_allocList();
   string& A = *(string*)args[0].ptr;
   std::regex rgx(AS_STR(args[1]));
   try
   {
     while (regex_search(*(string*)args[0].ptr, m, rgx))
     {
-        PltList* match = vm_allocList();
+        ZList* match = vm_allocList();
         for(auto x: m)
-          match->push_back(PObjFromStr(x));
-        parts->push_back(PObjFromList(match));
+          match->push_back(ZObjFromStr(x));
+        parts->push_back(ZObjFromList(match));
         A = m.suffix();
     }
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(ValueError,e.what());
+    return Z_Err(ValueError,e.what());
   }
-  return PObjFromList(parts);
+  return ZObjFromList(parts);
 }
-PltObject replace(PltObject* args,int n)
+ZObject replace(ZObject* args,int n)
 {
   if(n!=3)
   {
-    return Plt_Err(ArgumentError,"3 arguments needed!");
+    return Z_Err(ArgumentError,"3 arguments needed!");
     
   }
   if(args[0].type!='s' || args[1].type!='s' || args[2].type!='s')
   {
-    return Plt_Err(TypeError,"3 string arguments needed!");
+    return Z_Err(TypeError,"3 string arguments needed!");
     
   }
   try
   {
-    return PObjFromStr(regex_replace(*(string*)args[0].ptr, regex(*(string*)args[1].ptr),*(string*) args[2].ptr));
+    return ZObjFromStr(regex_replace(*(string*)args[0].ptr, regex(*(string*)args[1].ptr),*(string*) args[2].ptr));
   }
   catch(std::regex_error& e)
   {
-    return Plt_Err(ValueError,e.what());
+    return Z_Err(ValueError,e.what());
   }
 }

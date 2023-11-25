@@ -4,33 +4,33 @@
   #define EXPORT
 #endif
 
-#include "PltObject.h"
+#include "ZObject.h"
 
 extern "C"
 {
 
-    EXPORT PltObject init();
+    EXPORT ZObject init();
     //
     //Functions
-    EXPORT PltObject STRERROR(PltObject*,int);
+    EXPORT ZObject STRERROR(ZObject*,int);
     //Methods of our Wrapper Curl Object(not real curl object)
-    EXPORT PltObject curlklass__construct__(PltObject*,int);//
-    EXPORT PltObject setopt(PltObject*,int);
-    EXPORT PltObject perform(PltObject*,int);
-    EXPORT PltObject cleanup(PltObject*,int);
-    EXPORT PltObject getinfo(PltObject*,int);
-    EXPORT PltObject ESCAPE(PltObject*,int);
-    EXPORT PltObject UNESCAPE(PltObject*,int);
-    EXPORT PltObject curlklass__del__(PltObject*,int);
+    EXPORT ZObject curlklass__construct__(ZObject*,int);//
+    EXPORT ZObject setopt(ZObject*,int);
+    EXPORT ZObject perform(ZObject*,int);
+    EXPORT ZObject cleanup(ZObject*,int);
+    EXPORT ZObject getinfo(ZObject*,int);
+    EXPORT ZObject ESCAPE(ZObject*,int);
+    EXPORT ZObject UNESCAPE(ZObject*,int);
+    EXPORT ZObject curlklass__del__(ZObject*,int);
     //Methods of MimeObject
-    EXPORT PltObject mime__construct__(PltObject*,int);
-    EXPORT PltObject addpart(PltObject*,int);
-    EXPORT PltObject MIME__del__(PltObject*,int);
+    EXPORT ZObject mime__construct__(ZObject*,int);
+    EXPORT ZObject addpart(ZObject*,int);
+    EXPORT ZObject MIME__del__(ZObject*,int);
     //Methods MimePartObject
-    EXPORT PltObject MIME_NAME(PltObject*,int);
-    EXPORT PltObject MIME_FILENAME(PltObject*,int);
-    EXPORT PltObject MIME_CONTENTTYPE(PltObject*,int);
-    EXPORT PltObject MIME_DATA(PltObject*,int);
-    EXPORT PltObject MIMEPART__del__(PltObject*,int);
+    EXPORT ZObject MIME_NAME(ZObject*,int);
+    EXPORT ZObject MIME_FILENAME(ZObject*,int);
+    EXPORT ZObject MIME_CONTENTTYPE(ZObject*,int);
+    EXPORT ZObject MIME_DATA(ZObject*,int);
+    EXPORT ZObject MIMEPART__del__(ZObject*,int);
     
 }

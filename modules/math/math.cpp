@@ -3,11 +3,11 @@
 #include <climits>
 
 using namespace std;
-PltObject nil;
-PltObject init()
+ZObject nil;
+ZObject init()
 {
 
-    nil.type = PLT_NIL;
+    nil.type = Z_NIL;
     Module* ModuleObject = vm_allocModule();//allocate a module object
 
     ModuleObject->name = "math";//module name is math
@@ -32,29 +32,29 @@ PltObject init()
     ModuleObject->addNativeFunction("radians",&RADIANS);
     ModuleObject->addNativeFunction("log",&LOG);
     ModuleObject->addNativeFunction("log10",&LOG10);
-    return PObjFromModule(ModuleObject);
+    return ZObjFromModule(ModuleObject);
 }
 
-PltObject FLOOR(PltObject* args,int n)
+ZObject FLOOR(ZObject* args,int n)
 {
     //rr stands for return result
     if(n!=1)
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
     if(args[0].type=='i' || args[0].type=='l')
         return args[0];
-    if(args[0].type!=PLT_FLOAT)
-        return Plt_Err(TypeError,"Numeric argument needed!");    
+    if(args[0].type!=Z_FLOAT)
+        return Z_Err(TypeError,"Numeric argument needed!");    
     double res = (floor(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
-      return PObjFromInt64((long long int)res);
+      return ZObjFromInt64((long long int)res);
     else
-      return PObjFromDouble(res);
+      return ZObjFromDouble(res);
 }
-PltObject CEIL(PltObject* args,int n)
+ZObject CEIL(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -62,22 +62,22 @@ PltObject CEIL(PltObject* args,int n)
         return args[0];
         
     }
-    if(args[0].type!=PLT_FLOAT)
+    if(args[0].type!=Z_FLOAT)
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (ceil(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
-      return PObjFromInt64((long long int)res);
+      return ZObjFromInt64((long long int)res);
     else
-      return PObjFromDouble(res);
+      return ZObjFromDouble(res);
 }
-PltObject TRUNC(PltObject* args,int n)
+ZObject TRUNC(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -85,22 +85,22 @@ PltObject TRUNC(PltObject* args,int n)
         return args[0];
         
     }
-    if(args[0].type!=PLT_FLOAT)
+    if(args[0].type!=Z_FLOAT)
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (trunc(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
-      return PObjFromInt64((long long int)res);
+      return ZObjFromInt64((long long int)res);
     else
-      return PObjFromDouble(res);
+      return ZObjFromDouble(res);
 }
-PltObject ROUND(PltObject* args,int n)
+ZObject ROUND(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -108,568 +108,568 @@ PltObject ROUND(PltObject* args,int n)
         return args[0];
         
     }
-    if(args[0].type!=PLT_FLOAT)
+    if(args[0].type!=Z_FLOAT)
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
     double res = (round(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
-      return PObjFromInt64((long long int)res);
+      return ZObjFromInt64((long long int)res);
     else
-      return PObjFromDouble(res);
+      return ZObjFromDouble(res);
 }
-PltObject SQRT(PltObject* args,int n)
+ZObject SQRT(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (sqrt(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (sqrt(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (sqrt(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject RADIANS(PltObject* args,int n)
+ZObject RADIANS(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
     double pi = 2*acos(0.0);
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = ((args[0].f*pi/180));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = ((args[0].i*pi/180));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = ((args[0].l*pi/180));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject LOG(PltObject* args,int n)
+ZObject LOG(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject LOG10(PltObject* args,int n)
+ZObject LOG10(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject SIN(PltObject* args,int n)
+ZObject SIN(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (sin(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (sin(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (sin(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject COS(PltObject* args,int n)
+ZObject COS(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (cos(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (cos(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (cos(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject TAN(PltObject* args,int n)
+ZObject TAN(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(cos(args[0].f)==0)
         {
-            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(cos(args[0].i)==0)
         {
-            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(cos(args[0].l)==0)
         {
-            return Plt_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject SINH(PltObject* args,int n)
+ZObject SINH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (sinh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (sinh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (sinh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject COSH(PltObject* args,int n)
+ZObject COSH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (cosh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (cosh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (cosh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject TANH(PltObject* args,int n)
+ZObject TANH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (tanh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (tanh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (tanh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ASIN(PltObject* args,int n)
+ZObject ASIN(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Plt_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ACOS(PltObject* args,int n)
+ZObject ACOS(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Plt_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ATAN(PltObject* args,int n)
+ZObject ATAN(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (atan(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (atan(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (atan(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ASINH(PltObject* args,int n)
+ZObject ASINH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         double res = (asinh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         double res = (asinh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         double res = (asinh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ACOSH(PltObject* args,int n)
+ZObject ACOSH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i<1)
         {
-            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l<1)
         {
-            return Plt_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }
-PltObject ATANH(PltObject* args,int n)
+ZObject ATANH(ZObject* args,int n)
 {
     if(n!=1)
     {
-        return Plt_Err(ArgumentError,"1 argument needed");
+        return Z_Err(ArgumentError,"1 argument needed");
         
     }
-    if(args[0].type==PLT_FLOAT)
+    if(args[0].type==Z_FLOAT)
     {
         if(args[0].f <= -1 || args[0].f>=1)
         {
-            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].f));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT)
+    else if(args[0].type==Z_INT)
     {
         if(args[0].i <= -1 || args[0].i>=1)
         {
-            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].i));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
-    else if(args[0].type==PLT_INT64)
+    else if(args[0].type==Z_INT64)
     {
         if(args[0].l <= -1 || args[0].l>=1)
         {
-            return Plt_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].l));
-        return PObjFromDouble(res);
+        return ZObjFromDouble(res);
     }
     else
     {
-        return Plt_Err(TypeError,"Numeric argument needed!");
+        return Z_Err(TypeError,"Numeric argument needed!");
         
     }
 }

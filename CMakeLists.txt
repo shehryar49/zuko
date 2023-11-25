@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
-project(plutonium)
+project(zuko)
 set(CMAKE_CXX_STANDARD 11)
-add_executable(plutonium plutonium.cpp)
+add_executable(zuko zuko.cpp)
 include_directories(include/) # even modules use this (include/PltObject.h)
 if(UNIX)
-  target_link_libraries(plutonium ${CMAKE_DL_LIBS})
-  target_link_libraries(plutonium -lreadline) # GNU readline
+  target_link_libraries(zuko ${CMAKE_DL_LIBS})
+  target_link_libraries(zuko -lreadline) # GNU readline
 endif()
 
 add_executable(test_all tests/test_all.cpp)
@@ -32,6 +32,9 @@ set_target_properties(regex PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 # datetime
 add_library(datetime SHARED modules/datetime/datetime.cpp modules/datetime/datetime.h)
 set_target_properties(datetime PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+# bignum
+add_library(bignum SHARED modules/bignum/bignumWrapper.cpp modules/bignum/bignum.cpp modules/bignum/bignum.h)
+set_target_properties(bignum PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 # cgi
 add_library(cgi SHARED modules/cgi/cgi.cpp modules/cgi/cgi.h)
 set_target_properties(cgi PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)

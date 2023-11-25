@@ -9,14 +9,14 @@ The code is completely free to use and comes without any guarantee/warrantee
 #else
 #define EXPORT 
 #endif
-#include "PltObject.h"
+#include "ZObject.h"
 extern "C"
 {
-  EXPORT PltObject init();
-  EXPORT PltObject TIME(PltObject* args,int32_t n);
-  EXPORT PltObject CTIME(PltObject* args,int32_t n);
-  EXPORT PltObject LOCALTIME(PltObject* args,int32_t n);
-  EXPORT PltObject GMTIME(PltObject* args,int32_t n);
-  EXPORT PltObject TMKLASS__del__(PltObject* args,int32_t n);
+  EXPORT ZObject init();
+  EXPORT ZObject TIME(ZObject* args,int32_t n);
+  EXPORT ZObject CTIME(ZObject* args,int32_t n);
+  EXPORT ZObject LOCALTIME(ZObject* args,int32_t n);
+  EXPORT ZObject GMTIME(ZObject* args,int32_t n);
+  EXPORT ZObject TMKLASS__del__(ZObject* args,int32_t n);
   
 }

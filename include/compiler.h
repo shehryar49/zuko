@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef COMPILER_H_
 #define COMPILER_H_
-#include "plutonium.h"
+#include "zuko.h"
 #include "vm.h"
 #include "lexer.h"
 using namespace std;
@@ -147,7 +147,7 @@ public:
     {
       if(vm.constants)
         delete[] vm.constants;
-      vm.constants = new PltObject[p.num_of_constants];
+      vm.constants = new ZObject[p.num_of_constants];
       vm.total_constants = 0;
     }
     initFunctions();
@@ -203,7 +203,7 @@ public:
       REPL();
     exit(1);
   }
-  int32_t isDuplicateConstant(PltObject x)
+  int32_t isDuplicateConstant(ZObject x)
   {
       for (int32_t k = 0; k < vm.total_constants; k += 1)
       {
@@ -242,7 +242,7 @@ public:
   }
   vector<uint8_t> exprByteCode(Node* ast)
   {
-      PltObject reg;
+      ZObject reg;
       vector<uint8_t> bytes;
       if (ast->childs.size() == 0)
       {
@@ -2205,7 +2205,7 @@ public:
     k->members = error->members;
     k->privateMembers = error->privateMembers;
     globals.emplace(name,STACK_SIZE++);
-    vm.STACK.push_back(PObjFromKlass(k));
+    vm.STACK.push_back(ZObjFromKlass(k));
     return k;
   }
   vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
@@ -2226,21 +2226,21 @@ public:
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
       int32_t k = 2;
-      PltList l;
-      PltObject elem;
+      ZList l;
+      ZObject elem;
       elem.type = 's';
       while (k < argc)
       {
           //elem.s = argv[k];
           string* p = allocString();
           *p = argv[k];
-          l.push_back(PObjFromStrPtr(p));
+          l.push_back(ZObjFromStrPtr(p));
           k += 1;
       }
-      PltObject A;
-      PltList* p = allocList();
+      ZObject A;
+      ZList* p = allocList();
       *p = l;
-      vm.STACK.push_back(PObjFromList(p));
+      vm.STACK.push_back(ZObjFromList(p));
       FileObject* STDIN = allocFileObject();
       STDIN->open = true;
       STDIN ->fp = stdin;
@@ -2249,11 +2249,11 @@ public:
       STDOUT->open = true;
       STDOUT ->fp = stdout;
       
-      vm.STACK.push_back(PObjFromFile(STDIN));
-      vm.STACK.push_back(PObjFromFile(STDOUT));
+      vm.STACK.push_back(ZObjFromFile(STDIN));
+      vm.STACK.push_back(ZObjFromFile(STDOUT));
       
       addToVMStringTable("msg");
-      PltObject nil;
+      ZObject nil;
       Error = allocKlass();
       Error->name = "Error";
       Error->members.emplace("msg",nil);
@@ -2279,11 +2279,11 @@ public:
       bytecode.push_back(OP_RETURN);
 
       bytes_done+=26;
-      PltObject construct;
-      construct.type = PLT_FUNC;
+      ZObject construct;
+      construct.type = Z_FUNC;
       construct.ptr = (void*)fun;
       Error->members.emplace("__construct__",construct);
-      vm.STACK.push_back(PObjFromKlass(Error));
+      vm.STACK.push_back(ZObjFromKlass(Error));
       STACK_SIZE+=1;
       TypeError = makeErrKlass("TypeError",Error);
       ValueError = makeErrKlass("ValueError",Error);

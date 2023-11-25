@@ -57,9 +57,9 @@ const char* tests[] =
 int main(int argc,const char* argv[])
 {
   #ifdef _WIN32
-    string path = "..\\plutonium.exe";
+    string path = "..\\zuko.exe";
   #else
-    string path = "../plutonium";
+    string path = "../zuko";
   #endif
   if(argc == 2)
   {
@@ -91,7 +91,7 @@ int main(int argc,const char* argv[])
       expectedOutput+= ch;
     fin.close();
     line = path+" ";
-    line += test+".plt > out.txt";
+    line += test+".zk > out.txt";
     int l = system(line.c_str());//produces out.txt
     ifstream file("out.txt",ios::in);
     if(l!=0 || !file)
