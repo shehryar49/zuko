@@ -176,7 +176,7 @@ private:
     vector<void *> moduleHandles;
   #endif
 
-  vector<FunObject *> executing = {NULL}; // pointer to plutonium function object we are executing,NULL means control is not in a function
+  vector<FunObject *> executing = {NULL}; // pointer to zuko function object we are executing,NULL means control is not in a function
   
   vector<BuiltinFunc> builtin; // addresses of builtin native functions
   // referenced in bytecode
@@ -817,8 +817,8 @@ public:
     string s1;
     string s2;
     char c1;
-    //ZList pl1;      // plutonium list 1
-    ZList* pl_ptr1; // plutonium list pointer 1
+    //ZList pl1;      // zuko list 1
+    ZList* pl_ptr1; // zuko list pointer 1
     //Dictionary pd1;
     ZObject alwaysi32;
     ZObject alwaysByte;
@@ -1184,7 +1184,7 @@ public:
             STACK.erase(STACK.end()-i2,STACK.end());
             DoThreshholdBusiness();
           }
-          else // that's it modules cannot have plutonium code functions (at least not right now)
+          else // that's it modules cannot have zuko code functions (at least not right now)
           {
             spitErr(TypeError, "Error member of module is not a function so cannot be called.");
             NEXT_INST;
@@ -1419,7 +1419,7 @@ public:
         typedef ZObject (*initFun)();
         typedef void (*apiFun)(apiFuncions *);
         #ifdef _WIN32
-          s1 = "C:\\plutonium\\modules\\" + s1 + ".dll";
+          s1 = "C:\\zuko\\modules\\" + s1 + ".dll";
           HINSTANCE module = LoadLibraryA(s1.c_str());
           if (!module)
           {
@@ -1431,7 +1431,7 @@ public:
           
         #endif
         #ifdef __linux__
-          s1 = "/opt/plutonium/modules/" + s1 + ".so";
+          s1 = "/opt/zuko/modules/" + s1 + ".so";
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {
@@ -1442,7 +1442,7 @@ public:
           apiFun a = (apiFun)dlsym(module, "api_setup");
         #endif
         #ifdef __APPLE__
-          s1 = "/opt/plutonium/modules"+s1+".dynlib";
+          s1 = "/opt/zuko/modules"+s1+".dynlib";
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {

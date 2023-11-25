@@ -1310,7 +1310,7 @@ public:
                     parseError("SyntaxError","Invalid Syntax");
             }
           }
-          else if(tokens.size()==4)
+          else if(tokens.size()==4 && tokens[2].content == "as")
           {
             if(tokens[1].type!=ID_TOKEN || tokens[2].type!=KEYWORD_TOKEN || tokens[2].content!="as" || tokens[3].type!=ID_TOKEN)
             {
@@ -1324,14 +1324,14 @@ public:
             ast->childs.push_back(NewNode(NodeType::ID,tokens[3].content));
             return ast;
           }
-          else if(tokens.size()==6)
+          else if(tokens.size()==4)
           {
-             if(tokens[1].type!=ID_TOKEN || tokens[1].content!="std" || tokens[2].type!=OP_TOKEN || tokens[2].content!="/" || tokens[3].type!=ID_TOKEN || tokens[4].type!=OP_TOKEN || tokens[4].content!="." || tokens[5].type!=ID_TOKEN || tokens[5].content!="plt")
+             if(tokens[1].type!=ID_TOKEN || tokens[1].content!="std" || tokens[2].type!=OP_TOKEN || tokens[2].content!="/" || tokens[3].type!=ID_TOKEN )
                parseError("SyntaxError","Invalid Syntax");
             #ifdef _WIN32
-            tokens[3].content="C:\\plutonium\\std\\"+tokens[3].content+".plt";
+            tokens[3].content="C:\\zuko\\std\\"+tokens[3].content+".zk";
             #else
-            tokens[3].content="/opt/plutonium/std/"+tokens[3].content+".plt";
+            tokens[3].content="/opt/zuko/std/"+tokens[3].content+".zk";
             #endif
             Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
             ast->childs.push_back(n);
