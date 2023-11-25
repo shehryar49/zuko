@@ -1,6 +1,6 @@
-*.pltb
+*.zkb
 /dis
-/plutonium
+/zuko
 /tests/test_all
 /modules/*.so
 /tests/out.txt
