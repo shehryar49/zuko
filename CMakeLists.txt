@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 project(zuko)
 set(CMAKE_CXX_STANDARD 11)
 add_executable(zuko zuko.cpp)
-include_directories(include/) # even modules use this (include/PltObject.h)
+include_directories(include/) # even modules use this (include/ZObject.h)
 if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})
   target_link_libraries(zuko -lreadline) # GNU readline
