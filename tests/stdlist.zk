@@ -1,0 +1,13 @@
+import std/ll.plt
+var list = ll::List()
+for(var i=1 to 10000 step 1)
+{
+    list.push_back(i)
+}
+
+var it = list.begin()
+while(it != list.end())
+{
+    println(it.value())
+    it.next()
+}
