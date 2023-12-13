@@ -5,7 +5,7 @@
 /modules/*.so
 /tests/out.txt
 out.txt
-/program.zk
+/program.zu
 /demo.json
 *.cmake
 Makefile
