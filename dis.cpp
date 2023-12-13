@@ -301,31 +301,7 @@ int main(int argc,char** argv)
            printf("%d  POP_EXCEPT_TARG\n",k);
 
          }
-         else if(inst==CONT)
-         {
-           int orgk = k;
-                        k+=1;
-           FOO.bytes[0] = program[k];
-                         k+=1;
-           FOO.bytes[1] = program[k];
-                         k+=1;
-           FOO.bytes[2] = program[k];
-                         k+=1;
-           FOO.bytes[3] = program[k];
-           int where = FOO.x;
-                         k+=1;
-           FOO.bytes[0] = program[k];
-                         k+=1;
-           FOO.bytes[1] = program[k];
-                         k+=1;
-           FOO.bytes[2] = program[k];
-           k+=1;
-           FOO.bytes[3] = program[k];
-          int n = FOO.x;
-          printf("%d  CONT  %d  %d\n",orgk,where,n);
-          k+=1;
-          continue;
-         }
+
          else if(inst==CALLMETHOD)
          {
            k+=1;
@@ -732,31 +708,6 @@ int orgk = k;
               FOO.bytes[3] = program[k];
              int where = FOO.x;
              printf("%d  GOTO  %d\n",orgk,where);
-             k+=1;
-             continue;
-         }
-         else if(inst==BREAK)
-         {
-              int orgk = k;
-                           k+=1;
-              FOO.bytes[0] = program[k];
-                            k+=1;
-              FOO.bytes[1] = program[k];
-                            k+=1;
-              FOO.bytes[2] = program[k];
-                            k+=1;
-              FOO.bytes[3] = program[k];
-              int where = FOO.x;
-                            k+=1;
-              FOO.bytes[0] = program[k];
-                            k+=1;
-              FOO.bytes[1] = program[k];
-                            k+=1;
-              FOO.bytes[2] = program[k];
-              k+=1;
-              FOO.bytes[3] = program[k];
-             int n = FOO.x;
-             printf("%d  BREAK  %d  %d\n",orgk,where,n);
              k+=1;
              continue;
          }
