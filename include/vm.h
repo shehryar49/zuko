@@ -836,7 +836,6 @@ public:
     while (*k != OP_EXIT)
     {
       inst = *k;
-
       switch (inst)
       {
     #else
@@ -3476,6 +3475,7 @@ public:
     if (STACK.size() != 0 && panic)
     {
       fprintf(stderr,"An InternalError occurred.Error Code: 15\n");
+
       exit(1);
     }
 

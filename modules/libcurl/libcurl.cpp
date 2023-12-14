@@ -1,6 +1,6 @@
 
 /*
-Libcurl Binding for Plutonium(easy interface only)
+Libcurl Binding for Zuko(easy interface only)
 The original code of libcurl is not modified in anyway. This is just a wrapper around libcurl
 and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
@@ -20,10 +20,7 @@ Written by Shahryar Ahmad
 #include <vector>
 #include "libcurl.h"
 using namespace std;
-struct MemoryStruct
-{
-  vector<uint8_t>* memory;//bytearray of memory
-};
+
 //Default WriteMemory function
 //pushes all the bytes to a bytearray
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -35,8 +32,9 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
   memcpy(&(mem->at(prevsize)), contents, realsize);
   return realsize;
 }
-//WriteMemory function which calls plutonium callback and passes the bytes
+//WriteMemory function which calls zuko callback and passes the bytes
 ZObject wmcallback;
+ZObject xfercallback;
 size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
@@ -50,6 +48,25 @@ size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
   p1.ptr = (void*)btArr;
   vm_callObject(&wmcallback,&p1,1,&rr);
   return realsize;
+}
+//xfer function
+int xferfun(void* clientp,curl_off_t dltotal,curl_off_t dlnow,curl_off_t ultotal,curl_off_t ulnow)
+{
+  ZObject args[4];
+  ZObject r;
+  r.type = Z_INT64;
+  r.l = dltotal;
+  args[0] = r;
+  r.l = dlnow;
+  args[1] = r;
+  r.l = ultotal;
+  args[2] = r;
+  r.l = ulnow;
+  args[3] = r;
+  vm_callObject(&xfercallback,args,4,&r);
+  if(r.type == Z_INT)
+    return r.i;
+  return 0;
 }
 struct CurlObject //Wrapper around the curl handle
 {
@@ -109,7 +126,9 @@ ZObject init()
     d->members.emplace(("OPT_WRITEFUNCTION"),ZObjFromInt64(CURLOPT_WRITEFUNCTION));
     d->members.emplace(("OPT_MIMEPOST"),ZObjFromInt64(CURLOPT_MIMEPOST));
     d->members.emplace(("OPT_VERBOSE"),ZObjFromInt64(CURLOPT_VERBOSE));
-    
+    d->members.emplace("OPT_XFERINFOFUNCTION",ZObjFromInt64(CURLOPT_XFERINFOFUNCTION));
+    d->members.emplace("OPT_NOPROGRESS",ZObjFromInt64(CURLOPT_NOPROGRESS));
+
     d->members.emplace(("CURLE_OK"),ZObjFromInt64(CURLE_OK));
     d->members.emplace(("WriteMemory"),ZObjFromInt(0));
     d->members.emplace(("INFO_CONTENT_TYPE"),ZObjFromInt64((long long int)CURLINFO_CONTENT_TYPE));
@@ -442,6 +461,26 @@ ZObject setopt(ZObject* args,int n)
         return Z_Err(Error,(string)curl_easy_strerror(res));
         
       }
+    }
+    else if( opt == CURLOPT_NOPROGRESS)
+    {
+      KlassObject* d = (KlassObject*)args[0].ptr;
+      CurlObject* obj = (CurlObject*)(d->members[".handle"]).ptr;
+      CURLcode res = curl_easy_setopt(obj->handle,CURLOPT_NOPROGRESS,args[2].i);
+      if(res != CURLE_OK)
+	      return Z_Err(Error,(string)curl_easy_strerror(res));
+    }
+    else if(opt == CURLOPT_XFERINFOFUNCTION)
+    {
+      if(args[2].type!=Z_FUNC)
+        return Z_Err(TypeError,"XFERINFOFUNCTION option must be a callback function!");
+      KlassObject* d = (KlassObject*)args[0].ptr;
+      d->members[".xfercallback"] = args[2];
+      xfercallback = args[2];
+      CurlObject* obj = (CurlObject*)(d->members)[".handle"].ptr;
+      CURLcode res = curl_easy_setopt(obj->handle,CURLOPT_XFERINFOFUNCTION,xferfun);
+      if(res != CURLE_OK)
+        return Z_Err(Error,(string)curl_easy_strerror(res));
     }
     else if(opt==CURLOPT_POSTFIELDS)
     {

@@ -77,6 +77,16 @@ function listPackages()
   else 
     system("ls -1 /opt/zuko/modules")
 }
+function clean()
+{
+  println("🧹🧹 Cleaning cache")
+  if(@os == "Linux")
+  {
+    system("rm -rf fizatmp")
+    system("rm -rf fizatmp.tar.gz")
+  }
+  
+}
 function updatePackageList()
 {
   var c = libcurl.Curl()
@@ -106,6 +116,8 @@ if(len(argv) == 1 and argv[0] == "update")
   updatePackageList()
 else if(len(argv)==1 and argv[0]=="list")
   listPackages()
+else if(len(argv) == 1 and argv[0]=="clean")
+  clean()
 else if(len(argv) == 2)
 {
   var action = argv[0]
@@ -151,11 +163,12 @@ else if(len(argv) == 2)
     }
     catch(err)
     {
+      var woman = bytearray([])
       println("[-] ",err.msg)
-      println("[-] Installation failed.")
+      print("[-] Installation failed 🤷‍🤷\n")
       exit()
     }
-    println("[+] Installation done!")
+    println("[+] Installation done!  🫦🫦")
   }
   else if(action == "remove")
     removePackage(name)
@@ -164,6 +177,8 @@ else if(len(argv) == 2)
 }
 else
 {
+  println("Fiza 🧕🧕 package manager") 
+  # zuko strings by default can store utf8 but they are not utf8 aware
   println("usage: fiza <action> [package]")
   println("Examples: ")
   println("\tinstall packageName")
@@ -171,3 +186,4 @@ else
   println("\tupdate")
   println("\tlist")
 }
+var whatever = "🤷‍♀️💃🏻🫦💁‍♀️🧕"

@@ -207,14 +207,42 @@ string& readfile(string filename)
       exit(0);
   }
   signed char ch;
+  int32_t expect = 0;//continuation bytes to expect
   while ((ch = fgetc(fp)) != EOF)
   {
-      if(ch <= 0)
+      if(expect)
       {
-        printf("Error the file %s does not seem to be a text file or contains non-ascii characters.\n",filename.c_str());
+        if(ch & 0x80) //msb is on
+        {
+          expect-=1;
+          src += ch;
+          continue;
+        }
+        else
+        {
+          printf("Error the file %s does not seem to be a utf-8 text file.\n",filename.c_str());
+          exit(0);
+        }
+      }
+      if(!(ch & 0x80)) //single byte codepoint
+      ;
+      else if((ch & 0xe0) == 0xc0) // 2 byte codepoint
+        expect = 1;
+      else if((ch & 0xf0) == 0xe0) // 3 byte codepoint
+        expect = 2;
+      else if((ch & 0xf8) == 0xf0) // 4 byte codepoint
+        expect = 3;
+      else
+      {
+        printf("Error the file %s does not seem to be a utf-8 text file.\n",filename.c_str());
         exit(0);
       }
       src += ch;
+  }
+  if(expect)
+  {
+    printf("Error the file %s does not seem to be a utf-8 text file.\n",filename.c_str());
+    exit(0);
   }
   fclose(fp);
   return src;

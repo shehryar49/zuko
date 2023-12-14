@@ -72,7 +72,7 @@ int main(int argc, const char* argv[])
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
-    //WriteByteCode(bytecode,p.LineNumberTable,p.files);
+//    WriteByteCode(bytecode,p.LineNumberTable,p.files);
      
     vm.load(bytecode,p);
    

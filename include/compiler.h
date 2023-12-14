@@ -1796,7 +1796,7 @@ public:
             vector<uint8_t> catchBlock = compile(ast->childs[3]);
             int32_t catchlocals = locals.back().size();
             scope-=1;
-            foo = catchBlock.size()+(catchlocals==1 ? 1 : 5);
+            foo = catchBlock.size()+((catchlocals==1) ? 1 : 5);
             program.push_back(JMP);
             addBytes(program,foo);
             program.insert(program.end(),catchBlock.begin(),catchBlock.end());
@@ -1804,11 +1804,12 @@ public:
 
             if(catchlocals>1)
             {
-            foo = catchlocals;
-            program.push_back(NPOP_STACK);
-            addBytes(program,foo);
-            bytes_done+=5;
+              foo = catchlocals;
+              program.push_back(NPOP_STACK);
+              addBytes(program,foo);
+              bytes_done+=5;
             }
+            else
             {
               program.push_back(POP_STACK);
               bytes_done+=1;
