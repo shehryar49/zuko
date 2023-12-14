@@ -1,6 +1,6 @@
 # Official Repository of Zuko Programming Langauge
 
-Zuko is a dynamically typed and lightweight programming language written in C++. Plutonium is compiled to bytecode and then interpreted by a virtual machine. 
+Zuko is a dynamically typed and lightweight programming language written in C++. Zuko is compiled to bytecode and then interpreted by a virtual machine. 
 
 # HOW TO COMPILE:
 ## Visual Studio:
