@@ -1329,9 +1329,9 @@ public:
              if(tokens[1].type!=ID_TOKEN || tokens[1].content!="std" || tokens[2].type!=OP_TOKEN || tokens[2].content!="/" || tokens[3].type!=ID_TOKEN )
                parseError("SyntaxError","Invalid Syntax");
             #ifdef _WIN32
-            tokens[3].content="C:\\zuko\\std\\"+tokens[3].content+".zk";
+            tokens[3].content="C:\\zuko\\std\\"+tokens[3].content+".zu";
             #else
-            tokens[3].content="/opt/zuko/std/"+tokens[3].content+".zk";
+            tokens[3].content="/opt/zuko/std/"+tokens[3].content+".zu";
             #endif
             Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
             ast->childs.push_back(n);
