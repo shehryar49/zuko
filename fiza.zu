@@ -148,15 +148,16 @@ else if(len(argv) == 2)
         ver = parts[2]
       }
     }
-    if(ver[len(ver)-1] == "\r") # remove carriage returns
-    {
-      ver = ver.substr(0,len(ver)-2)
-    }
+
     if(url == nil)
     {
       println("Package ",name," was not found!\nYou can update package list and retry.")
       exit()
     }
+
+    if(ver[len(ver)-1] == "\r")
+      ver = ver.substr(0,len(ver)-2)
+
     try
     {
       installPackage(name,url,ver)
