@@ -1,0 +1,10 @@
+function g(var x,var y)
+{
+    return x | y
+}
+function fun(var x,var y)
+{
+    return x^y + g(x,y)
+}
+
+println(fun(10,20))

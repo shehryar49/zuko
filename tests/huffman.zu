@@ -1,0 +1,142 @@
+
+class Node
+{
+    var val = nil
+    var char = nil
+    var left = nil
+    var right = nil
+    function __construct__(var val,var char)
+    {
+        self.val = val
+        self.char = char
+    }
+}
+function findInNodes(var elem,var list)
+{
+  var k = 0
+  foreach(var e: list)
+  {
+    if(e.char==elem)
+      return k
+    k+=1
+  }
+  return nil
+}
+function sort(var list)
+{
+    var l=len(list)
+    for(var i=1 to l step 1)
+    {
+        for(var j=0 to l-i-1 step 1)
+        {
+            if(list[j].val > list[j+1].val)
+            {
+                var c = list[j]
+                list[j] = list[j+1]
+                list[j+1] = c
+            }
+        }
+    }
+}
+function generateHuffmanTree(var v)
+{
+
+  if(len(v)==0)
+    return nil
+  while(len(v)!=1)
+  {
+
+    sort(v)
+    #pick minimum two elements from the list
+    var left = v[0]
+    var right = v[1]
+    #create a new node
+    var n = Node(left.val+right.val,0)
+    n.left = left
+    n.right = right
+    v.erase(0,1)
+    v.insert(0,n)
+  }
+  return v[0]
+}
+function printTree(var tree,var spaces)
+{
+    if(tree==nil)
+      return nil
+    for(var i=1 to spaces step 1)
+      print(" ")
+    println("|",tree.val,": ",tree.char)
+    printTree(tree.left,spaces+2)
+    printTree(tree.right,spaces+2)
+}
+function getCodeFromTree(var ch,var tree)
+{
+  if(tree==nil)
+    return nil
+  if(tree.char == ch)
+    return ""
+  var res = getCodeFromTree(ch,tree.left)
+  if(res!=nil)
+    return "0"+res
+  res = getCodeFromTree(ch,tree.right)
+  if(res!=nil)
+    return "1"+res
+  return nil
+}
+function encode(var str,var tree)
+{
+  var codes = {}
+  var encoded = ""
+  foreach(var e: str)
+  {
+    if(codes.hasKey(e))
+    {
+      encoded+=codes[e]
+    }
+    else
+    {
+      var C = getCodeFromTree(e,tree)
+      codes.emplace(e,C)
+      encoded+=C
+    }
+  }
+  return encoded
+}
+function decode(var str,var tree)
+{
+  var decoded = ""
+  var h = tree
+  foreach(var e: str)
+  {
+    if(e=="0")
+    {
+      h=h.left
+    }
+    else if(e=="1")
+    {
+      h = h.right
+    }
+    if(h.left==nil and h.right==nil) #leaf node is found 
+    {
+      decoded+=h.char
+      h = tree
+    }
+  }
+  return decoded
+
+}
+var str = "abcccaccc"
+var freq = []
+foreach(var e: str)
+{
+    var x = findInNodes(e,freq)
+    if(x==nil)
+       freq.push(Node(1,e))
+    else
+       freq[x].val+=1
+}
+
+var tree = generateHuffmanTree(freq)
+var E = encode(str,tree)
+println(E)
+println(decode(E,tree))
