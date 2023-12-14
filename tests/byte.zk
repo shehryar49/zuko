@@ -1,6 +1,0 @@
-var b = 0xf0
-var c = 0x0f
-println(b & c) # 0x00
-println(0x01 << 7) # 0x80
-println(int(0x41)) #65
-println(byte(254)) #0xfe
