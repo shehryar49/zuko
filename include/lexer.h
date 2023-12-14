@@ -703,11 +703,6 @@ public:
             else
             {
                 //error;
-                if(c<0)
-                {
-                    printf("Error: The given file is non ascii\n");
-                    return {};
-                }
                 line_num = ln;
                 lexErr("SyntaxError",(string)"Illegal character '"+c+"'");
                 return {};
