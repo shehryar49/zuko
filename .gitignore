@@ -1,4 +1,5 @@
-*.zkb
+*.zub
+astdump
 /dis
 /zuko
 /tests/test_all

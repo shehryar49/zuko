@@ -247,10 +247,10 @@ string& readfile(string filename)
   fclose(fp);
   return src;
 }
-void WriteByteCode(vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
+void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
 {
 
-   FILE* f = fopen("program.pltb","wb");
+   FILE* f = fopen(fname,"wb");
    if(!f)
    {
     printf("error writing bytecode file \n");
