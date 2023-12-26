@@ -57,8 +57,11 @@ void REPL()
       exit(0);
     else if(line == ".showstack")
     {
-      for(auto e: vm.STACK)
+      for(size_t i=0;i<vm.STACK.size;i++)
+      {
+        ZObject e = vm.STACK.arr[i];
         printf("%s\n",ZObjectToStr(e).c_str());
+      }
       continue;
     }
     else if(line == ".showconstants")
@@ -109,12 +112,12 @@ void REPL()
     vm.load(bytecode,p);
     //WriteByteCode(bytecode,LineNumberTable,files);// for debugging
     vm.interpret(offset,false);//
-    if(vm.STACK.size() > stackSize)
-        vm.STACK.erase(vm.STACK.begin()+stackSize,vm.STACK.end());
-    else if(vm.STACK.size() < stackSize)
+    if(vm.STACK.size > stackSize)
+        zlist_eraseRange(&vm.STACK,stackSize,vm.STACK.size - 1);
+    else if(vm.STACK.size < stackSize)
     {
-      compiler.reduceStackTo(vm.STACK.size());
-      stackSize = vm.STACK.size();
+      compiler.reduceStackTo(vm.STACK.size);
+      stackSize = vm.STACK.size;
     }
     bytecode.pop_back();//pop OP_EXIT
     offset=bytecode.size();

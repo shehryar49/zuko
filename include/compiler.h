@@ -2206,7 +2206,7 @@ public:
     k->members = error->members;
     k->privateMembers = error->privateMembers;
     globals.emplace(name,STACK_SIZE++);
-    vm.STACK.push_back(ZObjFromKlass(k));
+    zlist_push(&vm.STACK,ZObjFromKlass(k));
     return k;
   }
   vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
@@ -2227,7 +2227,7 @@ public:
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
       int32_t k = 2;
-      ZList l;
+      zlist* l = allocList();
       ZObject elem;
       elem.type = 's';
       while (k < argc)
@@ -2235,13 +2235,11 @@ public:
           //elem.s = argv[k];
           string* p = allocString();
           *p = argv[k];
-          l.push_back(ZObjFromStrPtr(p));
+          zlist_push(l,ZObjFromStrPtr(p));
           k += 1;
       }
       ZObject A;
-      ZList* p = allocList();
-      *p = l;
-      vm.STACK.push_back(ZObjFromList(p));
+      zlist_push(&vm.STACK,ZObjFromList(l));
       FileObject* STDIN = allocFileObject();
       STDIN->open = true;
       STDIN ->fp = stdin;
@@ -2250,11 +2248,12 @@ public:
       STDOUT->open = true;
       STDOUT ->fp = stdout;
       
-      vm.STACK.push_back(ZObjFromFile(STDIN));
-      vm.STACK.push_back(ZObjFromFile(STDOUT));
+      zlist_push(&vm.STACK,ZObjFromFile(STDIN));
+      zlist_push(&vm.STACK,ZObjFromFile(STDOUT));
       
       addToVMStringTable("msg");
       ZObject nil;
+      nil.type = Z_NIL;
       Error = allocKlass();
       Error->name = "Error";
       Error->members.emplace("msg",nil);
@@ -2284,7 +2283,7 @@ public:
       construct.type = Z_FUNC;
       construct.ptr = (void*)fun;
       Error->members.emplace("__construct__",construct);
-      vm.STACK.push_back(ZObjFromKlass(Error));
+      zlist_push(&vm.STACK,ZObjFromKlass(Error));
       STACK_SIZE+=1;
       TypeError = makeErrKlass("TypeError",Error);
       ValueError = makeErrKlass("ValueError",Error);

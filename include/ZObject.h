@@ -25,11 +25,12 @@ SOFTWARE.*/
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include "zlist.h"
 
-#define ZList vector<ZObject>
+//#define ZList vector<ZObject>
 #define Dictionary std::unordered_map<ZObject,ZObject,HashFunction>
 //
-//Types for different plutonium datatypes
+//Types for different zuko datatypes
 
 #define Z_LIST 'j'
 #define Z_DICT 'a'
@@ -43,11 +44,11 @@ SOFTWARE.*/
 #define Z_MSTR 'k' //mutable strings
 #define Z_FILESTREAM 'u'
 #define Z_NIL 'n'
-#define Z_OBJ 'o' //objects created using plutonium code
-#define Z_CLASS 'v' //Plutonium code class
+#define Z_OBJ 'o' //objects created using zuko code
+#define Z_CLASS 'v' //Zuko code class
 #define Z_BOOL 'b'
 #define Z_POINTER 'p' //just a pointer that means something only to c++ code,the interpreter just stores it
-#define Z_FUNC 'w' //plutonium code function
+#define Z_FUNC 'w' //zuko code function
 #define Z_COROUTINE 'g'
 #define Z_COROUTINE_OBJ 'z'
 #define Z_ERROBJ 'e' //same as an object,just in thrown state
@@ -64,17 +65,7 @@ struct FileObject
   FILE* fp;
   bool open;
 };
-extern "C" struct ZObject
-{
-    union
-    {
-        double f;
-        int64_t l;
-        int32_t i;
-        void* ptr;
-    };
-    char type;
-};
+
 struct HashFunction
 {
   size_t operator()(const ZObject& obj) const
@@ -108,7 +99,20 @@ bool operator==(const ZObject& lhs,const ZObject& other)
   else if(lhs.type==Z_STR)
     return *(string*)other.ptr==*(string*)lhs.ptr;
   else if(lhs.type==Z_LIST)
-      return *(ZList*)lhs.ptr==*(ZList*)other.ptr;
+  {
+    zlist* a = (zlist*)lhs.ptr;
+    zlist* b = (zlist*)other.ptr;
+    if(a == b)
+      return true;
+    if(a->size != b->size)
+      return false;
+    for(size_t i=0;i<a->size;i++)
+    {
+        if(!(a->arr[i] == b->arr[i]))
+          return false;
+    }
+    return true;
+  }
   else if(lhs.type == Z_BYTEARR)
     return *(vector<uint8_t>*)lhs.ptr == *(vector<uint8_t>*)other.ptr;
   else if(other.type=='y' || other.type=='r' || other.type == Z_CLASS)
@@ -172,7 +176,7 @@ struct FunObject
   string name;
   size_t i;
   size_t args;
-  ZList opt; //default/optional parameters
+  zlist opt; //default/optional parameters
 };
 
 
@@ -191,7 +195,7 @@ enum CoState
 struct Coroutine
 {
   int curr;//index in bytecode from where to resume the coroutine
-  ZList locals;
+  zlist locals;
   CoState state;
   string name;
   FunObject* fun;//function from which this coroutine object was made
@@ -276,7 +280,7 @@ inline ZObject ZObjFromBool(bool b)
   return ret;
 }
 
-inline ZObject ZObjFromList(ZList* l)
+inline ZObject ZObjFromList(zlist* l)
 {
   ZObject ret;
   ret.type = Z_LIST;
@@ -342,7 +346,7 @@ inline ZObject ZObjFromFile(FileObject* file)
 #define AS_PTR(x) x.ptr
 
 
-typedef ZList*(*fn1)();//allocList
+typedef zlist*(*fn1)();//allocList
 typedef Dictionary*(*fn2)();//allocDictionary
 typedef string*(*fn3)();//allocString
 typedef string*(*fn4)();//allocMutString
@@ -478,7 +482,7 @@ extern "C"
   };
   #ifdef _WIN32
   #ifndef ZUKO_INTERPRETER //to make sure this header is included in a shared library
-  //and not the plutonium interpreter
+  //and not the zuko interpreter
   __declspec(dllexport)
   #endif
   #endif

@@ -47,7 +47,7 @@ int main(int argc, const char* argv[])
       source_code = readfile(filename);
     }
     //the  program currently consists of 1 file only
-    //unless this 1 file imports other plutonium files
+    //unless this 1 file imports other zuko files
     //add this 1 file's name and source to ProgramInfo 
     p.files.push_back(filename);//add filename
     p.sources.push_back(source_code);//add source
@@ -72,7 +72,7 @@ int main(int argc, const char* argv[])
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
-    //WriteByteCode(((string)filename+(string)"b").c_str(),bytecode,p.LineNumberTable,p.files);
+    WriteByteCode(((string)filename+(string)"b").c_str(),bytecode,p.LineNumberTable,p.files);
     
     vm.load(bytecode,p);
    

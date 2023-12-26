@@ -447,8 +447,8 @@ string ZObjectToStr(const ZObject& a)
         else if(a.type=='j')
         {
 
-            string ZListToStr(ZList*,vector<void*>* = nullptr);
-            ZList* p = (ZList*)a.ptr;
+            string ZListToStr(zlist*,vector<void*>* = nullptr);
+            zlist* p = (zlist*)a.ptr;
             return ZListToStr(p);
         }
         else if(a.type==Z_STR || a.type==Z_MSTR)
@@ -465,45 +465,44 @@ string ZObjectToStr(const ZObject& a)
         return "nil";
     }
 
-string ZListToStr(ZList* p,vector<void*>* prev=nullptr)
+string ZListToStr(zlist* p,vector<void*>* prev=nullptr)
 {
-  ZList l = *p;
   vector<void*> seen;
   if(prev!=nullptr)
     seen = *prev;
 	seen.push_back(p);
   string res="[";
-  for(size_t k=0;k<l.size();k+=1)
+  for(size_t k=0;k<p->size;k+=1)
   {
-      if(l[k].type=='j')
+      if(p->arr[k].type=='j')
       {
-         if( std::find(seen.begin(), seen.end(), l[k].ptr) != seen.end())
+         if( std::find(seen.begin(), seen.end(), p->arr[k].ptr) != seen.end())
            res+="[...]";
          else
          {
-            res+=ZListToStr((ZList*)l[k].ptr,&seen);
+            res+=ZListToStr((zlist*)p->arr[k].ptr,&seen);
          }
       }
-			else if(l[k].type=='a')
+			else if(p->arr[k].type=='a')
       {
 				 string DictToStr(Dictionary*,vector<void*>* = nullptr);
 
-         if( std::find(seen.begin(), seen.end(), l[k].ptr) != seen.end())
+         if( std::find(seen.begin(), seen.end(), p->arr[k].ptr) != seen.end())
            res+="{...}";
          else
          {
-            res+=DictToStr((Dictionary*)l[k].ptr,&seen);
+            res+=DictToStr((Dictionary*)p->arr[k].ptr,&seen);
          }
       }
-			else if(l[k].type=='s')
+			else if(p->arr[k].type=='s')
 			{
-				res+= "\""+unescape(*(string*)l[k].ptr)+"\"";
+				res+= "\""+unescape(*(string*)p->arr[k].ptr)+"\"";
 			}
       else
       {
-        res+=ZObjectToStr(l[k]);
+        res+=ZObjectToStr(p->arr[k]);
       }
-      if(k!=l.size()-1)
+      if(k!=p->size-1)
         res+=",";
   }
   return res+"]";
@@ -539,7 +538,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),key.ptr)!=seen.end())
 				   res+="[...]";
 				 else
-				   res+=ZListToStr((ZList*)key.ptr,&seen);
+				   res+=ZListToStr((zlist*)key.ptr,&seen);
 			 }
 			 else
           res+=ZObjectToStr(key);
@@ -562,7 +561,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),val.ptr)!=seen.end())
 					 res+="[...]";
 				 else
-					 res+=ZListToStr((ZList*)val.ptr,&seen);
+					 res+=ZListToStr((zlist*)val.ptr,&seen);
 			 }
        else
           res+=ZObjectToStr(val);
