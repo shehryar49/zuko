@@ -24,7 +24,7 @@
     #include <io.h>
     #include <fcntl.h>
 #endif
-#include "ZObject.h"
+#include "zapi.h"
 using namespace std;
 typedef ZObject(*BuiltinFunc)(ZObject*,int32_t);
 void PromoteType(ZObject&,char t);

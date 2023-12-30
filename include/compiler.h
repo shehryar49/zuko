@@ -207,7 +207,7 @@ public:
   {
       for (int32_t k = 0; k < vm.total_constants; k += 1)
       {
-          if (vm.constants[k] == x)
+          if (ZObject_equals(vm.constants[k],x))
               return k;
       }
       return -1;
@@ -2240,11 +2240,11 @@ public:
       }
       ZObject A;
       zlist_push(&vm.STACK,ZObjFromList(l));
-      FileObject* STDIN = allocFileObject();
+      zfile* STDIN = alloczfile();
       STDIN->open = true;
       STDIN ->fp = stdin;
   
-      FileObject* STDOUT = allocFileObject();
+      zfile* STDOUT = alloczfile();
       STDOUT->open = true;
       STDOUT ->fp = stdout;
       

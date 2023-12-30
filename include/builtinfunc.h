@@ -104,7 +104,7 @@ ZObject TOCHAR(ZObject* args,int32_t argc)
   return ZObjFromStrPtr(p);
 }
 string unescape(string);
-void printDictionary(Dictionary* l,vector<void*> seen = {})
+void printZDict(ZDict* l,vector<void*> seen = {})
 {
   if(std::find(seen.begin(),seen.end(),(void*)l)!=seen.end())
   {
@@ -112,40 +112,44 @@ void printDictionary(Dictionary* l,vector<void*> seen = {})
     return;
   }
   seen.push_back((void*)l);
-  Dictionary d = *l;
+  ZDict d = *l;
   ZObject val;
-  size_t k = l->size();
-  size_t i = 0;
+  size_t k = l->size;
+  size_t m = 0;
   printf("{");
-  for(auto e: d)
+  for(size_t i=0;i<l->capacity;i++)
   {
+    if(l->table[i].stat != OCCUPIED)
+      continue;
+    ZObject key = l->table[i].key;
+    ZObject val = l->table[i].val;
     void printList(zlist*,vector<void*> = {});
 
-    if(e.first.type=='j')
-      printList((zlist*)e.first.ptr,seen);
-    else if(e.first.type=='a')
-      printDictionary((Dictionary*)e.first.ptr,seen);
-    else if(e.first.type=='s')
+    if(key.type=='j')
+      printList((zlist*)key.ptr,seen);
+    else if(key.type=='a')
+      printZDict((ZDict*)key.ptr,seen);
+    else if(key.type=='s')
     {
-      printf("\"%s\"",unescape(*(string*)e.first.ptr).c_str());
+      printf("\"%s\"",unescape(*(string*)key.ptr).c_str());
     }
     else
-      printf("%s",ZObjectToStr(e.first).c_str());
+      printf("%s",ZObjectToStr(key).c_str());
     printf(" : ");
     //
-    if(e.second.type=='j')
-      printList((zlist*)e.second.ptr,seen);
-    else if(e.second.type=='a')
-      printDictionary((Dictionary*)e.second.ptr,seen);
-    else if(e.second.type=='s')
+    if(val.type=='j')
+      printList((zlist*)val.ptr,seen);
+    else if(val.type=='a')
+      printZDict((ZDict*)val.ptr,seen);
+    else if(val.type=='s')
     {
-      printf("\"%s\"",unescape(*(string*)e.second.ptr).c_str());
+      printf("\"%s\"",unescape(*(string*)val.ptr).c_str());
     }
     else
-      printf("%s",ZObjectToStr(e.second).c_str());
-    if(i!=k-1)
+      printf("%s",ZObjectToStr(val).c_str());
+    if(m!=k-1)
       printf(",");
-    i+=1;
+    m+=1;
   }
   printf("}");
 }
@@ -166,7 +170,7 @@ void printList(zlist* l,vector<void*> seen = {})
     if(val.type=='j')
       printList((zlist*)val.ptr,seen);
     else if(val.type=='a')
-      printDictionary((Dictionary*)val.ptr,seen);
+      printZDict((ZDict*)val.ptr,seen);
     else if(val.type=='s')
     {
       printf("\"%s\"",unescape(*(string*)val.ptr).c_str());
@@ -202,7 +206,7 @@ ZObject print(ZObject* args,int32_t argc)
         if(args[k].type=='j')
            printList((zlist*)args[k].ptr);
         else if(args[k].type=='a')
-           printDictionary((Dictionary*)args[k].ptr);
+           printZDict((ZDict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
@@ -251,7 +255,7 @@ ZObject PRINTF(ZObject* args,int32_t argc)
           if(args[j].type=='j')
            printList((zlist*)args[j].ptr);
           else if(args[j].type=='a')
-           printDictionary((Dictionary*)args[j].ptr);
+           printZDict((ZDict*)args[j].ptr);
           else if(args[j].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[j].ptr);
           else
@@ -310,7 +314,7 @@ ZObject println(ZObject* args,int32_t argc)
         if(args[k].type=='j')
           printList((zlist*)args[k].ptr);
         else if(args[k].type=='a')
-          printDictionary((Dictionary*)args[k].ptr);
+          printZDict((ZDict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
           printByteArray((vector<uint8_t>*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
@@ -409,7 +413,7 @@ ZObject LEN(ZObject* args,int32_t argc)
     else if(args[0].type=='j')
         ret.l = ((zlist*)args[0].ptr)->size;
     else if(args[0].type=='a')
-        ret.l = ((Dictionary*)args[0].ptr)->size();
+        ret.l = ((ZDict*)args[0].ptr)->size;
     else if(args[0].type == 'c')
         ret.l = ((vector<uint8_t>*)args[0].ptr)->size();
     else
@@ -433,7 +437,7 @@ ZObject OPEN(ZObject* args,int32_t argc)
 
         return Z_Err(FileOpenError,strerror(errno));
     }
-    FileObject* f = allocFileObject();
+    zfile* f = alloczfile();
     f->fp = fp;
     f->open = true;
     ret.type = 'u';
@@ -456,7 +460,7 @@ ZObject READ(ZObject* args,int32_t argc)
         return Z_Err(ValueError,"Error optional delimeter argument to read() should be string of length 1");
       delim = l[0];  
     }
-    FileObject fobj = *(FileObject*)args[0].ptr;
+    zfile fobj = *(zfile*)args[0].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* fp = fobj.fp;
@@ -479,7 +483,7 @@ ZObject CLOSE(ZObject* args,int32_t argc)
   //  printf("args[0].type = %c\n",args[0].type);
     if(args[0].type!='u')
         return Z_Err(TypeError,"Error close() takes a file stream as an argument!");
-    FileObject* fobj = (FileObject*)args[0].ptr;
+    zfile* fobj = (zfile*)args[0].ptr;
     if(!fobj->open)
     {
       return Z_Err(ValueError,"Error file already closed!");
@@ -545,7 +549,7 @@ ZObject WRITE(ZObject* args,int32_t argc)
   if(!validateArgTypes("write",patt,args,argc,ret))
     return ret;
   string& data = *(string*)args[0].ptr;
-  FileObject* p = (FileObject*)args[1].ptr;
+  zfile* p = (zfile*)args[1].ptr;
   FILE* fp = p->fp;
   if(fputs(data.c_str(),fp)==EOF)
     return Z_Err(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
@@ -904,7 +908,7 @@ ZObject getFileSize(ZObject* args,int32_t argc)
     if(args[0].type!='u')
         return Z_Err(TypeError,"Error getFileSize() takes an open file as argument!");
   
-    FileObject* p = (FileObject*)args[0].ptr;
+    zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
       return Z_Err(FileIOError,"Unable to get size of closed file!");
     FILE* currF = p->fp;
@@ -921,7 +925,7 @@ ZObject FTELL(ZObject* args,int32_t argc)
   {
     if(args[0].type!='u')
         return Z_Err(TypeError,"Error ftell() takes an open file as argument!");
-    FileObject* p = (FileObject*)args[0].ptr;
+    zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
       return Z_Err(FileIOError,"Error file is closed!");
     FILE* currF = p->fp;
@@ -940,7 +944,7 @@ ZObject REWIND(ZObject* args,int32_t argc)
     if(args[0].type!='u')
         return Z_Err(TypeError,"Error rewind() takes an open file as argument!");
   
-    FileObject* p = (FileObject*)args[0].ptr;
+    zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
       return Z_Err(FileIOError,"Unable to rewind closed file!");
     FILE* currF = p->fp;
@@ -1544,7 +1548,7 @@ ZObject writelines(ZObject* args,int32_t argc)
                     }
                     f+=1;
                 }
-                FileObject* p = (FileObject*)args[1].ptr;
+                zfile* p = (zfile*)args[1].ptr;
                 FILE* currF = p->fp;
                 fputs(data.c_str(),currF);
                 ZObject ret = nil;
@@ -1565,7 +1569,7 @@ ZObject readlines(ZObject* args,int32_t argc)
       if(args[0].type!='u')
           return Z_Err(TypeError,"Argument not a filestream!");
       signed char ch;
-      FileObject fobj = *(FileObject*)args[0].ptr;
+      zfile fobj = *(zfile*)args[0].ptr;
       if(!fobj.open)
         return Z_Err(ValueError,"Error the file stream is closed!");
       FILE* currF = fobj.fp;
@@ -1628,7 +1632,7 @@ ZObject FREAD(ZObject* args,int32_t argc)
     int64_t e = a.l;
     auto p = (vector<uint8_t>*)args[0].ptr;
     p->resize(e);
-    FileObject fobj = *(FileObject*)args[2].ptr;
+    zfile fobj = *(zfile*)args[2].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
@@ -1667,7 +1671,7 @@ ZObject FWRITE(ZObject* args,int32_t argc)
       return Z_Err(ValueError,"Error the bytearray needs to have specified number of bytes!");
     if(l->size() == 0)
       return ret;
-    FileObject fobj = *(FileObject*)args[1].ptr;
+    zfile fobj = *(zfile*)args[1].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
@@ -1689,7 +1693,7 @@ ZObject FSEEK(ZObject* args,int32_t argc)
       return ret;
     int32_t w = 0;
     int32_t whence = args[2].i;
-    FileObject fobj = *(FileObject*)args[0].ptr;
+    zfile fobj = *(zfile*)args[0].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
@@ -1713,17 +1717,19 @@ ZObject FSEEK(ZObject* args,int32_t argc)
 }
 //
 zlist* makeListCopy(zlist);
-Dictionary* makeDictCopy(Dictionary);
+ZDict* makeDictCopy(ZDict);
 //
-Dictionary* makeDictCopy(Dictionary v)
+ZDict* makeDictCopy(ZDict v)
 {
-  Dictionary* d = allocDict();
-  for(auto e: v)
+  ZDict* d = allocDict();
+  for(size_t i=0;i<d->capacity;i++)
   {
+    if(d->table[i].stat != OCCUPIED)
+      continue;
     ZObject key,val;
-    key = e.first;
-    val = e.second;
-    d->emplace(key,val);
+    key = d->table[i].key;
+    val = d->table[i].val;
+    ZDict_set(d,key,val);
   }
   return d;
 }
@@ -1745,7 +1751,7 @@ ZObject COPY(ZObject* args,int32_t argc)
       return Z_Err(ArgumentError,"Error clone() takes one argument!");
   if(args[0].type=='a')
   {
-     Dictionary v = *(Dictionary*)args[0].ptr;
+     ZDict v = *(ZDict*)args[0].ptr;
      ZObject ret = nil;
      ret.type = 'a';
      ret.ptr = (void*)makeDictCopy(v);
@@ -1953,7 +1959,7 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
     ZObject ret = nil;
     for(size_t k=0;k<p->size;k+=1)
     {
-      if(p->arr[k]==args[1])
+      if(ZObject_equals(p->arr[k],args[1]))
       {
         ret.type = 'i';
         ret.i = k;
@@ -2143,14 +2149,14 @@ ZObject ERASE(ZObject* args,int32_t argc)
   {
      if(argc!=2)
        return Z_Err(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
-    Dictionary* d = (Dictionary*)args[0].ptr;
+    ZDict* d = (ZDict*)args[0].ptr;
     ZObject key = args[1];
     if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
       return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
-    if(d->find(key)==d->end())
-      return Z_Err(KeyError,"Error cannot erase value,key not found in the dictionary!");
-    d->erase(key);
-    ZObject ret = nil;
+    bool b = ZDict_erase(d,key);
+    ZObject ret;
+    ret.type = Z_BOOL;
+    ret.i = b;
     return ret;
   }
   else if(args[0].type == 'c')
@@ -2245,12 +2251,12 @@ ZObject asMap(ZObject* args,int32_t argc)
     ZObject x;
     x.type = 'l';
     size_t i = 0;
-    Dictionary* d = allocDict();
+    ZDict* d = allocDict();
 
     for(;i<l.size;i++)
     {
        x.l = i;
-       d->emplace(x,l.arr[i]);
+       ZDict_emplace(d,x,l.arr[i]);
     }
     ZObject ret = nil;
     ret.type = 'a';
@@ -2263,13 +2269,15 @@ ZObject ASLIST(ZObject* args,int32_t argc)
       return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
     if(argc!=1)
       return Z_Err(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
-    Dictionary d = *(Dictionary*)args[0].ptr;
+    ZDict d = *(ZDict*)args[0].ptr;
     zlist* list = allocList();
-    for(auto e: d)
+    for(size_t i=0;i<d.capacity;i++)
     {
+      if(d.table[i].stat != OCCUPIED)
+        continue;
       zlist* sub = allocList();
-      zlist_push(sub,e.first);
-      zlist_push(sub,e.second);
+      zlist_push(sub,d.table[i].key);
+      zlist_push(sub,d.table[i].val);
       
       ZObject x;
       x.type = 'j';
@@ -2326,11 +2334,12 @@ ZObject EMPLACE(ZObject* args,int32_t argc)
          return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
   if(argc!=3)
     return Z_Err(ArgumentError,"Error method emplace() takes 2 arguments!");
-  Dictionary* p = (Dictionary*)args[0].ptr;
+  ZDict* p = (ZDict*)args[0].ptr;
   ZObject& key = args[1];
   if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
     return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
-  p->emplace(key,args[2]);
+
+  ZDict_emplace(p,key,args[2]);
   ZObject ret = nil;
   return ret;
 
@@ -2341,11 +2350,13 @@ ZObject HASKEY(ZObject* args,int32_t argc)
          return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
   if(argc!=2)
     return Z_Err(ArgumentError,"Error method hasKey() takes 1 argument!");
-  Dictionary* p = (Dictionary*)args[0].ptr;
+  ZDict* p = (ZDict*)args[0].ptr;
 
   ZObject ret = nil;
+  ZObject tmp;
   ret.type= 'b';
-  ret.i = (p->find(args[1])!=p->end());
+  ret.i = ZDict_get(p,args[1],&tmp);
+
   return ret;
 
 }

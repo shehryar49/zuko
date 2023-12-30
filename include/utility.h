@@ -25,6 +25,7 @@ SOFTWARE.*/
 #include <stdlib.h>
 #include <string>
 #include "zuko.h"
+
 using namespace std;
 
 string IntToHex(int i)
@@ -458,8 +459,8 @@ string ZObjectToStr(const ZObject& a)
         else if(a.type=='a')
         {
             //printf("returning ZObjectToStr of dictionary\n");
-						string DictToStr(Dictionary*,vector<void*>* = nullptr);
-            Dictionary* p = (Dictionary*)a.ptr;
+						string DictToStr(ZDict*,vector<void*>* = nullptr);
+            ZDict* p = (ZDict*)a.ptr;
             return DictToStr(p);
         }
         return "nil";
@@ -485,13 +486,13 @@ string ZListToStr(zlist* p,vector<void*>* prev=nullptr)
       }
 			else if(p->arr[k].type=='a')
       {
-				 string DictToStr(Dictionary*,vector<void*>* = nullptr);
+				 string DictToStr(ZDict*,vector<void*>* = nullptr);
 
          if( std::find(seen.begin(), seen.end(), p->arr[k].ptr) != seen.end())
            res+="{...}";
          else
          {
-            res+=DictToStr((Dictionary*)p->arr[k].ptr,&seen);
+            res+=DictToStr((ZDict*)p->arr[k].ptr,&seen);
          }
       }
 			else if(p->arr[k].type=='s')
@@ -508,7 +509,7 @@ string ZListToStr(zlist* p,vector<void*>* prev=nullptr)
   return res+"]";
 }
 
-string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
+string DictToStr(ZDict* p,vector<void*>* prev=nullptr)
 {
 
     string res = "{";
@@ -517,11 +518,14 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 		if(prev!=nullptr)
 		  seen = *prev;
 		seen.push_back((void*)p);
-		Dictionary d = *p;
-    for(auto e: d)
+		ZDict d = *p;
+    for(size_t i=0;i<d.capacity;i++)
     {
-       ZObject key = e.first;
-       ZObject val = e.second;
+       if(d.table[i].stat != OCCUPIED)
+         continue;
+       
+       ZObject key = d.table[i].key;
+       ZObject val = d.table[i].val;
        if(key.type=='s')
           res+= "\""+unescape(*(string*)key.ptr)+"\"";
        else if(key.type=='a')
@@ -530,7 +534,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 					 res+="{...}";
 				 else
 				 {
-						res+=DictToStr((Dictionary*)key.ptr,&seen);
+						res+=DictToStr((ZDict*)key.ptr,&seen);
 				 }
 			 }
 			 else if(key.type=='j')
@@ -553,7 +557,7 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 					 res+="{...}";
 				 else
 				 {
-						res+=DictToStr((Dictionary*)val.ptr,&seen);
+						res+=DictToStr((ZDict*)val.ptr,&seen);
 				 }
 			 }
 			 else if(val.type=='j')
@@ -565,10 +569,11 @@ string DictToStr(Dictionary* p,vector<void*>* prev=nullptr)
 			 }
        else
           res+=ZObjectToStr(val);
-       if(k!=d.size()-1)
-         res+=(",");
+       res+=',';
        k+=1;
     }
+    if(res.length() > 0)
+      res.pop_back();
     res+="}";
    return res;
 }

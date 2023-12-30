@@ -2,14 +2,15 @@
 #define ZLIST_H
 #include <stdio.h>
 #include <stdlib.h>
-#include "object.h"
-#include "ZObject.h"
-typedef struct zlist
+#include <string.h>
+#include "zobject.h"
+
+struct zlist
 {
   ZObject* arr;
   size_t size;
   size_t capacity;
-}zlist;
+};
 void zlist_init(zlist* p)
 {
     p->arr = (ZObject*)malloc(sizeof(ZObject)*4);

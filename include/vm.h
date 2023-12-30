@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
-#include "zuko.h"
+#include "zapi.h"
 #ifdef THREADED_INTERPRETER
   #ifdef __GNUC__
     #define NEXT_INST goto *targets[*k];
@@ -103,7 +103,7 @@ string fullform(char t)
   else if (t == Z_FILESTREAM)
     return "File Stream";
   else if (t == Z_DICT)
-    return "Dictionary";
+    return "ZDict";
   else if (t == Z_MODULE)
     return "Module";
   else if (t == Z_FUNC)
@@ -139,13 +139,13 @@ Klass *allocKlass();
 KlassObject *allocKlassObject();
 zlist *allocList();
 vector<uint8_t>* allocByteArray();
-Dictionary *allocDict();
+ZDict *allocDict();
 string *allocString();
 string *allocMutString();
 FunObject *allocFunObject();
 FunObject *allocCoroutine();
 Coroutine *allocCoObj();
-FileObject *allocFileObject();
+zfile *alloczfile();
 Module *allocModule();
 NativeFunction *allocNativeFun();
 FunObject* allocFunObject();
@@ -223,7 +223,7 @@ public:
     api.a2 = &allocDict;
     api.a3 = &allocString;
     api.a4 = &allocMutString;
-    api.a5 = &allocFileObject;
+    api.a5 = &alloczfile;
     api.a6 = &allocKlass;
     api.a7 = &allocKlassObject;
     api.a8 = &allocNativeFun;
@@ -392,20 +392,22 @@ public:
       // so we only process objects referenced by it and not curr itself
       if (curr.type == Z_DICT)
       {
-        Dictionary &d = *(Dictionary *)curr.ptr;
-        for (auto e : d)
+        ZDict &d = *(ZDict *)curr.ptr;
+        for (size_t i=0;i<d.capacity;i++)
         {
+          if(d.table[i].stat != OCCUPIED)
+            continue;
           // if e.first or e.second is a heap object and known to our memory pool
           // add it to aux
-          if (isHeapObj(e.first) && (it = memory.find(e.first.ptr)) != memory.end() && !(it->second.isMarked))
+          if (isHeapObj(d.table[i].key) && (it = memory.find(d.table[i].key.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.first);
+            zlist_push(&aux,d.table[i].key);
           }
-          if (isHeapObj(e.second) && (it = memory.find(e.second.ptr)) != memory.end() && !(it->second.isMarked))
+          if (isHeapObj(d.table[i].val) && (it = memory.find(d.table[i].val.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.second);
+            zlist_push(&aux,d.table[i].val);
           }
         }
       }
@@ -616,22 +618,29 @@ public:
       }
       else if (m.type == Z_DICT)
       {
-        delete (Dictionary *)e;
-        allocated -= sizeof(Dictionary);
+        ZDict_destroy((ZDict*)e);
+        delete (ZDict *)e;
+        allocated -= sizeof(ZDict);
       }
       else if (m.type == Z_FILESTREAM)
       {
-        delete (FileObject *)e;
-        allocated -= sizeof(FileObject);
+        delete (zfile *)e;
+        allocated -= sizeof(zfile);
       }
-      else if (m.type == Z_FUNC || m.type=='g')
+      else if (m.type == Z_FUNC)
       {
-        zlist_destroy(&((FunObject*)e) ->opt );
+        zlist_destroy(&((FunObject*)e) ->opt);
+        delete (FunObject *)e;
+        allocated -= sizeof(FunObject);
+      }
+      else if(m.type == Z_COROUTINE)
+      {
         delete (FunObject *)e;
         allocated -= sizeof(FunObject);
       }
       else if (m.type == 'z')
       {
+        zlist_destroy(&((Coroutine*)e)->locals);
         delete (Coroutine *)e;
         allocated -= sizeof(Coroutine);
       }
@@ -828,7 +837,7 @@ public:
     char c1;
     //zlist pl1;      // zuko list 1
     zlist* pl_ptr1; // zuko list pointer 1
-    //Dictionary pd1;
+    //ZDict pd1;
     ZObject alwaysi32;
     ZObject alwaysByte;
     vector<ZObject> values;
@@ -836,7 +845,7 @@ public:
     alwaysi32.type = Z_INT;
     alwaysByte.type = Z_BYTE;
     int32_t* alwaysi32ptr = &alwaysi32.i;
-    Dictionary *pd_ptr1;
+    ZDict *pd_ptr1;
     vector<uint8_t>* bt_ptr1;
     k = program + offset;
     
@@ -943,12 +952,12 @@ public:
               spitErr(TypeError,"Key of type "+fullform(p2.type)+" not allowed.");
               NEXT_INST;
             }
-            if (pd_ptr1->find(p2) != pd_ptr1->end())
+            if (ZDict_get(pd_ptr1,p2,&p4))
             {
               spitErr(ValueError, "Duplicate keys in dictionary not allowed!");
               NEXT_INST;
             }
-            pd_ptr1->emplace(p2, p1);
+            ZDict_set(pd_ptr1,p2,p1);
             i1 -= 1;
           }
           p1.ptr = (void *)pd_ptr1;
@@ -1058,13 +1067,8 @@ public:
         }
         else if (p3.type == Z_DICT)
         {
-          pd_ptr1 = (Dictionary *)p3.ptr;
-          if (pd_ptr1->find(p1) == pd_ptr1->end())
-          {
-            spitErr(ValueError, "Error given key is not present in dictionary!");
-            NEXT_INST;
-          }
-          (*pd_ptr1)[p1] = p2;
+          pd_ptr1 = (ZDict *)p3.ptr;
+          ZDict_set(pd_ptr1,p1,p2);
         }
         else
         {
@@ -1493,15 +1497,14 @@ public:
       {
         executing.pop_back();
         zlist_fastpop(&STACK,&p1);
-        //locals
-        //IMPORTANT values = {STACK.end() - (STACK.size - frames.back()), STACK.end()};
-        zlist_eraseRange(&STACK,STACK.size - (STACK.size - frames.back()),STACK.size - 1);
+        ZObject* locals = STACK.arr + frames.back();
+        size_t total = STACK.size - frames.back();
+        STACK.size = frames.back();
         zlist_fastpop(&STACK,&p2);//genObj
-        
-
         Coroutine *g = (Coroutine *)p2.ptr;
-        zlist_resize(&(g->locals),values.size());
-        memcpy(g->locals.arr,&values[0],values.size()*sizeof(ZObject));
+        zlist_resize(&(g->locals),total);
+        if(total != 0)
+          memcpy(g->locals.arr,locals,total*sizeof(ZObject));
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = false;
@@ -1509,18 +1512,21 @@ public:
         zlist_push(&STACK,p1);
         k = callstack[callstack.size() - 1] - 1;
         callstack.pop_back();
-        k++; NEXT_INST;
+        k++; 
+        NEXT_INST;
       }
       CASE_CP YIELD_AND_EXPECTVAL:
       {
         executing.pop_back();
         zlist_fastpop(&STACK,&p2);
-      //IMPORTANT  values = {STACK.end() - (STACK.size - frames.back()), STACK.end()};
-        zlist_eraseRange(&STACK,STACK.size - (STACK.size - frames.back()),STACK.size - 1);
+        ZObject* locals = STACK.arr + frames.back();
+        size_t total = STACK.size - frames.back();
+        STACK.size = frames.back();
         zlist_fastpop(&STACK,&p1);
         Coroutine *g = (Coroutine *)p1.ptr;
-        zlist_resize(&(g->locals),values.size());
-        memcpy(g->locals.arr,&values[0],values.size()*sizeof(ZObject));
+        zlist_resize(&(g->locals),total);
+        if(total != 0)
+          memcpy(g->locals.arr,locals,total*sizeof(ZObject));
         g->curr = k - program + 1;
         g->state = SUSPENDED;
         g->giveValOnResume = true;
@@ -1541,13 +1547,12 @@ public:
         executing.pop_back();
         ZObject val;
         zlist_fastpop(&STACK,&val);
-        //IMPORTANT values = {STACK.end() - (STACK.size - frames.back()), STACK.end()};
-        zlist_eraseRange(&STACK,STACK.size - (STACK.size - frames.back()),STACK.size - 1);
+        //we don't really need to save the coroutines locals anymore
+        STACK.size = frames.back();
         ZObject genObj;
         zlist_fastpop(&STACK,&genObj);
         Coroutine *g = (Coroutine *)genObj.ptr;
-        zlist_resize(&(g->locals),values.size());
-        memcpy(g->locals.arr,&values[0],values.size()*sizeof(ZObject));
+        g->locals.size = 0;
         g->curr = k - program + 1;
         g->state = STOPPED;
         frames.pop_back();
@@ -2078,7 +2083,7 @@ public:
             NEXT_INST;
         }
         p3.type = Z_BOOL;
-        p3.i = (bool)(p1 == p2);
+        p3.i = (bool)(ZObject_equals(p1,p2));
         zlist_push(&STACK,p3);
         k++; NEXT_INST;
       }
@@ -2209,14 +2214,14 @@ public:
         }
         else if (p2.type == Z_DICT)
         {
-          Dictionary* d = (Dictionary *)p2.ptr;
-          if (d->find(p1) == d->end())
+          ZDict* d = (ZDict *)p2.ptr;
+          ZObject res;
+          if (!ZDict_get(d,p1,&res))
           {
             orgk = k - program;
             spitErr(KeyError, "Error key " + ZObjectToStr(p1) + " not found in the dictionary!");
             NEXT_INST;
           }
-          ZObject res = (*d)[p1];
           zlist_push(&STACK,res);
         }
         else if (p2.type == Z_STR || p2.type == Z_MSTR)
@@ -2276,7 +2281,7 @@ public:
           PromoteType(p1, Z_INT64);
         else if (p1.type == Z_INT64 && p2.type == Z_INT)
           PromoteType(p2, Z_INT64);
-        p3.i = (bool)!(p1 == p2);
+        p3.i = (bool)!(ZObject_equals(p1,p2));
         zlist_push(&STACK,p3);
         k++; NEXT_INST;
       }
@@ -2337,7 +2342,7 @@ public:
             {
               size_t idx = res->size;
               zlist_resize(res,res->size+src->size);
-              memcpy(res->arr+idx,src->arr,src->size);
+              memcpy(res->arr+idx,src->arr,src->size*sizeof(ZObject));
 //              res->insert(res->end(),src->begin(),src->end())
             }
           }
@@ -2887,13 +2892,14 @@ public:
           g->fun = f;
           g->curr = f->i;
           g->state = SUSPENDED;
-          //IMPORTANT vector<ZObject> locals = {STACK.end() - N, STACK.end()};
-          zlist_eraseRange(&STACK,STACK.size - N,STACK.size - 1);
-          //zlist_resize(&(g->locals),locals.size());
-          //memcpy(g->locals.arr,&locals[0],locals.size()*sizeof(ZObject));
+          ZObject* locals = STACK.arr + STACK.size - N;
+          STACK.size -= N;
+          zlist_resize(&(g->locals),N);
+          if(N != 0)
+            memcpy(g->locals.arr,locals,N*sizeof(ZObject));
           g->giveValOnResume = false;
           ZObject T;
-          T.type = 'z';
+          T.type = Z_COROUTINE_OBJ;
           T.ptr = g;
           zlist_push(&STACK,T);
           DoThreshholdBusiness();
@@ -3665,13 +3671,13 @@ FunObject* allocCoroutine() //coroutine can be represented by FunObject
   vm.memory.emplace((void *)p, m);
   return p;
 }
-FileObject *allocFileObject()
+zfile *alloczfile()
 {
 
-  FileObject *p = new FileObject;
+  zfile *p = new zfile;
   if (!p)
   {
-    fprintf(stderr,"allocFileObject(): error allocating memory!\n");
+    fprintf(stderr,"alloczfile(): error allocating memory!\n");
     exit(0);
   }
   vm.allocated += sizeof(zlist);
@@ -3681,15 +3687,16 @@ FileObject *allocFileObject()
   vm.memory.emplace((void *)p, m);
   return p;
 }
-Dictionary *allocDict()
+ZDict *allocDict()
 {
-  Dictionary *p = new Dictionary;
+  ZDict *p = new ZDict;
   if (!p)
   {
     fprintf(stderr,"allocDict(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(Dictionary);
+  ZDict_init(p);
+  vm.allocated += sizeof(ZDict);
   MemInfo m;
   m.type = Z_DICT;
   m.isMarked = false;
