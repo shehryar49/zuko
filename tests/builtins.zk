@@ -1,0 +1,8 @@
+# isalpha
+println(isalpha("ab8")) # false
+# ascii
+println(ascii("A")) # 65
+# char
+println(char(97)) # a
+# reverse
+println(reverse("abc")) #cba
