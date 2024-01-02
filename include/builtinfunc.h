@@ -30,7 +30,6 @@ SOFTWARE.*/
 using namespace std;
 
 std::unordered_map<string,BuiltinFunc> funcs;
-
 int32_t f;
 string fullform(char);
 void PromoteType(ZObject&,char);
@@ -61,13 +60,15 @@ ZObject Z_ISALPHA(ZObject* args,int32_t argc)
     return Z_Err(ArgumentError,"Error isalpha() takes one argument!");
   if(args[0].type!=Z_STR && args[0].type!=Z_MSTR)
     return Z_Err(TypeError,"Error isalpha() takes a string argument!");
-  string s = *(string*)args[0].ptr;
+  ZStr* s = AS_STR(args[0]);
   ZObject ret = nil;
   ret.type = 'b';
   ret.i = 0;
-  for(auto e: s)
+  char* p = s->val;
+  char ch;
+  while((ch = *p++))
   {
-    if(!isalpha(e))
+    if(!isalpha(ch))
       return ret;
   }
   ret.i = 1;
@@ -80,13 +81,13 @@ ZObject ASCII(ZObject* args,int32_t argc)
     return Z_Err(ArgumentError,"Error ascii() takes one argument!");
   if(args[0].type!='s' && args[0].type!=Z_MSTR)
     return Z_Err(TypeError,"Error ascii() takes a string argument!");
-  string s = *(string*)args[0].ptr;
-  if(s.length()!=1)
+  ZStr* s = AS_STR(args[0]);
+  if(s->len != 1)
       return Z_Err(ValueError,"Error ascii() takes a string argument of length 1!");
  
   ZObject ret = nil;
   ret.type = 'i';
-  ret.i = s[0];
+  ret.i = s->val[0];
   return ret;
 }
 ZObject TOCHAR(ZObject* args,int32_t argc)
@@ -96,11 +97,9 @@ ZObject TOCHAR(ZObject* args,int32_t argc)
   if(args[0].type!='i')
     return Z_Err(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
-  string s;
-  s+=ch;
   ZObject ret = nil;
-  string* p = allocString();
-  *p = s;
+  ZStr* p = allocString(1);
+  p->val[0] = ch;
   return ZObjFromStrPtr(p);
 }
 string unescape(string);
@@ -131,7 +130,7 @@ void printZDict(ZDict* l,vector<void*> seen = {})
       printZDict((ZDict*)key.ptr,seen);
     else if(key.type=='s')
     {
-      printf("\"%s\"",unescape(*(string*)key.ptr).c_str());
+      printf("\"%s\"",unescape(AS_STR(key)->val).c_str());
     }
     else
       printf("%s",ZObjectToStr(key).c_str());
@@ -143,7 +142,7 @@ void printZDict(ZDict* l,vector<void*> seen = {})
       printZDict((ZDict*)val.ptr,seen);
     else if(val.type=='s')
     {
-      printf("\"%s\"",unescape(*(string*)val.ptr).c_str());
+      printf("\"%s\"",unescape(AS_STR(val)->val).c_str());
     }
     else
       printf("%s",ZObjectToStr(val).c_str());
@@ -173,7 +172,7 @@ void printList(zlist* l,vector<void*> seen = {})
       printZDict((ZDict*)val.ptr,seen);
     else if(val.type=='s')
     {
-      printf("\"%s\"",unescape(*(string*)val.ptr).c_str());
+      printf("\"%s\"",unescape((ZStr*)val.ptr).c_str());
     }
     else
     {
@@ -236,15 +235,15 @@ ZObject PRINTF(ZObject* args,int32_t argc)
       return Z_Err(ArgumentError,"At least one argument needed!");
     if(args[0].type!='s' && args[0].type!=Z_MSTR)
       return Z_Err(TypeError,"Argument 1 must be a string!");
-    string& format = *(string*)args[0].ptr;
+    ZStr* format = (ZStr*)args[0].ptr;
     int32_t k = 0;
-    int32_t l = format.length();
+    int32_t l = format->len;
     int32_t j = 1;
     while(k<l)
     {
-        if(format[k] == '%')
+        if(format->val[k] == '%')
         {
-          if(k+1 < l && format[k+1] == '%')
+          if(k+1 < l && format->val[k+1] == '%')
           {
             printf("%%");
             k+=2;
@@ -263,7 +262,7 @@ ZObject PRINTF(ZObject* args,int32_t argc)
           j+=1;
         }
         else
-          printf("%c",format[k]);
+          printf("%c",format->val[k]);
         k+=1;
     }
     ZObject ret = nil;
@@ -276,16 +275,16 @@ ZObject FORMAT(ZObject* args,int32_t argc)
       return Z_Err(ArgumentError,"At least one argument needed!");
     if(args[0].type!=Z_STR && args[0].type!=Z_MSTR)
       return Z_Err(TypeError,"Argument 1 must be a string!");
-    const string& format = *(string*)args[0].ptr;
+    ZStr* format = (ZStr*)args[0].ptr;
     int32_t k = 0;
-    int32_t l = format.length();
+    int32_t l = format->len;
     int32_t j = 1;
-    string* p = allocString();
+    string* p = allocMutString();
     while(k<l)
     {
-        if(format[k] == '%')
+        if(format->val[k] == '%')
         {
-          if(k+1 < l && format[k+1] == '%')
+          if(k+1 < l && format->val[k+1] == '%')
           {
             *p+="%%";
             k+=2;
@@ -297,11 +296,11 @@ ZObject FORMAT(ZObject* args,int32_t argc)
           j+=1;
         }
         else
-          *p+=format[k];
+          *p+=format->val[k];
         k+=1;
     }
 
-    return ZObjFromStrPtr(p);
+    return ZObjFromMStrPtr(p);
 }
 
 //void printList(zlist);
@@ -349,8 +348,8 @@ ZObject input(ZObject* args,int32_t argc)
     {
       if(args[0].type!='s' && args[0].type!=Z_MSTR)
         return Z_Err(TypeError,"Error input() takes a string argument!");
-      string& prompt = *(string*)args[0].ptr;
-      printf("%s",prompt.c_str());
+      char* prompt = ((ZStr*)args[0].ptr)->val;
+      printf("%s",prompt);
     }
     ZObject ret = nil;
     string s;
@@ -359,14 +358,11 @@ ZObject input(ZObject* args,int32_t argc)
     {
         ch = fgetc(stdin);
         if(ch=='\n')
-        {
-            break;
-        }
-
-          s+=ch;
+          break;
+        s+=ch;
     }
-    string* p = allocString();
-    *p = s;
+    ZStr* p = allocString(s.length());
+    strcpy(p->val,s.c_str());
     return ZObjFromStrPtr(p);
 }
 ZObject TYPEOF(ZObject* args,int32_t argc)
@@ -376,8 +372,9 @@ ZObject TYPEOF(ZObject* args,int32_t argc)
       return Z_Err(TypeError,"Error typeof() takes one argument only!");
   }
   string fullform(char);
-  string* p = allocString();
-  *p = fullform(args[0].type);
+  string s = fullform(args[0].type);
+  ZStr* p = allocString(s.length());
+  strcpy(p->val,s.c_str());
   return ZObjFromStrPtr(p);
 }
 ZObject isInstanceOf(ZObject* args,int32_t argc)
@@ -405,10 +402,14 @@ ZObject LEN(ZObject* args,int32_t argc)
 
     ZObject ret = nil;
     ret.type = Z_INT64;
-    if(args[0].type=='s' || args[0].type == Z_MSTR)
+    if(args[0].type=='s')
     {
-      string& s = *(string*)args[0].ptr;
-      ret.l = s.length();
+      ZStr* s = (ZStr*)args[0].ptr;
+      ret.l = s->len;
+    }
+    else if( args[0].type == Z_MSTR)
+    {
+      //IMPORTANT implement
     }
     else if(args[0].type=='j')
         ret.l = ((zlist*)args[0].ptr)->size;
@@ -427,16 +428,13 @@ ZObject OPEN(ZObject* args,int32_t argc)
     ZObject ret = nil;
     if(!validateArgTypes("open",patt,args,argc,ret))
       return ret;
-    string& filename = *(string*)args[0].ptr;
-    string& mode = *(string*)args[1].ptr;
+    string filename = AS_STR(args[0])->val;
+    string mode = AS_STR(args[1])->val;
     if(mode!="r" && mode!="w" && mode!="a" && mode!="rw" && mode!="rw+" && mode!="rb" && mode!="wb")
         return Z_Err(ValueError,"Error unknown mode: \""+mode+"\"");
     FILE* fp = fopen(filename.c_str(), mode.c_str());
     if(!fp)
-    {
-
         return Z_Err(FileOpenError,strerror(errno));
-    }
     zfile* f = alloczfile();
     f->fp = fp;
     f->open = true;
@@ -455,10 +453,10 @@ ZObject READ(ZObject* args,int32_t argc)
     {
       if(args[1].type!='s' && args[1].type!=Z_MSTR)
         return Z_Err(TypeError,"Error argument 2 to read() function should be of type string!");
-      string& l = *(string*)args[1].ptr;
-      if(l.length()!=1)
+      ZStr* l = AS_STR(args[1]);
+      if(l->len!=1)
         return Z_Err(ValueError,"Error optional delimeter argument to read() should be string of length 1");
-      delim = l[0];  
+      delim = l->val[0];  
     }
     zfile fobj = *(zfile*)args[0].ptr;
     if(!fobj.open)
@@ -467,7 +465,7 @@ ZObject READ(ZObject* args,int32_t argc)
     if(!fp)
         return Z_Err(FileIOError,"Error can't read from a closed file stream!");
     char ch;
-    string* p = allocString();
+    string* p = allocMutString();
     while((ch = fgetc(fp))!=EOF)
     {
         if(ch==delim)
@@ -548,13 +546,12 @@ ZObject WRITE(ZObject* args,int32_t argc)
   ZObject ret = nil;
   if(!validateArgTypes("write",patt,args,argc,ret))
     return ret;
-  string& data = *(string*)args[0].ptr;
+  ZStr* data = AS_STR(args[0]);
   zfile* p = (zfile*)args[1].ptr;
   FILE* fp = p->fp;
-  if(fputs(data.c_str(),fp)==EOF)
+  if(fputs(data->val,fp)==EOF)
     return Z_Err(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
-  ret.type = 'n';
-  //printf("done\n");
+  ret.type = Z_NIL;
   return ret;
 }
 ZObject EXIT(ZObject* args,int32_t argc)
@@ -581,11 +578,12 @@ ZObject REVERSE(ZObject* args,int32_t argc)
         return Z_Err(TypeError,"Error reverse() takes a string or list argument!");
     if(q.type=='s')
     {
-        string* l = allocString();
-        string& data = *(string*)q.ptr;
-        for(int32_t k=data.length()-1;k>=0;k--)
+        ZStr* data = AS_STR(q);
+        ZStr* l = allocString(data->len);
+        size_t i = 0;
+        for(int32_t k=data->len-1;k>=0;k--)
         {
-            *l+=data[k];
+            l->val[i++] = data->val[k];
         }
         return ZObjFromStrPtr(l);
     }
@@ -630,8 +628,10 @@ ZObject BYTES(ZObject* args,int32_t argc)
     }
     else if(e.type=='s' || e.type == Z_MSTR)
     {
-       string& s = *(string*)e.ptr;
-       for(auto ch: s)
+       ZStr* s = AS_STR(e);
+       char* ptr = s->val;
+       char ch;
+       while((ch = *ptr++))
          p->push_back((uint8_t)ch);
        return ret;
     }

@@ -23,6 +23,7 @@ SOFTWARE.*/
 #define ZUKO_API_H
 
 #include "zobject.h"
+#include "zstr.h"
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -125,7 +126,7 @@ Klass* AccessError;
 
 //
 //Helper and extension API Functions
-inline ZObject ZObjFromStrPtr(string* s)
+inline ZObject ZObjFromStrPtr(ZStr* s)
 {
   ZObject ret;
   ret.type = 's';
@@ -237,7 +238,7 @@ inline ZObject ZObjFromFile(zfile* file)
 #define AS_INT64(x) x.l
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) (uint8_t)x.i
-#define AS_STR(x) *(string*)x.ptr
+#define AS_STR(x) ((ZStr*)x.ptr)
 #define AS_MSTR(x) *(string*)x.ptr
 #define AS_DICT(x) *(ZDict*)x.ptr
 #define AS_LIST(x) *(PltList*)x.ptr
@@ -250,7 +251,7 @@ inline ZObject ZObjFromFile(zfile* file)
 
 typedef zlist*(*fn1)();//allocList
 typedef ZDict*(*fn2)();//allocZDict
-typedef string*(*fn3)();//allocString
+typedef ZStr*(*fn3)(size_t);//allocString
 typedef string*(*fn4)();//allocMutString
 typedef zfile*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
@@ -277,10 +278,11 @@ fn11 vm_callObject;
 fn12 vm_markImportant;
 fn13 vm_unmarkImportant;
 //The below helper functions make use of above function pointers
-inline ZObject ZObjFromStr(const string& s)
+inline ZObject ZObjFromStr(const char* str)
 {
-  string* ptr = vm_allocString();
-  *ptr = s;
+  size_t len = strlen(str);
+  ZStr* ptr = vm_allocString(len);
+  memcpy(ptr->val,str,len);
   ZObject ret;
   ret.type = 's';
   ret.ptr = (void*)ptr;
@@ -294,7 +296,7 @@ ZObject Z_Err(Klass* errKlass,string des)
   p->klass = errKlass;
   p->members = errKlass->members;
   p->privateMembers = errKlass->privateMembers;
-  p->members["msg"] = ZObjFromStr(des);
+  p->members["msg"] = ZObjFromStr(des.c_str()); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;

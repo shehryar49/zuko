@@ -21,7 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
-#include "zapi.h"
+#include "zuko.h"
+#include "zstr.h"
 #ifdef THREADED_INTERPRETER
   #ifdef __GNUC__
     #define NEXT_INST goto *targets[*k];
@@ -80,6 +81,7 @@ inline void PromoteType(ZObject &a, char t)
     }
   }
 }
+#define AS_STD_STR(x) (string)(((ZStr*)x.ptr)->val)
 string fullform(char t)
 {
   if (t == Z_INT)
@@ -140,7 +142,7 @@ KlassObject *allocKlassObject();
 zlist *allocList();
 vector<uint8_t>* allocByteArray();
 ZDict *allocDict();
-string *allocString();
+ZStr* allocString(size_t);
 string *allocMutString();
 FunObject *allocFunObject();
 FunObject *allocCoroutine();
@@ -262,8 +264,8 @@ public:
       E->klass = e;
       E->members = e->members;
       E->privateMembers = e->privateMembers;
-      string* s = allocString();
-      *s = msg;
+      ZStr* s = allocString(msg.length());
+      memcpy(s->val,&msg[0],msg.length());
       E->members["msg"] = ZObjFromStrPtr(s);
       p1.type = Z_OBJ;
       p1.ptr = (void*)E;
@@ -290,8 +292,8 @@ public:
       E->klass = e;
       E->members = e->members;
       E->privateMembers = e->privateMembers;
-      string* s = allocString();
-      *s = msg;
+      ZStr* s = allocString(msg.length());
+      memcpy(s->val,&msg[0],msg.length());
       E->members["msg"] = ZObjFromStrPtr(s);
       p1.type = Z_ERROBJ;
       p1.ptr = (void*)E;
@@ -651,8 +653,10 @@ public:
       }
       else if (m.type == Z_STR)
       {
-        delete (string *)e;
-        allocated -= sizeof(string);
+        ZStr* p = (ZStr*)e;
+        allocated -= sizeof(ZStr) + p->len + 1;
+        delete[] p->val;
+        delete p;
       }
       else if (m.type == Z_MSTR)
       {
@@ -727,7 +731,7 @@ public:
         if (rr.type == Z_ERROBJ)
         {
           KlassObject *E = (KlassObject*)rr.ptr;
-          s1 = meth + "():  " + *(string*)(E->members["msg"].ptr);
+          s1 = meth + "():  " + (string)((ZStr*)(E->members["msg"].ptr))->val;
           spitErr(E->klass, s1);
           return false;
         }
@@ -1089,7 +1093,7 @@ public:
         if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
-          spitErr(E->klass, *(string*)(E->members["msg"].ptr));
+          spitErr(E->klass, AS_STD_STR(E->members["msg"]));
           NEXT_INST;
         }
         zlist_eraseRange(&STACK,STACK.size - howmany,STACK.size - 1);
@@ -1106,7 +1110,7 @@ public:
         if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
-          spitErr(E->klass, *(string*)(E->members["msg"].ptr));
+          spitErr(E->klass, AS_STD_STR(E->members["msg"]));
           NEXT_INST;
         }
         zlist_eraseRange(&STACK,STACK.size - i2,STACK.size - 1);
@@ -1142,7 +1146,7 @@ public:
             {
               // The module raised an error
               KlassObject* E = (KlassObject*)p4.ptr;
-              s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
+              s1 = method_name + "():  " +  AS_STD_STR(E->members["msg"]);
               spitErr(E->klass,s1);
               NEXT_INST;
             }
@@ -1182,7 +1186,7 @@ public:
               {
                 // The module raised an error
                 KlassObject* E = (KlassObject*)p1.ptr;
-                s1 = method_name + "():  " +  *(string*)(E->members["msg"].ptr);
+                s1 = method_name + "():  " +  AS_STD_STR(E->members["msg"]);
                 spitErr(E->klass, s1);
                 NEXT_INST;
               }
@@ -1276,7 +1280,7 @@ public:
             if (rr.type == Z_ERROBJ)
             {
               KlassObject* E = (KlassObject *)rr.ptr;
-              spitErr(E->klass, fn->name + ": " + *(string*)(E->members["msg"].ptr));
+              spitErr(E->klass, fn->name + ": " + AS_STD_STR(E->members["msg"]));
               NEXT_INST;
             }
             zlist_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
@@ -1853,11 +1857,14 @@ public:
         }
         else if (c1 == Z_STR )
         {
-          string *p = allocString();
-
-          *p = *(string *)p1.ptr + *(string *)p2.ptr;
+          ZStr* a = (ZStr*)p1.ptr;
+          ZStr* b = (ZStr*)p2.ptr;
+          
+          ZStr* p = allocString(a->len + b->len);
+          memcpy(p->val, a->val, a->len);
+          memcpy(p->val + a->len, b->val, b->len);
           p3 = ZObjFromStrPtr(p);
-          zlist_push(&STACK,p3);
+          STACK.arr[STACK.size++] = p3;
           DoThreshholdBusiness();
         }
         else if (c1 == Z_INT)
@@ -2247,8 +2254,8 @@ public:
             spitErr(ValueError, "Error index is out of range!");
           }
           char c = s[p1.l];
-          string *p = allocString();
-          *p += c;
+          ZStr* p = allocString(1);
+          p->val[0] = c;
           zlist_push(&STACK,ZObjFromStrPtr(p));
           DoThreshholdBusiness();
         }
@@ -2363,12 +2370,12 @@ public:
             spitErr(ValueError,"Cannot multiply string by a negative integer!");
             NEXT_INST;
           }
-          string* src = (string*)p1.ptr;
-          string* res = allocString();
-          if(src->size()!=0)
+          ZStr* src = (ZStr*)p1.ptr;
+          ZStr* res = allocString(src->len * p2.l);
+          if(src->len != 0)
           {
-            for(size_t i=1;i<=(size_t)p2.l;i++)
-              res->insert(res->end(),src->begin(),src->end());
+           for(size_t i=0;i<(size_t)p2.l;i++)
+             memcpy(res->val+(i*src->len), src->val,src->len);
           }
           p1.type = Z_STR;
           p1.ptr = (void*)res;
@@ -2860,7 +2867,7 @@ public:
               zlist_eraseRange(&STACK,STACK.size-(N+1),STACK.size-1);
               if (p4.type == Z_ERROBJ)
               {
-                const string& msg = *(string*)(((KlassObject*)p4.ptr)->members["msg"].ptr);
+                char* msg = ((ZStr*)(((KlassObject*)p4.ptr)->members["msg"].ptr)) -> val;
                 spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
                 NEXT_INST;
               }
@@ -3260,7 +3267,8 @@ public:
         }
         if (except_targ.size() == 0)
         {
-          spitErr(ki->klass,*(string*)((*it).second.ptr) );
+          ///IMPORTANT
+          spitErr(ki->klass,((ZStr*)((*it).second.ptr))->val );
           NEXT_INST;
         }
         k = except_targ.back();
@@ -3554,21 +3562,31 @@ vector<uint8_t>* allocByteArray()
   return p;
 }
 
-char* allocString(size_t len)
+ZStr* allocString(size_t len)
 {
+  /*
+  if(len != 0)
+    return NULL;*/
 
-  char* p = new(nothrow) char[len+1];
-  if (!p)
+  ZStr* str = new(nothrow) ZStr;
+  char* buffer = new(nothrow) char[len+1];
+  if (!buffer || !str)
   {
     fprintf(stderr,"allocString(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(char*); //not actual size, but will do something about this in future
+  //The string owns this buffer
+  //it will get deleted when string gets deleted
+  buffer[len] = 0;
+  str->val = buffer;
+  str->len = len;
+
+  vm.allocated += len + 1 + sizeof(ZStr);
   MemInfo m;
   m.type = Z_STR;
   m.isMarked = false;
-  vm.memory.emplace((void *)p, m);
-  return p;
+  vm.memory.emplace((void *)str, m);
+  return str;
 }
 string *allocMutString()
 {

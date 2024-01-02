@@ -2233,8 +2233,8 @@ public:
       while (k < argc)
       {
           //elem.s = argv[k];
-          string* p = allocString();
-          *p = argv[k];
+          ZStr* p = allocString(strlen(argv[k]));
+          memcpy(p->val,argv[k],strlen(argv[k]));
           zlist_push(l,ZObjFromStrPtr(p));
           k += 1;
       }
