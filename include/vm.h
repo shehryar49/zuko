@@ -2679,8 +2679,12 @@ public:
               {
                 FunObject *p = (FunObject *)p1.ptr;
                 FunObject *rep = allocFunObject();
-                *rep = *p;
+                rep->args = p->args;
+                rep->i = p->i;
                 rep->klass = d;
+                rep->name = p->name;
+                zlist_resize(&(rep->opt),p->opt.size);
+                memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
                 p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }
@@ -2700,8 +2704,12 @@ public:
               {
                 FunObject *p = (FunObject *)p1.ptr;
                 FunObject *rep = allocFunObject();
-                *rep = *p;
+                rep->args = p->args;
+                rep->i = p->i;
                 rep->klass = d;
+                rep->name = p->name;
+                zlist_resize(&(rep->opt),p->opt.size);
+                memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
                 p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }

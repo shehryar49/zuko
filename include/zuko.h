@@ -1,6 +1,6 @@
 #ifndef ZUKO_H_
 #define ZUKO_H_
-#define ZUKO_INTERPRETER
+#define ZUKO_INTERPRETER 
 #define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
 //not defining this macro will always result in the simple switch based interpret loop
 #include <vector>

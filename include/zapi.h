@@ -33,7 +33,6 @@ using namespace std;
 
 
 
-struct ZObject;
 typedef ZObject(*NativeFunPtr)(ZObject*,int);
 
 
@@ -75,6 +74,9 @@ struct FunObject
   size_t i;
   size_t args;
   zlist opt; //default/optional parameters
+  #ifdef __cplusplus
+  FunObject& operator=(const FunObject&) = delete;
+  #endif
 };
 
 
@@ -83,6 +85,7 @@ struct NativeFunction
   Klass* klass;//address of class the function is member of (if any NULL otherwise)
   NativeFunPtr addr;
   string name;//name of function (used when printing errors)
+  NativeFunction& operator=(const NativeFunction&) = delete;
 };
 enum CoState
 {
@@ -98,6 +101,7 @@ struct Coroutine
   string name;
   FunObject* fun;//function from which this coroutine object was made
   bool giveValOnResume;
+  Coroutine& operator=(const Coroutine&) = delete;
 };
 
 //Error classes

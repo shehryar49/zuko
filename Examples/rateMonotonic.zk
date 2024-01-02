@@ -1,4 +1,4 @@
-import std/algo.plt
+import std/algo
 class Process
 {
   #class members are public by default

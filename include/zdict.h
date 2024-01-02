@@ -137,10 +137,10 @@ bool ZDict_get(ZDict* h,ZObject key,ZObject* val)
   int i = 1;
   while(h->table[idx].stat != EMPTY)
   {
-    if(h->table[idx].stat!=DELETED && ZObject_equals(h->table[idx].key,key))
+    if(ZObject_equals(h->table[idx].key,key))
     {
       *val = h->table[idx].val;
-      return true;
+      return h->table[idx].stat != DELETED;
     }
     idx = (idx + i*i) & (h->capacity - 1);
     i++;
