@@ -92,7 +92,7 @@ int main(int argc,const char* argv[])
       expectedOutput+= ch;
     fin.close();
     line = path+" ";
-    line += test+".zu > out.txt";
+    line += test+".zk > out.txt";
     int l = system(line.c_str());//produces out.txt
     ifstream file("out.txt",ios::in);
     if(l!=0 || !file)

@@ -140,7 +140,7 @@ bool ZDict_get(ZDict* h,ZObject key,ZObject* val)
     if(ZObject_equals(h->table[idx].key,key))
     {
       *val = h->table[idx].val;
-      return h->table[idx].stat != DELETED;
+      return true;
     }
     idx = (idx + i*i) & (h->capacity - 1);
     i++;
@@ -156,6 +156,8 @@ bool ZDict_erase(ZDict* h,ZObject key)
     if(ZObject_equals(h->table[idx].key,key))
     {
       h->table[idx].stat = DELETED;
+      h->table[idx].key.type = Z_NIL;
+      h->table[idx].val.type = Z_NIL;
       h->size--;
       return true;
     }
