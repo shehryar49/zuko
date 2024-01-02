@@ -21,3 +21,5 @@ while(k<=1000)
 }
 println(list)
 println(list[999])
+list.erase(1,998)
+println(list)

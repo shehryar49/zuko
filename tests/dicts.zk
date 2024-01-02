@@ -2,6 +2,11 @@ var x = {"a": [5,3,1],"b" : {"a" : "b","c" : "d"},0xff : 0xf8}
 println(x["a"])
 println(x["b"]["a"])
 println(x[0xff])
+# set value
+x["idk"] = 69
+println(x["idk"])
+x.emplace("idk",70)
+println(x["idk"]) # still 69
 
 var dict = {1: "a",2: "b",3: "c",4: "d"}
 dict.emplace(5,"e")
