@@ -6,7 +6,7 @@ astdump
 /modules/*.so
 /tests/out.txt
 out.txt
-/program.zu
+/program.zk
 /demo.json
 *.cmake
 Makefile

@@ -78,7 +78,7 @@ void ZDict_set(ZDict* h,ZObject key,ZObject val)
   h->table[idx].val = val;
   h->table[idx].stat = OCCUPIED;
   (h->size)++;
-  if(h->size  == 0.5f* h->capacity) //rehash
+  if(h->size  == 0.75f* h->capacity) //rehash
   {
     slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
     for(int i=0;i<h->capacity*2;i++)
@@ -113,7 +113,7 @@ void ZDict_emplace(ZDict* h,ZObject key,ZObject val)
   h->table[idx].val = val;
   h->table[idx].stat = OCCUPIED;
   (h->size)++;
-  if(h->size  == 0.5f* h->capacity) //rehash
+  if(h->size  == 0.75f* h->capacity) //rehash
   {
     slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
     for(int i=0;i<h->capacity*2;i++)

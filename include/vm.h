@@ -1482,13 +1482,13 @@ public:
       }
       CASE_CP OP_RETURN:
       {
-        k = callstack[callstack.size() - 1];
+        k = callstack.back();
         callstack.pop_back();
         executing.pop_back();
         p1 = STACK.arr[STACK.size - 1];
-        STACK.size = frames.back();
+        STACK.size = frames.back()+1;
+        STACK.arr[frames.back()] = p1;
         frames.pop_back();
-        zlist_push(&STACK,p1);
         if(!k)
           return;//return from interpret function
         NEXT_INST;
@@ -1866,7 +1866,7 @@ public:
           if (!addition_overflows(p1.i, p1.i))
           {
             p3.i = p1.i + p2.i;
-            zlist_push(&STACK,p3);
+            STACK.arr[STACK.size++] = p3;
             k++; NEXT_INST;
           }
           if (addition_overflows((int64_t)p1.i, (int64_t)p2.i))
@@ -1876,7 +1876,7 @@ public:
           }
           p3.type = Z_INT64;
           p3.l = (int64_t)(p1.i) + (int64_t)(p2.i);
-          zlist_push(&STACK,p3);
+          STACK.arr[STACK.size++] = p3;
         }
         else if (c1 == Z_FLOAT)
         {
@@ -1888,7 +1888,7 @@ public:
           }
           p3.type = Z_FLOAT;
           p3.f = p1.f + p2.f;
-          zlist_push(&STACK,p3);
+          STACK.arr[STACK.size++] = p3;
         }
         else if (c1 == Z_INT64)
         {
@@ -1900,7 +1900,7 @@ public:
           }
           p3.type = Z_INT64;
           p3.l = p1.l + p2.l;
-          zlist_push(&STACK,p3);
+          STACK.arr[STACK.size++] = p3;
           k++; NEXT_INST;
         }
         else
@@ -2084,7 +2084,8 @@ public:
         }
         p3.type = Z_BOOL;
         p3.i = (bool)(ZObject_equals(p1,p2));
-        zlist_push(&STACK,p3);
+        //IMPORTANT1  zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
       }
       CASE_CP NOT:
@@ -3077,7 +3078,7 @@ public:
           if (!subtraction_overflows(a.i, b.i))
           {
             c.i = a.i - b.i;
-            zlist_push(&STACK,c);
+            STACK.arr[STACK.size++] = c;
             k++; NEXT_INST;
           }
           if (subtraction_overflows((int64_t)a.i, (int64_t)b.i))
@@ -3087,7 +3088,7 @@ public:
           }
           c.type = Z_INT64;
           c.l = (int64_t)(a.i) - (int64_t)(b.i);
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_FLOAT)
         {
@@ -3099,7 +3100,7 @@ public:
           }
           c.type = Z_FLOAT;
           c.f = a.f - b.f;
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_INT64)
         {
@@ -3111,7 +3112,7 @@ public:
           }
           c.type = Z_INT64;
           c.l = a.l - b.l;
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
         }
         k++; NEXT_INST;
       }
@@ -3159,7 +3160,7 @@ public:
           if (!division_overflows(a.i, b.i))
           {
             c.i = a.i / b.i;
-            zlist_push(&STACK,c);
+            STACK.arr[STACK.size++] = c;
             k++; NEXT_INST;
           }
           if (division_overflows((int64_t)a.i, (int64_t)b.i))
@@ -3170,7 +3171,7 @@ public:
           }
           c.type = Z_INT64;
           c.l = (int64_t)(a.i) / (int64_t)(b.i);
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
           k++; NEXT_INST;
         }
         else if (t == Z_FLOAT)
@@ -3184,7 +3185,7 @@ public:
 
           c.type = Z_FLOAT;
           c.f = a.f / b.f;
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_INT64)
         {
@@ -3202,7 +3203,7 @@ public:
           }
           c.type = Z_INT64;
           c.l = a.l / b.l;
-          zlist_push(&STACK,c);
+          STACK.arr[STACK.size++] = c;
         }
         k++; NEXT_INST;
       }
@@ -3553,16 +3554,16 @@ vector<uint8_t>* allocByteArray()
   return p;
 }
 
-string *allocString()
+char* allocString(size_t len)
 {
 
-  string *p = new(nothrow) string;
+  char* p = new(nothrow) char[len+1];
   if (!p)
   {
     fprintf(stderr,"allocString(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(string);
+  vm.allocated += sizeof(char*); //not actual size, but will do something about this in future
   MemInfo m;
   m.type = Z_STR;
   m.isMarked = false;
