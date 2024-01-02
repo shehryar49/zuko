@@ -1,0 +1,16 @@
+import bignum
+
+# test bignum module
+
+function fact(var n)
+{
+    var k = bignum.bignum("1")
+    var ans = bignum.bignum("1")
+    while(k<=n)
+    {
+        ans*=k
+        k.increment()
+    }
+    return ans
+}
+println(fact(bignum.bignum("10")).strval() == "3628800")
