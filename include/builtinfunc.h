@@ -97,7 +97,6 @@ ZObject TOCHAR(ZObject* args,int32_t argc)
   if(args[0].type!='i')
     return Z_Err(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
-  ZObject ret = nil;
   ZStr* p = allocString(1);
   p->val[0] = ch;
   return ZObjFromStrPtr(p);
@@ -111,8 +110,6 @@ void printZDict(ZDict* l,vector<void*> seen = {})
     return;
   }
   seen.push_back((void*)l);
-  ZDict d = *l;
-  ZObject val;
   size_t k = l->size;
   size_t m = 0;
   printf("{");
@@ -353,7 +350,6 @@ ZObject input(ZObject* args,int32_t argc)
       char* prompt = ((ZStr*)args[0].ptr)->val;
       printf("%s",prompt);
     }
-    ZObject ret = nil;
     string s;
     char ch;
     while(true)
@@ -891,7 +887,7 @@ ZObject SUBSTR(ZObject* args,int32_t argc)
         
         if(args[0].l<0 || args[1].l<0 )
         {
-          ZStr* q = allocString(1);
+          ZStr* q = allocString(0);
           return ZObjFromStrPtr(q);
         }
         ZStr* q = allocString(args[1].l - args[0].l + 1);
@@ -1628,7 +1624,6 @@ void clean_stdin(void)
 }
 ZObject FREAD(ZObject* args,int32_t argc)
 {
-    ZObject ret = nil;
     if(argc!=3)
         return Z_Err(ArgumentError,"Error fread() takes 3 arguments!");
     if (args[0].type != Z_BYTEARR)
@@ -2477,7 +2472,6 @@ ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
     return Z_Err(TypeError,"Error first argument of str.substr() should be an integer");
   if(args[2].type!='i' && args[2].type!='l')
     return Z_Err(TypeError,"Error second argument of str.substr() should be an integer");
-  bool a = false;
   //ZStr* q = ((a = args[0].type == Z_STR)) ? allocString() : allocMutString();
   string* q = allocMutString();
   PromoteType(args[1],'l');
@@ -2494,9 +2488,9 @@ ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
 }
 ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
 {
-   if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+  if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
     return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
-    if(argc==3)
+  if(argc==3)
     {
         if(args[1].type!='s' && args[1].type!=Z_MSTR)
             return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
@@ -2514,9 +2508,10 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
         }
         else
         {
-//          ZStr* z = allocString();
- //  IMPORTANT       *z = replace_all(a,b,c);
-   //       return ZObjFromStrPtr(z);
+          string s = replace_all(a,b,c);
+          ZStr* z = allocString(c.length());
+          strcpy(z->val,s.c_str());
+          return ZObjFromStrPtr(z);
         }
     }
     else
@@ -2527,9 +2522,9 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
 }
 ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
 {
-   if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
+  if(args[0].type != Z_STR && args[0].type!=Z_MSTR)
     return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
-    if(argc==3)
+  if(argc==3)
     {
         if(args[1].type!='s')
             return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
@@ -2546,9 +2541,10 @@ ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
         }
         else
         {
-  //        ZStr* z = allocString();
-//          *z = replace(a,b,c);
-    //      return ZObjFromStrPtr(z);
+          string s = replace(a,b,c);
+          ZStr* z = allocString(c.length());
+          strcpy(z->val,s.c_str());
+          return ZObjFromStrPtr(z);
         }
     }
     else

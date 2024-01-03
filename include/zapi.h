@@ -24,6 +24,8 @@ SOFTWARE.*/
 
 #include "zobject.h"
 #include "zstr.h"
+#include "zmstr.h"
+#include "strmap.h"
 #include <vector>
 #include <unordered_map>
 #include <string>

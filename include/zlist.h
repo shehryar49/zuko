@@ -41,7 +41,7 @@ void zlist_erase(zlist* p,size_t idx)
         1 3 4 5 5
       */
       //left shift arr starting from idx to size-1
-      for(int i=idx;i<p->size-1;i++)
+      for(size_t i=idx;i<p->size-1;i++)
       {
         p->arr[i] = p->arr[i+1];  
       }

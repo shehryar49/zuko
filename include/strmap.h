@@ -1,6 +1,7 @@
 #ifndef ZUKO_STRMAP_H_
 #define ZUKO_STRMAP_H_
-
+// Members of Zuko Classes, Objects and Modules
+// are represented using this data structure.
 #include <stdlib.h>
 #include <string.h>
 #include "zobject.h"
@@ -9,54 +10,41 @@
 extern "C"{
 #endif
 
-typedef enum slotStatus
+typedef enum SM_SlotStatus
 {
-  EMPTY,
-  OCCUPIED,
-  DELETED
-}slotStatus;
-typedef struct slot
+  SM_EMPTY,
+  SM_OCCUPIED,
+  SM_DELETED
+}SM_SlotStatus;
+typedef struct SM_Slot
 {
   const char* key;
   ZObject val;
-  slotStatus stat;
-}slot;
-typedef struct ZSMap
+  SM_SlotStatus stat;
+}SM_Slot;
+typedef struct StrMap
 {
-  slot* table;
+  SM_Slot* table;
   size_t size;
   size_t capacity;
-}ZSMap;
+}StrMap;
 
-size_t hashDJB2(const char* key,size_t M)
-{
-  //using djb2 hash function for strings
-  size_t hash = 5381;
-  unsigned char c;
-  while(c = *key++)
-  {
-    //djb2 with XOR
-    hash = ((hash << 5) + hash) ^ c; // hash*33 + c
-  }
-  //M is always a power of 2
-  return hash & (M-1);
-}
+size_t hashDJB2(const char*,size_t);
 
-void ZSMap_init(ZSMap* h)
+void StrMap_init(StrMap* h)
 {
-  h->table = (slot*)malloc(sizeof(slot)*4);
+  h->table = (SM_Slot*)malloc(sizeof(slot)*4);
   h->size = 0;
   h->capacity = 4;
   for(int i=0;i<4;i++)
-    h->table[i].stat = EMPTY;
+    h->table[i].stat = SM_EMPTY;
 }
-void ZSMap_set(ZSMap* h,const char* key,ZObject val)
+void StrMap_set(StrMap* h,const char* key,ZObject val)
 {
   size_t idx;
   idx = hashDJB2(key,h->capacity);
   int i = 1;
-  size_t copy = idx;
-  while(h->table[idx].stat == OCCUPIED)
+  while(h->table[idx].stat == SM_OCCUPIED)
   {
     if(strcmp(h->table[idx].key,key) == 0) //same key, just reassign value
       break;
@@ -65,33 +53,32 @@ void ZSMap_set(ZSMap* h,const char* key,ZObject val)
   }
   h->table[idx].key = key;
   h->table[idx].val = val;
-  h->table[idx].stat = OCCUPIED;
+  h->table[idx].stat = SM_OCCUPIED;
   (h->size)++;
   if(h->size  == 0.75f* h->capacity) //rehash
   {
-    slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
-    for(int i=0;i<h->capacity*2;i++)
-      newArr[i].stat = EMPTY;
-    slot* old = h->table;
+    SM_Slot* newArr = (SM_Slot*)malloc(sizeof(slot)*(h->capacity*2));
+    for(size_t i=0;i<h->capacity*2;i++)
+      newArr[i].stat = SM_EMPTY;
+    SM_Slot* old = h->table;
     size_t oldcap = h->capacity;
     h->size = 0;
     h->table = newArr;
     h->capacity = h->capacity*2;
-    for(int i=0;i<oldcap;i++)
+    for(size_t i=0;i<oldcap;i++)
     {
-      if(old[i].stat == OCCUPIED)
-        ZSMap_set(h,old[i].key,old[i].val);
+      if(old[i].stat == SM_OCCUPIED)
+        StrMap_set(h,old[i].key,old[i].val);
     }
     free(old);
   }
 }
-void ZSMap_emplace(ZSMap* h,const char* key,ZObject val)
+void StrMap_emplace(StrMap* h,const char* key,ZObject val)
 {
   size_t idx;
   idx = hashDJB2(key,h->capacity);
   int i = 1;
-  size_t copy = idx;
-  while(h->table[idx].stat == OCCUPIED)
+  while(h->table[idx].stat == SM_OCCUPIED)
   {
     if(strcmp(h->table[idx].key,key) == 0) //same key, don't reassign value
       return;
@@ -100,31 +87,31 @@ void ZSMap_emplace(ZSMap* h,const char* key,ZObject val)
   }
   h->table[idx].key = key;
   h->table[idx].val = val;
-  h->table[idx].stat = OCCUPIED;
+  h->table[idx].stat = SM_OCCUPIED;
   (h->size)++;
   if(h->size  == 0.75f* h->capacity) //rehash
   {
-    slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
-    for(int i=0;i<h->capacity*2;i++)
-      newArr[i].stat = EMPTY;
-    slot* old = h->table;
+    SM_Slot* newArr = (SM_Slot*)malloc(sizeof(slot)*(h->capacity*2));
+    for(size_t i=0;i<h->capacity*2;i++)
+      newArr[i].stat = SM_EMPTY;
+    SM_Slot* old = h->table;
     size_t oldcap = h->capacity;
     h->size = 0;
     h->table = newArr;
     h->capacity = h->capacity*2;
-    for(int i=0;i<oldcap;i++)
+    for(size_t i=0;i<oldcap;i++)
     {
-      if(old[i].stat == OCCUPIED)
-        ZSMap_set(h,old[i].key,old[i].val);
+      if(old[i].stat == SM_OCCUPIED)
+        StrMap_set(h,old[i].key,old[i].val);
     }
     free(old);
   }
 }
-bool ZSMap_get(ZSMap* h,const char* key,ZObject* val)
+bool StrMap_get(StrMap* h,const char* key,ZObject* val)
 {
   size_t idx = hashDJB2(key,h->capacity);
   int i = 1;
-  while(h->table[idx].stat != EMPTY)
+  while(h->table[idx].stat != SM_EMPTY)
   {
     if(strcmp(h->table[idx].key,key) == 0)
     {
@@ -136,15 +123,15 @@ bool ZSMap_get(ZSMap* h,const char* key,ZObject* val)
   }
   return false;
 }
-bool ZSMap_erase(ZSMap* h,const char* key)
+bool StrMap_erase(StrMap* h,const char* key)
 {
   size_t idx = hashDJB2(key,h->capacity);
   int i = 1;
-  while(h->table[idx].stat != EMPTY)
+  while(h->table[idx].stat != SM_EMPTY)
   {
     if(strcmp(h->table[idx].key,key) == 0)
     {
-      h->table[idx].stat = DELETED;
+      h->table[idx].stat = SM_DELETED;
       h->table[idx].key = NULL;
       h->table[idx].val.type = Z_NIL;
       h->size--;
@@ -155,7 +142,7 @@ bool ZSMap_erase(ZSMap* h,const char* key)
   }
   return false;
 }
-void ZSMap_destroy(ZSMap* h)
+void StrMap_destroy(StrMap* h)
 {
   free(h->table);
 }

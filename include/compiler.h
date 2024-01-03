@@ -221,7 +221,8 @@ public:
         return i;
       i++;
     }
-    char* arr = new char[n.length()]; //will be freed by VM's destructor
+    char* arr = new char[n.length()+1]; //will be freed by VM's destructor
+    strcpy(arr,n.c_str());
     // the GC does not know about this memory
     // the string table won't be deallocated until exit, so no point in checking if
     // strings in it are reachable or not(during collect phase of GC)
@@ -238,12 +239,12 @@ public:
   }
   int32_t addBuiltin(const string& name)
   {
-    int32_t index;
+    size_t index;
     auto fnAddr = funcs[name];
     for(index = 0;index < vm.builtin.size();index+=1)
     {
       if(vm.builtin[index]==fnAddr)
-        return index;
+        return (size_t)index;
     }
     vm.builtin.push_back(funcs[name]);
     return (int32_t)vm.builtin.size()-1;
@@ -1356,8 +1357,6 @@ public:
               STACK_SIZE+=1;
 
               SymbolTable m;
-              bool add = true;
-              size_t index = 0;
               int32_t fnIdx = addBuiltin("len");
 
               //Bytecode to calculate length of list we are looping
@@ -2236,17 +2235,13 @@ public:
       globals.emplace("stdout",2);
       int32_t k = 2;
       zlist* l = allocList();
-      ZObject elem;
-      elem.type = 's';
       while (k < argc)
       {
-          //elem.s = argv[k];
           ZStr* p = allocString(strlen(argv[k]));
           memcpy(p->val,argv[k],strlen(argv[k]));
           zlist_push(l,ZObjFromStrPtr(p));
           k += 1;
       }
-      ZObject A;
       zlist_push(&vm.STACK,ZObjFromList(l));
       zfile* STDIN = alloczfile();
       STDIN->open = true;

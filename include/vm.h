@@ -189,7 +189,11 @@ private:
   zlist aux; // auxiliary space for markV2
   zlist STACK;
   vector<void*> important;//important memory not to free even when not reachable
- 
+  VM()
+  {
+    zlist_init(&aux);
+    zlist_init(&STACK);
+  }
 public:
   friend class Compiler;
   friend bool callObject(ZObject*,ZObject*,int,ZObject*);
@@ -205,11 +209,7 @@ public:
   apiFuncions api;
 
   ZObject nil;
-  VM()
-  {
-    zlist_init(&aux);
-    zlist_init(&STACK);
-  }
+  
   void load(vector<uint8_t>& bytecode,ProgramInfo& p)
   {
     program = &bytecode[0];
@@ -1352,7 +1352,6 @@ public:
           }
           executing.push_back(NULL);
           frames.push_back(STACK.size-i2);
-          size_t idx = STACK.size;
           zlist_insertList(&STACK,STACK.size,&(g->locals));
           g->state = RUNNING;
           g->giveValOnResume = false;
@@ -3245,9 +3244,8 @@ public:
         zlist_fastpop(&STACK,&p1);
         if (p1.i && p1.type == Z_BOOL)
           k = program + where - 1;
-        else
-          k++; NEXT_INST;
-        k++; NEXT_INST;
+        k++; 
+        NEXT_INST;
       }
       CASE_CP THROW:
       {
@@ -3528,6 +3526,10 @@ public:
     collectGarbage();
     zlist_destroy(&STACK);
     zlist_destroy(&aux);
+    for(auto e: strings)
+    {
+      delete[] e.val;
+    }
   }
 } vm;
 zlist *allocList()

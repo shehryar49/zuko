@@ -29,7 +29,7 @@ size_t hashDJB2(const char* key,size_t M)
   //using djb2 hash function for strings
   size_t hash = 5381;
   unsigned char c;
-  while(c = *key++)
+  while((c = *key++))
   {
     //djb2 with XOR
     hash = ((hash << 5) + hash) ^ c; // hash*33 + c
@@ -63,10 +63,8 @@ void ZDict_init(ZDict* h)
 }
 void ZDict_set(ZDict* h,ZObject key,ZObject val)
 {
-  size_t idx;
-  idx = hashZObject(key,h->capacity);
+  size_t idx = hashZObject(key,h->capacity);
   int i = 1;
-  size_t copy = idx;
   while(h->table[idx].stat == OCCUPIED)
   {
     if(ZObject_equals(h->table[idx].key,key)) //same key, just reassign value
@@ -81,14 +79,14 @@ void ZDict_set(ZDict* h,ZObject key,ZObject val)
   if(h->size  == 0.75f* h->capacity) //rehash
   {
     slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
-    for(int i=0;i<h->capacity*2;i++)
+    for(size_t i=0;i<h->capacity*2;i++)
       newArr[i].stat = EMPTY;
     slot* old = h->table;
     size_t oldcap = h->capacity;
     h->size = 0;
     h->table = newArr;
     h->capacity = h->capacity*2;
-    for(int i=0;i<oldcap;i++)
+    for(size_t i=0;i<oldcap;i++)
     {
       if(old[i].stat == OCCUPIED)
         ZDict_set(h,old[i].key,old[i].val);
@@ -98,10 +96,8 @@ void ZDict_set(ZDict* h,ZObject key,ZObject val)
 }
 void ZDict_emplace(ZDict* h,ZObject key,ZObject val)
 {
-  size_t idx;
-  idx = hashZObject(key,h->capacity);
+  size_t idx = hashZObject(key,h->capacity);
   int i = 1;
-  size_t copy = idx;
   while(h->table[idx].stat == OCCUPIED)
   {
     if(ZObject_equals(h->table[idx].key,key)) //same key, don't reassign value
@@ -116,14 +112,14 @@ void ZDict_emplace(ZDict* h,ZObject key,ZObject val)
   if(h->size  == 0.75f* h->capacity) //rehash
   {
     slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));
-    for(int i=0;i<h->capacity*2;i++)
+    for(size_t i=0;i<h->capacity*2;i++)
       newArr[i].stat = EMPTY;
     slot* old = h->table;
     size_t oldcap = h->capacity;
     h->size = 0;
     h->table = newArr;
     h->capacity = h->capacity*2;
-    for(int i=0;i<oldcap;i++)
+    for(size_t i=0;i<oldcap;i++)
     {
       if(old[i].stat == OCCUPIED)
         ZDict_set(h,old[i].key,old[i].val);
