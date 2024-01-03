@@ -14,7 +14,7 @@ void signalHandler(int signum)
     #ifdef _WIN32
       size_t written = _write(_fileno(stderr),buff,sizeof(buff));
     #else
-      size_t written = write(STDERR_FILENO,buff,sizeof(buff));
+      size_t written __attribute__((unused)) = write(STDERR_FILENO,buff,sizeof(buff));
     #endif
     exit(EXIT_FAILURE);
   }
