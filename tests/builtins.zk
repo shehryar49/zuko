@@ -6,3 +6,7 @@ println(ascii("A")) # 65
 println(char(97)) # a
 # reverse
 println(reverse("abc")) #cba
+# printf
+printf("%%%%%",69) # %69%
+# format
+println(format("%%%%%",69)) # %69%

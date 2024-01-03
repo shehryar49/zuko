@@ -50,7 +50,7 @@ using namespace std;
 #define Z_COROUTINE_OBJ 'z'
 #define Z_ERROBJ 'e' //same as an object,just in thrown state
 #define Z_BYTEARR 'c'
-
+#define Z_RAW 't' //used by VM's GC
 extern "C" struct ZObject
 {
     union

@@ -214,14 +214,22 @@ public:
   }
   int32_t addToVMStringTable(const string& n)
   {
-    auto it = std::find(vm.strings.begin(),vm.strings.end(),n);
-    if(it==vm.strings.end())
+    size_t i = 0;
+    for(auto e: vm.strings)
     {
-        vm.strings.push_back(n);
-        return (int32_t)vm.strings.size()-1;
+      if(strcmp(e.val,n.c_str()) == 0)
+        return i;
+      i++;
     }
-    else
-      return (int32_t)(it - vm.strings.begin());
+    char* arr = new char[n.length()]; //will be freed by VM's destructor
+    // the GC does not know about this memory
+    // the string table won't be deallocated until exit, so no point in checking if
+    // strings in it are reachable or not(during collect phase of GC)
+    ZStr str;
+    str.len = n.length();
+    str.val = arr;
+    vm.strings.push_back(str);
+    return (int32_t)vm.strings.size()-1;
   }
   inline void addLnTableEntry(size_t opcodeIdx)
   {

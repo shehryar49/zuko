@@ -199,7 +199,7 @@ public:
   std::unordered_map<void *, MemInfo> memory;
   size_t allocated = 0;
   size_t GC_Cycles = 0;
-  vector<string> strings; // string constants used in bytecode
+  vector<ZStr> strings; // string constants used in bytecode
   ZObject *constants = NULL;
   int32_t total_constants = 0; // total constants stored in the array constants
   apiFuncions api;
@@ -1123,7 +1123,7 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 4;
-        const string& method_name = strings[i1];
+        string method_name = strings[i1].val;//OPTIMIZE
         i2 = *k;
         p1 = STACK.arr[STACK.size-i2-1]; // Parent object from which member is being called
         if (p1.type == Z_MODULE)
@@ -1131,7 +1131,7 @@ public:
           Module *m = (Module *)p1.ptr;
           if (m->members.find(method_name) == m->members.end())
           {
-            spitErr(NameError, "Error the module has no member " + method_name + "!");
+            spitErr(NameError, "Error the module has no member " + (string)method_name + "!");
             NEXT_INST;
           }
           p3 = m->members[method_name];
@@ -1146,7 +1146,7 @@ public:
             {
               // The module raised an error
               KlassObject* E = (KlassObject*)p4.ptr;
-              s1 = method_name + "():  " +  AS_STD_STR(E->members["msg"]);
+              s1 = (string)method_name + "():  " +  AS_STD_STR(E->members["msg"]);
               spitErr(E->klass,s1);
               NEXT_INST;
             }
@@ -1186,7 +1186,7 @@ public:
               {
                 // The module raised an error
                 KlassObject* E = (KlassObject*)p1.ptr;
-                s1 = method_name + "():  " +  AS_STD_STR(E->members["msg"]);
+                s1 = (string)method_name + "():  " +  AS_STD_STR(E->members["msg"]);
                 spitErr(E->klass, s1);
                 NEXT_INST;
               }
@@ -1224,7 +1224,7 @@ public:
               FunObject *p = executing.back();
               if (p == NULL)
               {
-                spitErr(NameError, "Error " + method_name + " is private member of object!");
+                spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
                 NEXT_INST;
               }
               if (p->klass == obj->klass)
@@ -1374,7 +1374,7 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 3;
-        s1 = strings[i1];
+        s1 = strings[i1].val;
         
         if (p1.type != Z_OBJ)
         {
@@ -1426,7 +1426,7 @@ public:
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        s1 = strings[i1];
+        s1 = strings[i1].val;
         typedef ZObject (*initFun)();
         typedef void (*apiFun)(apiFuncions *);
         #ifdef _WIN32
@@ -2444,7 +2444,7 @@ public:
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        string& mname = strings[i1];
+        string mname = strings[i1].val;
      
         if (a.type == Z_MODULE)
         {
@@ -2540,7 +2540,7 @@ public:
         FunObject *fn = allocFunObject();
         fn->i = p;
         fn->args = *k;
-        fn->name = strings[idx];
+        fn->name = strings[idx].val;
         p1.type = Z_FUNC;
         p1.ptr = (void *)fn;
         k++;
@@ -2581,7 +2581,7 @@ public:
         int32_t idx;
         memcpy(&idx, k, sizeof(int32_t));
         k += 3;
-        const string& name = strings[idx];
+        string name = strings[idx].val; //OPTIMIZE
         ZObject klass;
         klass.type = Z_CLASS;
         Klass *obj = allocKlass();
@@ -2629,7 +2629,7 @@ public:
         k += 3;
         // N is total new class members
         // i1 is idx of class name in strings array
-        const string& name = strings[i1];
+        string name = strings[i1].val;
         ZObject klass;
         klass.type = Z_CLASS;
         Klass *d = allocKlass();
@@ -3337,7 +3337,7 @@ public:
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        string& mname = strings[i1];
+        string mname = strings[i1].val;//optimize
      
         if(a.type == Z_OBJ)
         {
@@ -3386,7 +3386,7 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 3;
-        s1 = strings[i1];
+        s1 = strings[i1].val;
         
         if (Parent.type != Z_OBJ)
         {
@@ -3561,7 +3561,27 @@ vector<uint8_t>* allocByteArray()
   vm.memory.emplace((void *)p, m);
   return p;
 }
+uint8_t* allocRaw(size_t len)
+{
+  // the stupid user who failed to send a valid
+  // length, will likely fail to add NULL check
+  // why degrade performance?
+  //if(len == 0)
+  // return NULL;
 
+  uint8_t* p = new(nothrow) uint8_t[len];
+  if (!p)
+  {
+    fprintf(stderr,"allocRaw(): error allocating memory!\n");
+    exit(0);
+  }
+  vm.allocated += sizeof(len);
+  MemInfo m;
+  m.type = Z_RAW;
+  m.isMarked = false;
+  vm.memory.emplace((void *)p, m);
+  return p;
+}
 ZStr* allocString(size_t len)
 {
   /*
@@ -3590,7 +3610,6 @@ ZStr* allocString(size_t len)
 }
 string *allocMutString()
 {
-
   string *p = new(nothrow) string;
   if (!p)
   {
