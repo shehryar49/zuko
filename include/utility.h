@@ -416,7 +416,7 @@ string ZObjectToStr(const ZObject& a)
 				else if(a.type=='w')
 				{
           FunObject* p = (FunObject*)a.ptr;
-					return "<Function "+p->name +">";
+					return "<Function "+(string)p->name +">";
 				}
         else if(a.type=='y')
           return "<Native Function>";
@@ -424,7 +424,7 @@ string ZObjectToStr(const ZObject& a)
 				  return "<Class "+*(string*)a.ptr+">";
 			  else if(a.type=='o')
         {
-				  return "<"+((KlassObject*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
+				  return "<"+(string)((KlassObject*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
         }
         else if(a.type=='q')
         {

@@ -24,14 +24,12 @@ SOFTWARE.*/
 
 #include "zobject.h"
 #include "zstr.h"
-#include "zmstr.h"
+#include "zbytearray.h"
 #include "strmap.h"
-#include <vector>
-#include <unordered_map>
-#include <string>
+#include "funobject.h"
+#include "klass.h"
+#include "klassobject.h"
 using namespace std;
-
-
 
 
 
@@ -41,46 +39,15 @@ typedef ZObject(*NativeFunPtr)(ZObject*,int);
 
 
 
-struct Klass
-{
-  string name;
-  std::unordered_map<string,ZObject> members;
-  std::unordered_map<string,ZObject> privateMembers;
-  inline void addMember(const string& name,ZObject val)
-  {
-    members.emplace(name,val);
-  }
-  inline void addPrivateMember(const string& name,ZObject val)
-  {
-    privateMembers.emplace(name,val);
-  }
-  void addNativeMethod(const string& name,NativeFunPtr r);
-  
-};
-struct KlassObject
-{
-  Klass* klass;
-  std::unordered_map<string,ZObject> members;
-  std::unordered_map<string,ZObject> privateMembers;
-};
+
+
 struct Module
 {
   std::string name;
   std::unordered_map<string,ZObject> members;
   void addNativeFunction(const string& name,NativeFunPtr r);
 };
-struct FunObject
-{
-  Klass* klass;//functions can be binded to classes as methods in which case they will have access to private members of that class
-  //and also keep the class alive with them
-  string name;
-  size_t i;
-  size_t args;
-  zlist opt; //default/optional parameters
-  #ifdef __cplusplus
-  FunObject& operator=(const FunObject&) = delete;
-  #endif
-};
+
 
 
 struct NativeFunction
@@ -213,7 +180,7 @@ inline ZObject ZObjFromKlassObj(KlassObject* ki)
   ret.ptr = (void*)ki;
   return ret;
 }
-inline ZObject ZObjFromByteArr(vector<uint8_t>* k)
+inline ZObject ZObjFromByteArr(ZByteArr* k)
 {
   ZObject ret;
   ret.type = Z_BYTEARR;
@@ -234,7 +201,6 @@ inline ZObject ZObjFromFile(zfile* file)
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) (uint8_t)x.i
 #define AS_STR(x) ((ZStr*)x.ptr)
-#define AS_MSTR(x) *(string*)x.ptr
 #define AS_DICT(x) *(ZDict*)x.ptr
 #define AS_LIST(x) *(PltList*)x.ptr
 #define AS_KLASS(x) *(Klass*)x.ptr
@@ -247,13 +213,13 @@ inline ZObject ZObjFromFile(zfile* file)
 typedef zlist*(*fn1)();//allocList
 typedef ZDict*(*fn2)();//allocZDict
 typedef ZStr*(*fn3)(size_t);//allocString
-typedef ZMStr*(*fn4)();//allocMutString
+typedef void*(*fn4)();//allocMutString
 typedef zfile*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
 typedef KlassObject*(*fn7)();//allocKlassObject
 typedef NativeFunction*(*fn8)();//allocNativeFunObj
 typedef Module*(*fn9)();//allocModule
-typedef vector<uint8_t>*(*fn10)();//allocBytearray
+typedef ZByteArr*(*fn10)();//allocBytearray
 typedef bool(*fn11)(ZObject*,ZObject*,int,ZObject*);//callobject
 typedef void(*fn12)(void*);//markImportant
 typedef void(*fn13)(void*);//unmarkImpotant
@@ -291,7 +257,7 @@ ZObject Z_Err(Klass* errKlass,string des)
   p->klass = errKlass;
   p->members = errKlass->members;
   p->privateMembers = errKlass->privateMembers;
-  p->members["msg"] = ZObjFromStr(des.c_str()); // OPTIMIZE!
+  StrMap_set(&(p->members),"msg",ZObjFromStr(des.c_str())); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
@@ -319,29 +285,6 @@ inline ZObject ZObjFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
   return ret;
 }
 
-void Klass::addNativeMethod(const string& name,NativeFunPtr r)
-{
-  NativeFunction* fn = vm_allocNativeFunObj();
-  fn->name = name;
-  fn->klass = this;
-  fn->addr = r;
-  ZObject tmp;
-  tmp.type = Z_NATIVE_FUNC;
-  tmp.ptr = (void*)fn;
-  this->members.emplace(name,tmp);
-}
-////////
-void Module::addNativeFunction(const string& name,NativeFunPtr r)
-{
-  NativeFunction* fn = vm_allocNativeFunObj();
-  fn->name = name;
-  fn->klass = NULL;
-  fn->addr = r;
-  ZObject tmp;
-  tmp.type = Z_NATIVE_FUNC;
-  tmp.ptr = (void*)fn;
-  this->members.emplace(name,tmp);
-}
 
 //
 extern "C"

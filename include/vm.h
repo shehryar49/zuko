@@ -23,6 +23,7 @@ SOFTWARE.*/
 #define VM_H_
 #include "zuko.h"
 #include "zstr.h"
+
 #ifdef THREADED_INTERPRETER
   #ifdef __GNUC__
     #define NEXT_INST goto *targets[*k];
@@ -133,12 +134,13 @@ struct MemInfo
   char type;
   bool isMarked;
 };
+struct ZByteArr;
 
 // Allocator functions
 Klass *allocKlass();
 KlassObject *allocKlassObject();
 zlist *allocList();
-vector<uint8_t>* allocByteArray();
+ZByteArr* allocByteArray();
 ZDict *allocDict();
 ZStr* allocString(size_t);
 FunObject *allocFunObject();
@@ -263,7 +265,7 @@ public:
       E->privateMembers = e->privateMembers;
       ZStr* s = allocString(msg.length());
       memcpy(s->val,&msg[0],msg.length());
-      E->members["msg"] = ZObjFromStrPtr(s);
+      StrMap_set(&(E->members),"msg",ZObjFromStrPtr(s));
       p1.type = Z_OBJ;
       p1.ptr = (void*)E;
       zlist_push(&STACK,p1);
@@ -291,7 +293,7 @@ public:
       E->privateMembers = e->privateMembers;
       ZStr* s = allocString(msg.length());
       memcpy(s->val,&msg[0],msg.length());
-      E->members["msg"] = ZObjFromStrPtr(s);
+      StrMap_set(&(E->members),"msg",ZObjFromStrPtr(s));
       p1.type = Z_ERROBJ;
       p1.ptr = (void*)E;
       zlist_push(&STACK,p1);
@@ -461,20 +463,26 @@ public:
       else if (curr.type == Z_CLASS)
       {
         Klass *k = (Klass *)curr.ptr;
-        for (auto e : k->members)
+        for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
-          if (isHeapObj(e.second) && (it = memory.find(e.second.ptr)) != memory.end() && !(it->second.isMarked))
+          if(k->members.table[idx].stat != SM_OCCUPIED)
+            continue;
+          SM_Slot& e = k->members.table[idx];
+          if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.second);
+            zlist_push(&aux,e.val);
           }
         }
-        for (auto e : k->privateMembers)
+        for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
         {
-          if (isHeapObj(e.second) && (it = memory.find(e.second.ptr)) != memory.end() && !(it->second.isMarked))
+          if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+            continue;
+          SM_Slot& e = k->privateMembers.table[idx];
+          if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.second);
+            zlist_push(&aux,e.val);
           }
         }
       }
@@ -504,20 +512,26 @@ public:
           it->second.isMarked = true;
           zlist_push(&aux,tmp);
         }
-        for (auto e : k->members)
+        for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
-          if (isHeapObj(e.second) && (it = memory.find(e.second.ptr)) != memory.end() && !(it->second.isMarked))
+          if(k->members.table[idx].stat != SM_OCCUPIED)
+            continue;
+          SM_Slot& e = k->members.table[idx];
+          if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.second);
+            zlist_push(&aux,e.val);
           }
         }
-        for (auto e : k->privateMembers)
+        for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
         {
-          if (isHeapObj(e.second) && (it = memory.find(e.second.ptr)) != memory.end() && !(it->second.isMarked))
+          if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+            continue;
+          SM_Slot& e = k->privateMembers.table[idx];
+          if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
           {
             it->second.isMarked = true;
-            zlist_push(&aux,e.second);
+            zlist_push(&aux,e.val);
           }
         }
       }
@@ -577,9 +591,10 @@ public:
           ZObject dummy;
           dummy.type = Z_OBJ;
           dummy.ptr = e.first;
-          if (obj->members.find("__del__") != obj->members.end())
+          ZObject cb;
+          if (StrMap_get(&(obj->members),"__del__",&cb))
           {
-            ZObject p1 = obj->members["__del__"];
+            ZObject p1 = cb;
             if(p1.type == Z_NATIVE_FUNC || p1.type == Z_FUNC)
             {
               ZObject rr;
@@ -607,11 +622,17 @@ public:
       }
       else if (m.type == Z_CLASS)
       {
+        Klass* k = (Klass*)e;
+        StrMap_destroy(&(k->members));
+        StrMap_destroy(&(k->privateMembers));
         delete (Klass *)e;
         allocated -= sizeof(Klass);
       }
       else if (m.type == Z_OBJ)
       {
+        KlassObject* k = (KlassObject*)e;
+        StrMap_destroy(&(k->members));
+        StrMap_destroy(&(k->privateMembers));  
         delete (KlassObject *)e;
         allocated -= sizeof(KlassObject);
       }
@@ -662,8 +683,9 @@ public:
       }
       else if(m.type == Z_BYTEARR)
       {
-        delete (vector<uint8_t>*)e;
-        allocated -= sizeof(vector<uint8_t>);
+        ZByteArr_destroy((ZByteArr*)e);
+        delete (ZByteArr*)e;
+        allocated -= sizeof(ZByteArr);
       }
       memory.erase(e);
     }
@@ -683,12 +705,10 @@ public:
     //raiseErrOnNF = whether to raise error on not found or not ?
 
     KlassObject *obj = (KlassObject *)A.ptr;
-    auto it = obj->members.find(meth);
     ZObject p3;
     static string s1;// to avoid multiple object creation across multiple invokeCalls
-    if (it != obj->members.end())
+    if (StrMap_get(&(obj->members),meth.c_str(),&p3))
     {
-      p3 = it->second;
       if (p3.type == Z_FUNC)
       {
         FunObject *fn = (FunObject *)p3.ptr;
@@ -722,7 +742,9 @@ public:
         if (rr.type == Z_ERROBJ)
         {
           KlassObject *E = (KlassObject*)rr.ptr;
-          s1 = meth + "():  " + (string)((ZStr*)(E->members["msg"].ptr))->val;
+          ZObject msg;
+          StrMap_get(&(E->members),"msg",&msg);
+          s1 = meth + "():  " + (string)((ZStr*)msg.ptr)->val;
           spitErr(E->klass, s1);
           return false;
         }
@@ -841,7 +863,7 @@ public:
     alwaysByte.type = Z_BYTE;
     int32_t* alwaysi32ptr = &alwaysi32.i;
     ZDict *pd_ptr1;
-    vector<uint8_t>* bt_ptr1;
+    ZByteArr* bt_ptr1;
     k = program + offset;
     
     #ifndef ISTHREADED
@@ -1037,7 +1059,7 @@ public:
         }
         else if (p3.type == Z_BYTEARR)
         {
-          bt_ptr1 = (vector<uint8_t>*)p3.ptr;
+          bt_ptr1 = (ZByteArr*)p3.ptr;
           int64_t idx = 0;
           if (p1.type == Z_INT)
             idx = p1.i;
@@ -1048,7 +1070,7 @@ public:
             spitErr(TypeError, "Error type " + fullform(p1.type) + " cannot be used to index bytearray!");
             NEXT_INST;
           }
-          if (idx < 0 || idx > (int64_t)bt_ptr1->size())
+          if (idx < 0 || idx > (int64_t)bt_ptr1->size)
           {
             spitErr(IndexError, "Error index " + ZObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size));
             NEXT_INST;
@@ -1058,7 +1080,7 @@ public:
             spitErr(TypeError,"Error byte value required for bytearray!");
             NEXT_INST;
           }
-          (*bt_ptr1)[idx] = (uint8_t)p2.i;
+          bt_ptr1->arr[idx] = (uint8_t)p2.i;
         }
         else if (p3.type == Z_DICT)
         {
@@ -1084,7 +1106,9 @@ public:
         if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
-          spitErr(E->klass, AS_STD_STR(E->members["msg"]));
+          ZObject msg;
+          StrMap_get(&(E->members),"msg",&msg);
+          spitErr(E->klass, AS_STD_STR(msg));
           NEXT_INST;
         }
         zlist_eraseRange(&STACK,STACK.size - howmany,STACK.size - 1);
@@ -1101,7 +1125,9 @@ public:
         if (p1.type == Z_ERROBJ)
         {
           KlassObject* E = (KlassObject*)p1.ptr;
-          spitErr(E->klass, AS_STD_STR(E->members["msg"]));
+          ZObject msg;
+          StrMap_get(&(E->members),"msg",&msg);
+          spitErr(E->klass, AS_STD_STR(msg));
           NEXT_INST;
         }
         zlist_eraseRange(&STACK,STACK.size - i2,STACK.size - 1);
@@ -1137,7 +1163,9 @@ public:
             {
               // The module raised an error
               KlassObject* E = (KlassObject*)p4.ptr;
-              s1 = (string)method_name + "():  " +  AS_STD_STR(E->members["msg"]);
+              ZObject msg;
+              StrMap_get(&(E->members),"msg",&msg);
+              s1 = (string)method_name + "():  " +  AS_STD_STR(msg);
               spitErr(E->klass,s1);
               NEXT_INST;
             }
@@ -1160,12 +1188,12 @@ public:
             r.type = Z_OBJ;
             r.ptr = (void *)obj;
             STACK.arr[STACK.size-i2-1] = r;
-            if (obj->members.find("__construct__") != obj->members.end())
+            ZObject construct;
+            if (StrMap_get(&(obj->members),"__construct__",&construct))
             {
-              ZObject construct = obj->members["__construct__"];
               if (construct.type != Z_NATIVE_FUNC)
               {
-                spitErr(TypeError, "Error constructor of module's class " + ((Klass *)p3.ptr)->name + " is not a native function!");
+                spitErr(TypeError, "Error constructor of module's class " + (string)((Klass *)p3.ptr)->name + " is not a native function!");
                 NEXT_INST;
               }
               NativeFunction *fn = (NativeFunction *)construct.ptr;
@@ -1177,7 +1205,9 @@ public:
               {
                 // The module raised an error
                 KlassObject* E = (KlassObject*)p1.ptr;
-                s1 = (string)method_name + "():  " +  AS_STD_STR(E->members["msg"]);
+                ZObject msg;
+                StrMap_get(&(E->members),"msg",&msg);
+                s1 = (string)method_name + "():  " +  AS_STD_STR(msg);
                 spitErr(E->klass, s1);
                 NEXT_INST;
               }
@@ -1199,7 +1229,9 @@ public:
           if (p3.type == Z_ERROBJ)
           {
             KlassObject* E = (KlassObject*)p3.ptr;
-            spitErr(E->klass, *(string *)(E->members["msg"].ptr));
+            ZObject msg;
+            StrMap_get(&(E->members),"msg",&msg);
+            spitErr(E->klass, *(string *)(msg.ptr));
             NEXT_INST;
           }
           zlist_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
@@ -1208,9 +1240,11 @@ public:
         else if (p1.type == Z_OBJ)
         {
           KlassObject *obj = (KlassObject *)p1.ptr;
-          if (obj->members.find(method_name) == obj->members.end())
+          ZObject tmp;
+
+          if (!StrMap_get(&(obj->members),method_name.c_str(),&tmp))
           {
-            if (obj->privateMembers.find(method_name) != obj->privateMembers.end())
+            if (StrMap_get(&(obj->privateMembers),method_name.c_str(),&tmp))
             {
               FunObject *p = executing.back();
               if (p == NULL)
@@ -1219,9 +1253,7 @@ public:
                 NEXT_INST;
               }
               if (p->klass == obj->klass)
-              {
-                p4 = obj->privateMembers[method_name];
-              }
+                p4 = tmp;
               else
               {
                 spitErr(NameError, "Error " + method_name + " is private member of object!");
@@ -1235,13 +1267,13 @@ public:
             }
           }
           else
-            p4 = obj->members[method_name];
+            p4 = tmp;
           if (p4.type == Z_FUNC)
           {
             FunObject *memFun = (FunObject *)p4.ptr;
             if ((size_t)i2 + 1 + memFun->opt.size < memFun->args || (size_t)i2 + 1 > memFun->args)
             {
-              spitErr(ArgumentError, "Error function " + memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
+              spitErr(ArgumentError, "Error function " + (string)memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
               NEXT_INST;
             }
             callstack.push_back(k + 1);
@@ -1271,7 +1303,9 @@ public:
             if (rr.type == Z_ERROBJ)
             {
               KlassObject* E = (KlassObject *)rr.ptr;
-              spitErr(E->klass, fn->name + ": " + AS_STD_STR(E->members["msg"]));
+              ZObject msg;
+              StrMap_get(&(E->members),"msg",&msg);
+              spitErr(E->klass, fn->name + ": " + AS_STD_STR(msg));
               NEXT_INST;
             }
             zlist_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
@@ -1364,51 +1398,35 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 3;
-        s1 = strings[i1].val;
-        
+        const char* memberName = strings[i1].val;        
         if (p1.type != Z_OBJ)
         {
           spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
           NEXT_INST;
         }
         KlassObject *ptr = (KlassObject *)p1.ptr;
-        if (ptr->members.find(s1) == ptr->members.end())
+        ZObject* ref;
+        if (!(ref = StrMap_getRef(&(ptr->members),memberName)))
         {
-          if (p1.type == Z_OBJ)
+          if (( ref = StrMap_getRef(&(ptr->privateMembers),memberName)))
           {
-            if (ptr->privateMembers.find(s1) != ptr->privateMembers.end())
+            // private member
+            FunObject *A = executing.back();
+            if (A == NULL || A->klass != ptr->klass)
             {
-              // private member
-              FunObject *A = executing.back();
-              if (A == NULL)
-              {
-                spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                NEXT_INST;
-              }
-              if (ptr->klass != A->klass)
-              {
-                spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                NEXT_INST;
-              }
-              ptr->privateMembers[s1] = p2;
-              k += 1;
+              spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
               NEXT_INST;
             }
-            else
-            {
-              spitErr(NameError, "Error the object has no member named " + s1);
-              NEXT_INST;
-            }
-          }
-          else
-          {
-            spitErr(NameError, "Error the object has no member named " + s1);
+            *ref = p2;
+            k += 1;
             NEXT_INST;
           }
+          spitErr(NameError, "Error the object has no member named " + s1);
+          NEXT_INST;
         }
-
-        ptr->members[s1] = p2;
-        k++; NEXT_INST;
+        *ref = p2;
+        k++; 
+        NEXT_INST;
       }
       CASE_CP IMPORT:
       {
@@ -2198,15 +2216,15 @@ public:
             NEXT_INST;
           }
 
-          bt_ptr1 = (vector<uint8_t>*)p2.ptr;
-          if ((size_t)p1.l >= bt_ptr1->size())
+          bt_ptr1 = (ZByteArr*)p2.ptr;
+          if ((size_t)p1.l >= bt_ptr1->size)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
             NEXT_INST;
           }
           p3.type = 'm';
-          p3.i = (*bt_ptr1)[p1.l];
+          p3.i = bt_ptr1->arr[p1.l];
           zlist_push(&STACK,p3);
           k++; NEXT_INST;
         }
@@ -2239,16 +2257,8 @@ public:
           }
           char* s;
           size_t length;
-          if(p2.type == Z_STR)
-          {
-            s = ((ZStr*)p2.ptr) -> val;
-            length = ((ZStr*)p2.ptr) -> len;
-          }
-          else
-          {
-            s = ((ZMStr*)p2.ptr) -> arr;
-            length = ((ZMStr*)p2.ptr) -> size;
-          }
+          s = ((ZStr*)p2.ptr) -> val;
+          length = ((ZStr*)p2.ptr) -> len;
           if ((size_t)p1.l >= length)
           {
             orgk = k - program;
@@ -2445,7 +2455,7 @@ public:
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        string mname = strings[i1].val;
+        const char* mname = strings[i1].val;
      
         if (a.type == Z_MODULE)
         {
@@ -2453,7 +2463,7 @@ public:
 
           if (m->members.find(mname) == m->members.end())
           {
-            spitErr(NameError, "Error module object has no member named '" + mname + "' ");
+            spitErr(NameError, "Error module object has no member named '" + (string)mname + "' ");
             NEXT_INST;
           }
           zlist_push(&STACK,m->members[mname]);
@@ -2463,64 +2473,61 @@ public:
         else if(a.type == Z_OBJ)
         {
           KlassObject *ptr = (KlassObject *)a.ptr;
-          if (ptr->members.find(mname) == ptr->members.end())
+          printf("ptr = %x\n",ptr);
+          ZObject tmp;
+          if (!StrMap_get(&(ptr->members),mname,&tmp))
           {
-              if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
+              if(StrMap_get(&(ptr->privateMembers),mname,&tmp))
               {
                 FunObject *A = executing.back();
-                if (A == NULL)
+                if (A == NULL || ptr->klass != A->klass)
                 {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->klass->name + "'s object!");
                   NEXT_INST;
                 }
-                if (ptr->klass != A->klass)
-                {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  NEXT_INST;
-                }
-                zlist_push(&STACK,ptr->privateMembers[mname]);
+                zlist_push(&STACK,tmp);
                 k += 1;
                 NEXT_INST;
               }
               else
               {
-                spitErr(NameError, "Error object has no member named " + mname);
+                spitErr(NameError, "Error object has no member named " + (string)mname);
                 NEXT_INST;
               }
           }
-          ZObject ret = ptr->members[mname];
-          zlist_push(&STACK,ret);
+          printf("pushing %d\n",tmp.i);
+          zlist_push(&STACK,tmp);
         }
         else if(a.type == Z_CLASS)
         {
           Klass *ptr = (Klass *)a.ptr;
-          if (ptr->members.find(mname) == ptr->members.end())
+          ZObject tmp;
+          if (!StrMap_get(&(ptr->members),mname,&tmp))
           {
-              if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
+              if (StrMap_get(&(ptr->privateMembers),mname,&tmp))
               {
                 FunObject *A = executing.back();
                 if (A == NULL)
                 {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
+                  spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->name + "!");
                   NEXT_INST;
                 }
                 if (ptr != A->klass)
                 {
-                  spitErr(AccessError, "Error cannot access private member " + mname + " of class " + ptr->name + "!");
+                  spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->name + "!");
                   NEXT_INST;
                 }
-                zlist_push(&STACK,ptr->privateMembers[mname]);
+                zlist_push(&STACK,tmp);
                 k += 1;
                 NEXT_INST;
               }
               else
               {
-                spitErr(NameError, "Error class has no member named " + mname);
+                spitErr(NameError, "Error class has no member named " + (string)mname);
                 NEXT_INST;
               }
           }
-          ZObject ret = ptr->members[mname];
-          zlist_push(&STACK,ret);
+          zlist_push(&STACK,tmp);
         }
         else
         {
@@ -2582,11 +2589,10 @@ public:
         int32_t idx;
         memcpy(&idx, k, sizeof(int32_t));
         k += 3;
-        string name = strings[idx].val; //OPTIMIZE
         ZObject klass;
         klass.type = Z_CLASS;
         Klass *obj = allocKlass();
-        obj->name = name;
+        obj->name = strings[idx].val;
         values.clear();
         names.clear();
         for (int32_t i = 1; i <= N; i++)
@@ -2606,14 +2612,11 @@ public:
         }
         for (int32_t i = 0; i < N; i += 1)
         {
-          s1 = *(string *)names[i].ptr;
-          if (s1[0] == '@')
-          {
-            s1.erase(s1.begin());
-            obj->privateMembers.emplace(s1, values[i]);
-          }
+          char* propName = ((ZStr*)names[i].ptr)->val;
+          if (propName[0] == '@')
+            StrMap_emplace(&(obj->privateMembers),propName+1,values[i]);
           else
-            obj->members.emplace(s1, values[i]);
+            StrMap_emplace(&(obj->members),propName,values[i]);
         }
         klass.ptr = (void *)obj;
         zlist_push(&STACK,klass);
@@ -2630,12 +2633,10 @@ public:
         k += 3;
         // N is total new class members
         // i1 is idx of class name in strings array
-        string name = strings[i1].val;
         ZObject klass;
         klass.type = Z_CLASS;
         Klass *d = allocKlass();
-        d->name = name;
-
+        d->name = strings[i1].val; // strings are not deallocated until exit, so no problem
         names.clear();
         values.clear();
         for (int32_t i = 1; i <= N; i++)
@@ -2664,26 +2665,27 @@ public:
 
         for (int32_t i = 0; i < N; i += 1)
         {
-          s1 = *(string *)names[i].ptr;
-          if (s1[0] == '@')
-          {
-            s1.erase(s1.begin());
-            d->privateMembers.emplace(s1, values[i]);
-          }
+          char* propName = ((ZStr*)names[i].ptr) -> val;
+          if (propName[0] == '@')
+            StrMap_emplace(&(d->privateMembers),propName+1,values[i]);
           else
-            d->members.emplace(s1, values[i]);
+            StrMap_emplace(&(d->members),propName,values[i]);
         }
 
-        for (const auto& e : Base->members)
+        for (size_t it = 0;it < Base->members.capacity;it++)
         {
-          const string &n = e.first;
-          if (n == "super")//do not add base class's super to this class
-            NEXT_INST;
-          if (d->members.find(n) == d->members.end())
+          if(Base->members.table[it].stat != SM_OCCUPIED)
+            continue;
+          auto& e = Base->members.table[it];
+          const char* n = e.key;
+          if (strcmp(n , "super") == 0)//do not add base class's super to this class
+            continue;
+          ZObject* ref;
+          if (!(ref = StrMap_getRef(&(d->members),n)))
           {
-            if (d->privateMembers.find(n) == d->privateMembers.end())
+            if ((ref = StrMap_getRef(&(d->privateMembers),n)))
             {
-              p1 = e.second;
+              p1 = e.val;
               if (p1.type == Z_FUNC)
               {
                 FunObject *p = (FunObject *)p1.ptr;
@@ -2697,18 +2699,22 @@ public:
                 p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }
-              d->members.emplace(e.first, p1);
+              StrMap_emplace(&(d->members),e.key, p1);
             }
           }
         }
-        for(const auto& e : Base->privateMembers)
+        for (size_t it = 0;it < Base->privateMembers.capacity;it++)
         {
-          const string &n = e.first;
-          if (d->privateMembers.find(n) == d->privateMembers.end())
+          if(Base->privateMembers.table[it].stat != SM_OCCUPIED)
+            continue;
+          auto& e = Base->privateMembers.table[it];
+          const char* n = e.key;
+          ZObject* ref;
+          if (!(ref = StrMap_getRef(&(d->privateMembers),n)))
           {
-            if (d->members.find(n) == d->members.end())
+            if (!(ref = StrMap_getRef(&(d->members),n)))
             {
-              p1 = e.second;
+              p1 = e.val;
               if (p1.type == Z_FUNC)
               {
                 FunObject *p = (FunObject *)p1.ptr;
@@ -2722,12 +2728,12 @@ public:
                 p1.type = Z_FUNC;
                 p1.ptr = (void *)rep;
               }
-              d->privateMembers.emplace(n, p1);
+              StrMap_emplace(&(d->privateMembers),n, p1);
             }
           }
         }
 
-        d->members.emplace("super",baseClass);
+        StrMap_emplace(&(d->members),"super",baseClass);
         klass.ptr = (void *)d;
         zlist_push(&STACK,klass);
         k++; NEXT_INST;
@@ -2785,7 +2791,7 @@ public:
           FunObject *obj = (FunObject *)fn.ptr;
           if ((size_t)N + obj->opt.size < obj->args || (size_t)N > obj->args)
           {
-            spitErr(ArgumentError, "Error function " + obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
+            spitErr(ArgumentError, "Error function " + (string)obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
             NEXT_INST;
           }
           callstack.push_back(k + 1);
@@ -2829,15 +2835,15 @@ public:
           obj->privateMembers = ((Klass *)fn.ptr)->privateMembers;
           s1 = ((Klass*)fn.ptr) -> name;
           obj->klass = (Klass *)fn.ptr;
-          if (obj->members.find("__construct__") != obj->members.end())
+          ZObject construct;
+          if (StrMap_get(&(obj->members),"__construct__", &construct))
           {
-            ZObject construct = obj->members["__construct__"];
             if (construct.type == Z_FUNC)
             {
               FunObject *p = (FunObject *)construct.ptr;
               if ((size_t)N + p->opt.size + 1 < p->args || (size_t)N + 1 > p->args)
               {
-                spitErr(ArgumentError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
+                spitErr(ArgumentError, "Error constructor of class " + (string)((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
                 NEXT_INST;
               }
               ZObject r;
@@ -2868,8 +2874,11 @@ public:
               zlist_eraseRange(&STACK,STACK.size-(N+1),STACK.size-1);
               if (p4.type == Z_ERROBJ)
               {
-                char* msg = ((ZStr*)(((KlassObject*)p4.ptr)->members["msg"].ptr)) -> val;
-                spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + msg);
+                KlassObject* E = (KlassObject*)p4.ptr;
+                ZObject msg;
+                StrMap_get(&(E->members),"msg",&msg);
+                char* errmsg = ((ZStr*)msg.ptr) -> val;
+                spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + errmsg);
                 NEXT_INST;
               }
               zlist_push(&STACK,r);
@@ -2879,7 +2888,7 @@ public:
             }
             else
             {
-              spitErr(TypeError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " is not a function!");
+              spitErr(TypeError, "Error constructor of class " + (string)((Klass *)fn.ptr)->name + " is not a function!");
               NEXT_INST;
             }
           }
@@ -2887,7 +2896,7 @@ public:
           {
             if (N != 0)
             {
-              spitErr(ArgumentError, "Error constructor of class " + ((Klass *)fn.ptr)->name + " takes 0 arguments!");
+              spitErr(ArgumentError, "Error class " + (string)((Klass *)fn.ptr)->name + " takes 0 arguments!");
               NEXT_INST;
             }
           }
@@ -3259,8 +3268,8 @@ public:
           NEXT_INST;
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
-        std::unordered_map<string,ZObject>::iterator it;
-        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=Z_STR))
+        ZObject msg;
+        if( !StrMap_get(&(ki->members),"msg",&msg) || msg.type!=Z_STR)
         {
           spitErr(ThrowError,"Object does not have member 'msg' or it is not a string!");
           NEXT_INST;
@@ -3268,7 +3277,7 @@ public:
         if (except_targ.size() == 0)
         {
           ///IMPORTANT
-          spitErr(ki->klass,((ZStr*)((*it).second.ptr))->val );
+          spitErr(ki->klass,((ZStr*)(msg.ptr))->val );
           NEXT_INST;
         }
         k = except_targ.back();
@@ -3337,42 +3346,36 @@ public:
         ++k;
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        string mname = strings[i1].val;//optimize
-     
+        const char* mname = strings[i1].val;//optimize
         if(a.type == Z_OBJ)
         {
           KlassObject *ptr = (KlassObject *)a.ptr;
-          if (ptr->members.find(mname) == ptr->members.end())
+          ZObject tmp;
+          if (!StrMap_get(&(ptr->members),mname,&tmp))
           {
-              if (ptr->privateMembers.find(mname) != ptr->privateMembers.end())
+              if (StrMap_get(&(ptr->privateMembers),mname,&tmp))
               {
                 FunObject *A = executing.back();
-                if (A == NULL)
+                if (A == NULL || A->klass != ptr->klass)
                 {
-                  spitErr(AccessError, "Cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
+                  spitErr(AccessError, "Cannot access private member " + (string)mname + " of class " + ptr->klass->name + "'s object!");
                   NEXT_INST;
                 }
-                if (ptr->klass != A->klass)
-                {
-                  spitErr(AccessError, "Cannot access private member " + mname + " of class " + ptr->klass->name + "'s object!");
-                  NEXT_INST;
-                }
-                zlist_push(&STACK,ptr->privateMembers[mname]);
+                zlist_push(&STACK,tmp);
                 k += 1;
                 NEXT_INST;
               }
               else
               {
-                spitErr(NameError, "Object 'self' has no member named " + mname);
+                spitErr(NameError, "Object 'self' has no member named " + (string)mname);
                 NEXT_INST;
               }
           }
-          ZObject ret = ptr->members[mname];
-          zlist_push(&STACK,ret);
+          zlist_push(&STACK,tmp);
         }
         else
         {
-          spitErr(TypeError, "Can not access member "+mname+", self not an object!");
+          spitErr(TypeError, "Can not access member "+(string)mname+", self not an object!");
           NEXT_INST;
         }
         k++; NEXT_INST;
@@ -3386,50 +3389,34 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 3;
-        s1 = strings[i1].val;
+        const char* s1 = strings[i1].val;
         
         if (Parent.type != Z_OBJ)
         {
-          spitErr(TypeError, "Cannot access variable "+s1+" ,self is not a class object!");
+          spitErr(TypeError, "Cannot access variable "+(string)s1+" ,self is not a class object!");
           NEXT_INST;
         }
         KlassObject *ptr = (KlassObject *)Parent.ptr;
-        if (ptr->members.find(s1) == ptr->members.end())
+        ZObject* ref;
+        if (! ( ref = StrMap_getRef(&(ptr->members),s1) ))
         {
-          if (Parent.type == Z_OBJ)
+          if (( ref = StrMap_getRef(&(ptr->privateMembers),s1) ))
           {
-            if (ptr->privateMembers.find(s1) != ptr->privateMembers.end())
+            // private member
+            FunObject *A = executing.back();
+            if (A == NULL || A->klass != ptr->klass)
             {
-              // private member
-              FunObject *A = executing.back();
-              if (A == NULL)
-              {
-                spitErr(AccessError, "Cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                NEXT_INST;
-              }
-              if (ptr->klass != A->klass)
-              {
-                spitErr(AccessError, "Cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
-                NEXT_INST;
-              }
-              ptr->privateMembers[s1] = val;
-              k += 1;
+              spitErr(AccessError, "Cannot access private member " + (string)s1 + " of class " + ptr->klass->name + "'s object!");
               NEXT_INST;
             }
-            else
-            {
-              spitErr(NameError, "Object has no member named " + s1);
-              NEXT_INST;
-            }
-          }
-          else
-          {
-            spitErr(NameError, "Object has no member named " + s1);
+            *ref = val;
+            k += 1;
             NEXT_INST;
-          }
+          }          
+          spitErr(NameError, "Object has no member named " + (string)s1);
+          NEXT_INST;
         }
-
-        ptr->members[s1] = val;
+        *ref = val;
         k++; NEXT_INST;
       }
       CASE_CP GC:
@@ -3485,9 +3472,9 @@ public:
         dummy.type = Z_OBJ;
         dummy.ptr = (*it).first;
         ZObject rr;
-        if (obj->members.find("__del__") != obj->members.end())
+        ZObject p1;
+        if (StrMap_get(&(obj->members),"__del__",&p1))
         {
-          ZObject p1 = obj->members["__del__"];
           if(p1.type == Z_FUNC || p1.type==Z_NATIVE_FUNC)
           {
             callObject(&p1,&dummy,1,&rr);
@@ -3550,14 +3537,15 @@ zlist *allocList()
   vm.memory.emplace((void *)p, m);
   return p;
 }
-vector<uint8_t>* allocByteArray()
+ZByteArr* allocByteArray()
 {
-  auto p = new(nothrow) vector<uint8_t>;
+  auto p = new(nothrow) ZByteArr;
   if (!p)
   {
     fprintf(stderr,"allocByteArray(): error allocating memory!\n");
     exit(0);
   }
+  ZByteArr_init(p);
   vm.allocated += sizeof(std::vector<uint8_t>);
   MemInfo m;
   m.type = Z_BYTEARR;
@@ -3621,6 +3609,9 @@ Klass *allocKlass()
     fprintf(stderr,"allocKlass(): error allocating memory!\n");
     exit(0);
   }
+  StrMap_init(&(p->members));
+  StrMap_init(&(p->privateMembers));
+
   vm.allocated += sizeof(Klass);
   MemInfo m;
   m.type = Z_CLASS;
@@ -3651,6 +3642,8 @@ KlassObject *allocKlassObject()
     fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
     exit(0);
   }
+  StrMap_init(&(p->members));
+  StrMap_init(&(p->privateMembers));
   vm.allocated += sizeof(KlassObject);
   MemInfo m;
   m.type = Z_OBJ;
@@ -3763,7 +3756,7 @@ bool callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
      FunObject* fn = (FunObject*)obj->ptr;
      if ((size_t)N + fn->opt.size < fn->args || (size_t)N > fn->args)
      {
-      *rr = Z_Err(ArgumentError, "Function " + fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
+      *rr = Z_Err(ArgumentError, "Function " + (string)fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
       return false;
      }
      uint8_t* prev = vm.k;

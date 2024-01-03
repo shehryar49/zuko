@@ -181,14 +181,14 @@ void printList(zlist* l,vector<void*> seen = {})
   printf("]");
 }
 
-void printByteArray(vector<uint8_t>* arr)
+void printByteArray(ZByteArr* arr)
 {
   string IntToHex(int);
-  size_t len = arr->size();
+  size_t len = arr->size;
   printf("bytearr([");
   for(size_t i=0;i<len;i++)
   {
-    printf("%s",IntToHex((*arr)[i]).c_str());
+    printf("%s",IntToHex(arr->arr[i]).c_str());
     if(i!=len-1)
       printf(",");
   }
@@ -204,15 +204,14 @@ ZObject print(ZObject* args,int32_t argc)
         else if(args[k].type=='a')
            printZDict((ZDict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
-          printByteArray((vector<uint8_t>*)args[k].ptr);
+          printByteArray((ZByteArr*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
         {
           KlassObject* ki = (KlassObject*)args[k].ptr;
           ZObject r,ret;
-          std::unordered_map<string,ZObject>::iterator it;
-          if((it = ki->members.find("__print__"))!=ki->members.end())
+
+          if(StrMap_get(&(ki->members),"__print__",&r))
           {
-            r = (*it).second;
             vm_callObject(&r,&r,1,&ret);
           }
           else
@@ -253,7 +252,7 @@ ZObject PRINTF(ZObject* args,int32_t argc)
           else if(args[j].type=='a')
            printZDict((ZDict*)args[j].ptr);
           else if(args[j].type==Z_BYTEARR)
-          printByteArray((vector<uint8_t>*)args[j].ptr);
+          printByteArray((ZByteArr*)args[j].ptr);
           else
            printf("%s",ZObjectToStr(args[j]).c_str());
           j+=1;
@@ -314,17 +313,13 @@ ZObject println(ZObject* args,int32_t argc)
         else if(args[k].type=='a')
           printZDict((ZDict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
-          printByteArray((vector<uint8_t>*)args[k].ptr);
+          printByteArray((ZByteArr*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
         {
           KlassObject* ki = (KlassObject*)args[k].ptr;
           ZObject r,ret;
-          std::unordered_map<string,ZObject>::iterator it;
-          if((it = ki->members.find("__print__"))!=ki->members.end())
-          {
-            r = (*it).second;
+          if(StrMap_get(&(ki->members),"__print__",&r))
             vm_callObject(&r,&r,1,&ret);
-          }
           else
             printf("%s",ZObjectToStr(args[k]).c_str());
         }
@@ -410,7 +405,7 @@ ZObject LEN(ZObject* args,int32_t argc)
     else if(args[0].type=='a')
         ret.l = ((ZDict*)args[0].ptr)->size;
     else if(args[0].type == 'c')
-        ret.l = ((vector<uint8_t>*)args[0].ptr)->size();
+        ret.l = ((ZByteArr*)args[0].ptr)->size;
     else
         return Z_Err(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
     return ret;
@@ -506,7 +501,7 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
   ZObject ret = nil;
   if(argc==0)
   {
-    vector<uint8_t>* arr = allocByteArray();
+    ZByteArr* arr = allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     return ret;
@@ -519,14 +514,14 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
     }
     zlist* p = (zlist*)args[0].ptr;
     size_t len = p->size;
-    vector<uint8_t>* arr = allocByteArray();
+    ZByteArr* arr = allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     for(size_t i=0;i<len;i++)
     {
       if(p->arr[i].type!=Z_BYTE)
         return Z_Err(TypeError,"Error argument list given to bytearray() must contain only bytes!");
-      arr->push_back(p->arr[i].i);
+      ZByteArr_push(arr,p->arr[i].i);
     }
     return ret;
   }
@@ -606,20 +601,20 @@ ZObject BYTES(ZObject* args,int32_t argc)
     ret.ptr = (void*)p;
     if(e.type=='i')
     {
-      p->resize(4);
-      memcpy(&(*p)[0],&e.i,4);
+      ZByteArr_resize(p,4);
+      memcpy(p->arr,&e.i,4);
       return ret;
     }
     else if(e.type=='l')
     {
-      p->resize(8);
-      memcpy(&(*p)[0],&e.l,8);
+      ZByteArr_resize(p,8);
+      memcpy(p->arr,&e.l,8);
       return ret;
     }
     else if(e.type=='f')
     {
-      p->resize(4);
-      memcpy(&(*p)[0],&e.f,4);
+      ZByteArr_resize(p,4);
+      memcpy(p->arr,&e.f,4);
       return ret;
     }
     else if(e.type=='s')
@@ -628,20 +623,20 @@ ZObject BYTES(ZObject* args,int32_t argc)
        char* ptr = s->val;
        char ch;
        while((ch = *ptr++))
-         p->push_back((uint8_t)ch);
+         ZByteArr_push(p,(uint8_t)ch);
        return ret;
     }
     else if(e.type=='b')
     {
       if(e.i)
-        p->push_back(1);
+        ZByteArr_push(p,1);
       else
-        p->push_back(0);
+        ZByteArr_push(p,0);
       return ret;
     }
     else if(e.type == Z_BYTE)
     {
-      p->push_back(e.i);
+      ZByteArr_push(p,e.i);
       return ret;
     }
     else
@@ -657,14 +652,21 @@ ZObject OBJINFO(ZObject* args,int32_t argc)
     if( args[0].type=='o')
     {
       KlassObject* k = (KlassObject*)args[0].ptr;
-      for(auto e: k->members)
+      for(size_t idx = 0; idx < k->members.capacity;idx++)
       {
-            printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
+        if(k->members.table[idx].stat != SM_OCCUPIED)
+          continue;
+        auto& e = k->members.table[idx];
+        printf("%s: %s\n",e.key,fullform(e.val.type).c_str());
           
       }
-      for(auto e: k->privateMembers)
+      for(size_t idx = 0; idx < k->privateMembers.capacity;idx++)
       {
-          printf("%s: %s\n",e.first.c_str(),fullform(e.second.type).c_str());
+        if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+          continue;
+        auto& e = k->privateMembers.table[idx];
+        printf("%s: %s\n",e.key,fullform(e.val.type).c_str());
+          
       }
       ZObject ret = nil;
       return ret;
@@ -1089,9 +1091,10 @@ ZObject STR(ZObject* args,int32_t argc)
       else if(args[0].type == Z_BYTEARR)
       {
         string s;
-        vector<uint8_t>& bytes = *(vector<uint8_t>*)args[0].ptr;
-        for(auto byte: bytes)
+        ZByteArr* bytes = (ZByteArr*)args[0].ptr;
+        for(size_t i=0;i<bytes->size;i++)
         {
+          uint8_t byte = bytes->arr[i];
           s.push_back((char)byte);
         }
         ZStr* p = allocString(s.length());
@@ -1631,14 +1634,14 @@ ZObject FREAD(ZObject* args,int32_t argc)
     ZObject a = args[1];
     PromoteType(a,'l');
     int64_t e = a.l;
-    auto p = (vector<uint8_t>*)args[0].ptr;
-    p->resize(e);
+    auto p = (ZByteArr*)args[0].ptr;
+    ZByteArr_resize(p,e);
     zfile fobj = *(zfile*)args[2].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     unsigned long long int read = 0;
-    if((read = fread(&(p->at(0)),1,e,currF))!=(size_t)e)
+    if((read = fread(p->arr,1,e,currF))!=(size_t)e)
         return Z_Err(FileIOError,"Error unable to read specified bytes from the file.");
     if(currF == stdin)
       clean_stdin();//the newline character can cause problem with future inputs or REPL
@@ -1652,7 +1655,7 @@ ZObject FWRITE(ZObject* args,int32_t argc)
     {
     if(!validateArgTypes("fwrite","cu",args,argc,ret))
       return ret;
-     S = ((vector<uint8_t>*)args[0].ptr)->size(); 
+     S = ((ZByteArr*)args[0].ptr)->size; 
     }
     else if(argc==3)
     {
@@ -1667,17 +1670,17 @@ ZObject FWRITE(ZObject* args,int32_t argc)
     {
       return Z_Err(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
     }
-    auto l = (vector<uint8_t>*)args[0].ptr;
-    if(S > l->size())
+    auto l = (ZByteArr*)args[0].ptr;
+    if(S > l->size)
       return Z_Err(ValueError,"Error the bytearray needs to have specified number of bytes!");
-    if(l->size() == 0)
+    if(l->size == 0)
       return ret;
     zfile fobj = *(zfile*)args[1].ptr;
     if(!fobj.open)
       return Z_Err(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     int64_t written = 0;
-    if((written = fwrite(&(l->at(0)),1,S,currF))!=(int64_t)S)
+    if((written = fwrite(l->arr,1,S,currF))!=(int64_t)S)
     {
         string what = strerror(errno);
         return Z_Err(FileIOError,"Error unable to write the bytes to file!");
@@ -1861,14 +1864,11 @@ ZObject POP(ZObject* args,int32_t argc)
   {
     ZObject ret = nil;
 
-    auto p = (vector<uint8_t>*)args[0].ptr;
-    if(p->size() != 0)
-    {
-      ret.type = Z_BYTE;
-      ret.i = p->back();
-      p->pop_back();
-      return ret;
-    }
+    auto p = (ZByteArr*)args[0].ptr;
+    uint8_t res;
+    ZByteArr_pop(p,&res);
+    ret.type = Z_BYTE;
+    ret.i = res;
     return ret;
   }
   else
@@ -1894,8 +1894,8 @@ ZObject CLEAR(ZObject* args,int32_t argc)
     return Z_Err(ArgumentError,"Error method clear() takes 0 arguments!");
   if(args[0].type == Z_BYTEARR)
   {
-    vector<uint8_t>* arr = (vector<uint8_t>*)args[0].ptr;
-    arr->clear();
+    ZByteArr* arr = (ZByteArr*)args[0].ptr;
+    arr->size = 0;
   }
   else
   {
@@ -1920,10 +1920,10 @@ ZObject PUSH(ZObject* args,int32_t argc)
   }
   else
   {
-    vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
+    ZByteArr* p = (ZByteArr*)args[0].ptr;
     if(args[1].type != Z_BYTE)
      return Z_Err(TypeError,"Can only push a byte to a bytearray!");
-    p->emplace_back((uint8_t)args[1].i); //faster
+    ZByteArr_push(p,args[1].i);
     ZObject ret = nil;
     return ret;
   }
@@ -1963,11 +1963,11 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
   }
   else
   {
-    vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
+    ZByteArr* p = (ZByteArr*)args[0].ptr;
     ZObject ret = nil;
-    for(size_t k=0;k<p->size();k+=1)
+    for(size_t k=0;k<p->size;k+=1)
     {
-      if((*p)[k]==(uint8_t)args[1].i)
+      if(p->arr[k]==(uint8_t)args[1].i)
       {
         ret.type = 'i';
         ret.i = k;
@@ -1981,7 +1981,7 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
 {
   if(argc==3)
   {
-    vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
+    ZByteArr* p = (ZByteArr*)args[0].ptr;
     ZObject idx = args[1];
     ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
@@ -1989,16 +1989,16 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
     PromoteType(idx,'l');
     if(idx.l < 0)
       return Z_Err(ValueError,"Error insertion position is negative!");
-    if((size_t)idx.l > p->size())
+    if((size_t)idx.l > p->size)
           return Z_Err(ValueError,"Error insertion position out of range!");
     if(val.type=='c')
     {
-      auto subarr = *(vector<uint8_t>*)val.ptr;
-      p->insert(p->begin()+idx.l,subarr.begin(),subarr.end());
+      auto subarr = (ZByteArr*)val.ptr;
+      ZByteArr_insertArr(p,idx.l,subarr);
     }
     else if(val.type == Z_BYTE)
     {
-      p->insert(p->begin()+idx.l,(uint8_t)val.i);
+      ZByteArr_insert(p,idx.l,val.i);
     }
     else
       return Z_Err(TypeError,"Error method insert() takes a byte or bytearray argument!");
@@ -2008,33 +2008,7 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
   else
     return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
 }
-ZObject INSERTMSTR(ZObject* args,int32_t argc)
-{
-  if(argc==3)
-  {
-    string* p = (string*)args[0].ptr;
-    ZObject idx = args[1];
-    ZObject val = args[2];
-    if(idx.type!='i' && idx.type!='l')
-      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
-    PromoteType(idx,'l');
-    if(idx.l < 0)
-      return Z_Err(ValueError,"Error insertion position is negative!");
-    if((size_t)idx.l > p->size())
-          return Z_Err(ValueError,"Error insertion position out of range!");
-    if(val.type==Z_STR)
-    {
-      const string& sub = *(string*)val.ptr;
-      p->insert(p->begin()+idx.l,sub.begin(),sub.end());
-    }
-    else
-      return Z_Err(TypeError,"Error method insert() takes a string argument!");
-    ZObject ret = nil;
-    return ret;
-  }
-  else
-    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
-}
+
 ZObject INSERTSTR(ZObject* args,int32_t argc)
 {
   if(argc==3)
@@ -2145,7 +2119,7 @@ ZObject ERASE(ZObject* args,int32_t argc)
   {
     if(argc!=2 && argc!=3)
       return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
-    vector<uint8_t>* p = (vector<uint8_t>*)args[0].ptr;
+    ZByteArr* p = (ZByteArr*)args[0].ptr;
     ZObject idx1 = args[1];
     ZObject idx2;
     if(argc==3)
@@ -2160,9 +2134,9 @@ ZObject ERASE(ZObject* args,int32_t argc)
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
         return Z_Err(ValueError,"Error index is negative!");
-    if((size_t)idx1.l >= p->size() || (size_t)idx2.l >= p->size())
+    if((size_t)idx1.l >= p->size || (size_t)idx2.l >= p->size)
         return Z_Err(ValueError,"Error index out of range!");
-    p->erase(p->begin()+idx1.l,p->begin()+idx2.l+1);
+    ZByteArr_eraseRange(p,idx1.l,idx2.l);
     ZObject ret = nil;
     return ret;
   }
@@ -2325,7 +2299,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     return Z_Err(ArgumentError,"Error unpack() takes 2 arguments!");
   if(args[1].type!=Z_STR)
     return Z_Err(TypeError,"Error unpack() takes a string argument!");
-  auto arr = (vector<uint8_t>*)args[0].ptr;
+  auto arr = (ZByteArr*)args[0].ptr;
   string pattern = ((ZStr*)args[1].ptr)->val;
   size_t k = 0;
   int32_t int32;
@@ -2340,33 +2314,33 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     char ch = pattern[i];
     if(ch == 'i')
     {
-      if(k+3 >= arr->size())
+      if(k+3 >= arr->size)
          return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
-      memcpy(&int32,&arr->at(k),4);
+      memcpy(&int32,arr->arr+k,4);
       zlist_push(res,ZObjFromInt(int32));
       k+=4;
     }
     else if(ch == 'l')
     {
-      if(k+7 >= arr->size())
+      if(k+7 >= arr->size)
          return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
-      memcpy(&int64,&arr->at(k),8);
-            zlist_push(res,ZObjFromInt(int64));      
+      memcpy(&int64,arr->arr+k,8);
+      zlist_push(res,ZObjFromInt(int64));      
       k+=8;
     }
     else if(ch == 'f')
     {
-      if(k+7 >= arr->size())
+      if(k+7 >= arr->size)
          return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
-      memcpy(&d,&arr->at(k),8);
+      memcpy(&d,arr->arr+k,8);
       zlist_push(res,ZObjFromDouble(d));
       k+=8;
     }
     else if(ch == 'b')
     {
-      if(k >= arr->size())
+      if(k >= arr->size)
          return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
-      memcpy(&b,&arr->at(k),1);
+      memcpy(&b,arr->arr+k,1);
       zlist_push(res,ZObjFromBool(b));
       k+=1;
     }
@@ -2388,13 +2362,13 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       if(!isnum(l) && !isInt64(l))
         return Z_Err(OverflowError,"Error given string length too large!");
       long long int len = atoll(l.c_str());
-      if((long long int)k+len-1 >= (long long int)arr->size())
+      if((long long int)k+len-1 >= (long long int)arr->size)
          return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       str = "";
       size_t f = k+(size_t)len;
       for(;k!=f;++k)
       {
-        char c = (*arr)[k];
+        char c = arr->arr[k];
         str.push_back(c);
       }
       auto p = allocString(str.length());

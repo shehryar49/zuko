@@ -1,4 +1,12 @@
-#ifndef KLASS_H_
-#define KLASS_H_
+#ifndef ZUKO_KLASS_H_
+#define ZUKO_KLASS_H_
 
+#include "strmap.h"
+
+struct Klass
+{
+  const char* name;
+  StrMap members;
+  StrMap privateMembers;
+};
 #endif

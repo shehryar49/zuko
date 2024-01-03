@@ -2209,7 +2209,8 @@ public:
   Klass* makeErrKlass(string name,Klass* error)
   {
     Klass* k = allocKlass();
-    k->name=name;
+    int32_t idx = addToVMStringTable(name);
+    k->name = vm.strings[idx].val;
     k->members = error->members;
     k->privateMembers = error->privateMembers;
     globals.emplace(name,STACK_SIZE++);
@@ -2259,7 +2260,7 @@ public:
       nil.type = Z_NIL;
       Error = allocKlass();
       Error->name = "Error";
-      Error->members.emplace("msg",nil);
+      StrMap_emplace(&(Error->members),"msg",nil);
       globals.emplace("Error",3);
       addToVMStringTable("__construct__");
       FunObject* fun = allocFunObject();
@@ -2285,7 +2286,7 @@ public:
       ZObject construct;
       construct.type = Z_FUNC;
       construct.ptr = (void*)fun;
-      Error->members.emplace("__construct__",construct);
+      StrMap_emplace(&(Error->members),"__construct__",construct);
       zlist_push(&vm.STACK,ZObjFromKlass(Error));
       STACK_SIZE+=1;
       TypeError = makeErrKlass("TypeError",Error);
