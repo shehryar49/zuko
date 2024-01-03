@@ -189,11 +189,7 @@ private:
   zlist aux; // auxiliary space for markV2
   zlist STACK;
   vector<void*> important;//important memory not to free even when not reachable
-  VM()
-  {
-    zlist_init(&aux);
-    zlist_init(&STACK);
-  }
+  
 public:
   friend class Compiler;
   friend bool callObject(ZObject*,ZObject*,int,ZObject*);
@@ -209,7 +205,11 @@ public:
   apiFuncions api;
 
   ZObject nil;
-  
+  VM()
+  {
+    zlist_init(&aux);
+    zlist_init(&STACK);
+  }
   void load(vector<uint8_t>& bytecode,ProgramInfo& p)
   {
     program = &bytecode[0];
@@ -660,8 +660,8 @@ public:
       }
       else if (m.type == Z_MSTR)
       {
-        delete (string *)e;
-        allocated -= sizeof(string);
+        delete (ZMStr*)e;
+        allocated -= sizeof(ZMStr);
       }
       
       else if (m.type == Z_NATIVE_FUNC)
