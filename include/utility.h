@@ -452,9 +452,10 @@ string ZObjectToStr(const ZObject& a)
             zlist* p = (zlist*)a.ptr;
             return ZListToStr(p);
         }
-        else if(a.type==Z_STR || a.type==Z_MSTR)
+        else if(a.type==Z_STR)
         {
-          return *(string*)a.ptr;
+          ZStr* str = (ZStr*)a.ptr;
+          return str->val;
         }
         else if(a.type=='a')
         {

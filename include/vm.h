@@ -92,8 +92,6 @@ string fullform(char t)
     return "Float";
   else if (t == Z_STR)
     return "String";
-  else if(t == Z_MSTR)
-    return "Mutable String";
   else if (t == Z_LIST)
     return "List";
   else if (t == Z_BYTE)
@@ -143,7 +141,6 @@ zlist *allocList();
 vector<uint8_t>* allocByteArray();
 ZDict *allocDict();
 ZStr* allocString(size_t);
-string *allocMutString();
 FunObject *allocFunObject();
 FunObject *allocCoroutine();
 Coroutine *allocCoObj();
@@ -224,7 +221,7 @@ public:
     api.a1 = &allocList;
     api.a2 = &allocDict;
     api.a3 = &allocString;
-    api.a4 = &allocMutString;
+//    api.a4 = &allocMutString; RIP
     api.a5 = &alloczfile;
     api.a6 = &allocKlass;
     api.a7 = &allocKlassObject;
@@ -657,13 +654,7 @@ public:
         allocated -= sizeof(ZStr) + p->len + 1;
         delete[] p->val;
         delete p;
-      }
-      else if (m.type == Z_MSTR)
-      {
-        delete (ZMStr*)e;
-        allocated -= sizeof(ZMStr);
-      }
-      
+      }      
       else if (m.type == Z_NATIVE_FUNC)
       {
         delete (NativeFunction *)e;
@@ -1201,7 +1192,7 @@ public:
             NEXT_INST;
           }
         }
-        else if (p1.type == Z_LIST || p1.type == Z_DICT || p1.type == Z_BYTEARR || p1.type == Z_STR || p1.type == Z_MSTR)
+        else if (p1.type == Z_LIST || p1.type == Z_DICT || p1.type == Z_BYTEARR || p1.type == Z_STR)
         {
           ZObject callmethod(string, ZObject *, int32_t);
           p3 = callmethod(method_name, &STACK.arr[STACK.size-i2-1], i2 + 1);
@@ -2231,7 +2222,7 @@ public:
           }
           zlist_push(&STACK,res);
         }
-        else if (p2.type == Z_STR || p2.type == Z_MSTR)
+        else if (p2.type == Z_STR )
         {
           if (p1.type != Z_INT && p1.type != Z_INT64)
           {
@@ -2246,8 +2237,19 @@ public:
             spitErr(ValueError, "Error index cannot be negative!");
             NEXT_INST;
           }
-          const string& s = *(string *)p2.ptr;
-          if ((size_t)p1.l >= s.length())
+          char* s;
+          size_t length;
+          if(p2.type == Z_STR)
+          {
+            s = ((ZStr*)p2.ptr) -> val;
+            length = ((ZStr*)p2.ptr) -> len;
+          }
+          else
+          {
+            s = ((ZMStr*)p2.ptr) -> arr;
+            length = ((ZMStr*)p2.ptr) -> size;
+          }
+          if ((size_t)p1.l >= length)
           {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
@@ -2297,7 +2299,7 @@ public:
 
         zlist_fastpop(&STACK,&p2);
         zlist_fastpop(&STACK,&p1);
-        if ((p1.type != Z_DICT && p1.type != Z_CLASS && p1.type != Z_LIST && p1.type != Z_OBJ && p1.type != Z_STR && p1.type != Z_MSTR && p1.type != Z_MODULE && p1.type != Z_FUNC) || (p2.type != Z_CLASS && p2.type != Z_DICT && p2.type != Z_STR && p2.type!=Z_MSTR && p2.type != Z_FUNC && p2.type != Z_LIST && p2.type != Z_OBJ && p2.type != Z_MODULE))
+        if ((p1.type != Z_DICT && p1.type != Z_CLASS && p1.type != Z_LIST && p1.type != Z_OBJ && p1.type != Z_STR && p1.type != Z_MODULE && p1.type != Z_FUNC) || (p2.type != Z_CLASS && p2.type != Z_DICT && p2.type != Z_STR && p2.type != Z_FUNC && p2.type != Z_LIST && p2.type != Z_OBJ && p2.type != Z_MODULE))
         {
           orgk = k - program;
           spitErr(TypeError, "Error operator 'is' unsupported for types " + fullform(p1.type) + " and " + fullform(p2.type));
@@ -3258,7 +3260,7 @@ public:
         }
         KlassObject* ki = (KlassObject*)p3.ptr;
         std::unordered_map<string,ZObject>::iterator it;
-        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=Z_STR && (*it).second.type!=Z_MSTR))
+        if( (it = ki->members.find("msg")) == ki->members.end() || ((*it).second.type!=Z_STR))
         {
           spitErr(ThrowError,"Object does not have member 'msg' or it is not a string!");
           NEXT_INST;
@@ -3610,21 +3612,7 @@ ZStr* allocString(size_t len)
   vm.memory.emplace((void *)str, m);
   return str;
 }
-string *allocMutString()
-{
-  string *p = new(nothrow) string;
-  if (!p)
-  {
-    fprintf(stderr,"allocMutString(): error allocating memory!\n");
-    exit(0);
-  }
-  vm.allocated += sizeof(string);
-  MemInfo m;
-  m.type = Z_MSTR;
-  m.isMarked = false;
-  vm.memory.emplace((void *)p, m);
-  return p;
-}
+
 Klass *allocKlass()
 {
   Klass* p = new(nothrow) Klass;

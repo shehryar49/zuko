@@ -135,13 +135,6 @@ inline ZObject ZObjFromStrPtr(ZStr* s)
   ret.ptr = (void*)s;
   return ret;
 }
-inline ZObject ZObjFromMStrPtr(string* s)
-{
-  ZObject ret;
-  ret.type = Z_MSTR;
-  ret.ptr = (void*)s;
-  return ret;
-}
 inline ZObject ZObjFromInt(int32_t x)
 {
   ZObject ret;
@@ -254,7 +247,7 @@ inline ZObject ZObjFromFile(zfile* file)
 typedef zlist*(*fn1)();//allocList
 typedef ZDict*(*fn2)();//allocZDict
 typedef ZStr*(*fn3)(size_t);//allocString
-typedef string*(*fn4)();//allocMutString
+typedef ZMStr*(*fn4)();//allocMutString
 typedef zfile*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
 typedef KlassObject*(*fn7)();//allocKlassObject

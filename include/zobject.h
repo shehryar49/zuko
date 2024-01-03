@@ -38,7 +38,6 @@ using namespace std;
 #define Z_NATIVE_FUNC 'y'//native function
 #define Z_MODULE 'q'
 #define Z_STR 's'
-#define Z_MSTR 'k' //mutable strings
 #define Z_FILESTREAM 'u'
 #define Z_NIL 'n'
 #define Z_OBJ 'o' //objects created using zuko code

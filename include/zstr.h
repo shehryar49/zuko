@@ -9,7 +9,8 @@ extern "C"{
 // Immuutable zuko string implementation
 typedef struct ZStr
 {
-  char* val;
+  char* val; //actually const char*
+  //but we need to write for the first time so ...
   size_t len; //for quick len check
 }ZStr;
 

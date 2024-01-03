@@ -1,5 +1,5 @@
 #include "bignum.h"
-#include "ZObject.h"
+#include "zobject.h"
 using namespace std;
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
