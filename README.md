@@ -23,7 +23,7 @@ Just run the shell script install.sh it will build,test and install zuko. It use
 You can test your build using test_all tool (src in tests/). You will have to build it from source. The CMake script does that for you. On Linux/Unix, install.sh script runs the tests automatically using this tool. To use it manually or on Windows just run it from command line and pass the zuko interpreter's path.
 
 # Documentation 
-The website: https://plutonium-lang.000webhostapp.com
+The website: https://zuko-lang.github.io
 
 # Discord
 Discord Server: https://discord.gg/cD4cDAszQh
