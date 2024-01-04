@@ -94,8 +94,8 @@ bool ZObject_equals(ZObject lhs,ZObject other)
   }
   else if(lhs.type==Z_LIST)
   {
-    zlist* a = (zlist*)lhs.ptr;
-    zlist* b = (zlist*)other.ptr;
+    ZList* a = (ZList*)lhs.ptr;
+    ZList* b = (ZList*)other.ptr;
     if(a == b)
       return true;
     if(a->size != b->size)

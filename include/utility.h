@@ -448,8 +448,8 @@ string ZObjectToStr(const ZObject& a)
         else if(a.type=='j')
         {
 
-            string ZListToStr(zlist*,vector<void*>* = nullptr);
-            zlist* p = (zlist*)a.ptr;
+            string ZListToStr(ZList*,vector<void*>* = nullptr);
+            ZList* p = (ZList*)a.ptr;
             return ZListToStr(p);
         }
         else if(a.type==Z_STR)
@@ -467,7 +467,7 @@ string ZObjectToStr(const ZObject& a)
         return "nil";
     }
 
-string ZListToStr(zlist* p,vector<void*>* prev=nullptr)
+string ZListToStr(ZList* p,vector<void*>* prev=nullptr)
 {
   vector<void*> seen;
   if(prev!=nullptr)
@@ -482,7 +482,7 @@ string ZListToStr(zlist* p,vector<void*>* prev=nullptr)
            res+="[...]";
          else
          {
-            res+=ZListToStr((zlist*)p->arr[k].ptr,&seen);
+            res+=ZListToStr((ZList*)p->arr[k].ptr,&seen);
          }
       }
 			else if(p->arr[k].type=='a')
@@ -543,7 +543,7 @@ string DictToStr(ZDict* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),key.ptr)!=seen.end())
 				   res+="[...]";
 				 else
-				   res+=ZListToStr((zlist*)key.ptr,&seen);
+				   res+=ZListToStr((ZList*)key.ptr,&seen);
 			 }
 			 else
           res+=ZObjectToStr(key);
@@ -566,7 +566,7 @@ string DictToStr(ZDict* p,vector<void*>* prev=nullptr)
 				 if(std::find(seen.begin(),seen.end(),val.ptr)!=seen.end())
 					 res+="[...]";
 				 else
-					 res+=ZListToStr((zlist*)val.ptr,&seen);
+					 res+=ZListToStr((ZList*)val.ptr,&seen);
 			 }
        else
           res+=ZObjectToStr(val);

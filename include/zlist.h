@@ -5,13 +5,13 @@
 #include <string.h>
 #include "zobject.h"
 
-typedef struct zlist
+typedef struct ZList
 {
   ZObject* arr;
   size_t size;
   size_t capacity;
-}zlist;
-void zlist_init(zlist* p)
+}ZList;
+void ZList_init(ZList* p)
 {
     p->arr = (ZObject*)malloc(sizeof(ZObject)*4);
     p->arr[0].type = 'n';
@@ -22,7 +22,7 @@ void zlist_init(zlist* p)
     p->capacity = 4;
     p->size = 0;
 }
-inline void zlist_push(zlist* p,ZObject val)
+void ZList_push(ZList* p,ZObject val)
 {
     if(p -> size >= p->capacity)
     {
@@ -32,7 +32,7 @@ inline void zlist_push(zlist* p,ZObject val)
     p->arr[p->size++] = val;
  
 }
-void zlist_erase(zlist* p,size_t idx)
+void ZList_erase(ZList* p,size_t idx)
 {
     if(idx < p->size)
     {
@@ -48,7 +48,7 @@ void zlist_erase(zlist* p,size_t idx)
       p->size -= 1;
     }
 }
-void zlist_eraseRange(zlist* p,size_t i,size_t j)
+void ZList_eraseRange(ZList* p,size_t i,size_t j)
 {
   if(i <= j && i < p->size && j<p->size)
   {
@@ -69,7 +69,7 @@ void zlist_eraseRange(zlist* p,size_t i,size_t j)
 
   }
 }
-void zlist_resize(zlist* p,size_t newSize)
+void ZList_resize(ZList* p,size_t newSize)
 {
   if(newSize <= p->size)
   {
@@ -88,7 +88,7 @@ void zlist_resize(zlist* p,size_t newSize)
     p->size = newSize;
   }
 }
-bool zlist_pop(zlist* p,ZObject* val)
+bool ZList_pop(ZList* p,ZObject* val)
 {
     if(p->size == 0)
       return false;
@@ -96,11 +96,11 @@ bool zlist_pop(zlist* p,ZObject* val)
     *val = p->arr[p->size];
     return true;
 }
-inline void zlist_fastpop(zlist* p,ZObject* val)
+void ZList_fastpop(ZList* p,ZObject* val)
 {
   *val = p->arr[--p->size];
 }
-void zlist_assign(zlist* p,zlist* val)
+void ZList_assign(ZList* p,ZList* val)
 {
     if(val->size > 0)
     {
@@ -115,17 +115,17 @@ void zlist_assign(zlist* p,zlist* val)
         return;
     }
 }
-void zlist_insert(zlist* p,size_t idx,ZObject val)
+void ZList_insert(ZList* p,size_t idx,ZObject val)
 {
   if(idx == p->size) //push
   {
-    zlist_push(p,val);
+    ZList_push(p,val);
     return;
   }
   if(idx < p->size)
   {
 
-    zlist_push(p,val);
+    ZList_push(p,val);
     size_t i = p->size - 1;
     while(i > idx)
     {
@@ -135,13 +135,13 @@ void zlist_insert(zlist* p,size_t idx,ZObject val)
     p->arr[idx] = val;
   }
 }
-void zlist_insertList(zlist* p,size_t idx,zlist* sublist)
+void ZList_insertList(ZList* p,size_t idx,ZList* sublist)
 {
   if(sublist -> size == 0)
     return;
   if(idx == p->size)
   {
-    zlist_resize(p,p->size + sublist->size);
+    ZList_resize(p,p->size + sublist->size);
     memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(ZObject));
     return;
   }
@@ -150,12 +150,12 @@ void zlist_insertList(zlist* p,size_t idx,zlist* sublist)
     // 1 2 3 4 0 0
 
     size_t i = p->size;
-    zlist_resize(p,p->size + sublist->size);
+    ZList_resize(p,p->size + sublist->size);
     memcpy(p->arr + i,p->arr+idx,sizeof(ZObject)*sublist->size);
     memcpy(p->arr+idx,sublist->arr,sizeof(ZObject)*sublist->size);
   }
 }
-void zlist_destroy(zlist* p)
+void ZList_destroy(ZList* p)
 {
     free(p->arr);
 }

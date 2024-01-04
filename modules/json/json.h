@@ -1,6 +1,6 @@
 #ifndef PLT_JSON_H_
 #define PLT_JSON_H_
-#include "ZObject.h"
+#include "zapi.h"
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else

@@ -235,7 +235,7 @@ ZObject TokToPObj(Token t)
   if(t.type == NULLVAL)
     return nil;
   else if(t.type == STR)
-    return ZObjFromStr(t.content);
+    return ZObjFromStr(t.content.c_str());
   else if(t.type == FLOAT)
     return ZObjFromDouble(atof(t.content.c_str()));
   else if(t.type == NUM)
@@ -277,7 +277,7 @@ int match_lcb(int start,int end,vector<Token>& tokens)
     }
     return -1;
 }
-Dictionary* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
+ZDict* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
 
 ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
@@ -289,7 +289,7 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
   {
     if(isValTok(tokens[k]))
     {
-      M->push_back(TokToPObj(tokens[k]));
+      ZList_push(M,TokToPObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -305,7 +305,7 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
         return M;
       err = true;
       k = r+1;
-      M->push_back(subobj);
+      ZList_push(M,subobj);
     }
     else if(tokens[k].type == LSB) //list
     {
@@ -322,7 +322,7 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
       }
       err = true;
       k = r+1;
-      M->push_back(sublist);
+      ZList_push(M,sublist);
     }
     else
     {
@@ -339,10 +339,10 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
   return M;
 }
 
-Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
+ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
-  Dictionary* M = vm_allocDict();
+  ZDict* M = vm_allocDict();
   if(tokens[l].type != LCB || tokens[h].type!=RCB)
   {
     msg = "SyntaxError";
@@ -368,7 +368,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
     //values begins at tokens[k]
     if(isValTok(tokens[k]))
     {
-      M->emplace(ZObjFromStr(tokens[k-2].content),TokToPObj(tokens[k]));
+      ZDict_emplace(M,ZObjFromStr(tokens[k-2].content.c_str()),TokToPObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -384,7 +384,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
         return M;
       err = true;
       k = r+1;    
-      M->emplace(ZObjFromStr(key),subobj);
+      ZDict_emplace(M,ZObjFromStr(key.c_str()),subobj);
     }
     else if(tokens[k].type == LSB) //list
     {
@@ -399,7 +399,7 @@ Dictionary* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,strin
         return M;
       err = true;
       k = r+1;
-      M->emplace(ZObjFromStr(key),sublist);
+      ZDict_emplace(M,ZObjFromStr(key.c_str()),sublist);
     }
     else
     {
@@ -439,11 +439,12 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
     {
       res+="[";
       seen.emplace(p.ptr,true);
-      ZList& l = *(ZList*)p.ptr;
-      size_t len = l.size();
+      ZList* l = (ZList*)p.ptr;
+      size_t len = l->size;
       size_t k = 0;
-      for(auto e: l)
+      for(size_t idx=0;idx<l->size;idx++)
       {
+        auto e = l->arr[idx];
         PObjToStr(e,res,seen);
         if(dumperror)
           return;
@@ -461,20 +462,23 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
     {
       res+="{";
       seen.emplace(p.ptr,true);
-      Dictionary& d = *(Dictionary*)p.ptr;
-      size_t l = d.size();
+      ZDict* d = (ZDict*)p.ptr;
+      size_t l = d->size;
       size_t k = 0;
-      for(auto e: d)
+      for(size_t idx = 0; idx < d->capacity;idx++)
       {
-        if(e.first.type != Z_STR) //json constraint fail
+        if(d->table[idx].stat != OCCUPIED)
+          continue;
+        auto& e = d->table[idx];
+        if(e.key.type != Z_STR) //json constraint fail
         {
           dumperror = true;
           dumperrmsg = "Dictionary key not a string!";
           return;
         }
-        res += "\"" + (*(string*)e.first.ptr) + "\"";
+        res += "\"" + (string)(((ZStr*)e.key.ptr))->val + "\"";
         res += ": ";
-        PObjToStr(e.second,res,seen);
+        PObjToStr(e.val,res,seen);
         if(dumperror)
           return;
         if(k++ != l-1)
@@ -501,8 +505,8 @@ ZObject init()
   //
   Module* d = vm_allocModule();
   d->name = "json";
-  d->members.emplace("loads",ZObjFromFunction("json.loads",&loads));
-  d->members.emplace("dumps",ZObjFromFunction("json.dumps",&dumps));
+  Module_addNativeFun(d,"loads",&loads);
+  Module_addNativeFun(d,"dumps",&dumps);
   return ZObjFromModule(d);
 }
 ZObject loads(ZObject* args,int32_t n)
@@ -514,12 +518,18 @@ ZObject loads(ZObject* args,int32_t n)
   string msg;
   vector<Token> tokens = tokenize(src,hadErr,msg);
   if(hadErr)
-    return Z_Err(tokenizeError,"Tokenization failed."+msg);
+  {
+    msg = "Tokenization failed. "+msg; 
+    return Z_Err(tokenizeError,msg.c_str());
+  }
   if(tokens.size() == 0)
     return Z_Err(parseError,"Empty string!");
-  Dictionary* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
+  ZDict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
-     return Z_Err(parseError,"Parsing failed."+msg);
+  {
+     msg = "Parsing failed. "+msg;
+     return Z_Err(parseError,msg.c_str());
+  }
   return ZObjFromDict(m);
 }
 ZObject dumps(ZObject* args,int32_t n)
@@ -530,12 +540,12 @@ ZObject dumps(ZObject* args,int32_t n)
     return Z_Err(TypeError,"Argument must be a dictionary!");
   dumperrmsg = "";
   dumperror = false;
-  string* res = vm_allocString();
+  string res;
   std::unordered_map<void*,bool> seen;
-  PObjToStr(args[0],*res,seen);
+  PObjToStr(args[0],res,seen);
   if(dumperror)
-    return Z_Err(Error,dumperrmsg);
-  return ZObjFromStrPtr(res);
+    return Z_Err(Error,dumperrmsg.c_str());
+  return ZObjFromStr(res.c_str());
 }
 void unload()
 {

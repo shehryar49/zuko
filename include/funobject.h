@@ -10,7 +10,7 @@ typedef struct FunObject
   const char* name;
   size_t i;
   size_t args;
-  zlist opt; //default/optional parameters
+  ZList opt; //default/optional parameters
   #ifdef __cplusplus
   FunObject& operator=(const FunObject&) = delete;
   #endif

@@ -2214,7 +2214,7 @@ public:
     StrMap_assign(&(k->members),&(error->members));
     StrMap_assign(&(k->members),&(error->privateMembers));
     globals.emplace(name,STACK_SIZE++);
-    zlist_push(&vm.STACK,ZObjFromKlass(k));
+    ZList_push(&vm.STACK,ZObjFromKlass(k));
     return k;
   }
   vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true)//compiles as a complete program adds NPOP_STACK and OP_EXIT
@@ -2235,15 +2235,15 @@ public:
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
       int32_t k = 2;
-      zlist* l = vm_allocList();
+      ZList* l = vm_allocList();
       while (k < argc)
       {
           ZStr* p = vm_allocString(strlen(argv[k]));
           memcpy(p->val,argv[k],strlen(argv[k]));
-          zlist_push(l,ZObjFromStrPtr(p));
+          ZList_push(l,ZObjFromStrPtr(p));
           k += 1;
       }
-      zlist_push(&vm.STACK,ZObjFromList(l));
+      ZList_push(&vm.STACK,ZObjFromList(l));
       zfile* STDIN = vm_alloczfile();
       STDIN->open = true;
       STDIN ->fp = stdin;
@@ -2252,8 +2252,8 @@ public:
       STDOUT->open = true;
       STDOUT ->fp = stdout;
       
-      zlist_push(&vm.STACK,ZObjFromFile(STDIN));
-      zlist_push(&vm.STACK,ZObjFromFile(STDOUT));
+      ZList_push(&vm.STACK,ZObjFromFile(STDIN));
+      ZList_push(&vm.STACK,ZObjFromFile(STDOUT));
       
       addToVMStringTable("msg");
       ZObject nil;
@@ -2287,7 +2287,7 @@ public:
       construct.type = Z_FUNC;
       construct.ptr = (void*)fun;
       StrMap_emplace(&(Error->members),"__construct__",construct);
-      zlist_push(&vm.STACK,ZObjFromKlass(Error));
+      ZList_push(&vm.STACK,ZObjFromKlass(Error));
       STACK_SIZE+=1;
       TypeError = makeErrKlass("TypeError",Error);
       ValueError = makeErrKlass("ValueError",Error);

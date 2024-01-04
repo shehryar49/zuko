@@ -12,7 +12,7 @@ typedef struct ZByteArr
 }ZByteArr;
 
 //forward declarations
-void ZByteArr_init(ZByteArr*);
+/*void ZByteArr_init(ZByteArr*);
 inline void ZByteArr_push(ZByteArr*,uint8_t);
 void ZByteArr_erase(ZByteArr*,size_t);
 void ZByteArr_eraseRange(ZByteArr*,size_t,size_t);
@@ -24,7 +24,7 @@ void ZByteArr_insert(ZByteArr*,size_t idx,uint8_t);
 void ZByteArr_insertArr(ZByteArr*,size_t,ZByteArr*);
 bool ZByteArr_equal(ZByteArr*,ZByteArr*);
 void ZByteArr_destroy(ZByteArr*);
-
+*/
 // 
 void ZByteArr_init(ZByteArr* p)
 {
@@ -32,7 +32,7 @@ void ZByteArr_init(ZByteArr* p)
     p->capacity = 4;
     p->size = 0;
 }
-inline void ZByteArr_push(ZByteArr* p,uint8_t val)
+ void ZByteArr_push(ZByteArr* p,uint8_t val)
 {
     if(p -> size >= p->capacity)
     {
@@ -101,7 +101,7 @@ bool ZByteArr_pop(ZByteArr* p,uint8_t* val)
     *val = p->arr[p->size];
     return true;
 }
-inline void ZByteArr_fastpop(ZByteArr* p,uint8_t* val)
+ void ZByteArr_fastpop(ZByteArr* p,uint8_t* val)
 {
   *val = p->arr[--p->size];
 }

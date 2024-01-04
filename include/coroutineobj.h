@@ -11,7 +11,7 @@ typedef enum CoState
 typedef struct Coroutine
 {
   int curr;//index in bytecode from where to resume the coroutine
-  zlist locals;
+  ZList locals;
   CoState state;
   const char* name;
   FunObject* fun;//function from which this coroutine object was made

@@ -108,7 +108,7 @@ inline ZObject ZObjFromBool(bool b)
   return ret;
 }
 
-inline ZObject ZObjFromList(zlist* l)
+inline ZObject ZObjFromList(ZList* l)
 {
   ZObject ret;
   ret.type = Z_LIST;
@@ -164,21 +164,21 @@ inline ZObject ZObjFromFile(zfile* file)
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) (uint8_t)x.i
 #define AS_STR(x) ((ZStr*)x.ptr)
-#define AS_DICT(x) *(ZDict*)x.ptr
-#define AS_LIST(x) *(PltList*)x.ptr
-#define AS_KLASS(x) *(Klass*)x.ptr
-#define AS_KlASSOBJECT(x) *(KlassObject*)x.ptr
-#define AS_BYTEARRAY(x) *(vector<uint8_t>*)x.ptr
-#define AS_FILEOBJECT(x) *(FileObject*)x.ptr
+#define AS_DICT(x) (ZDict*)x.ptr
+#define AS_LIST(x) (ZList*)x.ptr
+#define AS_KLASS(x) (Klass*)x.ptr
+#define AS_KlASSOBJ(x) (KlassObject*)x.ptr
+#define AS_BYTEARRAY(x) (ZByteArr*)x.ptr
+#define AS_FILEOBJECT(x) (zfile*)x.ptr
 #define AS_PTR(x) x.ptr
 /**************/
-typedef zlist*(*fn1)();//allocList
+typedef ZList*(*fn1)();//allocList
 typedef ZDict*(*fn2)();//allocZDict
 typedef ZStr*(*fn3)(size_t);//allocString
 typedef void*(*fn4)();//allocMutString
 typedef zfile*(*fn5)();//allocFileObject
 typedef Klass*(*fn6)();//allocKlass
-typedef KlassObject*(*fn7)();//allocKlassObject
+typedef KlassObject*(*fn7)(Klass*);//allocKlassObject
 typedef NativeFunction*(*fn8)();//allocNativeFunObj
 typedef Module*(*fn9)();//allocModule
 typedef ZByteArr*(*fn10)();//allocBytearray
@@ -223,8 +223,8 @@ typedef struct apiFuncions
 // just forward declare helper functions
 // Allocator functions
 Klass* vm_allocKlass();
-KlassObject * vm_allocKlassObject();
-zlist* vm_allocList();
+KlassObject * vm_allocKlassObject(Klass*);
+ZList* vm_allocList();
 ZByteArr* vm_allocByteArray();
 ZDict * vm_allocDict();
 ZStr* vm_allocString(size_t);
@@ -299,7 +299,7 @@ void api_setup(apiFuncions* p)
 #endif
 
 //The below helper functions make use of above function pointers
-inline ZObject ZObjFromStr(const char* str)// makes deep copy of str
+ZObject ZObjFromStr(const char* str)// makes deep copy of str
 {
   size_t len = strlen(str);
   ZStr* ptr = vm_allocString(len);
@@ -313,10 +313,7 @@ inline ZObject ZObjFromStr(const char* str)// makes deep copy of str
 ZObject Z_Err(Klass* errKlass,const char* des)
 {
   ZObject ret;
-  KlassObject* p = vm_allocKlassObject();
-  p->klass = errKlass;
-  StrMap_assign(&(p->members),&(errKlass->members));
-  StrMap_assign(&(p->privateMembers),&(errKlass->privateMembers));
+  KlassObject* p = vm_allocKlassObject(errKlass);
   StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
@@ -333,7 +330,7 @@ inline ZObject ZObjFromMethod(const char* name,NativeFunPtr r,Klass* k)
   ret.ptr = (void*)fn;
   return ret;
 }
-inline ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
+ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
 {
   ZObject ret;
   NativeFunction* fn = vm_allocNativeFunObj();
@@ -349,8 +346,39 @@ void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p)
   ZObject val = ZObjFromFunction(name,p);
   StrMap_emplace(&(m->members),name,val);
 }
-//
+void Module_addKlass(Module* m,const char* name,Klass* p)
+{
+  ZObject val = ZObjFromKlass(p);
+  StrMap_emplace(&(m->members),name,val);
+}
 
+//
+void Klass_addNativeMethod(Klass* k,const char* name,NativeFunPtr p)
+{
+  ZObject val = ZObjFromMethod(name,p,k);
+  StrMap_emplace(&(k->members),name,val);
+}
+void Klass_addMember(Klass* k,const char* name,ZObject val)
+{
+  StrMap_emplace(&(k->members),name,val);
+}
+void Klass_setMember(Klass* k,const char* name,ZObject val)
+{
+  StrMap_set(&(k->members),name,val);
+}
+
+//
+ZObject KlassObj_getMember(KlassObject* ko,const char* name)
+{
+  ZObject val;
+  val.type = Z_NIL;
+  StrMap_get(&(ko->members),name,&val);
+  return val;
+}
+void KlassObj_setMember(KlassObject* ko,const char* name,ZObject val)
+{
+  StrMap_set(&(ko->members),name,val);
+}
 
 #ifdef __cplusplus
 }

@@ -113,7 +113,7 @@ void REPL()
     //WriteByteCode(bytecode,LineNumberTable,files);// for debugging
     vm.interpret(offset,false);//
     if(vm.STACK.size > stackSize)
-        zlist_eraseRange(&vm.STACK,stackSize,vm.STACK.size - 1);
+        ZList_eraseRange(&vm.STACK,stackSize,vm.STACK.size - 1);
     else if(vm.STACK.size < stackSize)
     {
       compiler.reduceStackTo(vm.STACK.size);
