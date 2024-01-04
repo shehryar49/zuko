@@ -496,12 +496,12 @@ ZObject init()
 {
   nil.type = Z_NIL;
   //initialize custom errors
-  parseError = new Klass;
+  parseError = makeDerivedKlass(Error);
   parseError->name = "ParseError";
-  parseError->members = Error->members;
-  tokenizeError = new Klass;
+  tokenizeError = makeDerivedKlass(Error);
   tokenizeError->name = "TokenizeError";
-  tokenizeError->members = Error->members;
+  vm_markImportant(parseError);
+  vm_markImportant(tokenizeError);
   //
   Module* d = vm_allocModule();
   d->name = "json";
@@ -549,6 +549,6 @@ ZObject dumps(ZObject* args,int32_t n)
 }
 void unload()
 {
-  delete tokenizeError;
-  delete parseError;
+  vm_unmarkImportant(parseError);
+  vm_unmarkImportant(tokenizeError);
 }
