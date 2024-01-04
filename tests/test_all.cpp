@@ -52,7 +52,8 @@ const char* tests[] =
     "stdlist",
     "multiline-expr",
     "str",
-    "bignum"
+    "bignum",
+    "regex"
 };
 int main(int argc,const char* argv[])
 {

@@ -1,0 +1,12 @@
+import regex
+
+var str1 = "10101010"
+var str2 = "010101"
+
+println(regex.match(str1,"(10)+"))
+println(regex.match(str2,"(10)+"))
+
+var str3 = "hello12 world32"
+println(regex.replace(str3,"[a-z]+([0-9]+)","$1"))
+
+println(regex.search(str3,"[0-9]+"))
