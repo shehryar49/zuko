@@ -13,18 +13,33 @@ else
   exit
 fi
 
-echo "[+] Copying files"
+echo "[+] Copying files (might require password)"
 # sudo section
 sudo mkdir /opt/zuko
 sudo mkdir /opt/zuko/modules
+sudo mkdir /opt/zuko/include
 sudo cp zuko /opt/zuko/
 sudo cp -r std /opt/zuko
 sudo cp -r fiza /opt/zuko
 sudo cp fiza.zk /opt/zuko/
 sudo cp modules/*.so /opt/zuko/modules/
-sudo cp include/ZObject.h /opt/zuko
-#sudo cp include/c_api.h /opt/zuko
-#sudo cp include/c_api.cpp /opt/zuko
+# Copy dev kit
+sudo cp include/coroutineobj.h /opt/zuko/include
+sudo cp include/funobject.h /opt/zuko/include
+sudo cp include/klass.h /opt/zuko/include
+sudo cp include/klassobject.h /opt/zuko/include
+sudo cp include/module.h /opt/zuko/include
+sudo cp include/nativefun.h /opt/zuko/include
+sudo cp include/strmap.h /opt/zuko/include
+sudo cp include/zapi.h /opt/zuko/include
+sudo cp include/zbytearray.h /opt/zuko/include
+sudo cp include/zdict.h /opt/zuko/include
+sudo cp include/zfileobj.h /opt/zuko/include
+sudo cp include/zlist.h /opt/zuko/include
+sudo cp include/zobject.h /opt/zuko/include
+sudo cp include/zstr.h /opt/zuko/include
+#
+
 sudo chmod 777 /opt/zuko/fiza/packages.txt
 sudo chmod +x /opt/zuko/fiza
 sudo ln -s /opt/zuko/zuko /usr/bin/zuko
