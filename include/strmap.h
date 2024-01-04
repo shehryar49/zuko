@@ -27,6 +27,7 @@ typedef struct StrMap
   SM_Slot* table;
   size_t size;
   size_t capacity;
+  StrMap& operator=(const StrMap&) = delete;
 }StrMap;
 
 size_t hashDJB2(const char*,size_t);
@@ -156,6 +157,15 @@ bool StrMap_erase(StrMap* h,const char* key)
     i++;
   }
   return false;
+}
+void StrMap_assign(StrMap* h,StrMap* other) // makes deep copy
+{
+  for(size_t idx=0;idx<other->capacity;idx++)
+  {
+    if(other->table[idx].stat != SM_OCCUPIED)
+      continue;
+    StrMap_emplace(h,other->table[idx].key,other->table[idx].val);
+  }
 }
 void StrMap_destroy(StrMap* h)
 {

@@ -1,6 +1,7 @@
 class A
 {
   private var x = nil
+  var idk = 69
   function __construct__(var x)
     self.x = x
   function f1()
@@ -25,3 +26,8 @@ a.f1()
 a.f2()
 b.f1()
 b.f2()
+b.idk += 1
+println(b.idk == 70)
+println(B.idk == 69)
+println(A.idk == 69)
+println(B.super == A)

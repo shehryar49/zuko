@@ -2208,11 +2208,11 @@ public:
   }
   Klass* makeErrKlass(string name,Klass* error)
   {
-    Klass* k = allocKlass();
+    Klass* k = vm_allocKlass();
     int32_t idx = addToVMStringTable(name);
     k->name = vm.strings[idx].val;
-    k->members = error->members;
-    k->privateMembers = error->privateMembers;
+    StrMap_assign(&(k->members),&(error->members));
+    StrMap_assign(&(k->members),&(error->privateMembers));
     globals.emplace(name,STACK_SIZE++);
     zlist_push(&vm.STACK,ZObjFromKlass(k));
     return k;
@@ -2235,20 +2235,20 @@ public:
       globals.emplace("stdin",1);
       globals.emplace("stdout",2);
       int32_t k = 2;
-      zlist* l = allocList();
+      zlist* l = vm_allocList();
       while (k < argc)
       {
-          ZStr* p = allocString(strlen(argv[k]));
+          ZStr* p = vm_allocString(strlen(argv[k]));
           memcpy(p->val,argv[k],strlen(argv[k]));
           zlist_push(l,ZObjFromStrPtr(p));
           k += 1;
       }
       zlist_push(&vm.STACK,ZObjFromList(l));
-      zfile* STDIN = alloczfile();
+      zfile* STDIN = vm_alloczfile();
       STDIN->open = true;
       STDIN ->fp = stdin;
   
-      zfile* STDOUT = alloczfile();
+      zfile* STDOUT = vm_alloczfile();
       STDOUT->open = true;
       STDOUT ->fp = stdout;
       
@@ -2258,12 +2258,12 @@ public:
       addToVMStringTable("msg");
       ZObject nil;
       nil.type = Z_NIL;
-      Error = allocKlass();
+      Error = vm_allocKlass();
       Error->name = "Error";
       StrMap_emplace(&(Error->members),"msg",nil);
       globals.emplace("Error",3);
       addToVMStringTable("__construct__");
-      FunObject* fun = allocFunObject();
+      FunObject* fun = vm_allocFunObject();
       fun->name = "__construct__";
       fun->args = 2;
       fun->i = 5;

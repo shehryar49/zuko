@@ -29,50 +29,13 @@ SOFTWARE.*/
 #include "funobject.h"
 #include "klass.h"
 #include "klassobject.h"
-using namespace std;
+#include "module.h"
+#include "nativefun.h"
+#include "coroutineobj.h"
 
-
-
-
-typedef ZObject(*NativeFunPtr)(ZObject*,int);
-
-
-
-
-
-
-struct Module
-{
-  std::string name;
-  std::unordered_map<string,ZObject> members;
-  void addNativeFunction(const string& name,NativeFunPtr r);
-};
-
-
-
-struct NativeFunction
-{
-  Klass* klass;//address of class the function is member of (if any NULL otherwise)
-  NativeFunPtr addr;
-  string name;//name of function (used when printing errors)
-  NativeFunction& operator=(const NativeFunction&) = delete;
-};
-enum CoState
-{
-  SUSPENDED,
-  RUNNING,
-  STOPPED,
-};
-struct Coroutine
-{
-  int curr;//index in bytecode from where to resume the coroutine
-  zlist locals;
-  CoState state;
-  string name;
-  FunObject* fun;//function from which this coroutine object was made
-  bool giveValOnResume;
-  Coroutine& operator=(const Coroutine&) = delete;
-};
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 //Error classes
 Klass* Error;
@@ -208,8 +171,7 @@ inline ZObject ZObjFromFile(zfile* file)
 #define AS_BYTEARRAY(x) *(vector<uint8_t>*)x.ptr
 #define AS_FILEOBJECT(x) *(FileObject*)x.ptr
 #define AS_PTR(x) x.ptr
-
-
+/**************/
 typedef zlist*(*fn1)();//allocList
 typedef ZDict*(*fn2)();//allocZDict
 typedef ZStr*(*fn3)(size_t);//allocString
@@ -223,7 +185,65 @@ typedef ZByteArr*(*fn10)();//allocBytearray
 typedef bool(*fn11)(ZObject*,ZObject*,int,ZObject*);//callobject
 typedef void(*fn12)(void*);//markImportant
 typedef void(*fn13)(void*);//unmarkImpotant
+struct apiFuncions
+{
+  fn1 a1;//api function 1
+  fn2 a2;//and so on
+  fn3 a3;
+  fn4 a4;
+  fn5 a5;
+  fn6 a6;
+  fn7 a7;
+  fn8 a8;
+  fn9 a9;
+  fn10 a10;
+  fn11 a11;
+  fn12 a12;
+  fn13 a13;
+  Klass* k1;
+  Klass* k2;
+  Klass* k3;
+  Klass* k4;
+  Klass* k5;
+  Klass* k6;
+  Klass* k7;
+  Klass* k8;
+  Klass* k9;
+  Klass* k10;
+  Klass* k11;
+  Klass* k12;
+  Klass* k13;
+  Klass* k14;
+  Klass* k15;
+  Klass* k16;
+};
+/**************/
+#ifdef ZUKO_INTERPRETER
+// This header was included by the interpreter
+// just forward declare helper functions
+// Allocator functions
+Klass* vm_allocKlass();
+KlassObject * vm_allocKlassObject();
+zlist* vm_allocList();
+ZByteArr* vm_allocByteArray();
+ZDict * vm_allocDict();
+ZStr* vm_allocString(size_t);
+FunObject * vm_allocFunObject();
+FunObject * vm_allocCoroutine();
+Coroutine * vm_allocCoObj();
+zfile * vm_alloczfile();
+Module * vm_allocModule();
+NativeFunction * vm_allocNativeFunObj();
+FunObject* vm_allocFunObject();
+bool vm_callObject(ZObject*,ZObject*,int,ZObject*);
+void vm_markImportant(void*);
+void vm_unmarkImportant(void*);
 
+#else
+
+// This header was included by a module
+// Define function pointer variables for each allocator function
+// and set them after interpreter passes the values to the modules
 //
 fn1 vm_allocList;
 fn2 vm_allocDict;
@@ -238,6 +258,46 @@ fn10 vm_allocByteArray;
 fn11 vm_callObject;
 fn12 vm_markImportant;
 fn13 vm_unmarkImportant;
+  
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+void api_setup(apiFuncions* p)
+{
+  vm_allocList = p->a1;
+  vm_allocDict = p->a2;
+  vm_allocString = p->a3;
+  vm_allocMutString = p->a4;
+  vm_allocFileObject = p->a5;
+  vm_allocKlass = p->a6;
+  vm_allocKlassObject = p->a7;
+  vm_allocNativeFunObj = p->a8;
+  vm_allocModule = p->a9;
+  vm_allocByteArray = p->a10;
+  vm_callObject = p->a11;
+  vm_markImportant = p->a12;
+  vm_unmarkImportant = p->a13;
+  Error = p->k1;
+  TypeError = p->k2;
+  ValueError = p->k3;
+  MathError = p->k4; 
+  NameError = p->k5;
+  IndexError = p->k6;
+  ArgumentError = p->k7;
+  FileIOError = p->k8;
+  KeyError = p->k9;
+  OverflowError = p->k10;
+  FileOpenError = p->k11;
+  FileSeekError = p->k12; 
+  ImportError = p->k13;
+  ThrowError = p->k14;
+  MaxRecursionError = p->k15;
+  AccessError = p->k16;
+}
+
+#endif
+
 //The below helper functions make use of above function pointers
 inline ZObject ZObjFromStr(const char* str)
 {
@@ -255,14 +315,14 @@ ZObject Z_Err(Klass* errKlass,string des)
   ZObject ret;
   KlassObject* p = vm_allocKlassObject();
   p->klass = errKlass;
-  p->members = errKlass->members;
-  p->privateMembers = errKlass->privateMembers;
+  StrMap_assign(&(p->members),&(errKlass->members));
+  StrMap_assign(&(p->privateMembers),&(errKlass->privateMembers));
   StrMap_set(&(p->members),"msg",ZObjFromStr(des.c_str())); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
 }
-inline ZObject ZObjFromMethod(string name,NativeFunPtr r,Klass* k)
+inline ZObject ZObjFromMethod(const char* name,NativeFunPtr r,Klass* k)
 {
   ZObject ret;
   NativeFunction* fn = vm_allocNativeFunObj();
@@ -273,7 +333,7 @@ inline ZObject ZObjFromMethod(string name,NativeFunPtr r,Klass* k)
   ret.ptr = (void*)fn;
   return ret;
 }
-inline ZObject ZObjFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
+inline ZObject ZObjFromFunction(const char* name,NativeFunPtr r,Klass* k=NULL)
 {
   ZObject ret;
   NativeFunction* fn = vm_allocNativeFunObj();
@@ -287,79 +347,10 @@ inline ZObject ZObjFromFunction(string name,NativeFunPtr r,Klass* k=NULL)
 
 
 //
-extern "C"
-{
-  struct apiFuncions
-  {
-    fn1 a1;//api function 1
-    fn2 a2;//and so on
-    fn3 a3;
-    fn4 a4;
-    fn5 a5;
-    fn6 a6;
-    fn7 a7;
-    fn8 a8;
-    fn9 a9;
-    fn10 a10;
-    fn11 a11;
-    fn12 a12;
-    fn13 a13;
-    Klass* k1;
-    Klass* k2;
-    Klass* k3;
-    Klass* k4;
-    Klass* k5;
-    Klass* k6;
-    Klass* k7;
-    Klass* k8;
-    Klass* k9;
-    Klass* k10;
-    Klass* k11;
-    Klass* k12;
-    Klass* k13;
-    Klass* k14;
-    Klass* k15;
-    Klass* k16;
 
-  };
-  #ifdef _WIN32
-  #ifndef ZUKO_INTERPRETER //to make sure this header is included in a shared library
-  //and not the zuko interpreter
-  __declspec(dllexport)
-  #endif
-  #endif
-  void api_setup(apiFuncions* p)
-  {
-    vm_allocList = p->a1;
-    vm_allocDict = p->a2;
-    vm_allocString = p->a3;
-    vm_allocMutString = p->a4;
-    vm_allocFileObject = p->a5;
-    vm_allocKlass = p->a6;
-    vm_allocKlassObject = p->a7;
-    vm_allocNativeFunObj = p->a8;
-    vm_allocModule = p->a9;
-    vm_allocByteArray = p->a10;
-    vm_callObject = p->a11;
-    vm_markImportant = p->a12;
-    vm_unmarkImportant = p->a13;
-    Error = p->k1;
-    TypeError = p->k2;
-    ValueError = p->k3;
-    MathError = p->k4; 
-    NameError = p->k5;
-    IndexError = p->k6;
-    ArgumentError = p->k7;
-    FileIOError = p->k8;
-    KeyError = p->k9;
-    OverflowError = p->k10;
-    FileOpenError = p->k11;
-    FileSeekError = p->k12; 
-    ImportError = p->k13;
-    ThrowError = p->k14;
-    MaxRecursionError = p->k15;
-    AccessError = p->k16;
-  }
+
+#ifdef __cplusplus
 }
+#endif
 
 #endif

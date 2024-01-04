@@ -97,7 +97,7 @@ ZObject TOCHAR(ZObject* args,int32_t argc)
   if(args[0].type!='i')
     return Z_Err(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
-  ZStr* p = allocString(1);
+  ZStr* p = vm_allocString(1);
   p->val[0] = ch;
   return ZObjFromStrPtr(p);
 }
@@ -296,7 +296,7 @@ ZObject FORMAT(ZObject* args,int32_t argc)
           p+=format->val[k];
         k+=1;
     }
-    ZStr* s = allocString(p.length());
+    ZStr* s = vm_allocString(p.length());
     strcpy(s->val,p.c_str());
     return ZObjFromStrPtr(s);
 }
@@ -354,7 +354,7 @@ ZObject input(ZObject* args,int32_t argc)
           break;
         s+=ch;
     }
-    ZStr* p = allocString(s.length());
+    ZStr* p = vm_allocString(s.length());
     strcpy(p->val,s.c_str());
     return ZObjFromStrPtr(p);
 }
@@ -366,7 +366,7 @@ ZObject TYPEOF(ZObject* args,int32_t argc)
   }
   string fullform(char);
   string s = fullform(args[0].type);
-  ZStr* p = allocString(s.length());
+  ZStr* p = vm_allocString(s.length());
   strcpy(p->val,s.c_str());
   return ZObjFromStrPtr(p);
 }
@@ -424,7 +424,7 @@ ZObject OPEN(ZObject* args,int32_t argc)
     FILE* fp = fopen(filename.c_str(), mode.c_str());
     if(!fp)
         return Z_Err(FileOpenError,strerror(errno));
-    zfile* f = alloczfile();
+    zfile* f = vm_alloczfile();
     f->fp = fp;
     f->open = true;
     ret.type = 'u';
@@ -461,7 +461,7 @@ ZObject READ(ZObject* args,int32_t argc)
           break;
         p+=ch;
     }
-    ZStr* s = allocString(p.length());
+    ZStr* s = vm_allocString(p.length());
     strcpy(s->val,p.c_str());
     return ZObjFromStrPtr(s);
 }
@@ -501,7 +501,7 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
   ZObject ret = nil;
   if(argc==0)
   {
-    ZByteArr* arr = allocByteArray();
+    ZByteArr* arr = vm_allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     return ret;
@@ -514,7 +514,7 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
     }
     zlist* p = (zlist*)args[0].ptr;
     size_t len = p->size;
-    ZByteArr* arr = allocByteArray();
+    ZByteArr* arr = vm_allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     for(size_t i=0;i<len;i++)
@@ -570,7 +570,7 @@ ZObject REVERSE(ZObject* args,int32_t argc)
     if(q.type=='s')
     {
         ZStr* data = AS_STR(q);
-        ZStr* l = allocString(data->len);
+        ZStr* l = vm_allocString(data->len);
         size_t i = 0;
         for(int32_t k=data->len-1;k>=0;k--)
         {
@@ -578,7 +578,7 @@ ZObject REVERSE(ZObject* args,int32_t argc)
         }
         return ZObjFromStrPtr(l);
     }
-    zlist* l = allocList();
+    zlist* l = vm_allocList();
     zlist* currList = (zlist*)q.ptr;
     for(int32_t k =currList->size-1;k>=0;k--)
     {
@@ -594,7 +594,7 @@ ZObject BYTES(ZObject* args,int32_t argc)
 {
     if(argc!=1)
       return Z_Err(ArgumentError,"Error bytes() takes one argument!");
-    auto p = allocByteArray();
+    auto p = vm_allocByteArray();
     const ZObject& e = args[0];
     ZObject ret = nil;
     ret.type = Z_BYTEARR;
@@ -683,11 +683,14 @@ ZObject moduleInfo(ZObject* args,int32_t argc)
   if(args[0].type!=Z_MODULE)
     return Z_Err(TypeError,"Argument must be a module object!");
   Module* mod = (Module*)args[0].ptr;
-  printf("Module %s\n",mod->name.c_str());
+  printf("Module %s\n",mod->name);
   printf("------------\n");
-  for(auto e: mod->members)
+  for(size_t idx=0;idx<mod->members.capacity;idx++)
   {
-    printf("%s  %s\n",e.first.c_str(),fullform(e.second.type).c_str());
+    if(mod->members.table[idx].stat != SM_OCCUPIED)
+      continue;
+    auto& e = mod->members.table[idx];
+    printf("%s  %s\n",e.key,fullform(e.val.type).c_str());
 
   }
   ZObject ret = nil;
@@ -802,7 +805,7 @@ ZObject makeList(ZObject* args,int32_t argc)
             {
                 size_t j = k;
                 ZObject e;
-                ZStr* f = allocString();
+                ZStr* f = vm_allocString();
                 bool terminated = false;
                 while(true)
                 {
@@ -861,7 +864,7 @@ ZObject makeList(ZObject* args,int32_t argc)
         {
             return Z_Err(ValueError,"Error the list does not have enough bytes to follow the pattern!");
         }
-        zlist* p = allocList();
+        zlist* p = vm_allocList();
         zlist_assign(p,&res);
         ret.ptr = (void*)p;
         ret.type = 'j';
@@ -885,10 +888,10 @@ ZObject SUBSTR(ZObject* args,int32_t argc)
         
         if(args[0].l<0 || args[1].l<0 )
         {
-          ZStr* q = allocString(0);
+          ZStr* q = vm_allocString(0);
           return ZObjFromStrPtr(q);
         }
-        ZStr* q = allocString(args[1].l - args[0].l + 1);
+        ZStr* q = vm_allocString(args[1].l - args[0].l + 1);
         ZStr* data = (ZStr*)args[2].ptr;
         strcpy(q->val,substr((int32_t)args[0].l,(int32_t)args[1].l,data->val).c_str());
         return ZObjFromStrPtr(q);
@@ -971,11 +974,11 @@ ZObject SPLIT(ZObject* args,int32_t argc)
         ZStr* delim = (ZStr*)args[1].ptr;
 				vector<string> list = split(data->val,delim->val);
 				uint32_t  o = 0;
-				zlist* l = allocList();
+				zlist* l = vm_allocList();
 				ZStr* value;
 				while(o<list.size())
         {
-          value = allocString(list[o].length());
+          value = vm_allocString(list[o].length());
           strcpy(value->val,list[o].c_str());
           zlist_push(l,ZObjFromStrPtr(value));
           o+=1;
@@ -1004,7 +1007,7 @@ ZObject GETENV(ZObject* args,int32_t argc)
         char* c = getenv(vname->val);
         if(!c)
           return nil;
-        ZStr* s = allocString(strlen(c));
+        ZStr* s = vm_allocString(strlen(c));
         strcpy(s->val,c);
         return ZObjFromStrPtr(s);
       }
@@ -1040,34 +1043,34 @@ ZObject STR(ZObject* args,int32_t argc)
 			if(args[0].type=='i')
 			{
         string s = str(args[0].i);
-        ZStr* p = allocString(s.length());
+        ZStr* p = vm_allocString(s.length());
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
 			}
 			else if(args[0].type=='f')
 			{
         string s = str(args[0].f);
-        ZStr* p = allocString(s.length());
+        ZStr* p = vm_allocString(s.length());
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
 			}
       else if(args[0].type=='l')
       {
         string s = str(args[0].l);
-        ZStr* p = allocString(s.length());
+        ZStr* p = vm_allocString(s.length());
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
       }
       else if(args[0].type == Z_BYTE)
       {
         string s = ZObjectToStr(args[0]);
-        ZStr* p = allocString(s.length());
+        ZStr* p = vm_allocString(s.length());
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
       }
       else if(args[0].type == 'b')
       {
-          ZStr* s = allocString(5);
+          ZStr* s = vm_allocString(5);
           if(args[0].i)
             strcpy(s->val,"true");
           else
@@ -1077,14 +1080,14 @@ ZObject STR(ZObject* args,int32_t argc)
       else if(args[0].type == 'j')
       {
           string s = ZObjectToStr(args[0]);
-          ZStr* p = allocString(s.length());
+          ZStr* p = vm_allocString(s.length());
           strcpy(p->val,s.c_str());
           return ZObjFromStrPtr(p);
       }
       else if(args[0].type == 'a')
       {
           string s = ZObjectToStr(args[0]);
-          ZStr* p = allocString(s.length());
+          ZStr* p = vm_allocString(s.length());
           strcpy(p->val,s.c_str());
           return ZObjFromStrPtr(p);
       }   
@@ -1097,7 +1100,7 @@ ZObject STR(ZObject* args,int32_t argc)
           uint8_t byte = bytes->arr[i];
           s.push_back((char)byte);
         }
-        ZStr* p = allocString(s.length());
+        ZStr* p = vm_allocString(s.length());
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
       }
@@ -1447,7 +1450,7 @@ ZObject REPLACE(ZObject* args,int32_t argc)
            ZStr* b = (ZStr*)args[1].ptr;
            ZStr* c = (ZStr*)args[2].ptr;
            string s = replace_all(a->val,b->val,c->val);
-           ZStr* z = allocString(s.length());
+           ZStr* z = vm_allocString(s.length());
            strcpy(z->val,s.c_str());
            return ZObjFromStrPtr(z);
         }
@@ -1470,7 +1473,7 @@ ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
            ZStr* b = (ZStr*)args[1].ptr;
            ZStr* c = (ZStr*)args[2].ptr;
            string s = replace(a->val,b->val,c->val);
-           ZStr* z = allocString(s.length());
+           ZStr* z = vm_allocString(s.length());
            strcpy(z->val,s.c_str());
            return ZObjFromStrPtr(z);
         }
@@ -1574,7 +1577,7 @@ ZObject readlines(ZObject* args,int32_t argc)
       if(!fobj.open)
         return Z_Err(ValueError,"Error the file stream is closed!");
       FILE* currF = fobj.fp;
-      zlist* lines = allocList();
+      zlist* lines = vm_allocList();
       string reg; 
       int32_t k = 0;
 
@@ -1588,7 +1591,7 @@ ZObject readlines(ZObject* args,int32_t argc)
           else if(ch=='\n')
           {
               k+=1;
-              ZStr* line = allocString(reg.length());
+              ZStr* line = vm_allocString(reg.length());
               strcpy(line->val,reg.c_str());
               zlist_push(lines,ZObjFromStrPtr(line));
               reg = "";
@@ -1599,7 +1602,7 @@ ZObject readlines(ZObject* args,int32_t argc)
             reg+=ch;
           }
       }
-      ZStr* line = allocString(reg.length());
+      ZStr* line = vm_allocString(reg.length());
       strcpy(line->val,reg.c_str());
       zlist_push(lines,ZObjFromStrPtr(line));
       ZObject ret;
@@ -1725,7 +1728,7 @@ ZDict* makeDictCopy(ZDict);
 //
 ZDict* makeDictCopy(ZDict v)
 {
-  ZDict* d = allocDict();
+  ZDict* d = vm_allocDict();
   for(size_t i=0;i<d->capacity;i++)
   {
     if(d->table[i].stat != OCCUPIED)
@@ -1739,7 +1742,7 @@ ZDict* makeDictCopy(ZDict v)
 }
 zlist* makeListCopy(zlist v)
 {
-  zlist* p = allocList();
+  zlist* p = vm_allocList();
   for(size_t i = 0;i<v.size;i++)
   {
     ZObject e = v.arr[i];
@@ -2026,7 +2029,7 @@ ZObject INSERTSTR(ZObject* args,int32_t argc)
     if(val.type==Z_STR)
     {
       ZStr* sub = (ZStr*)val.ptr;
-      ZStr* result = allocString(sub->len + p.length());
+      ZStr* result = vm_allocString(sub->len + p.length());
       string q = sub->val;
       p.insert(p.begin()+idx.l,q.begin(),q.end());
       strcpy(result->val,p.c_str());
@@ -2164,7 +2167,7 @@ ZObject ERASE(ZObject* args,int32_t argc)
     string s = p->val;
     s.erase(s.begin()+idx1.l,s.begin()+idx2.l+1);
 
-    ZStr* res = allocString(s.length());
+    ZStr* res = vm_allocString(s.length());
     strcpy(res->val,s.c_str());
     return ZObjFromStrPtr(res);
   }
@@ -2183,7 +2186,7 @@ ZObject asMap(ZObject* args,int32_t argc)
     ZObject x;
     x.type = 'l';
     size_t i = 0;
-    ZDict* d = allocDict();
+    ZDict* d = vm_allocDict();
 
     for(;i<l.size;i++)
     {
@@ -2202,12 +2205,12 @@ ZObject ASLIST(ZObject* args,int32_t argc)
     if(argc!=1)
       return Z_Err(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
     ZDict d = *(ZDict*)args[0].ptr;
-    zlist* list = allocList();
+    zlist* list = vm_allocList();
     for(size_t i=0;i<d.capacity;i++)
     {
       if(d.table[i].stat != OCCUPIED)
         continue;
-      zlist* sub = allocList();
+      zlist* sub = vm_allocList();
       zlist_push(sub,d.table[i].key);
       zlist_push(sub,d.table[i].val);
       
@@ -2230,7 +2233,7 @@ ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
   if(args[0].type == Z_STR)
   {
     ZStr* str = (ZStr*)args[0].ptr;
-    ZStr* p = allocString(str->len);
+    ZStr* p = vm_allocString(str->len);
     size_t i = 0;
     while(i < str->len)
     {
@@ -2307,7 +2310,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
   double d;
   bool b;
   string str;
-  zlist* lp = allocList();
+  zlist* lp = vm_allocList();
   zlist* res = lp;
   for(size_t i=0;i<pattern.length();i++)
   {
@@ -2371,7 +2374,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
         char c = arr->arr[k];
         str.push_back(c);
       }
-      auto p = allocString(str.length());
+      auto p = vm_allocString(str.length());
       strcpy(p->val,str.c_str());
       zlist_push(res,ZObjFromStrPtr(p));
     }
@@ -2399,13 +2402,14 @@ ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
   {
     static ZStr empty;
     empty.len = 0;
-    empty.val = "";
+    static char arr[] = "";
+    empty.val = arr;
     return ZObjFromStrPtr(&empty);
   }
   else
   {
     string s = substr((int32_t)args[1].l,(int32_t)args[2].l,data->val);
-    ZStr* res = allocString(s.length());
+    ZStr* res = vm_allocString(s.length());
     strcpy(res->val,s.c_str());
     return ZObjFromStrPtr(res);
   }
@@ -2426,7 +2430,7 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
         string a = ((ZStr*)args[1].ptr) -> val;
         string b = ((ZStr*)args[2].ptr) -> val;
         string s = replace_all(a,b,c); // can be optimized but not today
-        ZStr* z = allocString(c.length());
+        ZStr* z = vm_allocString(c.length());
         strcpy(z->val,s.c_str());
         return ZObjFromStrPtr(z);
     }
@@ -2451,7 +2455,7 @@ ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
         string b = ((ZStr*)args[2].ptr) -> val;        
         string c = ( ((ZStr*)args[0].ptr) )->val;
         string s = replace(a,b,c);
-        ZStr* z = allocString(c.length());
+        ZStr* z = vm_allocString(c.length());
         strcpy(z->val,s.c_str());
         return ZObjFromStrPtr(z);
         
