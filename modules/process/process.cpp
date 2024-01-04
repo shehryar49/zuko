@@ -5,8 +5,8 @@ using namespace std;
 ZObject init(ZObject* rrr)
 {
   Module* prcMod = vm_allocModule();
-  prcMod->members.emplace("fork",ZObjFromFunction("process.fork",&FORK));
-  prcMod->members.emplace("getpid",ZObjFromFunction("process.getpid",&GETPID));
+  Module_addNativeFun(prcMod,"fork",&FORK);
+  Module_addNativeFun(prcMod,"getpid",&GETPID);
   return ZObjFromModule(prcMod);
 }
 

@@ -4,7 +4,7 @@
   #define EXPORT
 #endif
 
-#include "ZObject.h"
+#include "zapi.h"
 
 extern "C"
 {

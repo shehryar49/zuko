@@ -101,14 +101,14 @@ vector<string> splitIgnQuotes(string& s,char x)
   parts.push_back(read);
   return parts;
 }
-Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadError)
+ZDict* parse_multipart(char* data,int len,const string& boundary,bool& hadError)
 {
   hadError = true;
   if(len<=0)
     return nullptr;
   int k = 0;
   string b;
-  Dictionary* d = vm_allocDict();
+  ZDict* d = vm_allocDict();
   while (k < len && data[k]!='\r')
   {
     b+=data[k];
@@ -235,26 +235,25 @@ Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadE
           return nullptr;
       }
       if(filename =="")
-        d->emplace(ZObjFromStr(name),ZObjFromStr(content));
+        ZDict_emplace(d,ZObjFromStr(name.c_str()),ZObjFromStr(content.c_str()));
       else
       {
         //file content uploaded
-        KlassObject* ki = vm_allocKlassObject();
-        ki->klass = CgiFile;
-        ki->members.emplace("filename",ZObjFromStr(filename));
+        KlassObject* ki = vm_allocKlassObject(CgiFile);
+        KlassObj_setMember(ki,"filename",ZObjFromStr(filename.c_str()));
         if(headers.find("content-type")!=headers.end())
         {
           aux = headers["content-type"];
-          ki->members.emplace("type",ZObjFromStr(aux));
+          KlassObj_setMember(ki,"type",ZObjFromStr(aux.c_str()));
         }
         auto btArr = vm_allocByteArray();
-        btArr->resize(content.length());
-        memcpy(&btArr->at(0),&content[0],content.length());
+        ZByteArr_resize(btArr,content.length());
+        memcpy(btArr->arr,&content[0],content.length());
         ZObject rr;
         rr.type = Z_BYTEARR;
         rr.ptr = (void*)btArr;
-        ki->members.emplace("content",rr);
-        d->emplace(ZObjFromStr(name),ZObjFromKlassObj(ki));
+        KlassObj_setMember(ki,"content",rr);
+        ZDict_emplace(d,ZObjFromStr(name.c_str()),ZObjFromKlassObj(ki));
       }
         
       headers.clear();
@@ -263,13 +262,13 @@ Dictionary* parse_multipart(char* data,int len,const string& boundary,bool& hadE
   hadError = false;
   return d;
 }
-Dictionary* GET()
+ZDict* GET()
 {
        char* q = getenv("QUERY_STRING");
        if(!q)
          return nullptr;
        string query = q;
-       Dictionary* m = vm_allocDict();
+       ZDict* m = vm_allocDict();
        if(query == "")
          return m;
        vector<string> pairs = split(q,"&");
@@ -280,7 +279,7 @@ Dictionary* GET()
              return nullptr;
            eq[0] = url_decode(eq[0]);
            eq[1] = url_decode(eq[1]);
-           m->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
+           ZDict_emplace(m,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
        }
        return m;
 }
@@ -307,7 +306,7 @@ void consumeSpace(const string& data,int& k)
     k++;
   
 }
-Dictionary* POST(bool& err)
+ZDict* POST(bool& err)
 {
 
        char* q = getenv("CONTENT_LENGTH");
@@ -351,7 +350,7 @@ Dictionary* POST(bool& err)
        {
          data = s;
          delete[] s;
-         Dictionary* m = vm_allocDict();
+         ZDict* m = vm_allocDict();
          if(data == "")
            return m;
          vector<string> pairs = split(data,"&");
@@ -362,7 +361,7 @@ Dictionary* POST(bool& err)
                return nullptr;
              eq[0] = url_decode(eq[0]);
              eq[1] = url_decode(eq[1]);
-             m->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
+             ZDict_emplace(m,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
          }
          return m;
        }
@@ -382,7 +381,7 @@ ZObject FormData(ZObject* args,int n)
         return Z_Err(Error,"Environment variable REQUEST_METHOD not found!");
     if(string(method)=="GET")
     {
-       Dictionary* d = vm_allocDict();
+       ZDict* d = vm_allocDict();
        d = GET();
        if(!d)
           return Z_Err(Error,"Error parsing request(bad or unsupported format)");
@@ -392,13 +391,16 @@ ZObject FormData(ZObject* args,int n)
     else if(string(method)=="POST")
     {
        bool hadErr=false;
-       Dictionary* d = POST(hadErr);
+       ZDict* d = POST(hadErr);
        if(!d || hadErr)
           return Z_Err(Error,"Error parsing request(bad or unsupported format)");
        return ZObjFromDict(d);
     }
     else
-      return Z_Err(ValueError,"Unknown method "+(string)method);
+    {
+      string errmsg = (string)"Unknown method " + method;
+      return Z_Err(ValueError,errmsg.c_str());
+    }
 }
 ZObject nil;
 ZObject init()
@@ -410,16 +412,17 @@ ZObject init()
     nil.type = 'n';
     Module* d = vm_allocModule();
     CgiFile = vm_allocKlass();
-    CgiFile->members[(string)"filename"]  = nil;
-    CgiFile->members[(string)"content"] = nil;
-    CgiFile->members[(string)"contentType"] = nil;
+    Klass_addMember(CgiFile,"filename",nil);
+    Klass_addMember(CgiFile,"content",nil);
+    Klass_addMember(CgiFile,"contentType",nil);
     CgiFile->name = "cgi.File";
-    d->members.emplace("FormData",ZObjFromMethod("cgi.FormData",&FormData,CgiFile));
-    d->members.emplace("cookies",ZObjFromFunction("cgi.cookies",&cookies));
+
+    Module_addMember(d,"FormData",ZObjFromMethod("cgi.FormData",&FormData,CgiFile));
+    Module_addMember(d,"cookies",ZObjFromFunction("cgi.cookies",&cookies));
     
     //Function FormData is not a member of CgiFile class but we want the class  not to be
     //garbage collected when FormData function object is reachable 
-    d->members.emplace("File",ZObjFromKlass(CgiFile));
+    Module_addMember(d,"File",ZObjFromKlass(CgiFile));
     return ZObjFromModule(d);
 }
 
@@ -432,13 +435,13 @@ ZObject cookies(ZObject* args,int n)
     return Z_Err(ValueError,"No cookies!");
   string data = cookie;
   vector<string> parts = split(data,"; ");
-  Dictionary* dict = vm_allocDict();
+  ZDict* dict = vm_allocDict();
   for(auto e: parts)
   {
     vector<string> eq = split(e,"=");
     if(eq.size()!=2)
       return Z_Err(ValueError,"Bad or unsupported format");
-    dict->emplace(ZObjFromStr(eq[0]),ZObjFromStr(eq[1]));
+    ZDict_emplace(dict,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
   }
   return ZObjFromDict(dict);
 }

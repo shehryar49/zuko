@@ -1,11 +1,11 @@
 #ifndef SOCKET_PLT_H_
 #define SOCKET_PLT_H_
 #ifdef _WIN32
-  #include "ZObject.h"
+  #include "zapi.h"
   #define EXPORT __declspec(dllexport)
 #else
   #define EXPORT
-  #include "ZObject.h"
+  #include "zapi.h"
 #endif
 extern "C"
 {

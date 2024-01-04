@@ -1,4 +1,4 @@
-#include "ZObject.h"
+#include "zapi.h"
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else

@@ -1,6 +1,6 @@
 #ifndef PROCESS_PLT_H_
 #define PROCESS_PLT_H_
-#include "ZObject.h"
+#include "zapi.h"
 
 extern "C"
 {

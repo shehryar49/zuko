@@ -11,12 +11,15 @@ Klass* tmklass;
 ZObject init()
 {
     Module* d = vm_allocModule();
-    d->members.emplace("time",ZObjFromFunction("datetime.time",&TIME));
-    d->members.emplace("ctime",ZObjFromFunction("datetime.ctime",&CTIME));
+    Module_addNativeFun(d,"time",&TIME);
+    Module_addNativeFun(d,"ctime",&CTIME);
     tmklass = vm_allocKlass(); //kinda like the tm_struct
     tmklass->name = "tm";
-    d->members.emplace("localtime",ZObjFromFunction("datetime.localtime",&LOCALTIME,tmklass));
-    d->members.emplace("gmtime",ZObjFromFunction("datetime.gmtime",&GMTIME,tmklass));
+    // not actually methods of tmklass, but the following functions use tmklass
+    // 
+    Module_addMember(d,"localtime",ZObjFromMethod("localtime",&LOCALTIME,tmklass));
+    Module_addMember(d,"gmtime",ZObjFromMethod("gmtime",&GMTIME,tmklass));
+
     return ZObjFromModule(d);
 }
 ZObject TIME(ZObject* args,int32_t n)
@@ -38,11 +41,11 @@ ZObject CTIME(ZObject* args,int32_t n)
     if(args[0].type != Z_INT64)
       return Z_Err(TypeError,"Argument must be an int64!");
     time_t now = (time_t)args[0].l;
-    string* s = vm_allocString();
     char* tm = ctime(&now);
-    //strings in plutonium are immutable
+    ZStr* s = vm_allocString(strlen(tm));
+    //strings in zuko are immutable
     //never do the following with strings that you do not allocate
-    *s = tm;
+    strcpy(s->val,tm);
     return ZObjFromStrPtr(s);
 }
 ZObject LOCALTIME(ZObject* args,int32_t n)
@@ -55,22 +58,23 @@ ZObject LOCALTIME(ZObject* args,int32_t n)
     tm* time = localtime(&now);
     if(!time)
       return Z_Err(Error,"C localtime() returned nullptr");
-    KlassObject* ki = vm_allocKlassObject();
+    KlassObject* ki = vm_allocKlassObject(tmklass);
     ki->klass = tmklass;
     #ifdef _WIN32
       //Fuck microsoft
     #else
-      ki->members.emplace("gmtoff",ZObjFromInt64(time->tm_gmtoff));
-      ki->members.emplace("zone", ZObjFromStr((std::string)time->tm_zone));
+      KlassObj_setMember(ki,"gmtoff",ZObjFromInt64(time->tm_gmtoff));
+      KlassObj_setMember(ki,"zone", ZObjFromStr(time->tm_zone));
     #endif
-    ki->members.emplace("hour",ZObjFromInt(time->tm_hour));
-    ki->members.emplace("isdst",ZObjFromInt(time->tm_isdst));
-    ki->members.emplace("mday",ZObjFromInt(time->tm_mday));
-    ki->members.emplace("min",ZObjFromInt(time->tm_min));
-    ki->members.emplace("mon",ZObjFromInt(time->tm_mon));
-    ki->members.emplace("sec",ZObjFromInt(time->tm_sec));
-    ki->members.emplace("wday",ZObjFromInt(time->tm_wday));
-    ki->members.emplace("yday",ZObjFromInt(time->tm_yday));
+
+    KlassObj_setMember(ki,"hour",ZObjFromInt(time->tm_hour));
+    KlassObj_setMember(ki,"isdst",ZObjFromInt(time->tm_isdst));
+    KlassObj_setMember(ki,"mday",ZObjFromInt(time->tm_mday));
+    KlassObj_setMember(ki,"min",ZObjFromInt(time->tm_min));
+    KlassObj_setMember(ki,"mon",ZObjFromInt(time->tm_mon));
+    KlassObj_setMember(ki,"sec",ZObjFromInt(time->tm_sec));
+    KlassObj_setMember(ki,"wday",ZObjFromInt(time->tm_wday));
+    KlassObj_setMember(ki,"yday",ZObjFromInt(time->tm_yday));
 
     return ZObjFromKlassObj(ki);
 }
@@ -84,23 +88,23 @@ ZObject GMTIME(ZObject* args,int32_t n)
     tm* time = localtime(&now);
     if(!time)
       return Z_Err(Error,"C localtime() returned nullptr");
-    KlassObject* ki = vm_allocKlassObject();
+    KlassObject* ki = vm_allocKlassObject(tmklass);
     ki->klass = tmklass;
     #ifdef _WIN32
       //Fuck microsoft
     #else
-      ki->members.emplace("gmtoff", ZObjFromInt64(time->tm_gmtoff));
-      ki->members.emplace("zone", ZObjFromStr((std::string)time->tm_zone));
+      KlassObj_setMember(ki,"gmtoff", ZObjFromInt64(time->tm_gmtoff));
+      KlassObj_setMember(ki,"zone", ZObjFromStr(time->tm_zone));
     #endif
     
-    ki->members.emplace("hour",ZObjFromInt(time->tm_hour));
-    ki->members.emplace("isdst",ZObjFromInt(time->tm_isdst));
-    ki->members.emplace("mday",ZObjFromInt(time->tm_mday));
-    ki->members.emplace("min",ZObjFromInt(time->tm_min));
-    ki->members.emplace("mon",ZObjFromInt(time->tm_mon));
-    ki->members.emplace("sec",ZObjFromInt(time->tm_sec));
-    ki->members.emplace("wday",ZObjFromInt(time->tm_wday));
-    ki->members.emplace("yday",ZObjFromInt(time->tm_yday));
+    KlassObj_setMember(ki,"hour",ZObjFromInt(time->tm_hour));
+    KlassObj_setMember(ki,"isdst",ZObjFromInt(time->tm_isdst));
+    KlassObj_setMember(ki,"mday",ZObjFromInt(time->tm_mday));
+    KlassObj_setMember(ki,"min",ZObjFromInt(time->tm_min));
+    KlassObj_setMember(ki,"mon",ZObjFromInt(time->tm_mon));
+    KlassObj_setMember(ki,"sec",ZObjFromInt(time->tm_sec));
+    KlassObj_setMember(ki,"wday",ZObjFromInt(time->tm_wday));
+    KlassObj_setMember(ki,"yday",ZObjFromInt(time->tm_yday));
     return ZObjFromKlassObj(ki);
 }
 

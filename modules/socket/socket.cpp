@@ -1,6 +1,7 @@
 #include "socket.h"
 #include <string.h>
 #include <stdlib.h>
+#include <string>
 #ifdef _WIN32
   #include <winsock2.h>
   #pragma comment(lib,"ws2_32")
@@ -42,38 +43,37 @@ EXPORT ZObject init()
       if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
       {
           string errMsg = "Error code: " + to_string(WSAGetLastError());
-          return Z_Err(Error, errMsg);
+          return quickErr(Error, errMsg);
       }
     #endif
     Module* d = vm_allocModule();
     socketKlass = vm_allocKlass();
     socketKlass->name = "socket";
-    socketKlass->members.emplace(("__construct__"), ZObjFromMethod("",&socket__construct,socketKlass));
-    socketKlass->members.emplace((".internalPTR"),nil );
-    socketKlass->members.emplace(("bind"), ZObjFromMethod("bind", &socket_Bind, socketKlass));
-    socketKlass->members.emplace(("connect"), ZObjFromMethod("connect", &socket_Connect, socketKlass));
-    socketKlass->members.emplace(("send"), ZObjFromMethod("send", &socket_Send, socketKlass));
-    socketKlass->members.emplace(("recv"), ZObjFromMethod("recv", & socket_Recv, socketKlass));
-    socketKlass->members.emplace(("listen"), ZObjFromMethod("listen", & socket_Listen, socketKlass));
-    socketKlass->members.emplace(("accept"), ZObjFromMethod("accept", &socket_Accept, socketKlass));
-    socketKlass->members.emplace(("sendto"), ZObjFromMethod("sendto", &socket_SendTo, socketKlass));
-    socketKlass->members.emplace(("recvfrom"), ZObjFromMethod("recvfrom", &socket_RecvFrom, socketKlass));
-    socketKlass->members.emplace(("close"), ZObjFromMethod("close", & socket_Close, socketKlass));
-    socketKlass->members.emplace(("__del__"), ZObjFromMethod("__del__", &socket_del__, socketKlass));
-    
+    Klass_addNativeMethod(socketKlass,"__construct__",&socket__construct);
+    Klass_addNativeMethod(socketKlass,"bind",&socket_Bind);
+    Klass_addNativeMethod(socketKlass,"connect",  &socket_Connect);
+    Klass_addNativeMethod(socketKlass,"send",  &socket_Send);
+    Klass_addNativeMethod(socketKlass,"recv",  & socket_Recv);
+    Klass_addNativeMethod(socketKlass,"listen",  & socket_Listen);
+    Klass_addNativeMethod(socketKlass,"accept",  &socket_Accept);
+    Klass_addNativeMethod(socketKlass,"sendto",  &socket_SendTo);
+    Klass_addNativeMethod(socketKlass,"recvfrom", &socket_RecvFrom);
+    Klass_addNativeMethod(socketKlass,"close",  & socket_Close);
+    Klass_addNativeMethod(socketKlass,"__del__", &socket_del__);
+    Klass_addMember(socketKlass,".internalPTR",nil );
     
     udpResKlass = vm_allocKlass();
-    udpResKlass->members.emplace(("addr"), nil);
-    udpResKlass->members.emplace(("data"), nil);
+    Klass_addMember(udpResKlass,("addr"), nil);
+    Klass_addMember(udpResKlass,("data"), nil);
 
 
-    d->members.emplace(("socket"), ZObjFromKlass(socketKlass));
-    d->members.emplace(("socket"), ZObjFromKlass(udpResKlass));
-    d->members.emplace(("AF_INET"), ZObjFromInt(AF_INET));
-    d->members.emplace(("AF_INET6"), ZObjFromInt(AF_INET6));
-    d->members.emplace(("SOCK_STREAM"), ZObjFromInt(SOCK_STREAM));
-    d->members.emplace(("SOCK_DGRAM"), ZObjFromInt(SOCK_DGRAM));
-    d->members.emplace(("SOCK_RAW"), ZObjFromInt(SOCK_RAW));
+    Module_addKlass(d,"socket", socketKlass);
+    Module_addKlass(d,"udpres", udpResKlass);
+    Module_addMember(d,"AF_INET", ZObjFromInt(AF_INET));
+    Module_addMember(d,"AF_INET6", ZObjFromInt(AF_INET6));
+    Module_addMember(d,"SOCK_STREAM", ZObjFromInt(SOCK_STREAM));
+    Module_addMember(d,"SOCK_DGRAM", ZObjFromInt(SOCK_DGRAM));
+    Module_addMember(d,"SOCK_RAW", ZObjFromInt(SOCK_RAW));
     
 
     return ZObjFromModule(d);
@@ -83,51 +83,55 @@ EXPORT ZObject socket_del__( ZObject* args, int n)
 {
     return nil;
 }
+inline ZObject quickErr(Klass* k,string msg) // uses std::string instead of cstring
+{
+  return Z_Err(k,msg.c_str());
+}
 EXPORT ZObject socket__construct(ZObject* args, int n)
 {
   int e = validateArgTypes("oii", args, n);
   if (e == -1)
-    return Z_Err(ValueError, "3 arguments needed!");
+    return quickErr(ValueError, "3 arguments needed!");
   if (e!=-2)
-    return Z_Err(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
+    return quickErr(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
   if (args[0].type != Z_OBJ || ((KlassObject*)args[0].ptr)->klass != socketKlass)
-    return Z_Err(TypeError, "Argument 1 must be an object of socket class!");  
+    return quickErr(TypeError, "Argument 1 must be an object of socket class!");  
   
-  KlassObject& ko = *(KlassObject*)args[0].ptr;
+  KlassObject* ko = (KlassObject*)args[0].ptr;
   SOCKTYPE sock = socket(args[1].i, args[2].i, 0);  
   #ifdef _WIN32
     if (sock == INVALID_SOCKET)
     {
       string errMsg = "Error code " + to_string(WSAGetLastError());
-      return Z_Err(Error, errMsg);      
+      return quickErr(Error, errMsg.c_str());      
     }
   #else
     if(sock < 0)
-      return Z_Err(Error,strerror(errno));
+      return quickErr(Error,strerror(errno));
   #endif
-  ko.members[".sock"] = ZObjFromInt(sock);
-  ko.members[".ipfamily"] = args[1];
+  KlassObj_setMember(ko,".sock",ZObjFromInt(sock));
+  KlassObj_setMember(ko,".ipfamily",args[1]);
   return nil;
 }
 EXPORT ZObject socket_Bind(ZObject* args, int n)
 {
     int e = validateArgTypes("osi", args, n);
     if (e == -1)
-      return Z_Err(ValueError, "3 arguments needed!");
+      return quickErr(ValueError, "3 arguments needed!");
     if (e!=-2)
-      return Z_Err(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
+      return quickErr(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
         
     if (args[0].type != Z_OBJ || ((KlassObject*)args[0].ptr)->klass != socketKlass)
-      return Z_Err(TypeError, "Argument 1 must be an object of socket class!");  
+      return quickErr(TypeError, "Argument 1 must be an object of socket class!");  
   
     sockaddr_in server;
     
     KlassObject* p = (KlassObject*)args[0].ptr;
-    string& addr = *(string*)args[1].ptr;
-    SOCKTYPE s = p->members[".sock"].i;
+    ZStr* addr = AS_STR(args[1]);
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
 
-    server.sin_family = p->members[".ipfamily"].i;
-    server.sin_addr.s_addr = inet_addr(addr.c_str());
+    server.sin_family = AS_INT(KlassObj_getMember(p,".ipfamily"));
+    server.sin_addr.s_addr = inet_addr(addr->val);
     server.sin_port = htons(args[2].i);
     
     int ret = bind(s,(sockaddr*)&server,sizeof(server));
@@ -135,11 +139,11 @@ EXPORT ZObject socket_Bind(ZObject* args, int n)
       if (ret == SOCKET_ERROR)
       {
         string errMsg = to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);    
+        return quickErr(Error, errMsg);    
       }
     #else
       if(ret < 0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
     return nil;
 }
@@ -147,26 +151,26 @@ EXPORT ZObject socket_Listen( ZObject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
-      return Z_Err(ValueError, "2 arguments needed!");
+      return quickErr(ValueError, "2 arguments needed!");
     if (e!=-2)
-      return Z_Err(TypeError, "Argument " + to_string(e) + " is of invalid type.");
+      return quickErr(TypeError, "Argument " + to_string(e) + " is of invalid type.");
     if (((KlassObject*)args[0].ptr)->klass != socketKlass)
-      return Z_Err(TypeError, "Error socket object needed!");
+      return quickErr(TypeError, "Error socket object needed!");
     KlassObject* p = (KlassObject*)args[0].ptr;
     
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     int i = listen(s, args[0].i);
     #ifdef _WIN32
       if (i == SOCKET_ERROR)
       {
         string errMsg = to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);
+        return quickErr(Error, errMsg);
       }
     #else
       if (i < 0)
       {
           string errMsg = strerror(errno);
-          return Z_Err(Error, errMsg);
+          return quickErr(Error, errMsg);
       }
     #endif
     
@@ -175,14 +179,14 @@ EXPORT ZObject socket_Listen( ZObject* args, int n)
 EXPORT ZObject socket_Accept( ZObject* args, int n)
 {
     if (n != 1)
-      return Z_Err(ValueError, "1 argument needed");
+      return quickErr(ValueError, "1 argument needed");
   
     if (((KlassObject*)args[0].ptr)->klass != socketKlass)
-      return Z_Err(TypeError, "Error socket object needed!");
+      return quickErr(TypeError, "Error socket object needed!");
     
     KlassObject* p = (KlassObject*)args[0].ptr;
 
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     struct sockaddr_in  client;
     int c = sizeof(client);
     #ifdef _WIN32
@@ -194,17 +198,15 @@ EXPORT ZObject socket_Accept( ZObject* args, int n)
       if (new_socket == INVALID_SOCKET)
       {
         string errMsg = to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);
+        return quickErr(Error, errMsg);
       }
     #else
       if(new_socket <0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
     
-    KlassObject* d = vm_allocKlassObject();
-    d->klass = socketKlass;
-    d->members = socketKlass->members;
-    d->members[".sock"] = ZObjFromInt(new_socket);
+    KlassObject* d = vm_allocKlassObject(socketKlass);
+    KlassObj_setMember(d,".sock",ZObjFromInt(new_socket));
     return ZObjFromKlassObj(d);
     
 }
@@ -212,29 +214,29 @@ EXPORT ZObject socket_Connect( ZObject* args, int n)
 {
     int e = validateArgTypes("osi", args, n);
     if (e == -1)
-      return Z_Err(ValueError, "3 arguments needed!");
+      return quickErr(ValueError, "3 arguments needed!");
     if (e!=-2)
-      return Z_Err(TypeError, "Argument " + to_string(e) + " is of invalid type.");
+      return quickErr(TypeError, "Argument " + to_string(e) + " is of invalid type.");
     
     KlassObject* p = (KlassObject*)args[0].ptr;
-    string& addr = *(string*)args[1].ptr;
+    ZStr* addr = AS_STR(args[1]);
 
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
 
     struct sockaddr_in server;
-    server.sin_addr.s_addr = inet_addr(addr.c_str());
-    server.sin_family = p->members[".ipfamily"].i;
+    server.sin_addr.s_addr = inet_addr(addr->val);
+    server.sin_family = AS_INT(KlassObj_getMember(p,".ipfamily"));
     server.sin_port = htons(args[2].i);
     int ret = connect(s, (struct sockaddr*)&server, sizeof(server));
     #ifdef _WIN32
       if (ret == SOCKET_ERROR)
       {
         string errMsg = to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);        
+        return quickErr(Error, errMsg);        
       }
     #else
       if(ret < 0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
     return nil;
 }
@@ -242,25 +244,25 @@ EXPORT ZObject socket_Send(ZObject* args, int n)
 {
     int e = validateArgTypes("oc", args, n);
     if (e == -1)
-      return Z_Err(ValueError, "2 arguments needed!");
+      return quickErr(ValueError, "2 arguments needed!");
     if (e != -2)
-        return Z_Err(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
+        return quickErr(TypeError, "Argument " + to_string(e+1) + " is of invalid type.");
     KlassObject* p = (KlassObject*)args[0].ptr;
     if (p->klass != socketKlass)
-        return Z_Err(TypeError, "Error socket object needed!");   
+        return quickErr(TypeError, "Error socket object needed!");   
 
-    SOCKTYPE s = p->members[".sock"].i;
-    auto& l = *(vector<uint8_t>*)args[1].ptr;
-    int ret = send(s,(const char*)&l[0],l.size(),0);
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
+    ZByteArr* l = AS_BYTEARRAY(args[1]);
+    int ret = send(s,l->arr,l->size,0);
     #ifdef _WIN32
       if(ret == SOCKET_ERROR)
       {
         string errMsg = "Error code " + to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);
+        return quickErr(Error, errMsg);
       }
     #else
       if(ret < 0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
     return ZObjFromInt(ret);
 }
@@ -268,32 +270,32 @@ EXPORT ZObject socket_Recv( ZObject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
-      return Z_Err(ValueError, "1 argument needed!");
+      return quickErr(ValueError, "1 argument needed!");
     if (e!=-2)
-      return Z_Err(TypeError, "Argument " + to_string(e) + " is of invalid type.");
+      return quickErr(TypeError, "Argument " + to_string(e) + " is of invalid type.");
     KlassObject* p = (KlassObject*)args[0].ptr;
     if (p->klass != socketKlass)
-      return Z_Err(TypeError, "Error socket object needed!");     
+      return quickErr(TypeError, "Error socket object needed!");     
 
 
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     char* msg= new char[(size_t)args[1].i];
     int read = recv(s, msg, args[1].i, 0);
     #ifdef _WIN32
       if (read == SOCKET_ERROR)
       {
         string errMsg = "Error code: " + to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);
+        return quickErr(Error, errMsg);
       }
     #else
       if(read < 0)
-      return Z_Err(Error,strerror(errno));
+      return quickErr(Error,strerror(errno));
     #endif
 
     auto l = vm_allocByteArray();
     for (int i = 0; i < read; i++)
     {
-        l->push_back(msg[i]);
+        ZByteArr_push(l,msg[i]);
     }
     delete[] msg;
     return ZObjFromByteArr(l);
@@ -302,15 +304,15 @@ EXPORT ZObject socket_RecvFrom( ZObject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
-      return Z_Err(ArgumentError, "2 argument needed!");
+      return quickErr(ArgumentError, "2 argument needed!");
     if (e!=-2)
-      return Z_Err(TypeError, "Argument " + to_string(e) + " is of invalid type.");
+      return quickErr(TypeError, "Argument " + to_string(e) + " is of invalid type.");
     KlassObject* p = (KlassObject*)args[0].ptr;
     if (p->klass != socketKlass)
-        return Z_Err(TypeError, "Error socket object needed!");
+        return quickErr(TypeError, "Error socket object needed!");
     
 
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     
     char* msg = new char[args[1].i];
     int len;
@@ -325,30 +327,27 @@ EXPORT ZObject socket_RecvFrom( ZObject* args, int n)
       if (read == SOCKET_ERROR)
       {
         string errMsg = to_string(WSAGetLastError());
-        return Z_Err(Error, errMsg);
+        return quickErr(Error, errMsg);
       }
     #else
       if(read < 0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
 
     auto l = vm_allocByteArray();
     for (int i = 0; i < read; i++)
     {
-        l->push_back(msg[i]);
+        ZByteArr_push(l,msg[i]);
     }
     ZObject data;
     data.type = 'c';
     data.ptr = (void*)l;
     char* ip = inet_ntoa(cliaddr.sin_addr);
-    string IP = ip;
-    
 
-    KlassObject* d = vm_allocKlassObject();
-    d->klass = udpResKlass;
-
-    d->members.emplace(("addr"), ZObjFromStr(IP));
-    d->members.emplace(("data"), data);
+    KlassObject* d = vm_allocKlassObject(udpResKlass);
+   
+    KlassObj_setMember(d,"addr", ZObjFromStr(ip));
+    KlassObj_setMember(d,"data", data);
     delete[] msg;
     return ZObjFromKlassObj(d);
 }
@@ -356,55 +355,55 @@ EXPORT ZObject socket_SendTo( ZObject* args, int n)
 {
     int e = validateArgTypes("ocsi", args, n);
     if (e == -1)
-        return Z_Err(ValueError, "4 arguments needed!");
+        return quickErr(ValueError, "4 arguments needed!");
     if (e!=-2)
-        return Z_Err(TypeError, "Argument " + to_string(e) + " is of invalid type.");
+        return quickErr(TypeError, "Argument " + to_string(e) + " is of invalid type.");
     KlassObject* p = (KlassObject*)args[0].ptr;
     if (p->klass != socketKlass)
-        return Z_Err(TypeError, "Error socket object needed!");
+        return quickErr(TypeError, "Error socket object needed!");
     
-    SOCKTYPE s = p->members[".sock"].i;
-    auto& l = *(vector<uint8_t>*)args[1].ptr;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
+    auto l = AS_BYTEARRAY(args[1]);
     
     int read;
     unsigned int len;
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     // Filling server information
-    addr.sin_family = p->members[".ipfamily"].i;
+    addr.sin_family = AS_INT(KlassObj_getMember(p,".ipfamily"));
     addr.sin_port = htons(args[3].i);
-    string& saddr = *(string*)args[2].ptr;
-    addr.sin_addr.s_addr = inet_addr(saddr.c_str());
+    ZStr* saddr = AS_STR(args[2]);
+    addr.sin_addr.s_addr = inet_addr(saddr->val);
     //windows: (SOCKADDR*)
-    int iResult = sendto(s,(const char*)&l[0],l.size(), 0, (sockaddr*)&addr, sizeof(addr));
+    int iResult = sendto(s,(const char*)l->arr,l->size, 0, (sockaddr*)&addr, sizeof(addr));
     #ifdef _WIN32
     if (iResult == SOCKET_ERROR)
     {
         string msg = to_string(GetLastError());
-        return Z_Err(Error, msg);
+        return quickErr(Error, msg);
     }
     #else
       if(iResult < 0)
-        return Z_Err(Error,strerror(errno));
+        return quickErr(Error,strerror(errno));
     #endif
     return nil;
 }
 EXPORT ZObject socket_Close( ZObject* args, int n)
 {
     if (n != 1)
-        return Z_Err(ValueError, "1 arguments needed!.");
+        return quickErr(ValueError, "1 arguments needed!.");
     if (args[0].type != 'o')
     {
-        return Z_Err(TypeError, "Error socket object needed!");
+        return quickErr(TypeError, "Error socket object needed!");
         
     }
     KlassObject* p = (KlassObject*)args[0].ptr;
     if (p->klass != socketKlass)
     {
-        return Z_Err(TypeError, "Error socket object needed!");
+        return quickErr(TypeError, "Error socket object needed!");
     }
     
-    SOCKTYPE s = p->members[".sock"].i;
+    SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     #ifdef _WIN32
       closesocket(s);
     #else

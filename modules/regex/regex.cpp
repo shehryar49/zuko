@@ -1,31 +1,28 @@
 #include "regex.h"
 #include <regex>
+using namespace std;
 ZObject init()
 {
     Module* d = vm_allocModule();
     d->name = "regex";
-    d->members.emplace("match",ZObjFromFunction("regex.match",&match));
-    d->members.emplace("search",ZObjFromFunction("regex.search",&search));
-    d->members.emplace("replace",ZObjFromFunction("regex.replace",&replace));
+    Module_addNativeFun(d,"match",&match);
+    Module_addNativeFun(d,"search",&search);
+    Module_addNativeFun(d,"replace",&replace);
+    
     return ZObjFromModule(d);
 }
 ZObject match(ZObject* args,int n)
 {
   if(n!=2)
-  {
     return Z_Err(ArgumentError,"2 arguments needed!");
-    
-  }
   if(args[0].type!='s' || args[1].type!='s')
-  {
     return Z_Err(TypeError,"2 string arguments needed!");
-    
-  }
+  
   ZObject rr;
   rr.type = 'b';
   try
   {
-    rr.i = (bool)regex_match(*(string*)args[0].ptr,regex(*(string*)args[1].ptr));
+    rr.i = (bool)regex_match(AS_STR(args[0])->val,regex(AS_STR(args[1])->val));
   }
   catch(std::regex_error& e)
   {
@@ -36,27 +33,23 @@ ZObject match(ZObject* args,int n)
 ZObject search(ZObject* args,int n)
 {
   if(n!=2)
-  {
     return Z_Err(ArgumentError,"2 arguments needed!");
-    
-  }
   if(args[0].type!='s' || args[1].type!='s')
-  {
     return Z_Err(TypeError,"2 string arguments needed!");
-    
-  }
+
   smatch m;
   ZList* parts = vm_allocList();
-  string& A = *(string*)args[0].ptr;
-  std::regex rgx(AS_STR(args[1]));
+  string A = AS_STR(args[0])->val;
+  string B = A;
+  std::regex rgx(AS_STR(args[1])->val);
   try
   {
-    while (regex_search(*(string*)args[0].ptr, m, rgx))
+    while (regex_search(A, m, rgx))
     {
         ZList* match = vm_allocList();
         for(auto x: m)
-          match->push_back(ZObjFromStr(x));
-        parts->push_back(ZObjFromList(match));
+          ZList_push(match,ZObjFromStr(x.str().c_str()));
+        ZList_push(parts,ZObjFromList(match));
         A = m.suffix();
     }
   }
@@ -80,7 +73,7 @@ ZObject replace(ZObject* args,int n)
   }
   try
   {
-    return ZObjFromStr(regex_replace(*(string*)args[0].ptr, regex(*(string*)args[1].ptr),*(string*) args[2].ptr));
+    return ZObjFromStr(regex_replace(AS_STR(args[0])->val, regex(AS_STR(args[1])->val),AS_STR(args[2])->val).c_str());
   }
   catch(std::regex_error& e)
   {
