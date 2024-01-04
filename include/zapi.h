@@ -384,7 +384,18 @@ void KlassObj_setMember(KlassObject* ko,const char* name,ZObject val)
 {
   StrMap_set(&(ko->members),name,val);
 }
-
+//
+Klass* makeDerivedKlass(Klass* base)
+{
+  Klass* child = vm_allocKlass();
+  ZObject super;
+  super.type = Z_CLASS;
+  super.ptr = (void*)base;
+  StrMap_assign(&(child->members),&(base->members));
+  StrMap_assign(&(child->privateMembers),&(base->privateMembers));
+  Klass_setMember(child,"super",super);
+  return child;
+}
 #ifdef __cplusplus
 }
 #endif

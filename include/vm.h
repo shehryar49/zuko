@@ -626,6 +626,9 @@ public:
       }
       else if (m.type == Z_FILESTREAM)
       {
+        zfile* zf = (zfile*)e;
+        if(zf->open)
+          fclose(zf->fp);
         delete (zfile *)e;
         allocated -= sizeof(zfile);
       }
