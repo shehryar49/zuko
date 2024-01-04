@@ -3,10 +3,10 @@
 
 #include "strmap.h"
 
-struct Klass
+typedef struct Klass
 {
   const char* name;
   StrMap members;
   StrMap privateMembers;
-};
+}Klass;
 #endif

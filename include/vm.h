@@ -1101,8 +1101,10 @@ public:
           spitErr(E->klass, AS_STD_STR(msg));
           NEXT_INST;
         }
-        zlist_eraseRange(&STACK,STACK.size - howmany,STACK.size - 1);
-        k++; NEXT_INST;
+//        zlist_eraseRange(&STACK,STACK.size - howmany,STACK.size - 1);
+        STACK.size -= howmany;
+        k++;
+        NEXT_INST;
       }
       CASE_CP CALLFORVAL:
       {
@@ -3272,15 +3274,14 @@ public:
         }
         k = except_targ.back();
         i1 = STACK.size - tryStackCleanup.back();
-        zlist_eraseRange(&STACK,STACK.size - i1,STACK.size - 1);
+        STACK.size -= i1;
         i1 = frames.size() - tryLimitCleanup.back();
         frames.erase(frames.end() - i1, frames.end());
-        zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         except_targ.pop_back();
         tryStackCleanup.pop_back();
         tryLimitCleanup.pop_back();
         NEXT_INST;
-        k++; NEXT_INST;
       }
       CASE_CP ONERR_GOTO:
       {
@@ -3289,8 +3290,8 @@ public:
         except_targ.push_back((uint8_t *)program + i1);
         tryStackCleanup.push_back(STACK.size);
         tryLimitCleanup.push_back(frames.size());
-        k += 3;
-        k++; NEXT_INST;
+        k += 4;
+        NEXT_INST;
       }
       CASE_CP POP_EXCEP_TARG:
       {
@@ -3303,7 +3304,8 @@ public:
         k += 1;
         memcpy(&i1, k, sizeof(int32_t));
         k = program + i1 - 1;
-        k++; NEXT_INST;
+        k++; 
+        NEXT_INST;
       }
       CASE_CP GOTONPSTACK:
       {
@@ -3753,7 +3755,9 @@ bool vm_callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
      FunObject* fn = (FunObject*)obj->ptr;
      if ((size_t)N + fn->opt.size < fn->args || (size_t)N > fn->args)
      {
-      *rr = Z_Err(ArgumentError, "Function " + (string)fn->name + " takes " + to_string(fn->args) + " arguments," + to_string(N) + " given!");
+      static char buffer[1024];
+      snprintf(buffer,1024,"Function %s takes %zu arguments, %d given!",fn->name,fn->args,N);
+      *rr = Z_Err(ArgumentError, buffer);
       return false;
      }
      uint8_t* prev = vm.k;

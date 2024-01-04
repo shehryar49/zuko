@@ -27,7 +27,10 @@ typedef struct StrMap
   SM_Slot* table;
   size_t size;
   size_t capacity;
-  StrMap& operator=(const StrMap&) = delete;
+  #ifdef __cpluscplus
+    StrMap& operator=(const StrMap&) = delete;
+    StrMap(const StrMap&) = delete;
+  #endif
 }StrMap;
 
 size_t hashDJB2(const char*,size_t);

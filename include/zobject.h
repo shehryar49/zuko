@@ -24,10 +24,7 @@ SOFTWARE.*/
 
 #include <stdint.h>
 #include "zfileobj.h"
-#include <string>
-#include <vector>
-
-using namespace std;
+#include "zbytearray.h"
 
 #define Z_LIST 'j'
 #define Z_DICT 'a'
@@ -50,7 +47,12 @@ using namespace std;
 #define Z_ERROBJ 'e' //same as an object,just in thrown state
 #define Z_BYTEARR 'c'
 #define Z_RAW 't' //used by VM's GC
-extern "C" struct ZObject
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+typedef struct ZObject
 {
     union
     {
@@ -60,12 +62,13 @@ extern "C" struct ZObject
         void* ptr;
     };
     char type;
-};
-bool ZObject_equals(const ZObject&,const ZObject&);
+}ZObject;
+
+bool ZObject_equals(ZObject,ZObject);
 #include "zlist.h"
 #include "zdict.h"
 
-bool ZObject_equals(const ZObject& lhs,const ZObject& other)
+bool ZObject_equals(ZObject lhs,ZObject other)
 {
   if(other.type!=lhs.type)
       return false;
@@ -84,7 +87,11 @@ bool ZObject_equals(const ZObject& lhs,const ZObject& other)
   else if(lhs.type==Z_FILESTREAM)
     return ((zfile*)lhs.ptr)==((zfile*)other.ptr);
   else if(lhs.type==Z_STR)
-    return *(string*)other.ptr==*(string*)lhs.ptr;
+  {
+    ZStr* a = (ZStr*)lhs.ptr;
+    ZStr* b = (ZStr*)other.ptr;
+    return strcmp(a->val,b->val) == 0;
+  }
   else if(lhs.type==Z_LIST)
   {
     zlist* a = (zlist*)lhs.ptr;
@@ -101,7 +108,11 @@ bool ZObject_equals(const ZObject& lhs,const ZObject& other)
     return true;
   }
   else if(lhs.type == Z_BYTEARR)
-    return *(vector<uint8_t>*)lhs.ptr == *(vector<uint8_t>*)other.ptr;
+  {
+    ZByteArr* a = (ZByteArr*)lhs.ptr;
+    ZByteArr* b = (ZByteArr*)other.ptr;
+    return ZByteArr_equal(a,b);
+  }
   else if(other.type=='y' || other.type=='r' || other.type == Z_CLASS)
     return lhs.ptr==other.ptr;
   else if(lhs.type=='q' || lhs.type=='z')
@@ -110,4 +121,9 @@ bool ZObject_equals(const ZObject& lhs,const ZObject& other)
       return lhs.ptr == other.ptr;//*(ZDict*)lhs.ptr==*(ZDict*)other.ptr;
   return false;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

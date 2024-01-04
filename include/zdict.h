@@ -2,9 +2,10 @@
 #define ZDICT_H_
 
 #include <stdlib.h>
-#include <string>
-#include "zobject.h"
-using namespace std;
+#include <string.h>
+#include "zapi.h"
+#include "zstr.h"
+
 typedef enum slotStatus
 {
   EMPTY,
@@ -42,7 +43,7 @@ size_t hashZObject(ZObject a,size_t M)
 {
   char t = a.type;
   if(t==Z_STR)
-      return hashDJB2(((string*)a.ptr) -> c_str(),M);
+      return hashDJB2(((ZStr*)a.ptr) -> val,M);
   else if(t==Z_INT || t == Z_BOOL || t == Z_BYTE)
       return ((a.i * 31) & (M-1));
   else if(t==Z_INT64)
@@ -161,6 +162,18 @@ bool ZDict_erase(ZDict* h,ZObject key)
     i++;
   }
   return false;
+}
+bool ZDict_equal(ZDict* h,ZDict* other)
+{
+  for(size_t idx = 0; idx < h->capacity;idx++)
+  {
+    if(h->table[idx].stat != OCCUPIED)
+      continue;
+    ZObject val;
+    if(!ZDict_get(other,h->table[idx].key,&val) || !ZObject_equals(val,h->table[idx].val))
+      return false;
+  }
+  return true;
 }
 void ZDict_destroy(ZDict* h)
 {

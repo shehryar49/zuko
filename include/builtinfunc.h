@@ -35,11 +35,15 @@ string fullform(char);
 void PromoteType(ZObject&,char);
 
 ZObject nil;
+ZObject quickErr(Klass* k,string s)
+{
+  return Z_Err(k,s.c_str());
+}
 bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x)
 {
     if(e.length()!=(size_t)argc)
     {
-      x = Z_Err(ArgumentError,"Error "+name+"() takes "+str((int64_t)e.length())+" arguments!");
+      x = quickErr(ArgumentError,"Error "+name+"() takes "+str((int64_t)e.length())+" arguments!");
       return false;
     }
     for(int32_t f=1;f<=argc;f++)
@@ -47,7 +51,7 @@ bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x
         ZObject k = args[f-1];
         if(k.type!=e[f-1])
             {
-           x = Z_Err(TypeError,"Error argument "+str(f)+" of "+name+"() should be of type "+fullform(e[f-1]));
+           x = quickErr(TypeError,"Error argument "+str(f)+" of "+name+"() should be of type "+fullform(e[f-1]));
             return false;
             }
         
@@ -57,9 +61,9 @@ bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x
 ZObject Z_ISALPHA(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error isalpha() takes one argument!");
+    return quickErr(ArgumentError,"Error isalpha() takes one argument!");
   if(args[0].type!=Z_STR)
-    return Z_Err(TypeError,"Error isalpha() takes a string argument!");
+    return quickErr(TypeError,"Error isalpha() takes a string argument!");
   ZStr* s = AS_STR(args[0]);
   ZObject ret = nil;
   ret.type = 'b';
@@ -78,12 +82,12 @@ ZObject Z_ISALPHA(ZObject* args,int32_t argc)
 ZObject ASCII(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error ascii() takes one argument!");
+    return quickErr(ArgumentError,"Error ascii() takes one argument!");
   if(args[0].type!='s')
-    return Z_Err(TypeError,"Error ascii() takes a string argument!");
+    return quickErr(TypeError,"Error ascii() takes a string argument!");
   ZStr* s = AS_STR(args[0]);
   if(s->len != 1)
-      return Z_Err(ValueError,"Error ascii() takes a string argument of length 1!");
+      return quickErr(ValueError,"Error ascii() takes a string argument of length 1!");
  
   ZObject ret = nil;
   ret.type = 'i';
@@ -93,9 +97,9 @@ ZObject ASCII(ZObject* args,int32_t argc)
 ZObject TOCHAR(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error char() takes one argument!");
+    return quickErr(ArgumentError,"Error char() takes one argument!");
   if(args[0].type!='i')
-    return Z_Err(TypeError,"Error char() takes an integer argument!");
+    return quickErr(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
   ZStr* p = vm_allocString(1);
   p->val[0] = ch;
@@ -228,9 +232,9 @@ ZObject print(ZObject* args,int32_t argc)
 ZObject PRINTF(ZObject* args,int32_t argc)
 {
     if(argc < 1)
-      return Z_Err(ArgumentError,"At least one argument needed!");
+      return quickErr(ArgumentError,"At least one argument needed!");
     if(args[0].type!='s')
-      return Z_Err(TypeError,"Argument 1 must be a string!");
+      return quickErr(TypeError,"Argument 1 must be a string!");
     ZStr* format = (ZStr*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format->len;
@@ -246,7 +250,7 @@ ZObject PRINTF(ZObject* args,int32_t argc)
             continue;
           }
           if(j>=argc)
-            return Z_Err(ArgumentError,"String format requires more arguments!");
+            return quickErr(ArgumentError,"String format requires more arguments!");
           if(args[j].type=='j')
            printList((zlist*)args[j].ptr);
           else if(args[j].type=='a')
@@ -268,9 +272,9 @@ ZObject PRINTF(ZObject* args,int32_t argc)
 ZObject FORMAT(ZObject* args,int32_t argc)
 {
     if(argc < 1)
-      return Z_Err(ArgumentError,"At least one argument needed!");
+      return quickErr(ArgumentError,"At least one argument needed!");
     if(args[0].type!=Z_STR)
-      return Z_Err(TypeError,"Argument 1 must be a string!");
+      return quickErr(TypeError,"Argument 1 must be a string!");
     ZStr* format = (ZStr*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format->len;
@@ -288,7 +292,7 @@ ZObject FORMAT(ZObject* args,int32_t argc)
             continue;
           }
           if(j>=argc)
-            return Z_Err(ArgumentError,"String format requires more arguments!");
+            return quickErr(ArgumentError,"String format requires more arguments!");
           p += ZObjectToStr(args[j]);
           j+=1;
         }
@@ -336,12 +340,12 @@ ZObject input(ZObject* args,int32_t argc)
 {
     if(argc!=0 && argc!=1)
     {
-        return Z_Err(ArgumentError,"Error input() takes 1 or 0 arguments!");
+        return quickErr(ArgumentError,"Error input() takes 1 or 0 arguments!");
     }
     if(argc==1)
     {
       if(args[0].type!='s')
-        return Z_Err(TypeError,"Error input() takes a string argument!");
+        return quickErr(TypeError,"Error input() takes a string argument!");
       char* prompt = ((ZStr*)args[0].ptr)->val;
       printf("%s",prompt);
     }
@@ -362,7 +366,7 @@ ZObject TYPEOF(ZObject* args,int32_t argc)
 {
   if(argc!=1)
   {
-      return Z_Err(TypeError,"Error typeof() takes one argument only!");
+      return quickErr(TypeError,"Error typeof() takes one argument only!");
   }
   string fullform(char);
   string s = fullform(args[0].type);
@@ -373,9 +377,9 @@ ZObject TYPEOF(ZObject* args,int32_t argc)
 ZObject isInstanceOf(ZObject* args,int32_t argc)
 {
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
   if(args[1].type!='v')
-    return Z_Err(TypeError,"Error second argument to  isInstanceOf() should be a class!");
+    return quickErr(TypeError,"Error second argument to  isInstanceOf() should be a class!");
   ZObject ret = nil;
   ret.type = 'b';
   if(args[0].type!='o')
@@ -391,7 +395,7 @@ ZObject isInstanceOf(ZObject* args,int32_t argc)
 ZObject LEN(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Z_Err(ArgumentError,"Error len() takes one argument!");
+        return quickErr(ArgumentError,"Error len() takes one argument!");
 
     ZObject ret = nil;
     ret.type = Z_INT64;
@@ -407,7 +411,7 @@ ZObject LEN(ZObject* args,int32_t argc)
     else if(args[0].type == 'c')
         ret.l = ((ZByteArr*)args[0].ptr)->size;
     else
-        return Z_Err(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
+        return quickErr(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
     return ret;
 }
 //////////
@@ -420,10 +424,10 @@ ZObject OPEN(ZObject* args,int32_t argc)
     string filename = AS_STR(args[0])->val;
     string mode = AS_STR(args[1])->val;
     if(mode!="r" && mode!="w" && mode!="a" && mode!="rw" && mode!="rw+" && mode!="rb" && mode!="wb")
-        return Z_Err(ValueError,"Error unknown mode: \""+mode+"\"");
+        return quickErr(ValueError,"Error unknown mode: \""+mode+"\"");
     FILE* fp = fopen(filename.c_str(), mode.c_str());
     if(!fp)
-        return Z_Err(FileOpenError,strerror(errno));
+        return quickErr(FileOpenError,strerror(errno));
     zfile* f = vm_alloczfile();
     f->fp = fp;
     f->open = true;
@@ -434,25 +438,25 @@ ZObject OPEN(ZObject* args,int32_t argc)
 ZObject READ(ZObject* args,int32_t argc)
 {
     if(argc!=2 && argc!=1)
-        return Z_Err(ArgumentError,"Error read() function takes one or two arguments!");
+        return quickErr(ArgumentError,"Error read() function takes one or two arguments!");
     if(args[0].type!='u')
-        return Z_Err(TypeError,"Error read() needs a file stream to read from!");
+        return quickErr(TypeError,"Error read() needs a file stream to read from!");
     char delim = EOF;
     if(argc==2)
     {
       if(args[1].type!='s')
-        return Z_Err(TypeError,"Error argument 2 to read() function should be of type string!");
+        return quickErr(TypeError,"Error argument 2 to read() function should be of type string!");
       ZStr* l = AS_STR(args[1]);
       if(l->len!=1)
-        return Z_Err(ValueError,"Error optional delimeter argument to read() should be string of length 1");
+        return quickErr(ValueError,"Error optional delimeter argument to read() should be string of length 1");
       delim = l->val[0];  
     }
     zfile fobj = *(zfile*)args[0].ptr;
     if(!fobj.open)
-      return Z_Err(ValueError,"Error the file stream is closed!");
+      return quickErr(ValueError,"Error the file stream is closed!");
     FILE* fp = fobj.fp;
     if(!fp)
-        return Z_Err(FileIOError,"Error can't read from a closed file stream!");
+        return quickErr(FileIOError,"Error can't read from a closed file stream!");
     char ch;
     string p;
     while((ch = fgetc(fp))!=EOF)
@@ -468,18 +472,18 @@ ZObject READ(ZObject* args,int32_t argc)
 ZObject CLOSE(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Z_Err(ArgumentError,"Error close() takes 1 argument!");
+        return quickErr(ArgumentError,"Error close() takes 1 argument!");
   //  printf("args[0].type = %c\n",args[0].type);
     if(args[0].type!='u')
-        return Z_Err(TypeError,"Error close() takes a file stream as an argument!");
+        return quickErr(TypeError,"Error close() takes a file stream as an argument!");
     zfile* fobj = (zfile*)args[0].ptr;
     if(!fobj->open)
     {
-      return Z_Err(ValueError,"Error file already closed!");
+      return quickErr(ValueError,"Error file already closed!");
     }
     FILE* f = fobj->fp;
     if(f==stdin || f==stdout)
-      return Z_Err(ValueError,"Are you nuts?You should not close stdin or stdout!");
+      return quickErr(ValueError,"Are you nuts?You should not close stdin or stdout!");
     fclose(f);
     ZObject ret = nil;
     ret.type='n';
@@ -489,7 +493,7 @@ ZObject CLOSE(ZObject* args,int32_t argc)
 ZObject RAND(ZObject* args,int32_t argc)
 {
     if(argc!=0)
-        return Z_Err(ArgumentError,"Error rand() takes 0 arguments!");
+        return quickErr(ArgumentError,"Error rand() takes 0 arguments!");
     ZObject ret = nil;
     ret.i = rand();
     ret.type= 'i';
@@ -510,7 +514,7 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
   {
     if(args[0].type != Z_LIST)
     {
-      return Z_Err(TypeError,"Error bytearray() takes a list argument!");
+      return quickErr(TypeError,"Error bytearray() takes a list argument!");
     }
     zlist* p = (zlist*)args[0].ptr;
     size_t len = p->size;
@@ -520,19 +524,19 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
     for(size_t i=0;i<len;i++)
     {
       if(p->arr[i].type!=Z_BYTE)
-        return Z_Err(TypeError,"Error argument list given to bytearray() must contain only bytes!");
+        return quickErr(TypeError,"Error argument list given to bytearray() must contain only bytes!");
       ZByteArr_push(arr,p->arr[i].i);
     }
     return ret;
   }
-  return Z_Err(ArgumentError,"Error bytearray() takes 0 or 1 arguments!");
+  return quickErr(ArgumentError,"Error bytearray() takes 0 or 1 arguments!");
 }
 
 ZObject WRITE(ZObject* args,int32_t argc)
 {
   //printf("writing %s\n",args[0].s.c_str());
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error write() takes two arguments!");
+    return quickErr(ArgumentError,"Error write() takes two arguments!");
   string patt = "su";
   ZObject ret = nil;
   if(!validateArgTypes("write",patt,args,argc,ret))
@@ -541,7 +545,7 @@ ZObject WRITE(ZObject* args,int32_t argc)
   zfile* p = (zfile*)args[1].ptr;
   FILE* fp = p->fp;
   if(fputs(data->val,fp)==EOF)
-    return Z_Err(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
+    return quickErr(FileIOError,"Error while writing to file: "+(std::string)strerror(errno));
   ret.type = Z_NIL;
   return ret;
 }
@@ -551,22 +555,22 @@ ZObject EXIT(ZObject* args,int32_t argc)
     if(argc == 1)
     {
       if(args[0].type!=Z_INT)
-        return Z_Err(TypeError,"Integer argument required!");
+        return quickErr(TypeError,"Integer argument required!");
       ret = args[0].i;
     }
     else if(argc == 0);
     else
-        return Z_Err(ArgumentError,"Error exit() takes either 0 or 1 argument!");
+        return quickErr(ArgumentError,"Error exit() takes either 0 or 1 argument!");
     exit(ret);
 }
 ////////////////
 ZObject REVERSE(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Z_Err(ArgumentError,"Error reverse() takes 1 argument!");
+        return quickErr(ArgumentError,"Error reverse() takes 1 argument!");
     const ZObject& q  = args[0];
     if(q.type!='s' && q.type!='j')
-        return Z_Err(TypeError,"Error reverse() takes a string or list argument!");
+        return quickErr(TypeError,"Error reverse() takes a string or list argument!");
     if(q.type=='s')
     {
         ZStr* data = AS_STR(q);
@@ -593,7 +597,7 @@ ZObject REVERSE(ZObject* args,int32_t argc)
 ZObject BYTES(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-      return Z_Err(ArgumentError,"Error bytes() takes one argument!");
+      return quickErr(ArgumentError,"Error bytes() takes one argument!");
     auto p = vm_allocByteArray();
     const ZObject& e = args[0];
     ZObject ret = nil;
@@ -641,14 +645,14 @@ ZObject BYTES(ZObject* args,int32_t argc)
     }
     else
     {
-        return Z_Err(TypeError,"Error cannot convert "+fullform(e.type)+" type to bytes!");
+        return quickErr(TypeError,"Error cannot convert "+fullform(e.type)+" type to bytes!");
     }
 }
 ///////////////
 ZObject OBJINFO(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-      return Z_Err(ArgumentError,"Error obj_info() takes 1 argument!");
+      return quickErr(ArgumentError,"Error obj_info() takes 1 argument!");
     if( args[0].type=='o')
     {
       KlassObject* k = (KlassObject*)args[0].ptr;
@@ -673,15 +677,15 @@ ZObject OBJINFO(ZObject* args,int32_t argc)
     }
     else
     {
-        return Z_Err(TypeError,"Error argument is not an object of any class!");
+        return quickErr(TypeError,"Error argument is not an object of any class!");
     }
 }
 ZObject moduleInfo(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error moduleInfo takes 1 argument!");
+    return quickErr(ArgumentError,"Error moduleInfo takes 1 argument!");
   if(args[0].type!=Z_MODULE)
-    return Z_Err(TypeError,"Argument must be a module object!");
+    return quickErr(TypeError,"Argument must be a module object!");
   Module* mod = (Module*)args[0].ptr;
   printf("Module %s\n",mod->name);
   printf("------------\n");
@@ -730,12 +734,12 @@ ZObject makeList(ZObject* args,int32_t argc)
         {
             if(i>pattern.length()-1)
             {
-               return Z_Err(ValueError,"Error no pattern specified for the remaining bytes!");
+               return quickErr(ValueError,"Error no pattern specified for the remaining bytes!");
             }
             ZObject l = currList.arr[k];
             if(l.type!='m')
             {
-                return Z_Err(ValueError,"Error list should only contain bytes!");
+                return quickErr(ValueError,"Error list should only contain bytes!");
             }
             int32_t b = l.i;
             if(pattern[i]=='i')
@@ -743,7 +747,7 @@ ZObject makeList(ZObject* args,int32_t argc)
                FOO.bytes[0] = b;
                if(k+3 >=currList.size)
                {
-                   return Z_Err(ValueError,"Error the list is missing some bytes!");
+                   return quickErr(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList.arr[k];
@@ -772,7 +776,7 @@ ZObject makeList(ZObject* args,int32_t argc)
                FOO1.bytes[0] = b;
                if(k+7 >=currList.size)
                {
-                   return Z_Err(ValueError,"Error the list is missing some bytes!");
+                   return quickErr(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList.arr[k];
@@ -811,11 +815,11 @@ ZObject makeList(ZObject* args,int32_t argc)
                 {
                     if(j>=currList.size)
                     {
-                        return Z_Err(ValueError,"Ran out of bytes!");
+                        return quickErr(ValueError,"Ran out of bytes!");
                     }
                     e = currList.arr[j];
                     if(e.type!='m')
-                        return Z_Err(ValueError,"Error the list should only contain bytes!");
+                        return quickErr(ValueError,"Error the list should only contain bytes!");
                     if(e.i==0)
                     {
                         terminated = true;
@@ -826,7 +830,7 @@ ZObject makeList(ZObject* args,int32_t argc)
                 }
                 if(!terminated)
                 {
-                    return Z_Err(ValueError,"Error the bytes are invalid to be converted to string!");
+                    return quickErr(ValueError,"Error the bytes are invalid to be converted to string!");
                 }
 
                 zlist_push(&res,ZObjFromStrPtr(f));
@@ -837,7 +841,7 @@ ZObject makeList(ZObject* args,int32_t argc)
                FOO2.bytes[0] = b;
                if(k+3 >=currList.size)
                {
-                   return Z_Err(ValueError,"Error the list is missing some bytes!");
+                   return quickErr(ValueError,"Error the list is missing some bytes!");
                }
                k+=1;
                l = currList.arr[k];
@@ -855,14 +859,14 @@ ZObject makeList(ZObject* args,int32_t argc)
             }
             else
             {
-                return Z_Err(TypeError,"Error unknown type used in pattern!");
+                return quickErr(TypeError,"Error unknown type used in pattern!");
             }
             i+=1;
             k+=1;
         }
         if(i!=pattern.length())
         {
-            return Z_Err(ValueError,"Error the list does not have enough bytes to follow the pattern!");
+            return quickErr(ValueError,"Error the list does not have enough bytes to follow the pattern!");
         }
         zlist* p = vm_allocList();
         zlist_assign(p,&res);
@@ -878,9 +882,9 @@ ZObject SUBSTR(ZObject* args,int32_t argc)
     if(argc==3)
 		{
 			if(args[0].type!='i' && args[0].type!='l')
-        return Z_Err(TypeError,"Error first argument of substr() should be an integer");
+        return quickErr(TypeError,"Error first argument of substr() should be an integer");
       if(args[1].type!='i' && args[1].type!='l')
-        return Z_Err(TypeError,"Error second argument of substr() should be an integer");
+        return quickErr(TypeError,"Error second argument of substr() should be an integer");
 			if(args[2].type=='s')
 			{
         PromoteType(args[0],'l');
@@ -897,37 +901,37 @@ ZObject SUBSTR(ZObject* args,int32_t argc)
         return ZObjFromStrPtr(q);
 			}
 			else
-        return Z_Err(TypeError,"Error third argument of substr() should be a string!\n");
+        return quickErr(TypeError,"Error third argument of substr() should be a string!\n");
 		}
-		return Z_Err(ArgumentError,"Error substr() takes three arguments!");
+		return quickErr(ArgumentError,"Error substr() takes three arguments!");
 }
 ZObject getFileSize(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Z_Err(TypeError,"Error getFileSize() takes an open file as argument!");
+        return quickErr(TypeError,"Error getFileSize() takes an open file as argument!");
   
     zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
-      return Z_Err(FileIOError,"Unable to get size of closed file!");
+      return quickErr(FileIOError,"Unable to get size of closed file!");
     FILE* currF = p->fp;
     fseek(currF,0,SEEK_END);
     int64_t n = ftell(currF);
     rewind(currF);
     return ZObjFromInt64(n);
   }
-  return Z_Err(ArgumentError,"Error getFileSize() takes 1 argument!");
+  return quickErr(ArgumentError,"Error getFileSize() takes 1 argument!");
 }
 ZObject FTELL(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Z_Err(TypeError,"Error ftell() takes an open file as argument!");
+        return quickErr(TypeError,"Error ftell() takes an open file as argument!");
     zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
-      return Z_Err(FileIOError,"Error file is closed!");
+      return quickErr(FileIOError,"Error file is closed!");
     FILE* currF = p->fp;
     int64_t n = ftell(currF);
     ZObject ret = nil;
@@ -935,31 +939,31 @@ ZObject FTELL(ZObject* args,int32_t argc)
     ret.l = (int64_t)n;
     return ret;
   }
-  return Z_Err(ArgumentError,"Error ftell() takes 1 argument!");
+  return quickErr(ArgumentError,"Error ftell() takes 1 argument!");
 }
 ZObject REWIND(ZObject* args,int32_t argc)
 {
   if(argc==1)
   {
     if(args[0].type!='u')
-        return Z_Err(TypeError,"Error rewind() takes an open file as argument!");
+        return quickErr(TypeError,"Error rewind() takes an open file as argument!");
   
     zfile* p = (zfile*)args[0].ptr;
     if(!p->open)
-      return Z_Err(FileIOError,"Unable to rewind closed file!");
+      return quickErr(FileIOError,"Unable to rewind closed file!");
     FILE* currF = p->fp;
     rewind(currF);
     ZObject ret = nil;
     return ret;
   }
-  return Z_Err(ArgumentError,"Error rewind() takes 1 argument!");
+  return quickErr(ArgumentError,"Error rewind() takes 1 argument!");
 }
 ZObject SYSTEM(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-      return Z_Err(ArgumentError,"Error system() takes 1 argument!");
+      return quickErr(ArgumentError,"Error system() takes 1 argument!");
   if(args[0].type!='s')
-      return Z_Err(TypeError,"Error system() takes a string argument!");
+      return quickErr(TypeError,"Error system() takes a string argument!");
   ZStr* command = (ZStr*)args[0].ptr;
   int32_t i = system(command->val);
   return ZObjFromInt(i);
@@ -990,11 +994,11 @@ ZObject SPLIT(ZObject* args,int32_t argc)
 			}
 			else
       {
-        return Z_Err(TypeError,"Error split() takes both string arguments!\n");
+        return quickErr(TypeError,"Error split() takes both string arguments!\n");
         exit(0);
       }
 		}
-		return Z_Err(ArgumentError,"Error split() takes two arguments!");
+		return quickErr(ArgumentError,"Error split() takes two arguments!");
 }
 ZObject GETENV(ZObject* args,int32_t argc)
 {
@@ -1013,10 +1017,10 @@ ZObject GETENV(ZObject* args,int32_t argc)
       }
       else
       {
-        return Z_Err(TypeError,"Error getenv() takes a string argument!");
+        return quickErr(TypeError,"Error getenv() takes a string argument!");
       }
   }
-  return Z_Err(ArgumentError,"Error getenv() takes one argument!");
+  return quickErr(ArgumentError,"Error getenv() takes one argument!");
 }
 ZObject SHUFFLE(ZObject* args,int32_t argc)
 {
@@ -1031,10 +1035,10 @@ ZObject SHUFFLE(ZObject* args,int32_t argc)
 			}
 			else
       {
-        return Z_Err(TypeError,"Error shuffle takes a list as an argument!");
+        return quickErr(TypeError,"Error shuffle takes a list as an argument!");
       }
 		}
-		return Z_Err(ArgumentError,"Error shuffle() takes exactly one argument!");
+		return quickErr(ArgumentError,"Error shuffle() takes exactly one argument!");
 }
 ZObject STR(ZObject* args,int32_t argc)
 {
@@ -1104,19 +1108,19 @@ ZObject STR(ZObject* args,int32_t argc)
         strcpy(p->val,s.c_str());
         return ZObjFromStrPtr(p);
       }
-      return Z_Err(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
+      return quickErr(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
 		}
-    return Z_Err(ArgumentError,"Error str() takes only one argument!");
+    return quickErr(ArgumentError,"Error str() takes only one argument!");
 }
 ZObject FIND(ZObject* args,int32_t argc)
 {
   ZObject ret = nil;
   if(argc != 2)
-    return Z_Err(ArgumentError,"Error find() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error find() takes 2 arguments!");
   if(args[0].type != Z_STR)
-    return Z_Err(TypeError,"Error first argument given to find() must be a stirng!");
+    return quickErr(TypeError,"Error first argument given to find() must be a stirng!");
   if(args[1].type != Z_STR)
-    return Z_Err(TypeError,"Error second argument given to find() must be a stirng!");
+    return quickErr(TypeError,"Error second argument given to find() must be a stirng!");
   
   ret.type = 'l';
   ZStr* a = (ZStr*)args[0].ptr;
@@ -1166,7 +1170,7 @@ ZObject TOINT(ZObject* args,int32_t argc)
               return ret;
           }
           else
-              return Z_Err(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
+              return quickErr(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
@@ -1189,9 +1193,9 @@ ZObject TOINT(ZObject* args,int32_t argc)
       }
       else if(args[0].type == Z_INT || args[0].type == Z_INT64)
         return args[0];
-      return Z_Err(TypeError,"Error int() unsupported for type "+fullform(args[0].type));
+      return quickErr(TypeError,"Error int() unsupported for type "+fullform(args[0].type));
 		}
-		return Z_Err(ArgumentError,"Error int() takes exactly one argument!");
+		return quickErr(ArgumentError,"Error int() takes exactly one argument!");
 		exit(0);
 }
 ZObject TOINT32(ZObject* args,int32_t argc)
@@ -1232,7 +1236,7 @@ ZObject TOINT32(ZObject* args,int32_t argc)
               return ret;
           }
           else
-              return Z_Err(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
+              return quickErr(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
@@ -1263,9 +1267,9 @@ ZObject TOINT32(ZObject* args,int32_t argc)
           return ZObjFromInt(INT_MIN);
         return ZObjFromInt(static_cast<int32_t>(args[0].l)); 
       }
-      return Z_Err(TypeError,"Error int32() unsupported for type "+fullform(args[0].type));
+      return quickErr(TypeError,"Error int32() unsupported for type "+fullform(args[0].type));
 		}
-		return Z_Err(ArgumentError,"Error int32() takes exactly one argument!");
+		return quickErr(ArgumentError,"Error int32() takes exactly one argument!");
 		exit(0);
 }
 ZObject TOINT64(ZObject* args,int32_t argc)
@@ -1303,7 +1307,7 @@ ZObject TOINT64(ZObject* args,int32_t argc)
               return ret;
           }
           else
-              return Z_Err(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
+              return quickErr(ValueError,"Error the string "+(string)q->val+" cannot be converted to an integer!");
 			    return ret;
       }
 			else if(args[0].type=='f')
@@ -1327,9 +1331,9 @@ ZObject TOINT64(ZObject* args,int32_t argc)
       }
       else if(args[0].type == Z_INT64)
         return args[0];
-      return Z_Err(TypeError,"Error int64() unsupported for type "+fullform(args[0].type));
+      return quickErr(TypeError,"Error int64() unsupported for type "+fullform(args[0].type));
 		}
-		return Z_Err(ArgumentError,"Error int64() takes exactly one argument!");
+		return quickErr(ArgumentError,"Error int64() takes exactly one argument!");
 		exit(0);
 }
 ZObject TOFLOAT(ZObject* args,int32_t argc)
@@ -1346,7 +1350,7 @@ ZObject TOFLOAT(ZObject* args,int32_t argc)
         else if(isaFloat(q->val))
           return ZObjFromDouble(Float(q->val));
         else
-          return Z_Err(ValueError,"The string cannot be converted to a float!\n");
+          return quickErr(ValueError,"The string cannot be converted to a float!\n");
 			}
       else if(args[0].type == 'i')
       {
@@ -1362,9 +1366,9 @@ ZObject TOFLOAT(ZObject* args,int32_t argc)
       }
       else if(args[0].type == Z_FLOAT)
         return args[0];
-      return Z_Err(TypeError,"Error float() unsupported for type "+fullform(args[0].type));
+      return quickErr(TypeError,"Error float() unsupported for type "+fullform(args[0].type));
 		}
-		return Z_Err(ArgumentError,"Error float() takes exactly one argument!");
+		return quickErr(ArgumentError,"Error float() takes exactly one argument!");
 		exit(0);
 }
 ZObject tonumeric(ZObject* args,int32_t argc)
@@ -1397,15 +1401,15 @@ ZObject tonumeric(ZObject* args,int32_t argc)
           }
           else
           {
-              return Z_Err(ValueError,"Error cannot convert the string \""+(string)q->val+"\" to numeric type!");
+              return quickErr(ValueError,"Error cannot convert the string \""+(string)q->val+"\" to numeric type!");
           }
       }
       else
       {
-          return Z_Err(TypeError,"Error tonumeric() takes a string argument!");
+          return quickErr(TypeError,"Error tonumeric() takes a string argument!");
       }
 		}
-    return Z_Err(ArgumentError,"Error tonumeric() takes one argument!");
+    return quickErr(ArgumentError,"Error tonumeric() takes one argument!");
 }
 ZObject isnumeric(ZObject* args,int32_t argc)
 {
@@ -1431,21 +1435,21 @@ ZObject isnumeric(ZObject* args,int32_t argc)
             }
             else
             {
-                return Z_Err(TypeError,"Error isnumeric() takes a string argument!");
+                return quickErr(TypeError,"Error isnumeric() takes a string argument!");
             }
     }
-    return Z_Err(ArgumentError,"Error isnumeric() takes 1 argument!");
+    return quickErr(ArgumentError,"Error isnumeric() takes 1 argument!");
 }
 ZObject REPLACE(ZObject* args,int32_t argc)
 {
         if(argc==3)
         {
            if(args[0].type!='s')
-               return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
+               return quickErr(TypeError,"Error first argument given to replace() must be a string!");
            if(args[1].type!='s')
-               return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
+               return quickErr(TypeError,"Error second argument given to replace() must be a string!");
            if(args[2].type!='s')
-               return Z_Err(TypeError,"Error third argument given to replace() must be a string!");
+               return quickErr(TypeError,"Error third argument given to replace() must be a string!");
            ZStr* a = (ZStr*)args[0].ptr;
            ZStr* b = (ZStr*)args[1].ptr;
            ZStr* c = (ZStr*)args[2].ptr;
@@ -1456,7 +1460,7 @@ ZObject REPLACE(ZObject* args,int32_t argc)
         }
         else
         {
-            return Z_Err(ArgumentError,"Error replace() takes three arguments\n");
+            return quickErr(ArgumentError,"Error replace() takes three arguments\n");
         }
 }
 ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
@@ -1464,11 +1468,11 @@ ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
         if(argc==3)
         {
            if(args[0].type!='s')
-               return Z_Err(TypeError,"Error first argument given to replace_once() must be a string!");
+               return quickErr(TypeError,"Error first argument given to replace_once() must be a string!");
            if(args[1].type!='s')
-               return Z_Err(TypeError,"Error second argument given to replace_once() must be a string!");
+               return quickErr(TypeError,"Error second argument given to replace_once() must be a string!");
            if(args[2].type!='s')
-               return Z_Err(TypeError,"Error third argument given to replace_once() must be a string!");
+               return quickErr(TypeError,"Error third argument given to replace_once() must be a string!");
            ZStr* a = (ZStr*)args[0].ptr;
            ZStr* b = (ZStr*)args[1].ptr;
            ZStr* c = (ZStr*)args[2].ptr;
@@ -1479,13 +1483,13 @@ ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
         }
         else
         {
-            return Z_Err(ArgumentError,"Error replace_once() takes three arguments\n");
+            return quickErr(ArgumentError,"Error replace_once() takes three arguments\n");
         }
 }
 ZObject SLEEP(ZObject* args,int32_t argc)
 {
     if(argc!=1)
-        return Z_Err(ArgumentError,"Error sleep() takes 1 argument!");
+        return quickErr(ArgumentError,"Error sleep() takes 1 argument!");
     if(args[0].type=='i' && args[0].type!='l')
     {
       ZObject r = args[0];
@@ -1501,7 +1505,7 @@ ZObject SLEEP(ZObject* args,int32_t argc)
     }
     else
     {
-      return Z_Err(TypeError,"Error sleep() takes an integer argument!");
+      return quickErr(TypeError,"Error sleep() takes an integer argument!");
     }
 }
 
@@ -1509,16 +1513,16 @@ ZObject SLEEP(ZObject* args,int32_t argc)
 ZObject TOBYTE(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error byte() takes 1 argument!");
+    return quickErr(ArgumentError,"Error byte() takes 1 argument!");
   if(args[0].type == Z_INT)
   {
     if(args[0].i>255 || args[0].i<0)
-      return Z_Err(ValueError,"The integer must be in range 0 to 255!");
+      return quickErr(ValueError,"The integer must be in range 0 to 255!");
   }
   else if(args[0].type == Z_INT64)
   {
     if(args[0].l>255 || args[0].l<0)
-      return Z_Err(ValueError,"The integer must be in range 0 to 255!");
+      return quickErr(ValueError,"The integer must be in range 0 to 255!");
     args[0].i = args[0].l;
   }
   else if(args[0].type == Z_BYTE || args[0].type == Z_BOOL)
@@ -1527,7 +1531,7 @@ ZObject TOBYTE(ZObject* args,int32_t argc)
     return args[0];
   }
   else
-    return Z_Err(TypeError,"Cannot convert type "+fullform(args[0].type)+" to byte!");
+    return quickErr(TypeError,"Cannot convert type "+fullform(args[0].type)+" to byte!");
   args[0].type = Z_BYTE;
   return args[0];
 }
@@ -1536,7 +1540,7 @@ ZObject writelines(ZObject* args,int32_t argc)
      if(argc==2)
         {
             if(args[0].type!='j')
-                return Z_Err(TypeError,"Error first argument of writelines() should be a list!");
+                return quickErr(TypeError,"Error first argument of writelines() should be a list!");
             if(args[1].type=='u')
             {
                 zlist* lines = (zlist*)args[0].ptr;
@@ -1549,7 +1553,7 @@ ZObject writelines(ZObject* args,int32_t argc)
                 {
                     m = (lines->arr[f]);
                     if(m.type!='s')
-                      return Z_Err(ValueError,"List provided to writelines should consist of string elements only!");
+                      return quickErr(ValueError,"List provided to writelines should consist of string elements only!");
                     ZStr* line = (ZStr*)m.ptr;
                     fputs(line->val,currF);
                     if(f!=lines->size-1)
@@ -1558,11 +1562,11 @@ ZObject writelines(ZObject* args,int32_t argc)
                 }
                 return nil;
             }
-            return Z_Err(ArgumentError,"Error writelines() needs a filestream to write!");
+            return quickErr(ArgumentError,"Error writelines() needs a filestream to write!");
         }
         else
         {
-            return Z_Err(ValueError,"Error writelines() takes two arguments!");
+            return quickErr(ValueError,"Error writelines() takes two arguments!");
             exit(0);
         }
 }
@@ -1571,11 +1575,11 @@ ZObject readlines(ZObject* args,int32_t argc)
     if(argc==1)
     {
       if(args[0].type!='u')
-          return Z_Err(TypeError,"Argument not a filestream!");
+          return quickErr(TypeError,"Argument not a filestream!");
       signed char ch;
       zfile fobj = *(zfile*)args[0].ptr;
       if(!fobj.open)
-        return Z_Err(ValueError,"Error the file stream is closed!");
+        return quickErr(ValueError,"Error the file stream is closed!");
       FILE* currF = fobj.fp;
       zlist* lines = vm_allocList();
       string reg; 
@@ -1612,7 +1616,7 @@ ZObject readlines(ZObject* args,int32_t argc)
     }
     else
     {
-        return Z_Err(ArgumentError,"Error readlines() takes one argument!");
+        return quickErr(ArgumentError,"Error readlines() takes one argument!");
         exit(0);
     }
 }
@@ -1627,13 +1631,13 @@ void clean_stdin(void)
 ZObject FREAD(ZObject* args,int32_t argc)
 {
     if(argc!=3)
-        return Z_Err(ArgumentError,"Error fread() takes 3 arguments!");
+        return quickErr(ArgumentError,"Error fread() takes 3 arguments!");
     if (args[0].type != Z_BYTEARR)
-        return Z_Err(TypeError, "Error first argument to fread must be a bytearray!");
+        return quickErr(TypeError, "Error first argument to fread must be a bytearray!");
     if(args[1].type!='i' && args[1].type!='l')
-        return Z_Err(TypeError,"Error second argument of fread() should be an integer!");
+        return quickErr(TypeError,"Error second argument of fread() should be an integer!");
     if(args[2].type!='u')
-      return Z_Err(TypeError,"Error third argument of fread() should be a file stream!");
+      return quickErr(TypeError,"Error third argument of fread() should be a file stream!");
     ZObject a = args[1];
     PromoteType(a,'l');
     int64_t e = a.l;
@@ -1641,11 +1645,11 @@ ZObject FREAD(ZObject* args,int32_t argc)
     ZByteArr_resize(p,e);
     zfile fobj = *(zfile*)args[2].ptr;
     if(!fobj.open)
-      return Z_Err(ValueError,"Error the file stream is closed!");
+      return quickErr(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     unsigned long long int read = 0;
     if((read = fread(p->arr,1,e,currF))!=(size_t)e)
-        return Z_Err(FileIOError,"Error unable to read specified bytes from the file.");
+        return quickErr(FileIOError,"Error unable to read specified bytes from the file.");
     if(currF == stdin)
       clean_stdin();//the newline character can cause problem with future inputs or REPL
     return ZObjFromInt64(read);;
@@ -1663,7 +1667,7 @@ ZObject FWRITE(ZObject* args,int32_t argc)
     else if(argc==3)
     {
        if(args[0].type!='j' || args[1].type!='u' || (args[2].type!='i' && args[2].type!='l'))
-         return Z_Err(TypeError,"Invalid Argument types");
+         return quickErr(TypeError,"Invalid Argument types");
        if(args[2].type=='i')
          S = (size_t)args[2].i;
         else
@@ -1671,22 +1675,22 @@ ZObject FWRITE(ZObject* args,int32_t argc)
     }
     else
     {
-      return Z_Err(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
+      return quickErr(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
     }
     auto l = (ZByteArr*)args[0].ptr;
     if(S > l->size)
-      return Z_Err(ValueError,"Error the bytearray needs to have specified number of bytes!");
+      return quickErr(ValueError,"Error the bytearray needs to have specified number of bytes!");
     if(l->size == 0)
       return ret;
     zfile fobj = *(zfile*)args[1].ptr;
     if(!fobj.open)
-      return Z_Err(ValueError,"Error the file stream is closed!");
+      return quickErr(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     int64_t written = 0;
     if((written = fwrite(l->arr,1,S,currF))!=(int64_t)S)
     {
         string what = strerror(errno);
-        return Z_Err(FileIOError,"Error unable to write the bytes to file!");
+        return quickErr(FileIOError,"Error unable to write the bytes to file!");
 
     }
     return ZObjFromInt64(written);
@@ -1694,7 +1698,7 @@ ZObject FWRITE(ZObject* args,int32_t argc)
 ZObject FSEEK(ZObject* args,int32_t argc)
 {
     if(argc!=3)
-        return Z_Err(ArgumentError,"Error fseek() takes 3 arguments!");
+        return quickErr(ArgumentError,"Error fseek() takes 3 arguments!");
     ZObject ret = nil;
     if(!validateArgTypes("fseek","uii",args,argc,ret))
       return ret;
@@ -1702,7 +1706,7 @@ ZObject FSEEK(ZObject* args,int32_t argc)
     int32_t whence = args[2].i;
     zfile fobj = *(zfile*)args[0].ptr;
     if(!fobj.open)
-      return Z_Err(ValueError,"Error the file stream is closed!");
+      return quickErr(ValueError,"Error the file stream is closed!");
     FILE* currF = fobj.fp;
     int32_t where = args[1].i;
     if(whence==SEEK_SET)
@@ -1714,11 +1718,11 @@ ZObject FSEEK(ZObject* args,int32_t argc)
     else if(whence==SEEK_CUR)
         w = SEEK_CUR;
     else
-        return Z_Err(ValueError,"Error invalid option "+to_string(whence));
+        return quickErr(ValueError,"Error invalid option "+to_string(whence));
     if(fseek(currF,where,w)!=0)
       {
         string what = strerror(errno);
-        return Z_Err(FileSeekError,what);
+        return quickErr(FileSeekError,what);
       }
     return ret;
 }
@@ -1755,7 +1759,7 @@ zlist* makeListCopy(zlist v)
 ZObject COPY(ZObject* args,int32_t argc)
 {
   if(argc!=1)
-      return Z_Err(ArgumentError,"Error clone() takes one argument!");
+      return quickErr(ArgumentError,"Error clone() takes one argument!");
   if(args[0].type=='a')
   {
      ZDict v = *(ZDict*)args[0].ptr;
@@ -1774,13 +1778,13 @@ ZObject COPY(ZObject* args,int32_t argc)
     return ret;
   }
   else
-    return Z_Err(TypeError,"Error clone() takes a list or dictionary as an argument!");
+    return quickErr(TypeError,"Error clone() takes a list or dictionary as an argument!");
 }
 ZObject POW(ZObject* args,int32_t argc)
 {
     if(argc!=2)
     {
-        return Z_Err(ArgumentError,"pow() takes 2 arguments!");
+        return quickErr(ArgumentError,"pow() takes 2 arguments!");
     }
     ZObject a = args[0];
     ZObject b = args[1];
@@ -1800,7 +1804,7 @@ ZObject POW(ZObject* args,int32_t argc)
     }
     else
     {
-      return Z_Err(TypeError,"Error pow() unsupported for "+fullform(a.type)+" and "+fullform(b.type));
+      return quickErr(TypeError,"Error pow() unsupported for "+fullform(a.type)+" and "+fullform(b.type));
     }
       if(t=='i')
       {
@@ -1813,7 +1817,7 @@ ZObject POW(ZObject* args,int32_t argc)
 
         if(exponen_overflows((int64_t)a.i,(int64_t)b.i))
         {
-          return Z_Err(OverflowError,"Integer Overflow occurred in pow()");
+          return quickErr(OverflowError,"Integer Overflow occurred in pow()");
         }
         c.type = 'l';
         c.l = pow((int64_t)(a.i) , (int64_t)(b.i));
@@ -1823,7 +1827,7 @@ ZObject POW(ZObject* args,int32_t argc)
       {
         if(exponen_overflows(a.f,b.f))
         {
-              return Z_Err(OverflowError,"Floating Point Overflow occurred in pow()");
+              return quickErr(OverflowError,"Floating Point Overflow occurred in pow()");
         }
         c.type = 'f';
         c.f = pow(a.f,b.f);
@@ -1833,7 +1837,7 @@ ZObject POW(ZObject* args,int32_t argc)
       {
           if(exponen_overflows(a.l,b.l))
           {
-              return Z_Err(OverflowError,"Integer Overflow occurred in pow().");
+              return quickErr(OverflowError,"Integer Overflow occurred in pow().");
           }
           c.type = 'l';
           c.l = pow(a.l,b.l);
@@ -1844,7 +1848,7 @@ ZObject POW(ZObject* args,int32_t argc)
 ZObject CLOCK(ZObject* args,int32_t argc)
 {
   if(argc!=0)
-    return Z_Err(ArgumentError,"Error clock() takes 0 arguments!");
+    return quickErr(ArgumentError,"Error clock() takes 0 arguments!");
   ZObject ret = nil;
   ret.type = 'f';
   ret.f = static_cast<double> (clock());
@@ -1860,9 +1864,9 @@ ZObject CLOCK(ZObject* args,int32_t argc)
 ZObject POP(ZObject* args,int32_t argc)
 {
   if(args[0].type!=Z_LIST && args[0].type!=Z_BYTEARR )
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
+    return quickErr(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
   if(args[0].type == 'c')
   {
     ZObject ret = nil;
@@ -1883,7 +1887,7 @@ ZObject POP(ZObject* args,int32_t argc)
       zlist_pop(p,&ret);
     }
     else
-      return Z_Err(ValueError,"List is empty.No value to pop!");
+      return quickErr(ValueError,"List is empty.No value to pop!");
     return ret;
   }
   return nil;
@@ -1892,9 +1896,9 @@ ZObject POP(ZObject* args,int32_t argc)
 ZObject CLEAR(ZObject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type != Z_BYTEARR)
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error method clear() takes 0 arguments!");
+    return quickErr(ArgumentError,"Error method clear() takes 0 arguments!");
   if(args[0].type == Z_BYTEARR)
   {
     ZByteArr* arr = (ZByteArr*)args[0].ptr;
@@ -1910,9 +1914,9 @@ ZObject CLEAR(ZObject* args,int32_t argc)
 ZObject PUSH(ZObject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type!='c')
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error method push() takes 1 argument!");
+    return quickErr(ArgumentError,"Error method push() takes 1 argument!");
   if(args[0].type == 'j')
   {
     zlist* p = (zlist*)args[0].ptr;
@@ -1925,7 +1929,7 @@ ZObject PUSH(ZObject* args,int32_t argc)
   {
     ZByteArr* p = (ZByteArr*)args[0].ptr;
     if(args[1].type != Z_BYTE)
-     return Z_Err(TypeError,"Can only push a byte to a bytearray!");
+     return quickErr(TypeError,"Can only push a byte to a bytearray!");
     ZByteArr_push(p,args[1].i);
     ZObject ret = nil;
     return ret;
@@ -1935,9 +1939,9 @@ ZObject PUSH(ZObject* args,int32_t argc)
 ZObject FIND_METHOD(ZObject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type!=Z_BYTEARR && args[0].type!=Z_STR)
-    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
+    return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error method find() takes 1 arguments!");
+    return quickErr(ArgumentError,"Error method find() takes 1 arguments!");
   if(args[0].type == 'j')
   {
     zlist* p = (zlist*)args[0].ptr;
@@ -1957,7 +1961,7 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
   {
     string p = ((ZStr*)args[0].ptr) -> val;
     if(args[1].type != Z_STR)
-      return Z_Err(TypeError,"Argument 1 of str.find() must be a string!");
+      return quickErr(TypeError,"Argument 1 of str.find() must be a string!");
     ZStr* tofind = (ZStr*)args[1].ptr;
     size_t idx = p.find(tofind->val);
     if(idx == std::string::npos)
@@ -1988,12 +1992,12 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
     ZObject idx = args[1];
     ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Z_Err(ValueError,"Error insertion position is negative!");
+      return quickErr(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size)
-          return Z_Err(ValueError,"Error insertion position out of range!");
+          return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type=='c')
     {
       auto subarr = (ZByteArr*)val.ptr;
@@ -2004,12 +2008,12 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
       ZByteArr_insert(p,idx.l,val.i);
     }
     else
-      return Z_Err(TypeError,"Error method insert() takes a byte or bytearray argument!");
+      return quickErr(TypeError,"Error method insert() takes a byte or bytearray argument!");
     ZObject ret = nil;
     return ret;
   }
   else
-    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error method insert() takes 2 arguments!");
 }
 
 ZObject INSERTSTR(ZObject* args,int32_t argc)
@@ -2020,12 +2024,12 @@ ZObject INSERTSTR(ZObject* args,int32_t argc)
     ZObject idx = args[1];
     ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Z_Err(ValueError,"Error insertion position is negative!");
+      return quickErr(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p.size())
-          return Z_Err(ValueError,"Error insertion position out of range!");
+          return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type==Z_STR)
     {
       ZStr* sub = (ZStr*)val.ptr;
@@ -2036,10 +2040,10 @@ ZObject INSERTSTR(ZObject* args,int32_t argc)
       return ZObjFromStrPtr(result);
     }
     else
-      return Z_Err(TypeError,"Error method insert() takes a string argument!");
+      return quickErr(TypeError,"Error method insert() takes a string argument!");
   }
   else
-    return Z_Err(ArgumentError,"Error method insert() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error method insert() takes 2 arguments!");
 }
 
 ZObject INSERT(ZObject* args,int32_t argc)
@@ -2049,19 +2053,19 @@ ZObject INSERT(ZObject* args,int32_t argc)
   else if(args[0].type == Z_STR)
     return INSERTSTR(args,argc);
   if(args[0].type!='j')
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
   if(argc==3)
   {
     zlist* p = (zlist*)args[0].ptr;
     ZObject idx = args[1];
     ZObject val = args[2];
     if(idx.type!='i' && idx.type!='l')
-      return Z_Err(TypeError,"Error method insert() expects an integer argument for position!");
+      return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
     if(idx.l < 0)
-      return Z_Err(ValueError,"Error insertion position is negative!");
+      return quickErr(ValueError,"Error insertion position is negative!");
     if((size_t)idx.l > p->size)
-          return Z_Err(ValueError,"Error insertion position out of range!");
+          return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type=='j')
     {
       zlist* sublist = (zlist*)val.ptr;
@@ -2075,14 +2079,14 @@ ZObject INSERT(ZObject* args,int32_t argc)
     return ret;
   }
   else
-    return Z_Err(ArgumentError,"Error method insert() takes 3 arguments!");
+    return quickErr(ArgumentError,"Error method insert() takes 3 arguments!");
 }
 ZObject ERASE(ZObject* args,int32_t argc)
 {
   if(args[0].type=='j')
   {
     if(argc!=2 && argc!=3)
-      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     zlist* p = (zlist*)args[0].ptr;
     ZObject idx1 = args[1];
     ZObject idx2;
@@ -2091,15 +2095,15 @@ ZObject ERASE(ZObject* args,int32_t argc)
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Z_Err(ValueError,"Error index is negative!");
+        return quickErr(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size || (size_t)idx2.l >= p->size)
-        return Z_Err(ValueError,"Error index out of range!");
+        return quickErr(ValueError,"Error index out of range!");
     zlist_eraseRange(p,idx1.l,idx2.l);
     ZObject ret = nil;
     return ret;
@@ -2107,11 +2111,11 @@ ZObject ERASE(ZObject* args,int32_t argc)
   else if(args[0].type=='a')
   {
      if(argc!=2)
-       return Z_Err(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
+       return quickErr(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
     ZDict* d = (ZDict*)args[0].ptr;
     ZObject key = args[1];
     if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
-      return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
+      return quickErr(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
     bool b = ZDict_erase(d,key);
     ZObject ret;
     ret.type = Z_BOOL;
@@ -2121,7 +2125,7 @@ ZObject ERASE(ZObject* args,int32_t argc)
   else if(args[0].type == 'c')
   {
     if(argc!=2 && argc!=3)
-      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     ZByteArr* p = (ZByteArr*)args[0].ptr;
     ZObject idx1 = args[1];
     ZObject idx2;
@@ -2130,15 +2134,15 @@ ZObject ERASE(ZObject* args,int32_t argc)
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Z_Err(ValueError,"Error index is negative!");
+        return quickErr(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size || (size_t)idx2.l >= p->size)
-        return Z_Err(ValueError,"Error index out of range!");
+        return quickErr(ValueError,"Error index out of range!");
     ZByteArr_eraseRange(p,idx1.l,idx2.l);
     ZObject ret = nil;
     return ret;
@@ -2146,7 +2150,7 @@ ZObject ERASE(ZObject* args,int32_t argc)
   else if(args[0].type == Z_STR)
   {
     if(argc!=2 && argc!=3)
-      return Z_Err(ArgumentError,"Error erase() takes 2 or 3 arguments!");
+      return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
     ZStr* p = (ZStr*)args[0].ptr;
     ZObject idx1 = args[1];
     ZObject idx2;
@@ -2155,15 +2159,15 @@ ZObject ERASE(ZObject* args,int32_t argc)
     else
       idx2 = idx1;
     if(idx1.type!='i' && idx1.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for start!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for start!");
     if(idx2.type!='i' && idx2.type!='l')
-        return Z_Err(TypeError,"Error method erase() expects an integer argument for end!");
+        return quickErr(TypeError,"Error method erase() expects an integer argument for end!");
     PromoteType(idx1,'l');
     PromoteType(idx2,'l');
     if(idx1.l < 0 || idx2.l < 0)
-        return Z_Err(ValueError,"Error index is negative!");
+        return quickErr(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->len || (size_t)idx2.l >= p->len)
-        return Z_Err(ValueError,"Error index out of range!");
+        return quickErr(ValueError,"Error index out of range!");
     string s = p->val;
     s.erase(s.begin()+idx1.l,s.begin()+idx2.l+1);
 
@@ -2173,15 +2177,15 @@ ZObject ERASE(ZObject* args,int32_t argc)
   }
   else
   {
-      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
+      return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
   }
 }
 ZObject asMap(ZObject* args,int32_t argc)
 {
     if(args[0].type!='j')
-      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
+      return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
     if(argc!=1)
-      return Z_Err(ArgumentError,"Error list member asMap() takes 0 arguments!");
+      return quickErr(ArgumentError,"Error list member asMap() takes 0 arguments!");
     zlist l = *(zlist*)args[0].ptr;
     ZObject x;
     x.type = 'l';
@@ -2201,9 +2205,9 @@ ZObject asMap(ZObject* args,int32_t argc)
 ZObject ASLIST(ZObject* args,int32_t argc)
 {
     if(args[0].type!='a')
-      return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
+      return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
     if(argc!=1)
-      return Z_Err(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
+      return quickErr(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
     ZDict d = *(ZDict*)args[0].ptr;
     zlist* list = vm_allocList();
     for(size_t i=0;i<d.capacity;i++)
@@ -2227,9 +2231,9 @@ ZObject ASLIST(ZObject* args,int32_t argc)
 ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type != Z_STR)
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
   if(argc!=1)
-    return Z_Err(ArgumentError,"Error method reverse() takes 0 arguments!");
+    return quickErr(ArgumentError,"Error method reverse() takes 0 arguments!");
   if(args[0].type == Z_STR)
   {
     ZStr* str = (ZStr*)args[0].ptr;
@@ -2265,13 +2269,13 @@ ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
 ZObject EMPLACE(ZObject* args,int32_t argc)
 {
   if(args[0].type!='a')
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
   if(argc!=3)
-    return Z_Err(ArgumentError,"Error method emplace() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error method emplace() takes 2 arguments!");
   ZDict* p = (ZDict*)args[0].ptr;
   ZObject& key = args[1];
   if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
-    return Z_Err(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
+    return quickErr(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
 
   ZDict_emplace(p,key,args[2]);
   ZObject ret = nil;
@@ -2281,9 +2285,9 @@ ZObject EMPLACE(ZObject* args,int32_t argc)
 ZObject HASKEY(ZObject* args,int32_t argc)
 {
   if(args[0].type!='a')
-         return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
+         return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error method hasKey() takes 1 argument!");
+    return quickErr(ArgumentError,"Error method hasKey() takes 1 argument!");
   ZDict* p = (ZDict*)args[0].ptr;
 
   ZObject ret = nil;
@@ -2297,11 +2301,11 @@ ZObject HASKEY(ZObject* args,int32_t argc)
 ZObject UNPACK(ZObject* args,int32_t argc)
 {
   if(args[0].type!=Z_BYTEARR)
-    return Z_Err(NameError,"Error object has no member unpack()");
+    return quickErr(NameError,"Error object has no member unpack()");
   if(argc!=2)
-    return Z_Err(ArgumentError,"Error unpack() takes 2 arguments!");
+    return quickErr(ArgumentError,"Error unpack() takes 2 arguments!");
   if(args[1].type!=Z_STR)
-    return Z_Err(TypeError,"Error unpack() takes a string argument!");
+    return quickErr(TypeError,"Error unpack() takes a string argument!");
   auto arr = (ZByteArr*)args[0].ptr;
   string pattern = ((ZStr*)args[1].ptr)->val;
   size_t k = 0;
@@ -2318,7 +2322,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     if(ch == 'i')
     {
       if(k+3 >= arr->size)
-         return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
+         return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&int32,arr->arr+k,4);
       zlist_push(res,ZObjFromInt(int32));
       k+=4;
@@ -2326,7 +2330,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     else if(ch == 'l')
     {
       if(k+7 >= arr->size)
-         return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
+         return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&int64,arr->arr+k,8);
       zlist_push(res,ZObjFromInt(int64));      
       k+=8;
@@ -2334,7 +2338,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     else if(ch == 'f')
     {
       if(k+7 >= arr->size)
-         return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
+         return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&d,arr->arr+k,8);
       zlist_push(res,ZObjFromDouble(d));
       k+=8;
@@ -2342,7 +2346,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     else if(ch == 'b')
     {
       if(k >= arr->size)
-         return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
+         return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&b,arr->arr+k,1);
       zlist_push(res,ZObjFromBool(b));
       k+=1;
@@ -2350,9 +2354,9 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     else if(ch == 's')
     {
       if(i+1>=pattern.length())
-        return Z_Err(ValueError,"Error in pattern,required length after 's' ");
+        return quickErr(ValueError,"Error in pattern,required length after 's' ");
       if(!isdigit(pattern[i+1]))
-        return Z_Err(ValueError,"Error in pattern,required length after 's' ");
+        return quickErr(ValueError,"Error in pattern,required length after 's' ");
       string l;
       i+=1;
       l+=pattern[i];
@@ -2363,10 +2367,10 @@ ZObject UNPACK(ZObject* args,int32_t argc)
         i++;
       }
       if(!isnum(l) && !isInt64(l))
-        return Z_Err(OverflowError,"Error given string length too large!");
+        return quickErr(OverflowError,"Error given string length too large!");
       long long int len = atoll(l.c_str());
       if((long long int)k+len-1 >= (long long int)arr->size)
-         return Z_Err(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
+         return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       str = "";
       size_t f = k+(size_t)len;
       for(;k!=f;++k)
@@ -2379,7 +2383,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       zlist_push(res,ZObjFromStrPtr(p));
     }
     else
-      return Z_Err(ValueError,"Error invalid char in pattern string!"); 
+      return quickErr(ValueError,"Error invalid char in pattern string!"); 
   }
   return ZObjFromList(lp);
 }
@@ -2387,13 +2391,13 @@ ZObject UNPACK(ZObject* args,int32_t argc)
 ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
-    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
+    return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
   if(argc!=3)
-    return Z_Err(ArgumentError,"Error str.substr() takes 2 arguments");
+    return quickErr(ArgumentError,"Error str.substr() takes 2 arguments");
   if(args[1].type!='i' && args[1].type!='l')
-    return Z_Err(TypeError,"Error first argument of str.substr() should be an integer");
+    return quickErr(TypeError,"Error first argument of str.substr() should be an integer");
   if(args[2].type!='i' && args[2].type!='l')
-    return Z_Err(TypeError,"Error second argument of str.substr() should be an integer");
+    return quickErr(TypeError,"Error second argument of str.substr() should be an integer");
   
   PromoteType(args[1],'l');
   PromoteType(args[2],'l');
@@ -2418,13 +2422,13 @@ ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
 ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
-    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+    return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
   if(argc==3)
     {
         if(args[1].type!='s')
-            return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
+            return quickErr(TypeError,"Error first argument given to replace() must be a string!");
         if(args[2].type!='s')
-            return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
+            return quickErr(TypeError,"Error second argument given to replace() must be a string!");
       
         string c = ((ZStr*)args[0].ptr)->val;
         string a = ((ZStr*)args[1].ptr) -> val;
@@ -2436,20 +2440,20 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
     }
     else
     {
-        return Z_Err(ArgumentError,"Error method replace() takes two arguments\n");
+        return quickErr(ArgumentError,"Error method replace() takes two arguments\n");
     }
     
 }
 ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
-    return Z_Err(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
+    return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
   if(argc==3)
     {
         if(args[1].type!='s')
-            return Z_Err(TypeError,"Error first argument given to replace() must be a string!");
+            return quickErr(TypeError,"Error first argument given to replace() must be a string!");
         if(args[2].type!='s')
-            return Z_Err(TypeError,"Error second argument given to replace() must be a string!");
+            return quickErr(TypeError,"Error second argument given to replace() must be a string!");
       
         string a = ((ZStr*)args[1].ptr) -> val;
         string b = ((ZStr*)args[2].ptr) -> val;        
@@ -2462,7 +2466,7 @@ ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
     }
     else
     {
-        return Z_Err(ArgumentError,"Error method replace() takes two arguments\n");
+        return quickErr(ArgumentError,"Error method replace() takes two arguments\n");
     }
 }
 
@@ -2548,7 +2552,7 @@ void initMethods()
 ZObject callmethod(string name,ZObject* args,int32_t argc)
 {
      if(methods.find(name)==methods.end())
-       return Z_Err(NameError,"Error "+fullform(args[0].type)+" type has no method named "+name+"()");
+       return quickErr(NameError,"Error "+fullform(args[0].type)+" type has no method named "+name+"()");
      return methods[name](args,argc);
 }
 bool function_exists(string name)

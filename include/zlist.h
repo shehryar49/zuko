@@ -5,12 +5,12 @@
 #include <string.h>
 #include "zobject.h"
 
-struct zlist
+typedef struct zlist
 {
   ZObject* arr;
   size_t size;
   size_t capacity;
-};
+}zlist;
 void zlist_init(zlist* p)
 {
     p->arr = (ZObject*)malloc(sizeof(ZObject)*4);

@@ -12,26 +12,26 @@ ZObject init()
 
     ModuleObject->name = "math";//module name is math
     //Add functions to the module
-    ModuleObject->addNativeFunction("floor",&FLOOR);
-    ModuleObject->addNativeFunction("ceil",&CEIL);
-    ModuleObject->addNativeFunction("round",&ROUND);
-    ModuleObject->addNativeFunction("sin",&SIN);
-    ModuleObject->addNativeFunction("cos",&COS);
-    ModuleObject->addNativeFunction("tan",&TAN);
-    ModuleObject->addNativeFunction("asin",&ASIN);
-    ModuleObject->addNativeFunction("acos",&ACOS);
-    ModuleObject->addNativeFunction("atan",&ATAN);
-    ModuleObject->addNativeFunction("sinh",&SINH);
-    ModuleObject->addNativeFunction("cosh",&COSH);
-    ModuleObject->addNativeFunction("tanh",&TANH);
-    ModuleObject->addNativeFunction("asinh",&ASINH);
-    ModuleObject->addNativeFunction("acosh",&ACOSH);
-    ModuleObject->addNativeFunction("atanh",&ATANH);
-    ModuleObject->addNativeFunction("sqrt",&SQRT);
-    ModuleObject->addNativeFunction("trunc",&TRUNC);
-    ModuleObject->addNativeFunction("radians",&RADIANS);
-    ModuleObject->addNativeFunction("log",&LOG);
-    ModuleObject->addNativeFunction("log10",&LOG10);
+    Module_addNativeFun(ModuleObject,"floor",&FLOOR);
+    Module_addNativeFun(ModuleObject,"ceil",&CEIL);
+    Module_addNativeFun(ModuleObject,"round",&ROUND);
+    Module_addNativeFun(ModuleObject,"sin",&SIN);
+    Module_addNativeFun(ModuleObject,"cos",&COS);
+    Module_addNativeFun(ModuleObject,"tan",&TAN);
+    Module_addNativeFun(ModuleObject,"asin",&ASIN);
+    Module_addNativeFun(ModuleObject,"acos",&ACOS);
+    Module_addNativeFun(ModuleObject,"atan",&ATAN);
+    Module_addNativeFun(ModuleObject,"sinh",&SINH);
+    Module_addNativeFun(ModuleObject,"cosh",&COSH);
+    Module_addNativeFun(ModuleObject,"tanh",&TANH);
+    Module_addNativeFun(ModuleObject,"asinh",&ASINH);
+    Module_addNativeFun(ModuleObject,"acosh",&ACOSH);
+    Module_addNativeFun(ModuleObject,"atanh",&ATANH);
+    Module_addNativeFun(ModuleObject,"sqrt",&SQRT);
+    Module_addNativeFun(ModuleObject,"trunc",&TRUNC);
+    Module_addNativeFun(ModuleObject,"radians",&RADIANS);
+    Module_addNativeFun(ModuleObject,"log",&LOG);
+    Module_addNativeFun(ModuleObject,"log10",&LOG10);
     return ZObjFromModule(ModuleObject);
 }
 

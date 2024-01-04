@@ -185,7 +185,7 @@ typedef ZByteArr*(*fn10)();//allocBytearray
 typedef bool(*fn11)(ZObject*,ZObject*,int,ZObject*);//callobject
 typedef void(*fn12)(void*);//markImportant
 typedef void(*fn13)(void*);//unmarkImpotant
-struct apiFuncions
+typedef struct apiFuncions
 {
   fn1 a1;//api function 1
   fn2 a2;//and so on
@@ -216,7 +216,7 @@ struct apiFuncions
   Klass* k14;
   Klass* k15;
   Klass* k16;
-};
+}apiFuncions;
 /**************/
 #ifdef ZUKO_INTERPRETER
 // This header was included by the interpreter
@@ -299,7 +299,7 @@ void api_setup(apiFuncions* p)
 #endif
 
 //The below helper functions make use of above function pointers
-inline ZObject ZObjFromStr(const char* str)
+inline ZObject ZObjFromStr(const char* str)// makes deep copy of str
 {
   size_t len = strlen(str);
   ZStr* ptr = vm_allocString(len);
@@ -310,14 +310,14 @@ inline ZObject ZObjFromStr(const char* str)
   return ret;
 }
 
-ZObject Z_Err(Klass* errKlass,string des)
+ZObject Z_Err(Klass* errKlass,const char* des)
 {
   ZObject ret;
   KlassObject* p = vm_allocKlassObject();
   p->klass = errKlass;
   StrMap_assign(&(p->members),&(errKlass->members));
   StrMap_assign(&(p->privateMembers),&(errKlass->privateMembers));
-  StrMap_set(&(p->members),"msg",ZObjFromStr(des.c_str())); // OPTIMIZE!
+  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
@@ -333,19 +333,22 @@ inline ZObject ZObjFromMethod(const char* name,NativeFunPtr r,Klass* k)
   ret.ptr = (void*)fn;
   return ret;
 }
-inline ZObject ZObjFromFunction(const char* name,NativeFunPtr r,Klass* k=NULL)
+inline ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
 {
   ZObject ret;
   NativeFunction* fn = vm_allocNativeFunObj();
   fn->name = name;
-  fn->klass = k;
   fn->addr = r;
   ret.type = 'y';
   ret.ptr = (void*)fn;
   return ret;
 }
 
-
+void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p)
+{
+  ZObject val = ZObjFromFunction(name,p);
+  StrMap_emplace(&(m->members),name,val);
+}
 //
 
 
