@@ -4,7 +4,7 @@
 #include "include/zuko.h"
 
 #define ZUKO_VER 0.3
-#define ZUKO_VER_PATCH 1
+#define ZUKO_VER_PATCH 2
 
 void signalHandler(int signum)
 {
@@ -72,7 +72,7 @@ int main(int argc, const char* argv[])
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
-    WriteByteCode(((string)filename+(string)"b").c_str(),bytecode,p.LineNumberTable,p.files);
+    //WriteByteCode(((string)filename+(string)"b").c_str(),bytecode,p.LineNumberTable,p.files);
     
     vm.load(bytecode,p);
    
