@@ -11,60 +11,47 @@
   #include <fcntl.h>
 #endif
 using namespace std;
+
 Klass* CgiFile;
+
 vector<string> split(string s,const string& x)
 {
-	unsigned int  k = 0;
+	size_t  k = 0;
 	vector<string> list;
-	while(s.find(x)!=std::string::npos)
+	while( (k = s.find(x) ) != std::string::npos)
 	{
-		k = s.find(x);
 		list.push_back(s.substr(0,k));
 		s = s.substr(k+x.length());
 	}
 	list.push_back(s);
 	return list;
 }
-int to_decimal(string HEX)
+int hexdigitToDecimal(char ch)
 {
-    int ans = 0;
-    std::reverse(HEX.begin(),HEX.end());
-    int x = 1;
-    for(auto e: HEX)
-    {
-        if(e>='0' && e<='9')
-          ans+= (e-48)*x;
-        else if(isalpha(e))
-        {
-          e = toupper(e);
-          ans+=(e-55)*x;
-        }
-        x*=16;
-    }
-    return ans;
+  if(ch >= 'A' && ch <='F')
+    return ch - 'A' + 10;
+  else if(ch >= 'a' && ch <='f')
+    return ch - 'a' + 10;
+  else if(ch >= '0' && ch <= '9')
+    return ch - '0';
+  return 69;
 }
 string url_decode(const string& s)
 {
     string res = "";
     int k = 0;
-    while(k<s.length())
+    size_t len = s.length();
+    while(k<len)
     {
-        if(s[k]=='%')
+        if(s[k]=='%' && k+2 < len)
         {
-            string HEX;
-            HEX+=s[k+1];
-            HEX+=s[k+2];
             k+=2;
-            res+= (char)to_decimal(HEX);
+            res += (char)( hexdigitToDecimal(s[k+1])*16 + hexdigitToDecimal(s[k+2]) );
         }
         else if(s[k]=='+')
-        {
             res+=" ";
-        }
         else
-        {
-            res+=s[k];
-        }
+          res+=s[k];
         k+=1;
     }
     return res;
@@ -101,31 +88,27 @@ vector<string> splitIgnQuotes(string& s,char x)
   parts.push_back(read);
   return parts;
 }
-ZDict* parse_multipart(char* data,int len,const string& boundary,bool& hadError)
+
+ZDict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadError)
 {
+
   hadError = true;
-  if(len<=0)
-    return nullptr;
-  int k = 0;
+  size_t k = 0;
   string b;
-  ZDict* d = vm_allocDict();
   while (k < len && data[k]!='\r')
-  {
-    b+=data[k];
-    k+=1;
-  }
-  if(b!=boundary)
-  {
-    if(b.substr(2)!=boundary)
-      return nullptr;
-  }
+    b+=data[k++];
+  
+  if(b.substr(2)!=boundary)
+    return nullptr;
   k+=2;//skip newline character
+  
   char ch;
   std::unordered_map<string,string> headers;
   string headername;
   string read;
   string aux ;
   b = "\r\n"+(string)"--"+boundary;
+  ZDict* d = vm_allocDict();
   while(k<len)
   {
     headername = "";
@@ -191,9 +174,9 @@ ZDict* parse_multipart(char* data,int len,const string& boundary,bool& hadError)
                 k++;
                 continue;
             }
-            if(k+1<len && data[k]=='-' && data[k+1]=='-')//firefox adds "--" at last boundary
+            if(k+1<len && data[k]=='-' && data[k+1]=='-')
               k+=2;
-            if(k+1<len && (data[k]!='\r' || data[k+1]!='\n'))//firefox adds "--" at last boundary
+            if(k+1<len && (data[k]!='\r' || data[k+1]!='\n'))
               return nullptr;
             k+=2;//skip CRLF
             break;//boundary was found end content
@@ -309,50 +292,26 @@ void consumeSpace(const string& data,int& k)
 ZDict* POST(bool& err)
 {
 
+       err = true;
        char* q = getenv("CONTENT_LENGTH");
        char* t = getenv("CONTENT_TYPE");
        if(!q || !t)
-       {
-           err = true;
-           return nullptr;
-       }
+         return nullptr;
        string type = t;
-       int len = atoi(q);
+       size_t len = atoll(q);
        char* s = new char[len+1];
        fread(s,sizeof(char),len,stdin);
        s[len] = 0;
-       string data ;
-       if(caseInsensitiveCmp(substr(0,18,type),"multipart/form-data")) // multipart form
+      
+       if(type=="application/x-www-form-urlencoded")
        {
-        int k=19;
-        consumeSpace(type,k);
-        if(k>=type.length() || data[k]!=';')
-          k++;
-        consumeSpace(type,k);
-        string boundary;
-        if(caseInsensitiveCmp(substr(k,k+8,type),"boundary="))
-        {
-          boundary = type.substr(k+9);
-          if(boundary.length() < 1)
-          {
-            err=true;
-            return nullptr;
-          }
-        }
-        else
-        {
-          err=true;
-          return nullptr;
-        }
-        return parse_multipart(s,len,boundary,err);
-       }
-       else if(type=="application/x-www-form-urlencoded")
-       {
-         data = s;
-         delete[] s;
+         string data = s;
          ZDict* m = vm_allocDict();
-         if(data == "")
+         if(data.length() == 0)
+         {
+           err = false;
            return m;
+         }
          vector<string> pairs = split(data,"&");
          for(auto pair: pairs)
          {
@@ -363,11 +322,32 @@ ZDict* POST(bool& err)
              eq[1] = url_decode(eq[1]);
              ZDict_emplace(m,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
          }
+         err = false;
          return m;
+       }
+       else if(caseInsensitiveCmp(substr(0,18,type),"multipart/form-data")) // multipart form
+       {
+        int k=19;
+        consumeSpace(type,k);
+        if(k>=type.length() || type[k]!=';')
+          return nullptr;
+        k+=1;
+        consumeSpace(type,k);
+        if(k >= type.length())
+          return nullptr;
+        string boundary;
+        if(caseInsensitiveCmp(substr(k,k+8,type),"boundary="))
+        {
+          boundary = type.substr(k+9);
+          if(boundary.length() < 1)
+            return nullptr;
+        }
+        else
+          return nullptr;
+        return parse_multipart(s,len,boundary,err);
        }
        else
        {
-         err = true;
          return nullptr;
        }
 
