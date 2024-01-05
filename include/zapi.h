@@ -58,49 +58,49 @@ Klass* AccessError;
 
 //
 //Helper and extension API Functions
-inline ZObject ZObjFromStrPtr(ZStr* s)
+ZObject ZObjFromStrPtr(ZStr* s)
 {
   ZObject ret;
   ret.type = 's';
   ret.ptr = (void*)s;
   return ret;
 }
-inline ZObject ZObjFromInt(int32_t x)
+ZObject ZObjFromInt(int32_t x)
 {
   ZObject ret;
   ret.type = 'i';
   ret.i = x;
   return ret;
 }
-inline ZObject ZObjFromDouble(double f)
+ZObject ZObjFromDouble(double f)
 {
   ZObject ret;
   ret.type = 'f';
   ret.f = f;
   return ret;
 }
-inline ZObject ZObjFromInt64(int64_t x)
+ZObject ZObjFromInt64(int64_t x)
 {
   ZObject ret;
   ret.type = 'l';
   ret.l = x;
   return ret;
 }
-inline ZObject ZObjFromPtr(void* p)
+ZObject ZObjFromPtr(void* p)
 {
   ZObject ret;
   ret.type = 'p';
   ret.ptr = p;
   return ret;
 }
-inline ZObject ZObjFromByte(uint8_t x)
+ZObject ZObjFromByte(uint8_t x)
 {
   ZObject ret;
   ret.type = 'm';
   ret.i = x;
   return ret;
 }
-inline ZObject ZObjFromBool(bool b)
+ZObject ZObjFromBool(bool b)
 {
   ZObject ret;
   ret.type = Z_BOOL;
@@ -108,49 +108,49 @@ inline ZObject ZObjFromBool(bool b)
   return ret;
 }
 
-inline ZObject ZObjFromList(ZList* l)
+ZObject ZObjFromList(ZList* l)
 {
   ZObject ret;
   ret.type = Z_LIST;
   ret.ptr = (void*)l;
   return ret;
 }
-inline ZObject ZObjFromDict(ZDict* l)
+ZObject ZObjFromDict(ZDict* l)
 {
   ZObject ret;
   ret.type = Z_DICT;
   ret.ptr = (void*)l;
   return ret;
 }
-inline ZObject ZObjFromModule(Module* k)
+ZObject ZObjFromModule(Module* k)
 {
   ZObject ret;
   ret.type = Z_MODULE;
   ret.ptr = (void*)k;
   return ret;
 }
-inline ZObject ZObjFromKlass(Klass* k)
+ZObject ZObjFromKlass(Klass* k)
 {
   ZObject ret;
   ret.type = Z_CLASS;
   ret.ptr = (void*)k;
   return ret;
 }
-inline ZObject ZObjFromKlassObj(KlassObject* ki)
+ZObject ZObjFromKlassObj(KlassObject* ki)
 {
   ZObject ret;
   ret.type = Z_OBJ;
   ret.ptr = (void*)ki;
   return ret;
 }
-inline ZObject ZObjFromByteArr(ZByteArr* k)
+ZObject ZObjFromByteArr(ZByteArr* k)
 {
   ZObject ret;
   ret.type = Z_BYTEARR;
   ret.ptr = (void*)k;
   return ret;
 }
-inline ZObject ZObjFromFile(zfile* file)
+ZObject ZObjFromFile(zfile* file)
 {
   ZObject ret;
   ret.type = Z_FILESTREAM;
