@@ -70,6 +70,10 @@ bool ZObject_equals(ZObject,ZObject);
 
 bool ZObject_equals(ZObject lhs,ZObject other)
 {
+  if(lhs.type == 'i' && other.type == 'l')
+    return (int64_t)lhs.i == other.l;
+  if(lhs.type == 'l' && other.type=='i')
+    return lhs.l == (int64_t)other.i;
   if(other.type!=lhs.type)
       return false;
   if(lhs.type==Z_NIL)
@@ -90,7 +94,7 @@ bool ZObject_equals(ZObject lhs,ZObject other)
   {
     ZStr* a = (ZStr*)lhs.ptr;
     ZStr* b = (ZStr*)other.ptr;
-    return strcmp(a->val,b->val) == 0;
+    return (a->len == b->len) && (strcmp(a->val,b->val) == 0);
   }
   else if(lhs.type==Z_LIST)
   {
@@ -111,14 +115,14 @@ bool ZObject_equals(ZObject lhs,ZObject other)
   {
     ZByteArr* a = (ZByteArr*)lhs.ptr;
     ZByteArr* b = (ZByteArr*)other.ptr;
-    return ZByteArr_equal(a,b);
+    return a == b || ZByteArr_equal(a,b);
   }
   else if(other.type=='y' || other.type=='r' || other.type == Z_CLASS)
     return lhs.ptr==other.ptr;
   else if(lhs.type=='q' || lhs.type=='z')
     return lhs.ptr==other.ptr;
   else if(lhs.type==Z_DICT)//IMPORTANT
-      return lhs.ptr == other.ptr;//*(ZDict*)lhs.ptr==*(ZDict*)other.ptr;
+     return lhs.ptr == other.ptr || ZDict_equal((ZDict*)lhs.ptr,(ZDict*)other.ptr);
   return false;
 }
 
