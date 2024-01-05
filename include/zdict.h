@@ -175,6 +175,15 @@ bool ZDict_equal(ZDict* h,ZDict* other)
   }
   return true;
 }
+void ZDict_assign(ZDict* h,ZDict* other) // makes deep copy
+{
+  for(size_t idx=0;idx<other->capacity;idx++)
+  {
+    if(other->table[idx].stat != OCCUPIED)
+      continue;
+    ZDict_emplace(h,other->table[idx].key,other->table[idx].val);
+  }
+}
 void ZDict_destroy(ZDict* h)
 {
   free(h->table);
