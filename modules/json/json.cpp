@@ -50,11 +50,12 @@ struct Token
     content = cont;
   }
 };
-vector<Token> tokenize(std::string& str,bool& hadErr,string& msg)
+vector<Token> tokenize(ZStr* zstr,bool& hadErr,string& msg)
 {
   std::vector<Token> tokens;
   hadErr = true;
-  size_t l = str.length();
+  string str = zstr->val;
+  size_t l = zstr->len;
   size_t i = 0;
   int line_num = 1;
   int line_begin = 0;
@@ -426,7 +427,7 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
   else if(p.type == Z_FLOAT)
     res+= to_string(p.f);
   else if(p.type == Z_STR)
-    res+= "\""+(*(string*)p.ptr)+"\"";
+    res+= "\""+(string)(AS_STR(p)->val)+"\"";
   else if(p.type == Z_BOOL)
     res += (p.i) ? "true" : "false";
   else if(p.type == Z_NIL)
@@ -513,7 +514,7 @@ ZObject loads(ZObject* args,int32_t n)
 {
   if(n!=1 || args[0].type!=Z_STR)
     return Z_Err(TypeError,"String argument required!");
-  string& src = *(string*)args[0].ptr;
+  ZStr* src = AS_STR(args[0]);
   bool hadErr;
   string msg;
   vector<Token> tokens = tokenize(src,hadErr,msg);
