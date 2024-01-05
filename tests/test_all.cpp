@@ -53,7 +53,8 @@ const char* tests[] =
     "multiline-expr",
     "str",
     "bignum",
-    "regex"
+    "regex",
+    "json"
 };
 int main(int argc,const char* argv[])
 {

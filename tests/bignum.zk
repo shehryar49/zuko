@@ -14,3 +14,9 @@ function fact(var n)
     return ans
 }
 println(fact(bignum.bignum("10")).strval() == "3628800")
+
+var a = bignum.bignum("5")
+var b = bignum.bignum("2")
+
+println((a-b).strval() == "3")
+println((b-a).strval() == "-3")

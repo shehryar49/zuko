@@ -1,0 +1,13 @@
+import json
+
+var user = {
+    "username": "ali",
+    "password": "password",
+    "age": 25,
+    "married": false,
+    "nickname": nil
+}
+
+var str = json.dumps(user)
+var userConvertedBack = json.loads(str)
+println(userConvertedBack == user)
