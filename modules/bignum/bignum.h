@@ -26,6 +26,7 @@ SOFTWARE.*/
 #include <exception>
 #include <stdexcept>
 #include <algorithm>
+#include <cstdint>
 
 using namespace std;
 class bignum
