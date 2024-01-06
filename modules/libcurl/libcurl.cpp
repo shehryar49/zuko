@@ -270,8 +270,8 @@ ZObject MIME_CONTENTTYPE(ZObject* args,int n)
       return Z_Err(TypeError,"Argument 1 must be a MimePart object");
   KlassObject* d = (KlassObject*)args[0].ptr;
   MimePart* obj = (MimePart*)AS_PTR(KlassObj_getMember(d,".handle"));
-  string& name = *(string*)args[1].ptr;
-  curl_mime_type(obj->mimepart,name.c_str());
+  ZStr* name = AS_STR(args[1]);
+  curl_mime_type(obj->mimepart,name->val);
   return nil;
 }
 ZObject MIME_DATA(ZObject* args,int n)
@@ -347,13 +347,10 @@ ZObject setopt(ZObject* args,int n)
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)KlassObj_getMember(d,".handle").ptr;
-      obj->url = *(string*)args[2].ptr;
+      obj->url = AS_STR(args[2])->val;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->url.c_str());
       if( res!= CURLE_OK)
-      {
         return Z_Err(Error,curl_easy_strerror(res));
-        
-      }
       
     }
     else if(opt==CURLOPT_FOLLOWLOCATION)
@@ -464,7 +461,7 @@ ZObject setopt(ZObject* args,int n)
       }
       KlassObject* d = (KlassObject*)args[0].ptr;
       CurlObject* obj = (CurlObject*)KlassObj_getMember(d,".handle").ptr;
-      obj->useragent = *(string*)args[2].ptr;
+      obj->useragent = AS_STR(args[2])->val;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->useragent.c_str());
       if( res!= CURLE_OK)
       {
