@@ -134,7 +134,7 @@ EXPORT ZObject socket_Bind(ZObject* args, int n)
     server.sin_addr.s_addr = inet_addr(addr->val);
     server.sin_port = htons(args[2].i);
     
-    int ret = bind(s,(sockaddr*)&server,sizeof(server));
+    int ret = ::bind(s,(sockaddr*)&server,sizeof(server));
     #ifdef _WIN32
       if (ret == SOCKET_ERROR)
       {
