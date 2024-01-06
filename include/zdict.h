@@ -187,6 +187,11 @@ void ZDict_assign(ZDict* h,ZDict* other) // makes deep copy
     ZDict_emplace(h,other->table[idx].key,other->table[idx].val);
   }
 }
+void ZDict_clear(ZDict* h)
+{
+  for(size_t idx=0;idx<h->capacity;idx++)
+    h->table[idx].stat = EMPTY;
+}
 void ZDict_destroy(ZDict* h)
 {
   free(h->table);
