@@ -1127,13 +1127,13 @@ public:
         k++;
         memcpy(&i1, k, 4);
         k += 4;
-        string method_name = strings[i1].val;//OPTIMIZE
+        const char* method_name = strings[i1].val;//OPTIMIZE
         i2 = *k;
         p1 = STACK.arr[STACK.size-i2-1]; // Parent object from which member is being called
         if (p1.type == Z_MODULE)
         {
           Module *m = (Module *)p1.ptr;
-          if (!StrMap_get(&(m->members),method_name.c_str(),&p3))
+          if (!StrMap_get(&(m->members),method_name,&p3))
           {
             spitErr(NameError, "Error the module has no member " + (string)method_name + "!");
             NEXT_INST;
@@ -1224,9 +1224,9 @@ public:
           KlassObject *obj = (KlassObject *)p1.ptr;
           ZObject tmp;
 
-          if (!StrMap_get(&(obj->members),method_name.c_str(),&tmp))
+          if (!StrMap_get(&(obj->members),method_name,&tmp))
           {
-            if (StrMap_get(&(obj->privateMembers),method_name.c_str(),&tmp))
+            if (StrMap_get(&(obj->privateMembers),method_name,&tmp))
             {
               FunObject *p = executing.back();
               if (p == NULL)
@@ -1238,13 +1238,13 @@ public:
                 p4 = tmp;
               else
               {
-                spitErr(NameError, "Error " + method_name + " is private member of object!");
+                spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
                 NEXT_INST;
               }
             }
             else
             {
-              spitErr(NameError, "Error object has no member " + method_name);
+              spitErr(NameError, "Error object has no member " + (string)method_name);
               NEXT_INST;
             }
           }
@@ -1295,7 +1295,7 @@ public:
           }
           else
           {
-            spitErr(NameError, "Error member " + method_name + " of object is not callable!");
+            spitErr(NameError, "Error member " + (string)method_name + " of object is not callable!");
             NEXT_INST;
           }
         }
@@ -1304,7 +1304,8 @@ public:
           if(i2!=0)
             p4 = STACK.arr[STACK.size - 1];
           Coroutine *g = (Coroutine *)p1.ptr;
-          if (method_name == "isAlive")
+          s1 = method_name;
+          if (s1 == "isAlive")
           {
             if(i2!=0)
             {
@@ -1320,9 +1321,9 @@ public:
             k++;
             NEXT_INST;
           }
-          if (method_name != "resume")
+          if (s1 != "resume")
           {
-            spitErr(NameError, "Error couroutine object has no member " + method_name);
+            spitErr(NameError, "Error couroutine object has no member " + s1);
             NEXT_INST;
           }
 
@@ -1436,18 +1437,18 @@ public:
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {
-            spitErr(ImportError, "dlopen(): " + (std::string)(dlerror()));
+            spitErr(ImportError, (std::string)(dlerror()));
             NEXT_INST;
           }
           initFun f = (initFun)dlsym(module, "init");
           apiFun a = (apiFun)dlsym(module, "api_setup");
         #endif
         #ifdef __APPLE__
-          s1 = "/opt/zuko/modules"+s1+".dynlib";
+          s1 = "/opt/zuko/modules/"+s1+".dylib";
           void *module = dlopen(s1.c_str(), RTLD_LAZY);
           if (!module)
           {
-            spitErr(ImportError, "dlopen(): " + (std::string)(dlerror()));
+            spitErr(ImportError, (std::string)(dlerror()));
             NEXT_INST;
           }
           initFun f = (initFun)dlsym(module, "init");
@@ -3125,7 +3126,7 @@ public:
           NEXT_INST;
         }
         ZObject c;
-        char t;
+        char t = 0;
         if(a.type == b.type && isNumeric(a.type))
           t = a.type;
         else if (isNumeric(a.type) && isNumeric(b.type))
