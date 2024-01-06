@@ -23,6 +23,8 @@ sudo cp -r std /opt/zuko
 sudo cp -r fiza /opt/zuko
 sudo cp fiza.zk /opt/zuko/
 sudo cp modules/*.so /opt/zuko/modules/
+sudo cp modules/*.dylib /opt/zuko/modules/
+
 # Copy dev kit
 sudo cp include/coroutineobj.h /opt/zuko/include
 sudo cp include/funobject.h /opt/zuko/include
@@ -42,8 +44,8 @@ sudo cp include/zstr.h /opt/zuko/include
 
 sudo chmod 777 /opt/zuko/fiza/packages.txt
 sudo chmod +x /opt/zuko/fiza
-sudo ln -s /opt/zuko/zuko /usr/bin/zuko
-sudo ln -s /opt/zuko/fiza.zk /usr/bin/fiza
+sudo ln -s /opt/zuko/zuko /usr/local/bin/zuko
+sudo ln -s /opt/zuko/fiza.zk /usr/local/bin/fiza
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then
