@@ -66,17 +66,22 @@ void ZDict_set(ZDict* h,ZObject key,ZObject val)
 {
   size_t idx = hashZObject(key,h->capacity);
   int i = 1;
+  bool reassigned = false;
   while(h->table[idx].stat == OCCUPIED)
   {
     if(ZObject_equals(h->table[idx].key,key)) //same key, just reassign value
+    {
+      reassigned = true;
       break;
+    }
     idx = (idx + i*i)  & (h->capacity - 1);
     i++;
   }
   h->table[idx].key = key;
   h->table[idx].val = val;
   h->table[idx].stat = OCCUPIED;
-  (h->size)++;
+  if(!reassigned)
+    (h->size)++;
   if(h->size  == 0.75f* h->capacity) //rehash
   {
     slot* newArr = (slot*)malloc(sizeof(slot)*(h->capacity*2));

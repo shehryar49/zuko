@@ -718,11 +718,31 @@ public:
       }
       else if (p3.type == Z_NATIVE_FUNC)
       {
-        NativeFunction *fn = (NativeFunction *)p3.ptr;
+        NativeFunction *fn = (NativeFunction*)p3.ptr;
         NativeFunPtr M = fn->addr;
         ZObject rr;
         
         ZObject argArr[2] = {A, (!rhs) ? nil : *rhs};
+        // do typechecking 
+        if(fn->signature)
+        {
+          size_t len = strlen(fn->signature);
+          if(len != 2)
+          {
+            spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, 2 given!");
+            return false;
+          }
+          size_t i = 0;
+          while(i<2)
+          {
+            if(argArr[i].type != fn->signature[i])
+            {
+              spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+              return false;
+            }
+            i+=1;
+          }
+        }
         rr = M(argArr, args);
         if (rr.type == Z_ERROBJ)
         {
@@ -1143,6 +1163,25 @@ public:
             NativeFunction *fn = (NativeFunction *)p3.ptr;
             NativeFunPtr f = fn->addr;
             ZObject *argArr = &STACK.arr[STACK.size-i2];
+            if(fn->signature)
+            {
+              size_t len = strlen(fn->signature);
+              if(len != i2)
+              {
+                spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, "+to_string(i2)+" given!");
+                NEXT_INST;
+              }
+              size_t i = 0;
+              while(i<i2)
+              {
+                if(argArr[i].type != fn->signature[i])
+                {
+                  spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+                  NEXT_INST;
+                }
+                i+=1;
+              }
+            }
             p4 = f(argArr, i2);
 
             if (p4.type == Z_ERROBJ)
@@ -1182,6 +1221,25 @@ public:
               NativeFunPtr p = fn->addr;
 
               ZObject *args = &STACK.arr[STACK.size-i2-1];
+              if(fn->signature)
+              {
+                size_t len = strlen(fn->signature);
+                if(len != i2)
+                {
+                  spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, "+to_string(i2)+" given!");
+                  NEXT_INST;
+                }
+                size_t i = 0;
+                while(i<i2)
+                {
+                  if(args[i].type != fn->signature[i])
+                  {
+                    spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+                    NEXT_INST;
+                  }
+                  i+=1;
+                }
+              }
               p1 = p(args, i2 + 1);
               if (p1.type == Z_ERROBJ)
               {
@@ -1195,7 +1253,7 @@ public:
               }
             }
 
-            ZList_eraseRange(&STACK,STACK.size-i2,STACK.size-1);
+            STACK.size -= i2;
             DoThreshholdBusiness();
           }
           else // that's it modules cannot have zuko code functions (at least not right now)
@@ -1281,6 +1339,25 @@ public:
             NativeFunPtr R = fn->addr;
             ZObject *args = &STACK.arr[STACK.size-i2-1];
             ZObject rr;
+            if(fn->signature)
+            {
+              size_t len = strlen(fn->signature);
+              if(len != i2+1)
+              {
+                spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, "+to_string(i2)+" given!");
+                NEXT_INST;
+              }
+              size_t i = 0;
+              while(i<i2+1)
+              {
+                if(args[i].type != fn->signature[i])
+                {
+                  spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+                  NEXT_INST;
+                }
+                i+=1;
+              }
+            }
             rr = R(args, i2 + 1);
             if (rr.type == Z_ERROBJ)
             {
@@ -2794,6 +2871,26 @@ public:
           NativeFunction *A = (NativeFunction *)fn.ptr;
           NativeFunPtr f = A->addr;
           p4.type = Z_NIL;
+          ZObject* args = STACK.arr + (STACK.size-N);
+          if(A->signature)
+          {
+            size_t len = strlen(A->signature);
+            if(len != N)
+            {
+              spitErr(ArgumentError,(string)"Native function "+ (string)A->name + (string)" takes "+to_string(len)+" arguments, "+to_string(N)+" given!");
+              NEXT_INST;
+            }
+            size_t i = 0;
+            while(i<N)
+            {
+              if(args[i].type != A->signature[i])
+              {
+                spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)A->name+(string)+"should be a "+fullform(A->signature[i]));
+                NEXT_INST;
+              }
+              i+=1;
+            }
+          }
           p4 = f(&(STACK.arr[STACK.size - N]), N);
           if (p4.type == Z_ERROBJ)
           {
@@ -2852,6 +2949,25 @@ public:
               r.ptr = (void *)obj;
               ZList_insert(&STACK,STACK.size - N,r);
               args = &STACK.arr[STACK.size - (N + 1)];
+              if(M->signature)
+              {
+                size_t len = strlen(M->signature);
+                if(len != N+1)
+                {
+                  spitErr(ArgumentError,(string)"Native function "+ (string)M->name + (string)" takes "+to_string(len)+" arguments, "+to_string(N+1)+" given!");
+                  NEXT_INST;
+                }
+                size_t i = 0;
+                while(i<N+1)
+                {
+                  if(args[i].type != M->signature[i])
+                  {
+                    spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)M->name+(string)+"should be a "+fullform(M->signature[i]));
+                    NEXT_INST;
+                  }
+                  i+=1;
+                }
+              }
               p4 = M->addr(args, N + 1);
               ZList_eraseRange(&STACK,STACK.size-(N+1),STACK.size-1);
               if (p4.type == Z_ERROBJ)
@@ -3732,6 +3848,7 @@ NativeFunction* vm_allocNativeFunObj()
     fprintf(stderr,"allocNativeFun(): error allocating memory!\n");
     exit(0);
   }
+  p->signature = NULL;
   vm.allocated += sizeof(NativeFunction);
   MemInfo m;
   m.type = Z_NATIVE_FUNC;
@@ -3742,7 +3859,7 @@ NativeFunction* vm_allocNativeFunObj()
 //callObject also behaves as a kind of try/catch since v0.31
 bool vm_callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
 {
-
+  static char buffer[1024];
   if(obj->type == Z_FUNC)
   {
      FunObject* fn = (FunObject*)obj->ptr;
@@ -3774,7 +3891,27 @@ bool vm_callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
     NativeFunction *A = (NativeFunction *)obj->ptr;
     NativeFunPtr f = A->addr;
     ZObject p4;
-
+    if(A->signature)
+    {
+      size_t len = strlen(A->signature);
+      if(len != N)
+      {
+        snprintf(buffer,1024,"Native function %s takes %zu arguments, %d given!",A->name,len,N);       
+        *rr = Z_Err(ArgumentError,buffer);
+        return false;
+      }
+      size_t i = 0;
+      while(i<N)
+      {
+        if(args[i].type != A->signature[i])
+        {
+          snprintf(buffer,1024,"Argument %zu to %s must be a %s\n",i+1,A->name,fullform(A->signature[i]).c_str());
+          *rr = Z_Err(TypeError,buffer);
+          return false;
+        }
+        i+=1;
+      }
+    }
     p4 = f(args, N);
 
     if (p4.type == Z_ERROBJ)

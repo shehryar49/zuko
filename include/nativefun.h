@@ -8,6 +8,7 @@ typedef struct NativeFunction
   Klass* klass;//address of class the function is member of (if any NULL otherwise)
   NativeFunPtr addr;
   const char* name;//name of function (used when printing errors)
+  const char* signature; //type string if any NULL otherwise
   #ifdef __cpluscplus
     NativeFunction& operator=(const NativeFunction&) = delete;
     NativeFunction(const NativeFunction&) = delete;

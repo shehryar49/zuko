@@ -346,6 +346,13 @@ void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p)
   ZObject val = ZObjFromFunction(name,p);
   StrMap_emplace(&(m->members),name,val);
 }
+void Module_addSigNativeFun(Module* m,const char* name,NativeFunPtr p,const char* sig)
+{
+  ZObject val = ZObjFromFunction(name,p);
+  NativeFunction* fn = (NativeFunction*)val.ptr;
+  fn->signature = sig;
+  StrMap_emplace(&(m->members),name,val);
+}
 void Module_addKlass(Module* m,const char* name,Klass* p)
 {
   ZObject val = ZObjFromKlass(p);
@@ -361,6 +368,13 @@ void Module_addMember(Module* m,const char* name,ZObject val)
 void Klass_addNativeMethod(Klass* k,const char* name,NativeFunPtr p)
 {
   ZObject val = ZObjFromMethod(name,p,k);
+  StrMap_emplace(&(k->members),name,val);
+}
+void Klass_addSigNativeMethod(Klass* k,const char* name,NativeFunPtr p,const char* sig)
+{
+  ZObject val = ZObjFromMethod(name,p,k);
+  NativeFunction* fn = (NativeFunction*)val.ptr;
+  fn->signature = sig;
   StrMap_emplace(&(k->members),name,val);
 }
 void Klass_addMember(Klass* k,const char* name,ZObject val)

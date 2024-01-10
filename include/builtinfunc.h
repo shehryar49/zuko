@@ -108,6 +108,7 @@ ZObject TOCHAR(ZObject* args,int32_t argc)
 string unescape(string);
 void printZDict(ZDict* l,vector<void*> seen = {})
 {
+  printf("dict size = %zu\n",l->size);
   if(std::find(seen.begin(),seen.end(),(void*)l)!=seen.end())
   {
     printf("{...}");
