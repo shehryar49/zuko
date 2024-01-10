@@ -15,7 +15,7 @@ binaries distributed under release tags. Because these are the options that were
 To install your build create C:\zuko and copy zuko.exe to it. **Note that binaries for Windows are already available. See releases. So you don't really have to build zuko from source on Windows unless you want to contribute.**
     
 ## Linux/Unix:
-Just run the shell script install.sh it will build,test and install zuko. It uses CMake for the build process. Also make sure you have libreadline-dev installed on your system. This is used by the Zuko REPL on Unix like systems. The installation path is /opt/zuko. The install.sh script also creates a symbolic link of /opt/zuko/zuko in /usr/bin . NOTE: Mac OS users will have to configure PATH manually because the symbolic link creation in /usr/bin is not allowed there.
+Just run the shell script install.sh it will build,test and install zuko. It uses CMake for the build process. Also make sure you have libreadline-dev installed on your system. This is used by the Zuko REPL on Unix like systems. The installation path is /opt/zuko. The install.sh script also creates a symbolic link of /opt/zuko/zuko in /usr/local/bin 
    
 
 ## Testing your build
