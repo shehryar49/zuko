@@ -56,11 +56,11 @@ endif()
 # windows specific modules
 if(WIN32)
   # conio
-  add_library(conio SHARED modules/conio/conio.cpp modules/conio/conio.h)
-  set_target_properties(conio PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+  # add_library(conio SHARED modules/conio/conio.cpp modules/conio/conio.h)
+  # set_target_properties(conio PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
   # console
-  add_library(console SHARED modules/console/console.cpp modules/console/console.h)
-  set_target_properties(console PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
+  # add_library(console SHARED modules/console/console.cpp modules/console/console.h)
+  # set_target_properties(console PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
 endif()
 
 # Third party library bindings
