@@ -35,6 +35,10 @@ int validateArgTypes(string e,ZObject* args,int n)
 Klass* socketKlass;
 Klass* udpResKlass;
 ZObject nil;
+inline ZObject quickErr(Klass* k,string msg) // uses std::string instead of cstring
+{
+  return Z_Err(k,msg.c_str());
+}
 EXPORT ZObject init()
 {
     nil.type = Z_NIL;
@@ -83,10 +87,7 @@ EXPORT ZObject socket_del__( ZObject* args, int n)
 {
     return nil;
 }
-inline ZObject quickErr(Klass* k,string msg) // uses std::string instead of cstring
-{
-  return Z_Err(k,msg.c_str());
-}
+
 EXPORT ZObject socket__construct(ZObject* args, int n)
 {
   int e = validateArgTypes("oii", args, n);
@@ -253,7 +254,7 @@ EXPORT ZObject socket_Send(ZObject* args, int n)
 
     SOCKTYPE s = AS_INT(KlassObj_getMember(p,".sock"));
     ZByteArr* l = AS_BYTEARRAY(args[1]);
-    int ret = send(s,l->arr,l->size,0);
+    int ret = send(s,(const char*)l->arr,l->size,0);
     #ifdef _WIN32
       if(ret == SOCKET_ERROR)
       {
