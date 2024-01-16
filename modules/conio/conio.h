@@ -1,11 +1,11 @@
 #pragma once
-#include "PltObject.h"
+#include "zapi.h"
 #define EXPORT __declspec(dllexport)
 
 extern "C"
 {
-	EXPORT PltObject init();
-	EXPORT PltObject GETCH(PltObject*, int);
-	EXPORT PltObject GETCHE(PltObject*, int);
-	EXPORT PltObject KBHIT(PltObject*, int);
+	EXPORT ZObject init();
+	EXPORT ZObject GETCH(ZObject*, int);
+	EXPORT ZObject GETCHE(ZObject*, int);
+	EXPORT ZObject KBHIT(ZObject*, int);
 }

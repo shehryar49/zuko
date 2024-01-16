@@ -1,40 +1,31 @@
 #include "conio.h"
 #include <conio.h>
-PltObject init()
+ZObject init()
 {
 	Module* d = vm_allocModule();
 	d->name = "conio";
-	d->members.emplace(("kbhit"), PObjFromFunction("conio.kbhit", &KBHIT));
-	d->members.emplace(("getch"), PObjFromFunction("conio.getch", &GETCH));
-	d->members.emplace(("getche"), PObjFromFunction("conio.getche", &GETCHE));
-	return PObjFromModule(d);
+	Module_addNativeFun(d,"kbhit", &KBHIT);
+	Module_addNativeFun(d,"getch", &GETCH);
+	Module_addNativeFun(d,"getche",&GETCHE);
+	return ZObjFromModule(d);
 }
 
-PltObject GETCH(PltObject* args, int n)
+ZObject GETCH(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
-		
-	}
-	return PObjFromInt(_getch());
+	  return Z_Err(ArgumentError, "0 arguments needed!");
+	return ZObjFromInt(_getch());
 }
 
-PltObject GETCHE(PltObject* args, int n)
+ZObject GETCHE(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
-		
-	}
-	return PObjFromInt(_getche());
+	  return Z_Err(ArgumentError, "0 arguments needed!");
+	return ZObjFromInt(_getche());
 }
-PltObject KBHIT(PltObject* args, int n)
+ZObject KBHIT(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
-
-	}
-	return PObjFromBool(_kbhit());
+	  return Z_Err(ArgumentError, "0 arguments needed!");
+	return ZObjFromBool(_kbhit());
 }
