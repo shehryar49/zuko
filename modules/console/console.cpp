@@ -1,88 +1,70 @@
 
 #include "console.h"
 #include <Windows.h>
-PltObject nil;
-PltObject init()
+
+ZObject nil;
+ZObject init()
 {
-	nil.type = PLT_NIL;
+	nil.type = Z_NIL;
 	Module* m = vm_allocModule();
 	m->name = "console";
-	m->members.emplace(("setTextAttribute"),PObjFromFunction("setTextAttribute",&setTextAttribute));
-	m->members.emplace(("show"), PObjFromFunction("show", &show));
-	m->members.emplace(("hide"), PObjFromFunction("hide", &hide));
-	m->members.emplace(("gotoxy"), PObjFromFunction("gotoxy", &gotoxy));
-	m->members.emplace(("getDimensions"), PObjFromFunction("getDimensions", &getDimensions));
+	Module_addNativeFun(m,"setTextAttribute",&setTextAttribute);
+	Module_addNativeFun(m,"show", &show);
+	Module_addNativeFun(m,"hide", &hide);
+	Module_addNativeFun(m,"gotoxy", &gotoxy);
+	Module_addNativeFun(m,"getDimensions", &getDimensions);
 
-	return PObjFromModule(m);
+	return ZObjFromModule(m);
 }
 
-PltObject setTextAttribute(PltObject* args, int n)
+ZObject setTextAttribute(ZObject* args, int n)
 {
 	if (n != 1)
-	{
-		return Plt_Err(ArgumentError, "1 argument needed!");
-		
-	}
-	
-	if (args[0].type != PLT_INT)
-	{
-		return Plt_Err(TypeError, "Integer 32 bit needed!");
-		
-	}
+		return Z_Err(ArgumentError, "1 argument needed!");
+	if (args[0].type != Z_INT)
+		return Z_Err(TypeError, "Integer 32 bit needed!");
+
 	HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hand, args[0].i);
 	return nil;
 }
-PltObject show(PltObject* args, int n)
+ZObject show(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
+	  return Z_Err(ArgumentError, "0 arguments needed!");
 		
-	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
 	return nil;
 }
-PltObject hide(PltObject* args, int n)
+ZObject hide(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
-		
-	}
+		return Z_Err(ArgumentError, "0 arguments needed!");
 	ShowWindow(GetConsoleWindow(), SW_HIDE);
 	return nil;
 }
-PltObject getDimensions(PltObject* args, int n)
+ZObject getDimensions(ZObject* args, int n)
 {
 	if (n != 0)
-	{
-		return Plt_Err(ArgumentError, "0 arguments needed!");
-		
-	}
+	  return Z_Err(ArgumentError, "0 arguments needed!");
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int c, r;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 	c = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	r = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-	PltList* dim = vm_allocList();
-	dim->push_back(PObjFromInt(r));
-	dim->push_back(PObjFromInt(c));
-	return PObjFromList(dim);
+	ZList* dim = vm_allocList();
+	ZList_push(dim,ZObjFromInt(r));
+	ZList_push(dim,ZObjFromInt(c));
+	return ZObjFromList(dim);
 }
 
-PltObject gotoxy(PltObject* args, int n)
+ZObject gotoxy(ZObject* args, int n)
 {
 	if (n != 2)
-	{
-		return Plt_Err(ArgumentError, "2 arguments needed!");
-		
-	}
+		return Z_Err(ArgumentError, "2 arguments needed!");
 	if (args[0].type != 'i' || args[1].type != 'i')
-	{
-		return Plt_Err(TypeError, "Integer argument needed!");
+		return Z_Err(TypeError, "Integer argument needed!");
 		
-	}
 	COORD pos = { args[0].i,args[1].i };
 	HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleCursorPosition(hand,pos);
