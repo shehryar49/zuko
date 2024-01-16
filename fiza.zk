@@ -12,10 +12,17 @@ import libcurl
 
 var openedFile = nil
 var size = 0
-var clearCommand = nil
+
+function clearScreen()
+{
+  if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+    system("cls")
+  else
+    system("clear")
+}
 function WriteMemory(var bytes)
 {
-  system(clearCommand)
+  clearScreen()
   size+=len(bytes)
   println("Downloaded ",size, " bytes ")
   fwrite(bytes,openedFile)
@@ -127,15 +134,9 @@ else if(len(argv) == 2)
   {
     var srcfile = nil
     if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
-    {
       srcfile = open("C:\\zuko\\fiza\\packages.txt","r")
-      clearCommand = "cls"
-    }
     else
-    {
       srcfile = open("/opt/zuko/fiza/packages.txt","r")
-      clearCommand = "clear"
-    }
     var lines = readlines(srcfile)
     var url = nil
     var ver = nil
