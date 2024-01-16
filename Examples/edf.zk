@@ -1,4 +1,4 @@
-import std/algo.plt
+import std/algo
 class Process
 {
   var capacity = nil
