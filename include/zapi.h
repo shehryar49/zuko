@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef ZUKO_API_H
 #define ZUKO_API_H
-
+#define ZUKO_API_VERSION 1
 #include "zobject.h"
 #include "zstr.h"
 #include "zbytearray.h"
@@ -263,8 +263,10 @@ fn13 vm_unmarkImportant;
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-void api_setup(apiFuncions* p)
+int api_setup(apiFuncions* p,int ver)
 {
+  if(ver != ZUKO_API_VERSION)
+    return 0;  
   vm_allocList = p->a1;
   vm_allocDict = p->a2;
   vm_allocString = p->a3;
@@ -294,6 +296,7 @@ void api_setup(apiFuncions* p)
   ThrowError = p->k14;
   MaxRecursionError = p->k15;
   AccessError = p->k16;
+  return 1;
 }
 
 #endif

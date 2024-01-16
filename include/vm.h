@@ -1496,7 +1496,7 @@ public:
         k += 3;
         s1 = strings[i1].val;
         typedef ZObject (*initFun)();
-        typedef void (*apiFun)(apiFuncions *);
+        typedef int (*apiFun)(apiFuncions *,int);
         #ifdef _WIN32
           s1 = "C:\\zuko\\modules\\" + s1 + ".dll";
           HINSTANCE module = LoadLibraryA(s1.c_str());
@@ -1541,7 +1541,12 @@ public:
           spitErr(ImportError, "Error api_setup() function not found in the module");
           NEXT_INST;
         }
-        a(&api);
+        int ret = a(&api,ZUKO_API_VERSION);
+        if(!ret)
+        {
+          spitErr(ImportError,"The module is not compatible with this interpreter! It uses a different version of extension api.");
+          NEXT_INST;
+        }
         p1 = f();
         if (p1.type != Z_MODULE)
         {
