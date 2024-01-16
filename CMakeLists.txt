@@ -46,6 +46,9 @@ set_target_properties(cgi PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 # socket
 add_library(socket SHARED modules/socket/socket.cpp modules/socket/socket.h)
 set_target_properties(socket PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
+# base64
+add_library(base64 SHARED modules/base64/base64.cpp modules/base64/base64.h)
+set_target_properties(base64 PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 
 
 # linux specific modules
