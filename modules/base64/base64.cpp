@@ -38,7 +38,7 @@ char reverse_base64(char ch)
     return 63;
   return 69;
 }
-std::string base64_encode(const char* blob,size_t len)
+std::string base64_encode(unsigned char* blob,size_t len)
 {
 
   std::string res;
@@ -89,7 +89,7 @@ std::string base64_encode(const char* blob,size_t len)
   }
   return res;
 }
-ZByteArr* base64_decode(const char* str,size_t len)
+ZByteArr* base64_decode(unsigned char* str,size_t len)
 {
   if(len == 0)
     return nullptr;
@@ -143,18 +143,18 @@ ZObject ENCODE(ZObject* args,int32_t n)
 {
   if(n!=1)
     return Z_Err(ArgumentError,"1 argument needed!");
-  const char* val;
+  unsigned char* val;
   size_t len;
   if(args[0].type == Z_STR)
   {
     auto str = AS_STR(args[0]);
-    val = str->val;
+    val = (unsigned char*)str->val;
     len = str->len;
   }
   else if(args[0].type == Z_BYTEARR)
   {
     auto arr = AS_BYTEARRAY(args[0]);
-    val = (const char*)arr->arr;
+    val = (unsigned char*)arr->arr;
     len = arr->size;
   }
   else
@@ -166,7 +166,7 @@ ZObject ENCODE(ZObject* args,int32_t n)
 ZObject DECODE(ZObject* args,int32_t n)
 {
   ZStr* str = AS_STR(args[0]);
-  ZByteArr* arr = base64_decode(str->val,str->len);
+  ZByteArr* arr = base64_decode((unsigned char*)str->val,str->len);
   if(!arr)
     return Z_Err(Error,"Invalid base64! Unable to decode!");
   return ZObjFromByteArr(arr);
