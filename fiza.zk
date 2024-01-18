@@ -125,6 +125,21 @@ else if(len(argv)==1 and argv[0]=="list")
   listPackages()
 else if(len(argv) == 1 and argv[0]=="clean")
   clean()
+else if(len(argv) == 2 and argv[0] == "list" and argv[1] == "available")
+{
+  var srcfile = nil
+  if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+    srcfile = open("C:\\zuko\\fiza\\packages.txt","r")
+  else
+    srcfile = open("/opt/zuko/fiza/packages.txt","r")
+  var lines = readlines(srcfile)
+  close(srcfile)
+  foreach(var line: lines)
+  {
+    var parts = split(line," ")
+    println(parts[0])
+  }
+}
 else if(len(argv) == 2)
 {
   var action = argv[0]
