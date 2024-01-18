@@ -1,2 +1,1 @@
-sfml https://github.com/shehryar49/pltSFML v1.0.0
-pluto https://github.com/Nafees10/plutoc v0.1.3
+

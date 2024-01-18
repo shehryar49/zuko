@@ -12,7 +12,7 @@ import libcurl
 
 var openedFile = nil
 var size = 0
-
+var ZUKO_VERSION = "v0.3.2"
 function clearScreen()
 {
   if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
@@ -97,7 +97,7 @@ function clean()
 function updatePackageList()
 {
   var c = libcurl.Curl()
-  c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/packages.txt")
+  c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/"+ZUKO_VERSION+"/packages.txt")
   c.setopt(libcurl.OPT_FOLLOWLOCATION,1)
   c.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
   var res = c.perform()
@@ -165,7 +165,6 @@ else if(len(argv) == 2)
     }
     catch(err)
     {
-      var woman = bytearray([])
       println("[-] ",err.msg)
       print("[-] Installation failed 🤷‍🤷\n")
       exit()
@@ -188,4 +187,3 @@ else
   println("\tupdate")
   println("\tlist")
 }
-var whatever = "🤷‍♀️💃🏻🫦💁‍♀️🧕"
