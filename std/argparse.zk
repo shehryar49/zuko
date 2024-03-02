@@ -30,7 +30,7 @@ namespace argparse
                     {
                         if(j+1 >= m)
                         {
-                          printf("Required % after -% option!\n",name,opt)
+                          printf("Required % after -% option!",name,opt)
                           var idk = ""
                           foreach(var arg: argv)
                           {
