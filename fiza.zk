@@ -66,6 +66,7 @@ function installPackage(var name,var url,var ver)
     if(ret != 0)
       throw Error("[-] Failed to copy files")
     ret = system("rm -rf fizatmp && rm fizatmp.tar.gz")
+    
   }
 }
 function removePackage(var name)
