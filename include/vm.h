@@ -23,6 +23,7 @@ SOFTWARE.*/
 #define VM_H_
 #include "zuko.h"
 #include "zstr.h"
+#include <dlfcn.h>
 
 #ifdef THREADED_INTERPRETER
   #ifdef __GNUC__
@@ -1510,12 +1511,17 @@ public:
           
         #endif
         #ifdef __linux__
-          s1 = "/opt/zuko/modules/" + s1 + ".so";
-          void *module = dlopen(s1.c_str(), RTLD_LAZY);
-          if (!module)
+          s2 = "./modules/"+s1+".so";
+          void* module = dlopen(s2.c_str(),RTLD_LAZY);
+          if(!module)
           {
-            spitErr(ImportError, (std::string)(dlerror()));
-            NEXT_INST;
+            s1 = "/opt/zuko/modules/" + s1 + ".so";
+            module = dlopen(s1.c_str(), RTLD_LAZY);
+            if (!module)
+            {
+              spitErr(ImportError, (std::string)(dlerror()));
+              NEXT_INST;
+            }
           }
           initFun f = (initFun)dlsym(module, "init");
           apiFun a = (apiFun)dlsym(module, "api_setup");
