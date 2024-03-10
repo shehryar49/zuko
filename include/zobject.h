@@ -117,7 +117,7 @@ bool ZObject_equals(ZObject lhs,ZObject other)
     ZByteArr* b = (ZByteArr*)other.ptr;
     return a == b || ZByteArr_equal(a,b);
   }
-  else if(other.type=='y' || other.type=='r' || other.type == Z_CLASS)
+  else if(other.type=='y' || other.type=='r' || other.type == Z_CLASS || other.type==Z_POINTER)
     return lhs.ptr==other.ptr;
   else if(lhs.type=='q' || lhs.type=='z')
     return lhs.ptr==other.ptr;
