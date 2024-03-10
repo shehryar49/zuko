@@ -120,6 +120,7 @@ ZObject *StrMap_getRef(StrMap *h, const char *key) {
   int i = 1;
   while (h->table[idx].stat != SM_EMPTY) {
     if (strcmp(h->table[idx].key, key) == 0) {
+
       return &(h->table[idx].val);
     }
     idx = (idx + i * i) & (h->capacity - 1);
