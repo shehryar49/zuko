@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
+#include "zlist.h"
 #include "zuko.h"
 #include "zstr.h"
 #include <dlfcn.h>
@@ -453,6 +454,9 @@ public:
             it->second.isMarked = true;
             ZList_push(&aux,e.val);
           }
+          if( (it = memory.find((void*)e.key)) != memory.end() )
+            it->second.isMarked = true;
+          
         }
         for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
         {
@@ -464,6 +468,8 @@ public:
             it->second.isMarked = true;
             ZList_push(&aux,e.val);
           }
+          if( (it = memory.find((void*)e.key)) != memory.end() )
+            it->second.isMarked = true;
         }
       }
       else if (curr.type == Z_NATIVE_FUNC)
