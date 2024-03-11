@@ -60,12 +60,14 @@ string IntToHex(int i)
 unsigned char tobyte(const string& s)
 {
     //s.length() is always 2
-    //and alphabets are in lowercase
+
     if(s.length() != 2)
       return 0;
+    char x = tolower(s[0]);
+    char y = tolower(s[1]);
     unsigned char b = 0;
-    b = (isdigit(s[1])) ? s[1]-48 : s[1]-87;
-    b += (isdigit(s[0])) ? (s[0]-48)<<4 : (s[0]-87)<<4;
+    b = (isdigit(y)) ? y-48 : y-87;
+    b += (isdigit(x)) ? (x-48)<<4 : (x-87)<<4;
     return b;
 }
 int32_t hexToInt32(const string& s)
@@ -150,6 +152,18 @@ string addlnbreaks(string s,bool& hadErr)
             else if(s[k]=='a')
             {
                 r+='\a';
+            }
+            else if(s[k] == 'x')
+            {
+              if(k+2 >= s.length())
+              {
+                hadErr = true;
+                return "Expected characters after '\\x' ";
+              }
+              string tmp = s.substr(k+1,2);
+              unsigned char ch = tobyte(tmp);
+              r += ch;
+              k += 2;
             }
             else if(s[k]=='"')
             {
