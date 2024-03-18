@@ -1,8 +1,15 @@
 #ifndef NATIVEFUN_H_
 #define NATIVEFUN_H_
-#include "zapi.h"
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+typedef struct ZObject ZObject;
+typedef struct Klass Klass;
 
 typedef ZObject(*NativeFunPtr)(ZObject*,int);
+
 typedef struct NativeFunction
 {
   Klass* klass;//address of class the function is member of (if any NULL otherwise)
@@ -14,4 +21,9 @@ typedef struct NativeFunction
     NativeFunction(const NativeFunction&) = delete;
   #endif
 }NativeFunction;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

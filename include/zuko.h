@@ -1,6 +1,6 @@
 #ifndef ZUKO_H_
 #define ZUKO_H_
-#define ZUKO_INTERPRETER 
+
 #define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
 //not defining this macro will always result in the simple switch based interpret loop
 #include <vector>
@@ -26,7 +26,7 @@
 #endif
 #include "zapi.h"
 using namespace std;
-typedef ZObject(*BuiltinFunc)(ZObject*,int32_t);
+
 void PromoteType(ZObject&,char t);
 string fullform(char);
 string ZObjectToStr(const ZObject&);
@@ -47,4 +47,5 @@ unsigned char tobyte(const string&);
 #include "utility.h"
 #include "programinfo.h"
 #include "repl.h"
+#include "zfileobj.h"
 #endif

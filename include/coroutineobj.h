@@ -1,7 +1,6 @@
 #ifndef COROUTINEOBJ_H_
 #define COROUTINEOBJ_H_
-#include "zapi.h"
-
+#include "funobject.h"
 typedef enum CoState
 {
   SUSPENDED,

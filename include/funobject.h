@@ -1,7 +1,8 @@
 #ifndef ZUKO_FUNOBJ_H_
 #define ZUKO_FUNOBJ_H_
-#include "zapi.h"
+//#include "zapi.h"
 #include "klass.h"
+#include "zlist.h"
 // Struct to represent zuko code functions
 typedef struct FunObject
 {

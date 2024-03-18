@@ -102,78 +102,7 @@ struct Node
   NodeType type;
   vector<Node*> childs;
 };
+extern const char* NodeTypeNames[68];
 
-const char* NodeTypeNames[] =
-{
-  "declare",
-  "import",
-  "importas",
-  "assign",
-  "memb",
-  "WHILE",
-  "DOWHILE",
-  "FOR",
-  "DFOR",
-  "decl",//used with FOR loop to tell if loop control variable should be
-  //declared or not
-  //i.e for(var i=0 to 10 step 1)
-  "nodecl",
-  "FOREACH",
-  "NAMESPACE",
-  "IF",
-  "IFELSE",
-  "IFELIF",
-  "IFELIFELSE",
-  "THROW",
-  "TRYCATCH",
-  "FUNC",
-  "CORO",
-  "CLASS",
-  "EXTCLASS",
-  "RETURN",
-  "EOP", //end of "program", also marks the end of tree
-  "YIELD",
-  "BREAK",
-  "CONTINUE",
-  "call",
-  "args",
-  "line",
-  "gc",
-  "file",
-  "end",
-  "add",
-  "sub",
-  "mul",
-  "div",
-  "mod",
-  "XOR",
-  "lshift",
-  "rshift",
-  "bitwiseand",
-  "bitwiseor",
-  "AND",
-  "OR",
-  "IS",
-  "lt",
-  "gt",
-  "lte",
-  "gte",
-  "equal",
-  "noteq",
-  "neg",
-  "complement",
-  "NOT",
-  "index",
-  "dict",
-  "list",
-  "NUM",
-  "FLOAT",
-  "NIL",
-  "STR",
-  "BOOL",
-  "BYTE",
-  "ID",
-  "conditions"
-};
 
 #endif
