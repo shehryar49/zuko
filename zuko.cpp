@@ -4,7 +4,7 @@
 #include "include/zuko.h"
 
 #define ZUKO_VER 0.3
-#define ZUKO_VER_PATCH 2
+#define ZUKO_VER_PATCH 3
 
 void signalHandler(int signum)
 {

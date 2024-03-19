@@ -41,7 +41,7 @@ sudo cp include/zfileobj.h /opt/zuko/include
 sudo cp include/zlist.h /opt/zuko/include
 sudo cp include/zobject.h /opt/zuko/include
 sudo cp include/zstr.h /opt/zuko/include
-sudo cp libzapi /opt/zuko/lib
+sudo cp libzapi.a /opt/zuko/lib
 #
 
 sudo chmod 777 /opt/zuko/fiza/packages.txt
