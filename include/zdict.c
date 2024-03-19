@@ -152,7 +152,6 @@ bool ZDict_equal(ZDict* h,ZDict* other)
     ZObject val;
     if(!ZDict_get(other,h->table[idx].key,&val) || !ZObject_equals(val,h->table[idx].val))
     {
-      printf("mismatch at key %c %c\n",h->table[idx].val.type,val.type);
       return false;
     }
   }

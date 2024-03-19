@@ -1,12 +1,11 @@
 #include "builtinfunc.h"
-
-
 #include "vm.h"
 #include "zuko.h"
 #include "zobject.h"
 #include "zlist.h"
 #include <stdint.h>
 #include <unordered_map>
+
 using namespace std;
 
 std::unordered_map<string,BuiltinFunc> funcs;

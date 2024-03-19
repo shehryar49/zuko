@@ -1,3 +1,7 @@
+#ifndef ZUKO_INTERPRETER
+#define ZUKO_INTERPRETER
+#endif
+
 #ifndef ZUKO_H_
 #define ZUKO_H_
 

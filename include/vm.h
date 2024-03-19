@@ -22,17 +22,8 @@ SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
 
-
-#include "zlist.h"
-#include "zstr.h"
-#include "zapi.h"
+#include "zuko.h"
 #include "builtinfunc.h"
-#include "programinfo.h"
-#include "funobject.h"
-#include <dlfcn.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
 
 using namespace std;
 #ifdef THREADED_INTERPRETER
@@ -60,7 +51,12 @@ struct MemInfo
 };
 
 
-
+extern "C"
+{
+  bool vm_callObject(ZObject*,ZObject*,int,ZObject*);
+  void vm_markImportant(void*);
+  void vm_unmarkImportant(void*);
+}
 
 class VM
 {
@@ -97,9 +93,11 @@ private:
 public:
   vector<BuiltinFunc> builtin; // addresses of builtin native functions
   friend class Compiler;
+  
   friend bool vm_callObject(ZObject*,ZObject*,int,ZObject*);
   friend void vm_markImportant(void*);
   friend void vm_unmarkImportant(void*);
+
   friend void REPL();
   std::unordered_map<void *, MemInfo> memory;
   size_t allocated = 0;

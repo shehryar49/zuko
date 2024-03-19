@@ -105,7 +105,7 @@ typedef struct apiFuncions
   Klass* k16;
 }apiFuncions;
 /**************/
-#ifndef ZUKO_BUILDING_MODULE
+#ifdef ZUKO_INTERPRETER
 // This header was included by the interpreter
 // just forward declare helper functions
 // Allocator functions

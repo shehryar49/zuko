@@ -23,10 +23,9 @@ SOFTWARE.*/
 #define ZOBJECT_H_
 
 
-#include "zbytearray.h"
-#include "zstr.h"
-#include <stdint.h>
 
+#include <stdint.h>
+#include <stdbool.h>
 
 #define Z_LIST 'j'
 #define Z_DICT 'a'

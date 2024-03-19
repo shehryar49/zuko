@@ -20,7 +20,7 @@ Klass* AccessError;
 
 
 
-#ifdef ZUKO_BUILDING_MODULE
+#ifndef ZUKO_INTERPRETER
 
 //Allocator function pointers
 fn1 vm_allocList;
