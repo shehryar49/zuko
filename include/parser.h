@@ -28,13 +28,12 @@ SOFTWARE.*/
 #include <algorithm>
 #include <queue>
 
-using namespace std;
 
-int len(string s);
-string substr(int x,int y,const string& s);
-vector<string> split(string s,const string& x);
-string lstrip(string s);
-string replace(string x,string y,string s);//Replaces only once
+int len(std::string s);
+std::string substr(int x,int y,const std::string& s);
+std::vector<std::string> split(std::string s,const std::string& x);
+std::string lstrip(std::string s);
+std::string replace(std::string x,std::string y,std::string s);//Replaces only once
 
 Node* NewNode(NodeType type,string val="");
 void stripNewlines(vector<Token>& tokens);
@@ -47,29 +46,7 @@ int findEndList(int k,const vector<Token>& tokens);
 int findRCB(int k,const vector<Token>& tokens);
 void deleteAST(Node* ast);
 void CopyAst(Node*& dest,Node* src);
-//For debugging purposes
-/*const char* StrTokenTypes[] =
-{
-  "id",
-  "string",
-  "num",
-  "float",
-  "keyword",
-  "comma",
-  "colon",
-  "L_CURLY_BRACKET_TOKEN",// {
-  "R_CURLY_BRACKET_TOKEN",// }
-  "LParen_TOKEN",// (
-  "RParen_TOKEN",// )
-  "BEGIN_LIST_TOKEN",// [
-  "END_LIST_TOKEN",// ]
-  "op",
-  "newline",
-  "byte",
-  "bool",
-  "EOP"
-};
-*/
+
 // Function to print AST in tablular form
 void printAST(Node* n,int spaces = 0);
 int findTokenConsecutive(Token t,int start,const vector<Token>& tokens);

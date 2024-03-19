@@ -41,6 +41,8 @@ sudo cp include/zfileobj.h /opt/zuko/include
 sudo cp include/zlist.h /opt/zuko/include
 sudo cp include/zobject.h /opt/zuko/include
 sudo cp include/zstr.h /opt/zuko/include
+sudo cp include/apiver.h /opt/zuko/include
+sudo cp include/apifunctions.h /opt/zuko/include
 sudo cp libzapi.a /opt/zuko/lib
 #
 
