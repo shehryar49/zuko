@@ -93,6 +93,24 @@ string fullform(char t)
 
 extern bool REPL_MODE;
 void REPL();
+//Error classes
+Klass* Error;
+Klass* TypeError;
+Klass* ValueError;
+Klass* MathError; 
+Klass* NameError;
+Klass* IndexError;
+Klass* ArgumentError;
+Klass* FileIOError;
+Klass* KeyError;
+Klass* OverflowError;
+Klass* FileOpenError;
+Klass* FileSeekError; 
+Klass* ImportError;
+Klass* ThrowError;
+Klass* MaxRecursionError;
+Klass* AccessError;
+
 
 VM::VM()
 {
@@ -335,7 +353,7 @@ while (aux.size != 0)
         for (size_t idx=0; idx<  k->members.capacity;idx++)
         {
             if(k->members.table[idx].stat!= SM_OCCUPIED)
-            continue;
+              continue;
             auto& e = k->members.table[idx];
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
@@ -350,21 +368,21 @@ while (aux.size != 0)
         for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
             if(k->members.table[idx].stat != SM_OCCUPIED)
-            continue;
+              continue;
             SM_Slot& e = k->members.table[idx];
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
-            it->second.isMarked = true;
-            ZList_push(&aux,e.val);
+                it->second.isMarked = true;
+                ZList_push(&aux,e.val);
             }
             if( (it = memory.find((void*)e.key)) != memory.end() )
-            it->second.isMarked = true;
+                it->second.isMarked = true;
             
         }
         for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
         {
             if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
-            continue;
+              continue;
             SM_Slot& e = k->privateMembers.table[idx];
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
@@ -404,23 +422,23 @@ while (aux.size != 0)
         for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
             if(k->members.table[idx].stat != SM_OCCUPIED)
-            continue;
+              continue;
             SM_Slot& e = k->members.table[idx];
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
-            it->second.isMarked = true;
-            ZList_push(&aux,e.val);
+                it->second.isMarked = true;
+                ZList_push(&aux,e.val);
             }
         }
         for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
         {
             if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
-            continue;
+                continue;
             SM_Slot& e = k->privateMembers.table[idx];
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
-            it->second.isMarked = true;
-            ZList_push(&aux,e.val);
+                it->second.isMarked = true;
+                ZList_push(&aux,e.val);
             }
         }
     }
@@ -620,7 +638,7 @@ bool VM::invokeOperator(string meth, ZObject A, size_t args, const char* op, ZOb
                 frames.push_back(STACK.size);
                 ZList_push(&STACK,A);
                 if (rhs != NULL)
-                ZList_push(&STACK,*rhs);
+                    ZList_push(&STACK,*rhs);
                 k = program + fn->i;
                 return true;
             }
@@ -1215,31 +1233,31 @@ while (*k != OP_EXIT)
         }
         }
         else
-        p4 = tmp;
+          p4 = tmp;
         if (p4.type == Z_FUNC)
         {
-        FunObject *memFun = (FunObject *)p4.ptr;
-        if ((size_t)i2 + 1 + memFun->opt.size < memFun->args || (size_t)i2 + 1 > memFun->args)
-        {
-            spitErr(ArgumentError, "Error function " + (string)memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
-            NEXT_INST;
-        }
-        callstack.push_back(k + 1);
-        if (callstack.size() >= 1000)
-        {
-            spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
-            NEXT_INST;
-        }
-        executing.push_back(memFun);
-        frames.push_back(STACK.size-i2-1);
-        // add default arguments
-        for (size_t i = memFun->opt.size - (memFun->args - 1 - (size_t)i2); i < (memFun->opt.size); i++)
-        {
-            ZList_push(&STACK,memFun->opt.arr[i]);
-        }
+            FunObject *memFun = (FunObject *)p4.ptr;
+            if ((size_t)i2 + 1 + memFun->opt.size < memFun->args || (size_t)i2 + 1 > memFun->args)
+            {
+                spitErr(ArgumentError, "Error function " + (string)memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
+                NEXT_INST;
+            }
+            callstack.push_back(k + 1);
+            if (callstack.size() >= 1000)
+            {
+                spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
+                NEXT_INST;
+            }
+            executing.push_back(memFun);
+            frames.push_back(STACK.size-i2-1);
+            // add default arguments
+            for (size_t i = memFun->opt.size - (memFun->args - 1 - (size_t)i2); i < (memFun->opt.size); i++)
+            {
+                ZList_push(&STACK,memFun->opt.arr[i]);
+            }
         //
-        k = program + memFun->i;
-        NEXT_INST;
+            k = program + memFun->i;
+            NEXT_INST;
         }
         else if (p4.type == Z_NATIVE_FUNC)
         {
@@ -1287,7 +1305,7 @@ while (*k != OP_EXIT)
     else if (p1.type == 'z')
     {
         if(i2!=0)
-        p4 = STACK.arr[STACK.size - 1];
+           p4 = STACK.arr[STACK.size - 1];
         Coroutine *g = (Coroutine *)p1.ptr;
         s1 = method_name;
         if (s1 == "isAlive")
@@ -2652,38 +2670,38 @@ while (*k != OP_EXIT)
     for (size_t it = 0;it < Base->members.capacity;it++)
     {
         if(Base->members.table[it].stat != SM_OCCUPIED)
-        continue;
+            continue;
         auto& e = Base->members.table[it];
         const char* n = e.key;
         if (strcmp(n , "super") == 0)//do not add base class's super to this class
-        continue;
+            continue;
         ZObject* ref1;
         if (!(ref1 = StrMap_getRef(&(d->members),n)))//member is not overriden in child
         {
-        if (!(ref1 = StrMap_getRef(&(d->privateMembers),n)))
-        {
-            p1 = e.val;
-            if (p1.type == Z_FUNC)
+            if (!(ref1 = StrMap_getRef(&(d->privateMembers),n)))
             {
-            FunObject *p = (FunObject *)p1.ptr;
-            FunObject *rep = vm_allocFunObject();
-            rep->args = p->args;
-            rep->i = p->i;
-            rep->klass = d;
-            rep->name = p->name;
-            ZList_resize(&(rep->opt),p->opt.size);
-            memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
-            p1.type = Z_FUNC;
-            p1.ptr = (void *)rep;
+                p1 = e.val;
+                if (p1.type == Z_FUNC)
+                {
+                    FunObject *p = (FunObject *)p1.ptr;
+                    FunObject *rep = vm_allocFunObject();
+                    rep->args = p->args;
+                    rep->i = p->i;
+                    rep->klass = d;
+                    rep->name = p->name;
+                    ZList_resize(&(rep->opt),p->opt.size);
+                    memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
+                    p1.type = Z_FUNC;
+                    p1.ptr = (void *)rep;
+                }
+                StrMap_set(&(d->members),e.key, p1); //override
             }
-            StrMap_set(&(d->members),e.key, p1); //override
-        }
         }
     }
     for (size_t it = 0;it < Base->privateMembers.capacity;it++)
     {
         if(Base->privateMembers.table[it].stat != SM_OCCUPIED)
-        continue;
+            continue;
         auto& e = Base->privateMembers.table[it];
         const char* n = e.key;
         ZObject* ref;
@@ -2779,7 +2797,7 @@ while (*k != OP_EXIT)
         NEXT_INST;
         }
         for (size_t i = obj->opt.size - (obj->args - N); i < obj->opt.size; i++)
-        ZList_push(&STACK,obj->opt.arr[i]);
+            ZList_push(&STACK,obj->opt.arr[i]);
         executing.push_back(obj);
         k = program + obj->i;
         NEXT_INST;
@@ -2938,7 +2956,7 @@ while (*k != OP_EXIT)
         STACK.size -= N;
         ZList_resize(&(g->locals),N);
         if(N != 0)
-        memcpy(g->locals.arr,locals,N*sizeof(ZObject));
+            memcpy(g->locals.arr,locals,N*sizeof(ZObject));
         g->giveValOnResume = false;
         ZObject T;
         T.type = Z_COROUTINE_OBJ;
@@ -3516,7 +3534,7 @@ for (auto e : moduleHandles)
     #else
     unload ufn = (unload)dlsym(e, "unload");
     if (ufn)
-    ufn();
+        ufn();
     dlclose(e);
     #endif
 }
@@ -3543,6 +3561,26 @@ for(auto e: strings)
 }
 }
 VM vm;
+//////////
+ZObject ZObjFromStr(const char* str)// makes deep copy of str
+{
+  size_t len = strlen(str);
+  ZStr* ptr = vm_allocString(len);
+  memcpy(ptr->val,str,len);
+  ZObject ret;
+  ret.type = 's';
+  ret.ptr = (void*)ptr;
+  return ret;
+}
+ZObject Z_Err(Klass* errKlass,const char* des)
+{
+  ZObject ret;
+  KlassObject* p = vm_allocKlassObject(errKlass);
+  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
+  ret.type = Z_ERROBJ;//indicates an object in thrown state
+  ret.ptr = (void*) p;
+  return ret;
+}
 ZList* vm_allocList()
 {
   ZList *p = new(nothrow) ZList;

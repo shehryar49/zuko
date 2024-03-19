@@ -1,7 +1,3 @@
-#ifndef ZUKO_INTERPRETER
-#define ZUKO_INTERPRETER
-#endif
-
 #ifndef ZUKO_H_
 #define ZUKO_H_
 
@@ -28,28 +24,34 @@
     #include <io.h>
     #include <fcntl.h>
 #endif
-#include "zapi.h"
-using namespace std;
-
-void PromoteType(ZObject&,char t);
-string fullform(char);
-string ZObjectToStr(const ZObject&);
-string substr(int32_t,int32_t,const string&);
-int32_t find(char,string);
-string replace_all(string,string,string);
-string addlnbreaks(string,bool&);
-unsigned char tobyte(const string&);
+#include "apiver.h"
+#include "zobject.h"
+#include "zstr.h"
+#include "zbytearray.h"
+#include "strmap.h"
+#include "funobject.h"
+#include "klass.h"
+#include "klassobject.h"
+#include "module.h"
+#include "nativefun.h"
+#include "coroutineobj.h"
+#include "zlist.h"
+#include "zdict.h"
+#include "zfileobj.h"
 #include "opcode.h"
 #include "overflow.h"
 #include "convo.h"
 #include "token.h"
 #include "parser.h"
 #include "compiler.h"
+#include "funobject.h"
 #include "builtinfunc.h"
 #include "vm.h"
 #include "lexer.h"
 #include "utility.h"
 #include "programinfo.h"
 #include "repl.h"
-#include "zfileobj.h"
+
+
+
 #endif

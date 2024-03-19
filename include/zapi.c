@@ -20,7 +20,6 @@ Klass* AccessError;
 
 
 
-#ifndef ZUKO_INTERPRETER
 
 //Allocator function pointers
 fn1 vm_allocList;
@@ -73,7 +72,7 @@ int api_setup(apiFuncions* p,int ver)
   AccessError = p->k16;
   return 1;
 }
-#endif
+
 
 //These helper functions utilized allocator functions
 //that is why they are defined here
@@ -99,16 +98,6 @@ ZObject ZObjFromStr(const char* str)// makes deep copy of str
   ret.ptr = (void*)ptr;
   return ret;
 }
-
-ZObject Z_Err(Klass* errKlass,const char* des)
-{
-  ZObject ret;
-  KlassObject* p = vm_allocKlassObject(errKlass);
-  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
-  ret.type = Z_ERROBJ;//indicates an object in thrown state
-  ret.ptr = (void*) p;
-  return ret;
-}
 ZObject ZObjFromMethod(const char* name,NativeFunPtr r,Klass* k)
 {
   ZObject ret;
@@ -130,6 +119,18 @@ ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
   ret.ptr = (void*)fn;
   return ret;
 }
+
+
+ZObject Z_Err(Klass* errKlass,const char* des)
+{
+  ZObject ret;
+  KlassObject* p = vm_allocKlassObject(errKlass);
+  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
+  ret.type = Z_ERROBJ;//indicates an object in thrown state
+  ret.ptr = (void*) p;
+  return ret;
+}
+
 
 void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p)
 {

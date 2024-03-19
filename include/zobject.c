@@ -167,3 +167,4 @@ ZObject ZObjFromFile(zfile* file)
   ret.ptr = (void*)file;
   return ret;
 }
+
