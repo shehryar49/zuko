@@ -49,9 +49,9 @@ sudo ln -s /opt/zuko/fiza.zk /usr/local/bin/fiza
 echo "[+] Running tests"
 cd tests/
 if ./test_all; then
-  echo "\n[+] Installation done and all tests passed!"
+  echo "[+] Installation done and all tests passed!"
 else
-  echo "\n[-] Installation was done but some tests failed."
+  echo "[-] Installation was done but some tests failed."
   
 fi
 # Hasta la vista baby
