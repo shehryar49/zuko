@@ -37,42 +37,42 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 add_library(math SHARED modules/math/math.cpp modules/math/math.h)
 set_target_properties(math PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 
-target_link_libraries(math -lzapi)
+target_link_libraries(math zapi)
 
 # json
 add_library(json SHARED modules/json/json.cpp modules/json/json.h)
 set_target_properties(json PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(json -lzapi)
+target_link_libraries(json zapi)
 # regex
 add_library(regex SHARED modules/regex/regex.cpp modules/regex/regex.h)
 set_target_properties(regex PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(regex -lzapi)
+target_link_libraries(regex zapi)
 # datetime
 add_library(datetime SHARED modules/datetime/datetime.cpp modules/datetime/datetime.h)
 set_target_properties(datetime PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(datetime -lzapi)
+target_link_libraries(datetime zapi)
 # bignum
 add_library(bignum SHARED modules/bignum/bignumWrapper.cpp modules/bignum/bignum.cpp modules/bignum/bignum.h)
 set_target_properties(bignum PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(bignum -lzapi)
+target_link_libraries(bignum zapi)
 # cgi
 add_library(cgi SHARED modules/cgi/cgi.cpp modules/cgi/cgi.h)
 set_target_properties(cgi PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(cgi -lzapi)
+target_link_libraries(cgi zapi)
 # socket
 add_library(socket SHARED modules/socket/socket.cpp modules/socket/socket.h)
 set_target_properties(socket PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(socket -lzapi)
+target_link_libraries(socket zapi)
 # base64
 add_library(base64 SHARED modules/base64/base64.cpp modules/base64/base64.h)
 set_target_properties(base64 PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-target_link_libraries(base64 -lzapi)
+target_link_libraries(base64 zapi)
 
 # linux specific modules
 if(UNIX)
   add_library(process SHARED modules/process/process.cpp modules/process/process.h)
   set_target_properties(process PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
-  target_link_libraries(process -lzapi)
+  target_link_libraries(process zapi)
 endif()
 # windows specific modules
 if(WIN32)
@@ -92,4 +92,4 @@ add_library(libcurl SHARED modules/libcurl/libcurl.cpp modules/libcurl/libcurl.h
 target_include_directories(libcurl PUBLIC include)
 target_link_libraries(libcurl ${CURL_LIBRARIES})
 set_target_properties(libcurl PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
-target_link_libraries(libcurl -lzapi)
+target_link_libraries(libcurl zapi)

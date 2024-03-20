@@ -285,33 +285,7 @@ void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_ma
     fclose(f);
     delete[] arr;
 }
-#ifdef PLUTONIUM_PROFILE
-void showProfileInfo()
-{
-  int n =  sizeof(opNames)/sizeof(const char*);
-  for(int i=1;i<n;i+=1)
-  {
-    for(int j=0;j<n-i;j++)
-    {
-      if(vm.instCount[j] < vm.instCount[j+1])
-      {
-        int c = vm.instCount[j];
-        vm.instCount[j] = vm.instCount[j+1];
-        vm.instCount[j+1] = c;
-        const char* prev = opNames[j];
-        opNames[j] = opNames[j+1];
-        opNames[j+1] = prev;
-      }
-    }
-  }
-  printf("OPCODE  Count\n");
-  for(int i=0;i<n;i++)
-  {
-    if(vm.instCount[i]!=0)
-      printf("%s  %ld\n",opNames[i],vm.instCount[i]);
-  }
-}
-#endif
+
 const char* getOS()
 {
   #ifdef __linux__
@@ -412,10 +386,8 @@ string ZObjectToStr(const ZObject& a)
           return "<Native Function>";
 				else if(a.type=='v')
 				  return "<Class "+(string)(((Klass*)a.ptr) -> name)+">";
-			  else if(a.type=='o')
-        {
+		    else if(a.type=='o')
 				  return "<"+(string)((KlassObject*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
-        }
         else if(a.type=='q')
         {
             char buff[100];
@@ -449,7 +421,6 @@ string ZObjectToStr(const ZObject& a)
         }
         else if(a.type=='a')
         {
-            //printf("returning ZObjectToStr of dictionary\n");
 						string DictToStr(ZDict*,vector<void*>* = nullptr);
             ZDict* p = (ZDict*)a.ptr;
             return DictToStr(p);
