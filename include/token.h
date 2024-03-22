@@ -58,6 +58,19 @@ struct Token
     type = obj.type;
     ln = obj.ln;
   }
+  Token(TokenType type,const string& content,size_t line)
+  {
+    this->type = type;
+    this->content = content;
+    this->ln = line;
+  }
+  Token(TokenType type,char ch,size_t line)
+  {
+    this->type = type;
+    this->content += ch;
+    this->ln = line;
+  }
+  
   Token& operator=(const Token& obj)
   {
     if(&obj == this)

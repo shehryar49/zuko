@@ -26,20 +26,36 @@ SOFTWARE.*/
 #include <vector>
 #include "token.h"
 
-using namespace std;
 
 
-bool isKeyword(string s);
+
 
 class Lexer
 {
 private:
-  string filename;
-  size_t line_num;
-  string source_code;
-  void lexErr(string type,string msg);
+  std::string filename;
+  std::string source_code;
+  size_t srcLen;
+  
+  bool printErr = true;
+
+  static bool isKeyword(std::string s);
+  static const char* keywords[];
+  static Token resolveMacro(const std::string& name);
+
+  void str(size_t&,std::vector<Token>&);
+  void macro(size_t&,std::vector<Token>&);
+  void comment(size_t&,std::vector<Token>&);
+  void numeric(size_t&,std::vector<Token>&);
+  void id(size_t&,std::vector<Token>&);
+
+  void lexErr(std::string type,std::string msg);
 public:
-    static Token resolveMacro(string name);
-    vector<Token> generateTokens(string fname,const string& s);
+  size_t line_num;  
+  //exceptions can be expensive so ...
+  bool hadErr = false;
+  std::string errmsg;
+  ///
+  vector<Token> generateTokens(string fname,const string& s,bool printErr = true);
 };
 #endif // LEXER_H_

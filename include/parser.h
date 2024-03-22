@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef PARSER_H_
 #define PARSER_H_
+#include "utility.h"
 #include "token.h"
 #include "ast.h"
 #include "programinfo.h"
@@ -29,11 +30,7 @@ SOFTWARE.*/
 #include <queue>
 
 
-int len(std::string s);
-std::string substr(int x,int y,const std::string& s);
-std::vector<std::string> split(std::string s,const std::string& x);
-std::string lstrip(std::string s);
-std::string replace(std::string x,std::string y,std::string s);//Replaces only once
+
 
 Node* NewNode(NodeType type,string val="");
 void stripNewlines(vector<Token>& tokens);

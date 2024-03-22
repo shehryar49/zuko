@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <time.h>
 #include <cstdint>
+#include "include/token.h"
 #include "include/zuko.h"
 
 #define ZUKO_VER 0.3
@@ -59,7 +60,9 @@ int main(int argc, const char* argv[])
     {
         Lexer lex;
         vector<Token> tokens = lex.generateTokens(filename,source_code);
-        if(tokens.size()==0)//empty program nothing to do
+        if(lex.hadErr)//had an error which was printed
+          return 0;
+        else if(tokens.size() == 1 && tokens[0].type == EOP_TOKEN)//empty program nothing to do
           return 0;
         
         Parser parser;

@@ -4,6 +4,57 @@
 #include <algorithm>
 using namespace std;
 
+int len(string s)
+{
+  return s.length()-1;
+}
+string substr(int x,int y,const string& s)
+{
+  //Crash safe substr function, the std::string.substr() can cause program to crash(or throws exception whatever)
+  //this function allows you to check string for subsequences without worrying about out of range issues
+  //returns a string if indexes are valid
+  int k = x;
+	string p = "";
+  int l = s.length();
+	while(k<=y && k<l)
+	{
+		p+= s[k];
+		k+=1;
+	}
+	return p;
+}
+vector<string> split(string s,const string& x)
+{
+	size_t k = 0;
+	vector<string> list;
+	while((k = s.find(x))!=std::string::npos)
+	{
+		list.push_back(s.substr(0,k));
+		s = s.substr(k+x.length());
+	}
+	list.push_back(s);
+	return list;
+}
+string lstrip(string s)
+{
+    while((s.length()>0) && (s[0]==' ' || s[0]=='\t'))
+    {
+        s = s.substr(1);
+    }
+    return s;
+}
+string replace(string x,string y,string s)//Replaces only once
+{
+	size_t start = s.find(x);
+	if(start!=std::string::npos)
+	{
+		string p1 = substr(0,start-1,s);
+		string p2 = substr(start+len(x)+1,len(s),s);
+		string result = p1+y+p2;
+		return result;
+	}
+	return s;
+}
 string IntToHex(int i)
 {
     if(i==0)
@@ -83,7 +134,7 @@ int64_t hexToInt64(const string& s)
     }
     return res;
 }
-string addlnbreaks(string s,bool& hadErr)
+string addlnbreaks(string s,bool& hadErr) // adds escape sequences
 {
 
     unsigned int k = 0;

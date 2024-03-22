@@ -31,9 +31,11 @@ SOFTWARE.*/
 #include "zdict.h"
 #include "programinfo.h"
 
-std::string substr(int,int,const std::string&);
-int len(std::string);
-
+int len(std::string s);
+std::string substr(int x,int y,const std::string& s);
+std::vector<std::string> split(std::string s,const std::string& x);
+std::string lstrip(std::string s);
+std::string replace(std::string x,std::string y,std::string s);//Replaces only once
 
 std::string IntToHex(int i);
 unsigned char tobyte(const std::string& s);
