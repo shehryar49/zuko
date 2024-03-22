@@ -83,12 +83,12 @@ private:
         return (!infunc  && !inloop
      && !inif && !inelif && !inelse && !intry && !incatch);
   }
-public:
-  void init(string fname,ProgramInfo& p);
   void parseError(string type,string msg);
   bool addSymRef(string name);
   Node* parseExpr(const vector<Token>& tokens);
   Node* parseStmt(vector<Token> tokens);
+public:
+  void init(string fname,ProgramInfo& p);
   Node* parse(const vector<Token>& tokens);
 };
 #endif
