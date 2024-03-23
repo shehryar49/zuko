@@ -26,9 +26,9 @@ SOFTWARE.*/
 #include "parser.h"
 #include "opcode.h"
 #include "zfileobj.h"
-using namespace std;
 
-#define JUMPOFFSet_Size 4
+
+#define JUMPOFFSET_SIZE 4
 #define SymbolTable std::unordered_map<string,int32_t>
 
 
@@ -45,37 +45,37 @@ private:
   int32_t STACK_SIZE = 0;//simulating STACK's size
   int32_t scope = 0;
   size_t line_num = 1;
-  vector<size_t> contTargets;
-  vector<size_t> breakTargets;
-  vector<int32_t> indexOfLastWhileLocals;
-  unordered_map<string,bool> symRef;
-  vector<SymbolTable> locals;
-  vector<string> prefixes = {""};
+
+
+  std::unordered_map<string,bool> symRef;
+  std::vector<SymbolTable> locals;
+  std::vector<std::string> prefixes = {""};
   int32_t* num_of_constants;
-  string filename;
-  vector<string>* files;
-  vector<string>* sources;
+  std::string filename;
+  std::vector<std::string>* files;
+  std::vector<string>* sources;
   short fileTOP;
-  unordered_map<size_t,ByteSrc>* LineNumberTable;
+  std::unordered_map<size_t,ByteSrc>* LineNumberTable;
   bool compileAllFuncs;
-  vector<size_t> andJMPS;
-  vector<size_t> orJMPS;
+  //For optimizing short circuit jumps after code generation
+  std::vector<size_t> andJMPS;
+  std::vector<size_t> orJMPS;
   //Context
   bool inConstructor = false;
   bool inGen = false;
   bool inclass = false;
   bool infunc = false;
-  vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
+  std::vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
   // the enclosing loop to backpatch the offset
-  vector<int32_t> contIdx; // same as above
+  std::vector<int32_t> contIdx; // same as above
   int32_t localsBegin;
-  string className;
-  vector<string> classMemb;
+  std::string className;
+  std::vector<string> classMemb;
   int32_t foo = 0;
   int32_t fnScope;
   bool returnStmtAtFnScope;
-  vector<uint8_t> bytecode;
-  vector<Pair> backpatches;
+  std::vector<uint8_t> bytecode;
+  std::vector<Pair> backpatches;
 public:
   friend void REPL();
   SymbolTable globals;
@@ -83,20 +83,20 @@ public:
   //init function is used instead of constructor
   //this way the Compiler class becomes reusable
   //by initializing it again
-  void init(string filename,ProgramInfo& p);
-  void compileError(string type,string msg);
+  void init(std::string filename,ProgramInfo& p);
+  void compileError(std::string type,std::string msg);
   int32_t isDuplicateConstant(ZObject x);
-  int32_t addToVMStringTable(const string& n);
+  int32_t addToVMStringTable(const std::string& n);
   void addLnTableEntry(size_t opcodeIdx);
-  int32_t addBuiltin(const string& name);
+  int32_t addBuiltin(const std::string& name);
   vector<uint8_t> exprByteCode(Node* ast);
   vector<string> scanClass(Node* ast);
-  int32_t resolveName(string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL);
+  int32_t resolveName(std::string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL);
   vector<uint8_t> compile(Node* ast);
   void optimizeJMPS(vector<uint8_t>& bytecode);
   void reduceStackTo(int size);//for REPL
 
-  Klass* makeErrKlass(string name,Klass* error);
+  Klass* makeErrKlass(std::string name,Klass* error);
   vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true);//compiles as a complete program adds NPOP_STACK and OP_EXIT
 
 };

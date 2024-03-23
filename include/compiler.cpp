@@ -95,7 +95,7 @@ this->filename = filename;
 if(p.num_of_constants > 0 && !REPL_MODE)
 {
     if(vm.constants)
-    delete[] vm.constants;
+        delete[] vm.constants;
     vm.constants = new ZObject[p.num_of_constants];
     vm.total_constants = 0;
 }
@@ -118,9 +118,6 @@ if(!REPL_MODE)
     orJMPS.clear();
     prefixes = {""};
     scope = 0;
-    breakTargets.clear();
-    contTargets.clear();
-    indexOfLastWhileLocals.clear();
     bytes_done = 0;
 }
 }
@@ -167,7 +164,7 @@ size_t i = 0;
 for(auto e: vm.strings)
 {
     if(strcmp(e.val,n.c_str()) == 0)
-    return i;
+        return i;
     i++;
 }
 char* arr = new char[n.length()+1]; //will be freed by VM's destructor
@@ -696,7 +693,7 @@ vector<uint8_t> Compiler::exprByteCode(Node* ast)
         const string& name = ast->childs[1]->val;
         bool udf = false;
         if (funcs.find(name) == funcs.end())//check if it is builtin function
-        udf = true;
+            udf = true;
         if (udf)
         {
             bool isGlobal = false;
@@ -704,9 +701,9 @@ vector<uint8_t> Compiler::exprByteCode(Node* ast)
             int foo = resolveName(name,isGlobal,true,&isSelf);
             if(isSelf)
             {
-            bytes.push_back(LOAD_LOCAL);
-            addBytes(bytes,0);//load self to pass as first argument
-            bytes_done+=5;
+                bytes.push_back(LOAD_LOCAL);
+                addBytes(bytes,0);//load self to pass as first argument
+                bytes_done+=5;
             }
             for (size_t k = 0; k < ast->childs[2]->childs.size(); k += 1)
             {
@@ -715,16 +712,16 @@ vector<uint8_t> Compiler::exprByteCode(Node* ast)
             }
             if(isSelf)
             {
-            addLnTableEntry(bytes_done);
-            bytes.push_back(SELFMEMB);
-            foo = addToVMStringTable(name);
-            addBytes(bytes,foo);
-            bytes_done+=5;
-            addLnTableEntry(bytes_done);
-            bytes.push_back(CALLUDF);
-            bytes.push_back(ast->childs[2]->childs.size()+1);
-            bytes_done+=2;
-            return bytes;
+                addLnTableEntry(bytes_done);
+                bytes.push_back(SELFMEMB);
+                foo = addToVMStringTable(name);
+                addBytes(bytes,foo);
+                bytes_done+=5;
+                addLnTableEntry(bytes_done);
+                bytes.push_back(CALLUDF);
+                bytes.push_back(ast->childs[2]->childs.size()+1);
+                bytes_done+=2;
+                return bytes;
             }
             else if(isGlobal)
             bytes.push_back(LOAD_GLOBAL);
@@ -759,11 +756,11 @@ vector<uint8_t> Compiler::exprByteCode(Node* ast)
             }
             if(add)
             {
-            vm.builtin.push_back(funcs[name]);
-            foo = vm.builtin.size()-1;
+                vm.builtin.push_back(funcs[name]);
+                foo = vm.builtin.size()-1;
             }
             else
-            foo = index;
+                foo = index;
             addBytes(bytes,foo);
             bytes.push_back((char)ast->childs[2]->childs.size());
             bytes_done += 6;
@@ -885,10 +882,10 @@ vector<uint8_t> Compiler::compile(Node* ast)
             if (scope == 0)
             {
                 if (globals.find(name) != globals.end())
-                compileError("NameError", "Error redeclaration of variable " + name);
+                    compileError("NameError", "Error redeclaration of variable " + name);
                 foo = STACK_SIZE;
                 if(!inclass)
-                globals.emplace(name,foo);
+                    globals.emplace(name,foo);
                 STACK_SIZE+=1;
             }
             else
@@ -898,7 +895,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 foo = STACK_SIZE;
                 if(inclass && !infunc);
                 else
-                locals.back().emplace(name,foo);
+                    locals.back().emplace(name,foo);
                 STACK_SIZE+=1;
             }
 
@@ -909,16 +906,16 @@ vector<uint8_t> Compiler::compile(Node* ast)
             string vname = (ast->type==NodeType::importas) ? ast->childs[2]->val : name;
             bool f;
             if(resolveName(vname,f,false)!=-1)
-            compileError("NameError","Error redeclaration of name "+vname);
+                compileError("NameError","Error redeclaration of name "+vname);
             addLnTableEntry(bytes_done);
             program.push_back(IMPORT);
             foo = addToVMStringTable(name);
             addBytes(program,foo);
             bytes_done += 5;
             if(scope==0)
-            globals.emplace(vname,STACK_SIZE);
+                globals.emplace(vname,STACK_SIZE);
             else
-            locals.back().emplace(vname,STACK_SIZE);
+                locals.back().emplace(vname,STACK_SIZE);
             STACK_SIZE+=1;
         }
         else if (ast->type == NodeType::assign)
@@ -1000,7 +997,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 vector<uint8_t> lhs = exprByteCode(ast->childs[1]->childs[0]);
                 program.insert(program.end(),lhs.begin(),lhs.end());
                 if(ast->childs[1]->childs[1]->type!=NodeType::ID)
-                compileError("SyntaxError","Invalid Syntax");
+                    compileError("SyntaxError","Invalid Syntax");
                 string mname = ast->childs[1]->childs[1]->val;
                 vector<uint8_t> val = exprByteCode(ast->childs[2]);
                 program.insert(program.end(), val.begin(), val.end());
@@ -1026,11 +1023,11 @@ vector<uint8_t> Compiler::compile(Node* ast)
         else if (ast->type == NodeType::WHILE || ast->type == NodeType::DOWHILE)
         {
             if(ast->type==NodeType::DOWHILE)
-            bytes_done+=5;//do while uses one extra jump before the condition
+              bytes_done+=5;//do while uses one extra jump before the condition
             //to skip the condition first time
             size_t L = bytes_done;
             vector<uint8_t> cond = exprByteCode(ast->childs[1]);
-            bytes_done += 1 + JUMPOFFSet_Size;//JMPFALSE <4 byte where>
+            bytes_done += 1 + JUMPOFFSET_SIZE;//JMPFALSE <4 byte where>
             scope += 1;
             int32_t before = STACK_SIZE;
             SymbolTable m;
@@ -1043,19 +1040,18 @@ vector<uint8_t> Compiler::compile(Node* ast)
             vector<uint8_t> block = compile(ast->childs[2]);
             localsBegin = localsBeginCopy; //backtrack
             STACK_SIZE = before;
-            breakTargets.pop_back();
-            contTargets.pop_back();
+
             scope -= 1;
             int32_t whileLocals = locals.back().size();
             locals.pop_back();
-            int32_t where = block.size() + 1 + JUMPOFFSet_Size;
+            int32_t where = block.size() + 1 + JUMPOFFSET_SIZE;
             if(whileLocals!=0)
-            where+=4;//4 for NPOP_STACK
+                where+=4;//4 for NPOP_STACK
             if(ast->type==NodeType::DOWHILE)
             {
-            program.push_back(JMP);
-            foo = cond.size()+ 5;
-            addBytes(program,foo);
+                program.push_back(JMP);
+                foo = cond.size()+ 5;
+                addBytes(program,foo);
             }
             program.insert(program.end(), cond.begin(), cond.end());
             //Check while condition
@@ -1067,16 +1063,16 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.insert(program.end(), block.begin(), block.end());
             if(whileLocals!=0)
             {
-            program.push_back(GOTONPSTACK);
-            foo = whileLocals;
-            addBytes(program,foo);
-            bytes_done += 4;
+                program.push_back(GOTONPSTACK);
+                foo = whileLocals;
+                addBytes(program,foo);
+                bytes_done += 4;
             }
             else
-            program.push_back(GOTO);
+                program.push_back(GOTO);
             foo = L;
             addBytes(program,foo);
-            bytes_done += 1 + JUMPOFFSet_Size;
+            bytes_done += 1 + JUMPOFFSET_SIZE;
             // backpatch break and continue offsets
             int32_t a = (int)bytes_done;
             int32_t b = (int)L;
@@ -1159,7 +1155,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             locals.push_back(m);
         }
 
-        bytes_done+=2+JUMPOFFSet_Size;//for jump before block
+        bytes_done+=2+JUMPOFFSET_SIZE;//for jump before block
         vector<int32_t> breakIdxCopy = breakIdx;
         vector<int32_t> contIdxCopy = contIdx;
         int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
@@ -1206,13 +1202,13 @@ vector<uint8_t> Compiler::compile(Node* ast)
         if(dfor || (I!="1" || ast->childs[5]->type!=NodeType::NUM) || isSelf)
         {
             inc = exprByteCode(ast->childs[5]);
-            where = block.size() + 1 + JUMPOFFSet_Size+inc.size()+11;
+            where = block.size() + 1 + JUMPOFFSET_SIZE+inc.size()+11;
             //11 bytes for some increment code
             
         }
         else
         {
-            where = block.size() + 1 + JUMPOFFSet_Size+5;
+            where = block.size() + 1 + JUMPOFFSET_SIZE+5;
 
         }
         if(whileLocals!=0)
@@ -1227,9 +1223,9 @@ vector<uint8_t> Compiler::compile(Node* ast)
         if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
         {
             if(!isGlobal)
-            block.push_back(INPLACE_INC);
+                block.push_back(INPLACE_INC);
             else
-            block.push_back(INC_GLOBAL);
+                block.push_back(INC_GLOBAL);
             foo = lcvIdx;
             addBytes(block,foo);
             bytes_done+=5;
@@ -1248,15 +1244,15 @@ vector<uint8_t> Compiler::compile(Node* ast)
             addBytes(block,foo);
             block.insert(block.end(),inc.begin(),inc.end());
             if(dfor)
-            block.push_back(SUB);
+                block.push_back(SUB);
             else
-            block.push_back(ADD);
+                block.push_back(ADD);
             if(isSelf)
-            block.push_back(ASSIGNSELFMEMB);
+                block.push_back(ASSIGNSELFMEMB);
             else if(!isGlobal )
-            block.push_back(ASSIGN);
+                block.push_back(ASSIGN);
             else
-            block.push_back(ASSIGN_GLOBAL);
+                block.push_back(ASSIGN_GLOBAL);
             addBytes(block,foo);
             bytes_done+=11;
         }
@@ -1280,7 +1276,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             bytes_done+=1;
             STACK_SIZE-=1;
         }
-        bytes_done += 1 + JUMPOFFSet_Size;
+        bytes_done += 1 + JUMPOFFSET_SIZE;
         //backpatching
         int32_t a = (int)bytes_done - 1;
         
@@ -1326,7 +1322,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             STACK_SIZE+=1;
             size_t L = bytes_done;
             addLnTableEntry(L+12);
-            bytes_done+=20+6+1+JUMPOFFSet_Size+6;
+            bytes_done+=20+6+1+JUMPOFFSET_SIZE+6;
             vector<int32_t> breakIdxCopy = breakIdx;
             vector<int32_t> contIdxCopy = contIdx;
             int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
@@ -1352,10 +1348,10 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.push_back(1);
             program.push_back(SMALLERTHAN);
             program.push_back(JMPIFFALSE);
-            int32_t where = 7+block.size()+1+JUMPOFFSet_Size+5+6;
+            int32_t where = 7+block.size()+1+JUMPOFFSET_SIZE+5+6;
             int32_t whileLocals = locals.back().size();
             if(whileLocals!=0)
-            where+=4;
+                where+=4;
             foo = where;
             addBytes(program,foo);
 
@@ -1380,20 +1376,20 @@ vector<uint8_t> Compiler::compile(Node* ast)
             locals.pop_back();
             if(whileLocals!=0)
             {
-            program.push_back(GOTONPSTACK);
-            foo = whileLocals;
-            addBytes(program,foo);
-            bytes_done += 4;
+                program.push_back(GOTONPSTACK);
+                foo = whileLocals;
+                addBytes(program,foo);
+                bytes_done += 4;
             }
             else
-            program.push_back(GOTO);
+                program.push_back(GOTO);
             foo = L;
             addBytes(program,foo);
 
             program.push_back(NPOP_STACK);
             foo = 2;
             addBytes(program,foo);
-            bytes_done += 1 + JUMPOFFSet_Size+JUMPOFFSet_Size+1;
+            bytes_done += 1 + JUMPOFFSET_SIZE+JUMPOFFSET_SIZE+1;
                         
             //backpatching             
             int32_t brk = bytes_done-5; 
@@ -1433,7 +1429,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             ast = ast->childs.back();
             continue;
             }
-            bytes_done += 1 + JUMPOFFSet_Size;
+            bytes_done += 1 + JUMPOFFSET_SIZE;
             scope += 1;
             int32_t before = STACK_SIZE;
             SymbolTable m;
@@ -1447,15 +1443,15 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.push_back(JMPIFFALSE);
             foo = block.size();//
             if(hasLocals)
-            foo+=5;
+                foo+=5;
             addBytes(program,foo);
             program.insert(program.end(), block.begin(), block.end());
             if(hasLocals)
             {
-            program.push_back(NPOP_STACK);
-            foo = locals.back().size();
-            addBytes(program,foo);
-            bytes_done += 5;
+                program.push_back(NPOP_STACK);
+                foo = locals.back().size();
+                addBytes(program,foo);
+                bytes_done += 5;
             }
             locals.pop_back();
         }
@@ -1463,7 +1459,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         {
             
             vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
-            bytes_done += 1 + JUMPOFFSet_Size;
+            bytes_done += 1 + JUMPOFFSET_SIZE;
             scope += 1;
             int32_t before = STACK_SIZE;
             SymbolTable m;
@@ -1476,7 +1472,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             locals.pop_back();
             program.insert(program.end(), ifcond.begin(), ifcond.end());
             program.push_back(JMPIFFALSE);
-            foo = ifblock.size() + 1 + JUMPOFFSet_Size;
+            foo = ifblock.size() + 1 + JUMPOFFSET_SIZE;
 
             if(iflocals!=0)
             {
@@ -1488,7 +1484,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
 
 
             scope += 1;
-            bytes_done += 1 + JUMPOFFSet_Size;
+            bytes_done += 1 + JUMPOFFSET_SIZE;
             before = STACK_SIZE;
             locals.push_back(m);
             vector<uint8_t> elseblock = compile(ast->childs[3]);
@@ -1498,15 +1494,15 @@ vector<uint8_t> Compiler::compile(Node* ast)
             locals.pop_back();
             if(iflocals!=0)
             {
-            program.push_back(JMPNPOPSTACK);
-            foo = iflocals;
-            addBytes(program,foo);
+                program.push_back(JMPNPOPSTACK);
+                foo = iflocals;
+                addBytes(program,foo);
             }
             else
-            program.push_back(JMP);
+                program.push_back(JMP);
             foo = elseblock.size();
             if(elseLocals!=0)
-            foo+=5;
+                foo+=5;
             addBytes(program,foo);
             program.insert(program.end(), elseblock.begin(), elseblock.end());
             if(elseLocals!=0)
@@ -1521,7 +1517,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         {
             
             vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
-            bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
+            bytes_done += 1 + JUMPOFFSET_SIZE;//JumpIfFalse after if condition
             scope += 1;
             SymbolTable m;
             locals.push_back(m);
@@ -1531,9 +1527,9 @@ vector<uint8_t> Compiler::compile(Node* ast)
             STACK_SIZE = before;
             int32_t iflocals = locals.back().size();
             locals.pop_back();
-            bytes_done += 1 + JUMPOFFSet_Size;//JMP of if block
+            bytes_done += 1 + JUMPOFFSET_SIZE;//JMP of if block
             if(iflocals!=0)
-            bytes_done+=4;//for NPOP_STACK+ 4 byte operand
+                bytes_done+=4;//for NPOP_STACK+ 4 byte operand
             vector<vector<uint8_t>> elifConditions;
             int32_t elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
             int32_t elifBlockcounter = 3;//third node of ast
@@ -1543,7 +1539,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             {
                 vector<uint8_t> elifCond = exprByteCode(ast->childs[1]->childs[k]);
                 elifConditions.push_back(elifCond);
-                bytes_done += 1 + JUMPOFFSet_Size;//JMPIFFALSE of elif
+                bytes_done += 1 + JUMPOFFSET_SIZE;//JMPIFFALSE of elif
                 scope += 1;
                 before = STACK_SIZE;
                 locals.push_back(m);
@@ -1553,9 +1549,9 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 int32_t eliflocals = locals.back().size();
                 elifLocalSizes.push_back(eliflocals);
                 locals.pop_back();
-                bytes_done += 1 + JUMPOFFSet_Size;// JMP of elifBlock
+                bytes_done += 1 + JUMPOFFSET_SIZE;// JMP of elifBlock
                 elifBlocks.push_back(elifBlock);
-                elifBlocksSize += elifCond.size() + 1 + JUMPOFFSet_Size + elifBlock.size() + 1 + JUMPOFFSet_Size ;
+                elifBlocksSize += elifCond.size() + 1 + JUMPOFFSET_SIZE + elifBlock.size() + 1 + JUMPOFFSET_SIZE ;
                 if(eliflocals!=0)
                 {
                 elifBlocksSize+=4;
@@ -1573,109 +1569,108 @@ vector<uint8_t> Compiler::compile(Node* ast)
             locals.pop_back();
             program.insert(program.end(), ifcond.begin(), ifcond.end());
             program.push_back(JMPIFFALSE);
-            foo = ifblock.size() + 1 + JUMPOFFSet_Size ;
+            foo = ifblock.size() + 1 + JUMPOFFSET_SIZE ;
             if(iflocals!=0)
-            foo+=4;
+                foo+=4;
             addBytes(program,foo);
             program.insert(program.end(), ifblock.begin(), ifblock.end());
             if(iflocals!=0)
             {
-            program.push_back(JMPNPOPSTACK);
-            foo = iflocals;
-            addBytes(program,foo);
+                program.push_back(JMPNPOPSTACK);
+                foo = iflocals;
+                addBytes(program,foo);
             }
             else
-            program.push_back(JMP);
+                program.push_back(JMP);
             foo = elifBlocksSize + elseBlock.size() ;
             if(elseLocals!=0)
-            foo+=5;
+                foo+=5;
             addBytes(program,foo);  
             for (size_t k = 0; k < elifBlocks.size(); k += 1)
             {
 
-                elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSet_Size) + 1;
+                elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSET_SIZE) + 1;
                 if(elifLocalSizes[k]!=0)
-                elifBlocksSize -= 4;
+                    elifBlocksSize -= 4;
                 program.insert(program.end(), elifConditions[k].begin(), elifConditions[k].end());
                 program.push_back(JMPIFFALSE);
-                foo = elifBlocks[k].size() + JUMPOFFSet_Size + 1;
+                foo = elifBlocks[k].size() + JUMPOFFSET_SIZE + 1;
                 if(elifLocalSizes[k]!=0)
-                foo+=4;
+                    foo+=4;
                 addBytes(program,foo);
                 program.insert(program.end(), elifBlocks[k].begin(), elifBlocks[k].end());
                 if(elifLocalSizes[k]!=0)
                 {
-
-                program.push_back(JMPNPOPSTACK);
-                foo = elifLocalSizes[k];
-                addBytes(program,foo);
+                    program.push_back(JMPNPOPSTACK);
+                    foo = elifLocalSizes[k];
+                    addBytes(program,foo);
                 }
                 else
-                program.push_back(JMP);
+                    program.push_back(JMP);
                 foo = elifBlocksSize + elseBlock.size() ;
                 if(elseLocals!=0)
-                foo+=5;
+                    foo+=5;
                 addBytes(program,foo);
             }
 
             program.insert(program.end(), elseBlock.begin(), elseBlock.end());
             if(elseLocals!=0)
             {
-            program.push_back(NPOP_STACK);
-            foo = elseLocals;
-            addBytes(program,foo);
-            bytes_done+=5;
+                program.push_back(NPOP_STACK);
+                foo = elseLocals;
+                addBytes(program,foo);
+                bytes_done+=5;
             }
         }
         else if (ast->type == NodeType::IFELIF)
-        {        
-        vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
-        bytes_done += 1 + JUMPOFFSet_Size;//JumpIfFalse after if condition
-        scope += 1;
-        SymbolTable m;
-        locals.push_back(m);
-        int32_t before = STACK_SIZE;
-        vector<uint8_t> ifblock = compile(ast->childs[2]);
-        scope -= 1;
-        STACK_SIZE = before;
-        int32_t iflocals = locals.back().size();
-        locals.pop_back();
-        bytes_done += 1 + JUMPOFFSet_Size;//JMP of if block
-        if(iflocals!=0)
-            bytes_done+=4;//for NPOP_STACK+ 4 byte operand
-        vector<vector<uint8_t>> elifConditions;
-        int32_t elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
-        int32_t elifBlockcounter = 3;//third node of ast
-        vector<int32_t> elifLocalSizes ;
-        vector<vector<uint8_t>> elifBlocks;
-        for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
-        {
-            vector<uint8_t> elifCond = exprByteCode(ast->childs[1]->childs[k]);
-            elifConditions.push_back(elifCond);
-            bytes_done += 1 + JUMPOFFSet_Size;//JMPIFFALSE of elif
+        {           
+            vector<uint8_t> ifcond = exprByteCode(ast->childs[1]->childs[0]);
+            bytes_done += 1 + JUMPOFFSET_SIZE;//JumpIfFalse after if condition
             scope += 1;
-            before = STACK_SIZE;
+            SymbolTable m;
             locals.push_back(m);
-            vector<uint8_t> elifBlock = compile(ast->childs[elifBlockcounter]);
+            int32_t before = STACK_SIZE;
+            vector<uint8_t> ifblock = compile(ast->childs[2]);
             scope -= 1;
             STACK_SIZE = before;
-            int32_t eliflocals = locals.back().size();
-            elifLocalSizes.push_back(eliflocals);
+            int32_t iflocals = locals.back().size();
             locals.pop_back();
-            bytes_done += 1 + JUMPOFFSet_Size;// JMP of elifBlock
-            elifBlocks.push_back(elifBlock);
-            elifBlocksSize += elifCond.size() + 1 + JUMPOFFSet_Size + elifBlock.size() + 1 + JUMPOFFSet_Size ;
-            if(eliflocals!=0)
+            bytes_done += 1 + JUMPOFFSET_SIZE;//JMP of if block
+            if(iflocals!=0)
+                bytes_done+=4;//for NPOP_STACK+ 4 byte operand
+            vector<vector<uint8_t>> elifConditions;
+            int32_t elifBlocksSize = 0;//total size in bytes elif blocks take including their conditions
+            int32_t elifBlockcounter = 3;//third node of ast
+            vector<int32_t> elifLocalSizes ;
+            vector<vector<uint8_t>> elifBlocks;
+            for (size_t k = 1; k < ast->childs[1]->childs.size(); k += 1)
             {
-                elifBlocksSize+=4;
-                bytes_done+=4;
-            }
-            elifBlockcounter += 1;
+                vector<uint8_t> elifCond = exprByteCode(ast->childs[1]->childs[k]);
+                elifConditions.push_back(elifCond);
+                bytes_done += 1 + JUMPOFFSET_SIZE;//JMPIFFALSE of elif
+                scope += 1;
+                before = STACK_SIZE;
+                locals.push_back(m);
+                vector<uint8_t> elifBlock = compile(ast->childs[elifBlockcounter]);
+                scope -= 1;
+                STACK_SIZE = before;
+                int32_t eliflocals = locals.back().size();
+                elifLocalSizes.push_back(eliflocals);
+                locals.pop_back();
+                bytes_done += 1 + JUMPOFFSET_SIZE;// JMP of elifBlock
+                elifBlocks.push_back(elifBlock);
+                elifBlocksSize += elifCond.size() + 1 + JUMPOFFSET_SIZE + elifBlock.size() + 1 + JUMPOFFSET_SIZE ;
+                if(eliflocals!=0)
+                {
+                    elifBlocksSize+=4;
+                    bytes_done+=4;
+                }
+                elifBlockcounter += 1;
         }
 
         program.insert(program.end(), ifcond.begin(), ifcond.end());
         program.push_back(JMPIFFALSE);
-        foo = ifblock.size() + 1 + JUMPOFFSet_Size ;
+        foo = ifblock.size() + 1 + JUMPOFFSET_SIZE ;
         if(iflocals!=0)
             foo+=4;
         addBytes(program,foo);
@@ -1692,12 +1687,12 @@ vector<uint8_t> Compiler::compile(Node* ast)
         addBytes(program,foo);
         for (size_t k = 0; k < elifBlocks.size(); k += 1)
         {
-            elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSet_Size) + 1;
+            elifBlocksSize -= elifBlocks[k].size() + elifConditions[k].size() + 1 + (2 * JUMPOFFSET_SIZE) + 1;
             if(elifLocalSizes[k]!=0)
                 elifBlocksSize -= 4;
             program.insert(program.end(), elifConditions[k].begin(), elifConditions[k].end());
             program.push_back(JMPIFFALSE);
-            foo = elifBlocks[k].size() + JUMPOFFSet_Size + 1;
+            foo = elifBlocks[k].size() + JUMPOFFSET_SIZE + 1;
             if(elifLocalSizes[k]!=0)
                 foo+=4;
             addBytes(program,foo);
@@ -1795,9 +1790,9 @@ vector<uint8_t> Compiler::compile(Node* ast)
             if(!inclass)
             {
                 if(scope==0)
-                globals.emplace(name,STACK_SIZE);
+                    globals.emplace(name,STACK_SIZE);
                 else
-                locals.back().emplace(name,STACK_SIZE);
+                    locals.back().emplace(name,STACK_SIZE);
                 STACK_SIZE+=1;
             }
             unordered_map<string,int32_t> C;
@@ -1810,7 +1805,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 locals.back().emplace("self",STACK_SIZE);
                 selfIdx = STACK_SIZE;
                 if(name=="__construct__")
-                inConstructor = true;
+                    inConstructor = true;
                 STACK_SIZE+=1;
             }
             for (size_t k =0; k<ast->childs[2]->childs.size(); k += 1)
@@ -1818,11 +1813,11 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 string n = ast->childs[2]->childs[k]->val;
                 if(ast->childs[2]->childs[k]->childs.size()!=0)
                 {
-                if(isGen)
-                    compileError("SyntaxError","Error default parameters not supported for couroutines");
-                expr = exprByteCode(ast->childs[2]->childs[k]->childs[0]);
-                program.insert(program.end(),expr.begin(),expr.end());
-                def_param +=1;
+                    if(isGen)
+                        compileError("SyntaxError","Error default parameters not supported for couroutines");
+                    expr = exprByteCode(ast->childs[2]->childs[k]->childs[0]);
+                    program.insert(program.end(),expr.begin(),expr.end());
+                    def_param +=1;
                 }
                 C.emplace(n,STACK_SIZE);
                 STACK_SIZE+=1;
@@ -1831,7 +1826,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 program.push_back(LOAD_CO);
             else
                 program.push_back(LOAD_FUNC);
-            foo = bytes_done+2+JUMPOFFSet_Size+JUMPOFFSet_Size+JUMPOFFSet_Size+1 +((isGen) ? 0 : 1);
+            foo = bytes_done+2+JUMPOFFSET_SIZE+JUMPOFFSET_SIZE+JUMPOFFSET_SIZE+1 +((isGen) ? 0 : 1);
             addBytes(program,foo);
             foo = addToVMStringTable(name);
             addBytes(program,foo);
@@ -1851,7 +1846,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             int32_t I = program.size();
             program.push_back(JMP);
             addBytes(program,0);
-            bytes_done += 1 + JUMPOFFSet_Size ;
+            bytes_done += 1 + JUMPOFFSET_SIZE ;
             
             locals.push_back(C);
             scope += 1;
@@ -1967,17 +1962,17 @@ vector<uint8_t> Compiler::compile(Node* ast)
         else if (ast->type == NodeType::RETURN_NODE)
         {
             if(inConstructor)
-            compileError("SyntaxError","Error class constructors should not return anything!");
+                compileError("SyntaxError","Error class constructors should not return anything!");
             if(scope == fnScope)
-            returnStmtAtFnScope = true;//function has an unconditional return
+                returnStmtAtFnScope = true;//function has an unconditional return
             //stmt in it's block
             vector<uint8_t> val = exprByteCode(ast->childs[1]);
             program.insert(program.end(), val.begin(), val.end());
             addLnTableEntry(bytes_done);
             if(inGen)
-            program.push_back(CO_STOP);
+                program.push_back(CO_STOP);
             else
-            program.push_back(OP_RETURN);
+                program.push_back(OP_RETURN);
             bytes_done += 1;
         }
         else if (ast->type == NodeType::THROW)
@@ -1991,7 +1986,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         else if (ast->type == NodeType::YIELD)
         {
             if(inConstructor)
-            compileError("SyntaxError","Error class constructor can not be generators!");
+                compileError("SyntaxError","Error class constructor can not be generators!");
             
             vector<uint8_t> val = exprByteCode(ast->childs[1]);
             program.insert(program.end(), val.begin(), val.end());              
@@ -2005,7 +2000,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             breakIdx.push_back(bytes_done+5);
             foo = 0;
             for(size_t i=localsBegin;i<locals.size();i++)
-            foo+=locals[i].size();
+                foo+=locals[i].size();
             addBytes(program,foo);
             foo = 0;
             addBytes(program,foo);
@@ -2013,8 +2008,8 @@ vector<uint8_t> Compiler::compile(Node* ast)
         }
         else if(ast->type==NodeType::gc)
         {
-        program.push_back(GC);
-        bytes_done+=1;
+            program.push_back(GC);
+            bytes_done+=1;
         }
         else if (ast->type == NodeType::CONTINUE)
         {
@@ -2022,7 +2017,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             contIdx.push_back(bytes_done+5);
             foo = 0;
             for(size_t i=localsBegin;i<locals.size();i++)
-            foo+=locals[i].size();
+                foo+=locals[i].size();
             addBytes(program,foo);
             foo = 0;
             addBytes(program,foo);
@@ -2053,19 +2048,19 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 bool add = true;
                 for(index = 0;index < vm.builtin.size();index+=1)
                 {
-                if(vm.builtin[index]==funcs[name])
-                {
-                    add = false;
-                    break;
-                }
+                    if(vm.builtin[index]==funcs[name])
+                    {
+                        add = false;
+                        break;
+                    }
                 }
                 if(add)
                 {
-                vm.builtin.push_back(funcs[name]);
-                foo = vm.builtin.size()-1;
+                    vm.builtin.push_back(funcs[name]);
+                    foo = vm.builtin.size()-1;
                 }
                 else
-                foo = index;
+                    foo = index;
                 addBytes(program,foo);
                 bytes_done += 5;
                 program.push_back((char)ast->childs[2]->childs.size());

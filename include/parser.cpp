@@ -2232,13 +2232,13 @@ Node* Parser::parse(const vector<Token>& tokens)
                 incatch = ctxCopy;
                 if(start==0)
                 {
-                Final = ast;
-                e = Final;
+                    Final = ast;
+                    e = Final;
                 }
                 else
                 {
-                e->childs.push_back(ast);
-                e = e->childs.back();
+                    e->childs.push_back(ast);
+                    e = e->childs.back();
                 }
                 start=i+1;
                 k = i;
@@ -2287,59 +2287,59 @@ Node* Parser::parse(const vector<Token>& tokens)
                 Node* A;
                 if(std::find(files->begin(),files->end(),str)!=files->end())
                 {
-                A = NewNode(NodeType::file);
-                A->childs.push_back(NewNode(NodeType::line,to_string(line_num)));
-                A->childs.push_back(NewNode(NodeType::STR,str));
-                A->childs.push_back(NewNode(NodeType::EOP));
+                    A = NewNode(NodeType::file);
+                    A->childs.push_back(NewNode(NodeType::line,to_string(line_num)));
+                    A->childs.push_back(NewNode(NodeType::STR,str));
+                    A->childs.push_back(NewNode(NodeType::EOP));
                 }
                 else
                 {
-                FILE* file = fopen(str.c_str(),"r");
-                if(!file)
-                    parseError("ImportError",strerror(errno));
-                files->push_back(str);
-                string F = filename;
-                size_t K = line_num;
-                filename = str;
-                line_num = 1;
-                string src;
-                char ch;
-                while((ch = fgetc(file))!=EOF)
-                {
-                    src+=ch;
-                }
-                fclose(file);
-                sources->push_back(src);
-                Lexer lex;
-                vector<Token> tokens = lex.generateTokens(filename,src);
-                stripNewlines(tokens);
-                Token t;
-                Token nl;
-                nl.type = NEWLINE_TOKEN;
-                nl.content = "\n";
-                tokens.push_back(nl);
-                t.type = EOP_TOKEN;
-                t.content  = "EOP";
-                tokens.push_back(t);
-                tokens.push_back(nl);
-                A = NewNode(NodeType::file);
-                A->childs.push_back(NewNode(NodeType::line,to_string(K)));
-                A->childs.push_back(NewNode(NodeType::STR,str));
-                Node* subast = parse(tokens);
-                A->childs.push_back(subast);
-                filename = F;
-                line_num = K;
+                    FILE* file = fopen(str.c_str(),"r");
+                    if(!file)
+                        parseError("ImportError",strerror(errno));
+                    files->push_back(str);
+                    string F = filename;
+                    size_t K = line_num;
+                    filename = str;
+                    line_num = 1;
+                    string src;
+                    char ch;
+                    while((ch = fgetc(file))!=EOF)
+                    {
+                        src+=ch;
+                    }
+                    fclose(file);
+                    sources->push_back(src);
+                    Lexer lex;
+                    vector<Token> tokens = lex.generateTokens(filename,src);
+                    stripNewlines(tokens);
+                    Token t;
+                    Token nl;
+                    nl.type = NEWLINE_TOKEN;
+                    nl.content = "\n";
+                    tokens.push_back(nl);
+                    t.type = EOP_TOKEN;
+                    t.content  = "EOP";
+                    tokens.push_back(t);
+                    tokens.push_back(nl);
+                    A = NewNode(NodeType::file);
+                    A->childs.push_back(NewNode(NodeType::line,to_string(K)));
+                    A->childs.push_back(NewNode(NodeType::STR,str));
+                    Node* subast = parse(tokens);
+                    A->childs.push_back(subast);
+                    filename = F;
+                    line_num = K;
 
                 }
                 if(start==0)
                 {
-                Final = A;
-                e = A;
+                   Final = A;
+                    e = A;
                 }
                 else
                 {
-                e->childs.push_back(A);
-                e = A;
+                    e->childs.push_back(A);
+                    e = A;
                 }
                 start = k+1;
                 deleteAST(ast);
@@ -2348,13 +2348,13 @@ Node* Parser::parse(const vector<Token>& tokens)
             {
                 if(start==0)
                 {
-                Final = ast;
-                e = Final;
+                   Final = ast;
+                    e = Final;
                 }
                 else
                 {
-                e->childs.push_back(ast);
-                e = e->childs.back();
+                    e->childs.push_back(ast);
+                    e = e->childs.back();
                 }
                 start = k+1;
             }
