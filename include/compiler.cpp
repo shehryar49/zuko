@@ -1921,7 +1921,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         {
             if(e=="super" || e=="self")
             {
-            compileError("NameError","Error class not allowed to have members named \"super\" or \"self\"");
+                compileError("NameError","Error class not allowed to have members named \"super\" or \"self\"");
             }
             foo = addToVMStringTable(e);
             program.push_back(LOAD_STR);

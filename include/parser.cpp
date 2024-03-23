@@ -1572,7 +1572,7 @@ return nullptr;//to avoid compiler warning otherwise the parseError function exi
 
 Node* Parser::parse(const vector<Token>& tokens)
 {
-    int k = 0;
+    size_t k = 0;
     Node* ast = nullptr;
     Token ElseTok,elif,newlinetok,bgscope,endscope;
     int start = 0;
@@ -1580,7 +1580,8 @@ Node* Parser::parse(const vector<Token>& tokens)
     Node* Final = nullptr;
     line_num = 1;
     bool a,b,c;
-    while(k<(int)tokens.size())
+    size_t len = tokens.size();
+    while(k<len)
     {
         if(tokens[k].type== TokenType::NEWLINE_TOKEN)
         {
@@ -1588,9 +1589,9 @@ Node* Parser::parse(const vector<Token>& tokens)
             vector<Token> line = {tokens.begin()+start,tokens.begin()+k};
             if(line.size()==0)
             {
-            start+=1;
-            k+=1;
-            continue;
+                start+=1;
+                k+=1;
+                continue;
             }
             line_num = line[0].ln;
             //for ifelse and loop statements, we pop the curly bracket from line
