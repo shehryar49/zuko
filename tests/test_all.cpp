@@ -52,6 +52,7 @@ const char* tests[] =
     "stdlist",
     "multiline-expr",
     "str",
+    "hex_escape_char",
     "bignum",
     "regex",
     "json",
