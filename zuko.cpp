@@ -70,6 +70,7 @@ int main(int argc, const char* argv[])
         Node* ast = parser.parse(tokens); //parse the tokens of root file
         //uncomment below line to print AST in tabular form
         //printAST(ast);
+        
         Compiler compiler;
         compiler.init(filename,p);//init compiler with root filename and ProgramInfo
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
