@@ -1670,8 +1670,15 @@ Node* Parser::parse(const vector<Token>& tokens)
                 int j = findTokenConsecutive(bgscope,start+line.size(),tokens);
                 int i;
                 if(j!=-1)
+                {
                     i = findRCB(j,tokens);
-                if(j==-1)
+                    if(i == -1)
+                    {
+                      line_num = tokens[j].ln;
+                      parseError("SyntaxError","Error expected '}' to match this.");
+                    }
+                }
+                else
                 {
                     j = findTokenConsecutive(newlinetok,start+line.size(),tokens);
                     i = findToken(newlinetok,j+1,tokens);
