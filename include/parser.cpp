@@ -855,7 +855,7 @@ Node* Parser::parseStmt(vector<Token> tokens)
 {
 if(tokens.size()==0)
     parseError("SyntaxError","Invalid Syntax");
-//length of tokens is never zero
+
 if(tokens.size()==1 && (tokens[0].content=="endfunc" || tokens[0].content=="endnm" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || tokens[0].content=="endfor" || tokens[0].content=="endelse" || tokens[0].content=="endwhile" || tokens[0].content =="endclass" || tokens[0].content=="endelif"  || tokens[0].content=="endif") && tokens[0].type==KEYWORD_TOKEN)
 {
     return NewNode(NodeType::end,tokens[0].content);
@@ -1647,7 +1647,8 @@ Node* Parser::parse(const vector<Token>& tokens)
                 k+=1;
                 continue;
             }
-            
+
+
             ast = parseStmt(line);
 
 
@@ -2313,20 +2314,24 @@ Node* Parser::parse(const vector<Token>& tokens)
                     sources->push_back(src);
                     Lexer lex;
                     vector<Token> tokens = lex.generateTokens(filename,src);
-                    stripNewlines(tokens);
-                    Token t;
-                    Token nl;
-                    nl.type = NEWLINE_TOKEN;
-                    nl.content = "\n";
-                    tokens.push_back(nl);
-                    t.type = EOP_TOKEN;
-                    t.content  = "EOP";
-                    tokens.push_back(t);
-                    tokens.push_back(nl);
+                    bool empty_file = false;
+                    if(tokens.size() == 1 && tokens[0].type==EOP_TOKEN)
+                      empty_file = true;
+                    if(lex.hadErr)
+                    {
+                        filename = F;
+                        line_num = K;
+                        //error was already printed
+                        exit(1);
+                    }
                     A = NewNode(NodeType::file);
                     A->childs.push_back(NewNode(NodeType::line,to_string(K)));
                     A->childs.push_back(NewNode(NodeType::STR,str));
-                    Node* subast = parse(tokens);
+                    Node* subast;
+                    if(empty_file)
+                        subast = NewNode(NodeType::EOP,"EOP");
+                    else
+                        subast = parse(tokens);
                     A->childs.push_back(subast);
                     filename = F;
                     line_num = K;
