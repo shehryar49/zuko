@@ -68,6 +68,7 @@ int main(int argc, const char* argv[])
         Parser parser;
         parser.init(filename,p);//init parser with root filename and ProgramInfo
         Node* ast = parser.parse(tokens); //parse the tokens of root file
+
         //uncomment below line to print AST in tabular form
         //printAST(ast);
         
