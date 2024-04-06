@@ -34,19 +34,19 @@ SOFTWARE.*/
 
 Node* NewNode(NodeType type,string val="");
 void stripNewlines(vector<Token>& tokens);
-int matchRPRight(int k,const vector<Token>& tokens);
-int findBeginList(int k,const vector<Token>& tokens);
-int findLCBRight(int k,const vector<Token>& tokens);
+
 int findToken(Token t,int start,const vector<Token>& tokens);
-int matchRP(int k,const vector<Token> tokens);
-int findEndList(int k,const vector<Token>& tokens);
-int findRCB(int k,const vector<Token>& tokens);
+int findTokenConsecutive(Token t,int start,const vector<Token>& tokens);
+
+int matchToken(int,TokenType,const vector<Token>&);
+int matchTokenRight(int,TokenType,const vector<Token>&);
+
 void deleteAST(Node* ast);
 void CopyAst(Node*& dest,Node* src);
 
 // Function to print AST in tablular form
 void printAST(Node* n,int spaces = 0);
-int findTokenConsecutive(Token t,int start,const vector<Token>& tokens);
+
 
 
 class Parser

@@ -1,7 +1,9 @@
 #include "parser.h"
+#include "ast.h"
 #include "lexer.h"
 #include <string.h>
 #include "convo.h"
+#include "token.h"
 extern bool REPL_MODE;
 void REPL();
 
@@ -25,57 +27,46 @@ void stripNewlines(vector<Token>& tokens)
     while(tokens.size()>0 && tokens[tokens.size()-1].type==NEWLINE_TOKEN )
         tokens.pop_back();
 }
-int matchRPRight(int k,const vector<Token>& tokens)
+//Function to find match for tokens like '(' '[' '{'
+int matchToken(int k,TokenType end,const vector<Token>& tokens)
 {
-  int ignore = 0;
-  while(k>=0)
-  {
-    if(tokens[k].type== TokenType::RParen_TOKEN)
-     ignore+=1;
-    else if(tokens[k].type== TokenType::LParen_TOKEN)
+    TokenType start = tokens[k].type;
+    int ignore = 0;
+    int l = tokens.size();
+    while(k<l)
     {
-      ignore-=1;
-      if(ignore==0)
-        return k;
+        if(tokens[k].type  == start)
+            ignore+=1;
+        else if(tokens[k].type== end)
+        {
+            ignore-=1;
+            if(ignore==0)
+                return k;
+        }
+        k+=1;
     }
-    k-=1;
-  }
-  return -1;
+    return -1;
 }
-int findBeginList(int k,const vector<Token>& tokens)
+int matchTokenRight(int k,TokenType end,const vector<Token>& tokens)
 {
-  int ignore = 0;
-  while(k>=0)
-  {
-    if(tokens[k].type==TokenType::END_LIST_TOKEN)
-     ignore+=1;
-    else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
+    TokenType start = tokens[k].type;
+    
+    int ignore = 0;
+    while(k>=0)
     {
-      ignore-=1;
-      if(ignore==0)
-        return k;
+        if(tokens[k].type == start)
+            ignore+=1;
+        else if(tokens[k].type == end)
+        {
+            ignore-=1;
+            if(ignore==0)
+                return k;
+        }
+        k-=1;
     }
-    k-=1;
-  }
-  return -1;
+    return -1;
 }
-int findLCBRight(int k,const vector<Token>& tokens)
-{
-  int ignore = 0;
-  while(k>=0)
-  {
-    if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-     ignore+=1;
-    else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
-    {
-      ignore-=1;
-      if(ignore==0)
-        return k;
-    }
-    k-=1;
-  }
-  return -1;
-}
+
 int findToken(Token t,int start,const vector<Token>& tokens)
 {
    int l = tokens.size();
@@ -87,60 +78,7 @@ int findToken(Token t,int start,const vector<Token>& tokens)
    }
    return -1;
 }
-int matchRP(int k,const vector<Token> tokens)
-{
-  int ignore = 0;
-  int l = tokens.size();
-  while(k<l)
-  {
-    if(tokens[k].type== TokenType::LParen_TOKEN)
-      ignore+=1;
-    else if(tokens[k].type== TokenType::RParen_TOKEN)
-    {
-      ignore-=1;
-      if(ignore==0)
-        return k;
-    }
-    k+=1;
-  }
-  return -1;
-}
-int findEndList(int k,const vector<Token>& tokens)
-{
-  int ignore = 0;
-  int l = tokens.size();
-  while(k<l)
-  {
-    if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
-      ignore+=1;
-    else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-    {
-      ignore-=1;
-      if(ignore==0)
-        return k;
-    }
-    k+=1;
-  }
-  return -1;
-}
-int findRCB(int k,const vector<Token>& tokens)
-{
-  int ignore = 0;
-  int l = tokens.size();
-  while(k<l)
-  {
-    if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
-      ignore+=1;
-    else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-    {
-      ignore-=1;
-      if(ignore==0)
-        return k;
-    }
-    k+=1;
-  }
-  return -1;
-}
+
 const char* NodeTypeNames[] =
 {
   "declare",
@@ -445,21 +383,21 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
         {
         if(tokens[k].type== TokenType::RParen_TOKEN)
         {
-            int i = matchRPRight(k,tokens);
+            int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k = i;
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = findBeginList(k,tokens);
+            int i = matchTokenRight(k,TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
         {
-            int i = findLCBRight(k,tokens);
+            int i = matchTokenRight(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
@@ -539,7 +477,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
     }
     if(tokens[tokens.size()-1].type==END_LIST_TOKEN)// evaluate indexes or lists
     {
-        int i = findBeginList(tokens.size()-1,tokens);
+        int i = matchTokenRight((int)tokens.size()-1,TokenType::BEGIN_LIST_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         if(i!=0)
@@ -570,7 +508,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
             {
-                int R = findEndList(k,tokens);
+                int R = matchToken(k,TokenType::END_LIST_TOKEN,tokens);
                 if(R>(L) || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<Token> sublist = {tokens.begin()+k,tokens.begin()+R+1};
@@ -579,7 +517,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
             {
-                int R = findRCB(k,tokens);
+                int R = matchToken(k,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(R>L || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<Token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
@@ -588,7 +526,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
             {
-                int R = matchRP(k,tokens);
+                int R = matchToken(k,TokenType::RParen_TOKEN,tokens);
                 if(R>L || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<Token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
@@ -611,24 +549,24 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
     {
         if(tokens[k].type==TokenType::RParen_TOKEN)
         {
-        int i = matchRPRight(k,tokens);
+        int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         k = i;
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = findBeginList(k,tokens);
+            int i = matchToken(k,TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
         {
-        int i = findLCBRight(k,tokens);
-        if(i==-1)
-            parseError("SyntaxError","Invalid Syntax");
-        k=i;
+            int i = matchTokenRight(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
+            if(i==-1)
+                parseError("SyntaxError","Invalid Syntax");
+            k = i;
         }
         else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="."))
         {
@@ -676,7 +614,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
             {
-                int R = findEndList(k,tokens);
+                int R = matchToken(k,TokenType::END_LIST_TOKEN,tokens);
                 vector<Token> sublist ={tokens.begin()+k,tokens.begin()+R+1};
                 if(tofill=="key")
                 {
@@ -691,7 +629,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
             {
-                int R = findRCB(k,tokens);
+                int R = matchToken(k,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(R==(int)tokens.size()-1)
                     parseError("SyntaxError","Invalid Syntax");
 
@@ -709,7 +647,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
             }
             else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
             {
-                int R = matchRP(k,tokens);
+                int R = matchToken(k,TokenType::RParen_TOKEN,tokens);
                 if(R>((int)tokens.size()-2) || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<Token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
@@ -744,7 +682,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
     ////////////////////
     if(tokens[0].type== TokenType::ID_TOKEN && tokens[1].type== TokenType::LParen_TOKEN)
     {
-        int i = matchRP(1,tokens);
+        int i = matchToken(1,TokenType::RParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         if(i==(int)tokens.size()-1)
@@ -782,7 +720,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
                 }
                 else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
                 {
-                    int i = findEndList(k,Args);
+                    int i = matchToken(k,TokenType::END_LIST_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> LIST =  {Args.begin()+k,Args.begin()+i+1};
@@ -791,7 +729,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
                 }
                 else if(Args[k].type== TokenType::LParen_TOKEN)
                 {
-                    int i = matchRP(k,Args);
+                    int i = matchToken(k,TokenType::RParen_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> P =  {Args.begin()+k,Args.begin()+i+1};
@@ -800,7 +738,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
                 }
                 else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
                 {
-                    int i = findRCB(k,Args);
+                    int i = matchToken(k,TokenType::R_CURLY_BRACKET_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> P =  {Args.begin()+k,Args.begin()+i+1};
@@ -821,7 +759,7 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
     //////////////
     if(tokens[0].type== TokenType::LParen_TOKEN)
     {
-        int i = matchRP(0,tokens);
+        int i = matchToken(0,TokenType::RParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         if(i==(int)tokens.size()-1)
@@ -952,7 +890,7 @@ if(tokens[0].type== TokenType::ID_TOKEN)
 {
     if(tokens.size()>=3)
     {
-    if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchRP(0,tokens)==((int)tokens.size()-1))
+    if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchToken(1,TokenType::RParen_TOKEN,tokens)==((int)tokens.size()-1))
     {
         bool wrapInPrint = false;
         if(REPL_MODE && atGlobalLevel() && tokens[0].content!="print" && tokens[0].content!="println" && tokens[0].content!="printf")
@@ -992,7 +930,7 @@ if(tokens[0].type== TokenType::ID_TOKEN)
                 }
                 else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
                 {
-                    int i = findEndList(k,Args);
+                    int i = matchToken(k,TokenType::END_LIST_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -1001,7 +939,7 @@ if(tokens[0].type== TokenType::ID_TOKEN)
                 }
                 else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
                 {
-                    int i = findRCB(k,Args);
+                    int i = matchToken(k,TokenType::R_CURLY_BRACKET_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -1010,7 +948,7 @@ if(tokens[0].type== TokenType::ID_TOKEN)
                 }
                 else if(Args[k].type== TokenType::LParen_TOKEN)
                 {
-                    int i = matchRP(k,Args);
+                    int i = matchToken(k,TokenType::RParen_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<Token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -1502,21 +1440,21 @@ while(k>=0)
 {
     if(tokens[k].type==TokenType::RParen_TOKEN)
     {
-    int i = matchRPRight(k,tokens);
+    int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
     if(i==-1)
         parseError("SyntaxError","Invalid Syntax");
     k = i;
     }
     else if(tokens[k].type== TokenType::END_LIST_TOKEN)
     {
-        int i = findBeginList(k,tokens);
+        int i = matchTokenRight(k,TokenType::BEGIN_LIST_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         k=i;
     }
     else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
     {
-    int i = findLCBRight(k,tokens);
+    int i = matchTokenRight(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
     if(i==-1)
         parseError("SyntaxError","Invalid Syntax");
     k=i;
@@ -1615,13 +1553,13 @@ Node* Parser::parse(const vector<Token>& tokens)
                 )
                 {
                 int idx = (int)k -1;
-                int rp = findRCB(idx,tokens);
+                int rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(a)
-                    rp = findRCB(idx,tokens);
+                    rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 else if(b)
-                    rp = matchRP(idx,tokens);
+                    rp = matchToken(idx,TokenType::RParen_TOKEN,tokens);
                 else if(c)
-                    rp = findEndList(idx,tokens);
+                    rp = matchToken(idx,TokenType::END_LIST_TOKEN,tokens);
                 if(rp == -1)
                     parseError("SyntaxError","'"+line.back().content+"' at the end of line is unmatched.");
                 //rp currently includes ending bracket on some line
@@ -1671,7 +1609,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                 int i;
                 if(j!=-1)
                 {
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                     if(i == -1)
                     {
                       line_num = tokens[j].ln;
@@ -1712,7 +1650,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                     line_num = tokens[j].ln;
                     parseError("SyntaxError","Error expected '(' after else if");
                 }
-                int l = matchRP(p,tokens);
+                int l = matchToken(p,TokenType::RParen_TOKEN,tokens);
 
                 vector<Token> condition = {tokens.begin()+p+1,tokens.begin()+l};
                 elifConditions.push_back(condition);
@@ -1727,7 +1665,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                         parseError("SyntaxError","Error expected code block or line after else if");
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 vector<Token> elifBlock = {tokens.begin()+j+1+1,tokens.begin()+i};
                 if(elifBlock.size()==1 && elifBlock[0].type==KEYWORD_TOKEN && (elifBlock[0].content=="endfor" || elifBlock[0].content=="endwhile" || elifBlock[0].content=="endnm" || elifBlock[0].content=="endclass" || elifBlock[0].content=="endfunc" || elifBlock[0].content=="endelse" || elifBlock[0].content=="endelif" ||  elifBlock[0].content=="endif"))
                 {
@@ -1751,7 +1689,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                         parseError("SyntaxError","Error expected code block or line after else");
                     }
                     else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 }
                 if(foundelif && foundElse)
                 {
@@ -1947,7 +1885,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                         parseError("SyntaxError","Expected code block after function definition!");
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(i==-1)
                     parseError("SyntaxError","Error missing '}' to end function definition.");
                 if(j==-1 || (j<(int)tokens.size()-1 && tokens[j+1].type==EOP_TOKEN))
@@ -2012,7 +1950,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                     parseError("SyntaxError","Error expected brackets {} after class definition!");
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(!atGlobalLevel())
                     parseError("SyntaxError","Class declartions must be at global scope or in a namespace!");
                 vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
@@ -2063,7 +2001,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                     parseError("SyntaxError","Error expected {} after namespace keyword");
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(!atGlobalLevel())
                     parseError("SyntaxError","Namespace declaration must be at global scope or within another namespace!");
                 vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
@@ -2114,7 +2052,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                         parseError("SyntaxError","Error expected a code block or line after "+ast->val);
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
                 if(block.size()==1 && block[0].type==KEYWORD_TOKEN && (block[0].content=="endfor" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || block[0].content=="endwhile" || block[0].content=="endnm" || block[0].content=="endclass" || block[0].content=="endfunc" || block[0].content=="endelse" || block[0].content=="endelif" ||  block[0].content=="endif"))
                 {
@@ -2167,7 +2105,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                     parseError("SyntaxError","Error expected a code block or line after try!");
                 }
                 else
-                    i = findRCB(j,tokens);
+                    i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 vector<Token> block = {tokens.begin()+j+1,tokens.begin()+i};
                 if(block.size()==1 && block[0].type==KEYWORD_TOKEN && (block[0].content=="endfor" || block[0].content=="endwhile" || block[0].content=="endnm" || block[0].content=="endclass" || block[0].content=="endfunc" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || block[0].content=="endelse" || block[0].content=="endelif" ||  block[0].content=="endif"))
                 {
@@ -2207,7 +2145,7 @@ Node* Parser::parse(const vector<Token>& tokens)
                             parseError("SyntaxError","Error expected code block or line after catch");
                     }
                     else
-                        i = findRCB(j,tokens);
+                        i = matchToken(j,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 }
                 else
                 {
