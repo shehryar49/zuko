@@ -791,53 +791,41 @@ Node* Parser::parseExpr(const vector<Token>& tokens)
 
 Node* Parser::parseStmt(vector<Token> tokens)
 {
-if(tokens.size()==0)
-    parseError("SyntaxError","Invalid Syntax");
+    if(tokens.size()==0)
+        parseError("SyntaxError","Invalid Syntax");
 
-if(tokens.size()==1 && (tokens[0].content=="endfunc" || tokens[0].content=="endnm" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || tokens[0].content=="endfor" || tokens[0].content=="endelse" || tokens[0].content=="endwhile" || tokens[0].content =="endclass" || tokens[0].content=="endelif"  || tokens[0].content=="endif") && tokens[0].type==KEYWORD_TOKEN)
-{
-    return NewNode(NodeType::end,tokens[0].content);
-}
-if(tokens.size()==1 && tokens[0].type==KEYWORD_TOKEN && tokens[0].content=="gc")
-    return NewNode(NodeType::gc);
-bool isPrivate = false;
-if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="private")
-{
-    isPrivate = true;
-    tokens.erase(tokens.begin());
-    if(!inclass)
-        parseError("SyntaxError","Error use of keyword private outside class!");
-    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="var")
+    if(tokens.size()==1 && (tokens[0].content=="endfunc" || tokens[0].content=="endnm" || tokens[0].content=="endtry" || tokens[0].content=="endcatch" || tokens[0].content=="endfor" || tokens[0].content=="endelse" || tokens[0].content=="endwhile" || tokens[0].content =="endclass" || tokens[0].content=="endelif"  || tokens[0].content=="endif") && tokens[0].type==KEYWORD_TOKEN)
+        return NewNode(NodeType::end,tokens[0].content);
+    if(tokens.size()==1 && tokens[0].type==KEYWORD_TOKEN && tokens[0].content=="gc")
+        return NewNode(NodeType::gc);
+
+    bool isPrivate = false;
+    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="private")
     {
+        isPrivate = true;
+        tokens.erase(tokens.begin());
+        if(!inclass)
+            parseError("SyntaxError","Error use of keyword private outside class!");
 
+        if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="var");
+        else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="function");
+        else
+            parseError("SyntaxError","Invalid use of keyword private\n");
     }
-    else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
+    else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="public")
     {
-
+        isPrivate = false;
+        tokens.erase(tokens.begin());
+        if(!inclass)
+            parseError("SyntaxError","Error use of keyword public outside class!");
+        if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="var");
+        else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="function");
+        else
+            parseError("SyntaxError","Invalid use of keyword public");
     }
-    else
-    parseError("SyntaxError","Invalid use of keyword private\n");
-}
-else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="public")
-{
-    isPrivate = false;
-    tokens.erase(tokens.begin());
-    if(!inclass)
-        parseError("SyntaxError","Error use of keyword public outside class!");
-    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="var")
+
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN  && tokens[0].content=="var")
     {
-
-    }
-    else if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
-    {
-
-    }
-    else
-    parseError("SyntaxError","Invalid use of keyword public");
-}
-
-if(tokens[0].type== TokenType::KEYWORD_TOKEN  && tokens[0].content=="var")
-{
     //declare statement
     if(tokens.size()<4) // there must be minimum four tokens var x  (simplest case)
     {
@@ -874,20 +862,20 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN  && tokens[0].content=="var")
     }
     ast->childs.push_back(parseExpr(expr));
     return ast;
-}
-if(tokens[0].type== TokenType::EOP_TOKEN && tokens.size()==1)
-{
+    }
+    if(tokens[0].type== TokenType::EOP_TOKEN && tokens.size()==1)
+    {
     Node* ast = NewNode(NodeType::EOP);
     return ast;
-}
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="break" || tokens[0].content=="continue") && tokens.size()==1)
-{
+    }
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="break" || tokens[0].content=="continue") && tokens.size()==1)
+    {
     Node* ast = NewNode(tokens[0].content == "break" ? NodeType::BREAK : NodeType::CONTINUE);
     ast->childs.push_back(NewNode(NodeType::line,to_string(tokens[0].ln)));
     return ast;
-}
-if(tokens[0].type== TokenType::ID_TOKEN)
-{
+    }
+    if(tokens[0].type== TokenType::ID_TOKEN)
+    {
     if(tokens.size()>=3)
     {
     if(tokens[1].type== TokenType::LParen_TOKEN && tokens[tokens.size()-1].type== TokenType::RParen_TOKEN && matchToken(1,TokenType::RParen_TOKEN,tokens)==((int)tokens.size()-1))
@@ -978,22 +966,20 @@ if(tokens[0].type== TokenType::ID_TOKEN)
         return ast;
     }
     }
-}
+    }
 
-if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="class")
-{
-    if(tokens.size()<2)
-        parseError("SyntaxError","Invalid Syntax");
-    if(tokens[1].type!=ID_TOKEN)
+    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="class")
+    {
+    if(tokens.size()<2 || tokens[1].type != ID_TOKEN)
         parseError("SyntaxError","Invalid Syntax");
     bool extendedClass=false;
     if(tokens.size()>=4)
     {
-    if(tokens[2].type!=TokenType::KEYWORD_TOKEN || tokens[3].type!=TokenType::ID_TOKEN)
-        parseError("SyntaxError","Invalid Syntax");
-    if(tokens[2].content!="extends")
-        parseError("SyntaxError","Invalid Syntax");
-    extendedClass = true;
+        if(tokens[2].type!=TokenType::KEYWORD_TOKEN || tokens[3].type!=TokenType::ID_TOKEN)
+            parseError("SyntaxError","Invalid Syntax");
+        if(tokens[2].content!="extends")
+            parseError("SyntaxError","Invalid Syntax");
+        extendedClass = true;
     }
     else if(tokens.size()==2)
     {
@@ -1022,9 +1008,9 @@ if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="class")
         ast->childs.push_back(parseExpr(tokens));
     }
     return ast;
-}
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="while" || tokens[0].content=="dowhile"))
-{
+    }
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="while" || tokens[0].content=="dowhile"))
+    {
     if(tokens.size()>=4)
     {
         if(tokens[1].type== TokenType::LParen_TOKEN  && tokens.back().type== TokenType::RParen_TOKEN)
@@ -1037,9 +1023,9 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && (tokens[0].content=="while" || t
             return ast;
         }
     }
-}
-if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="for")
-{
+    }
+    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="for")
+    {
     if(tokens.size()<3)
         parseError("SyntaxError","Invalid Syntax");
     if(tokens[1].type!=TokenType::LParen_TOKEN || tokens.back().type!=TokenType::RParen_TOKEN)
@@ -1114,9 +1100,9 @@ if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="for")
     }
     else
         parseError("SyntaxError","Invalid Syntax");
-}
-if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="foreach")
-{
+    }
+    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="foreach")
+    {
     if(tokens.size()<3)
         parseError("SyntaxError","Invalid Syntax");
 
@@ -1139,9 +1125,9 @@ if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="foreach")
     vector<Token> E = {Q};
     ast->childs.push_back(parseExpr(E));
     return ast;
-}
-if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="namespace")
-{
+    }
+    if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="namespace")
+    {
     if(tokens.size()!=2)
         parseError("SyntaxError","Invalid Syntax");
     if(tokens[1].type!=ID_TOKEN)
@@ -1155,11 +1141,11 @@ if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="namespace")
 
     ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
     return ast;
-}
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="if")
-{
-    if(tokens.size()>=4)
+    }
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="if")
     {
+        if(tokens.size()>=4)
+        {
     if(tokens[1].type== TokenType::LParen_TOKEN  && tokens.back().type== TokenType::RParen_TOKEN)
     {
         vector<Token> expr = {tokens.begin()+2,tokens.end()-1};
@@ -1171,9 +1157,9 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="if")
         ast->childs.push_back(conditions);
         return ast;
     }
+        }
     }
-}
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="import")
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="import")
     {
         Node* ast = NewNode(NodeType::import);
         vector<Token> t;
@@ -1234,7 +1220,7 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="import")
             parseError("SyntaxError","Invalid Syntax");
         }
     }
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
     {
         Node* ast = NewNode(NodeType::RETURN_NODE);
         vector<Token> t = {tokens.begin()+1,tokens.end()};
@@ -1245,7 +1231,7 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="return")
         ast->childs.push_back(parseExpr(t));
         return ast;
     }
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
     {
     foundYield = true;
     Node* ast = NewNode(NodeType::YIELD);
@@ -1257,8 +1243,8 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
     ast->childs.push_back(parseExpr(t));
     return ast;
     }
-if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
-{
+    if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
+    {
     if(tokens.size()<4)
         parseError("SyntaxError","Invalid Syntax");
     if(tokens.back().type==L_CURLY_BRACKET_TOKEN)
@@ -1353,9 +1339,9 @@ if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
     k+=1;
     }
     return ast;
-}
-int k=0;
-while(k<(int)tokens.size())
+    }
+    int k=0;
+    while(k<(int)tokens.size())
     {
         if(tokens[k].type!= TokenType::OP_TOKEN)
         {
@@ -1433,11 +1419,11 @@ while(k<(int)tokens.size())
     ast->childs.push_back(parseExpr(expr));
     return ast;
     }
-//Handle statements of the form
-//expr.fun()
-k = tokens.size()-1;
-while(k>=0)
-{
+    //Handle statements of the form
+    //expr.fun()
+    k = tokens.size()-1;
+    while(k>=0)
+    {
     if(tokens[k].type==TokenType::RParen_TOKEN)
     {
     int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
@@ -1485,9 +1471,9 @@ while(k>=0)
     return ast;
     }
     k-=1;
-}
-if(REPL_MODE)
-{
+    }
+    if(REPL_MODE)
+    {
     vector<Token> dummyStmt;
     Token i;
     i.content = "println";
@@ -1502,10 +1488,9 @@ if(REPL_MODE)
     i.type = RParen_TOKEN;
     dummyStmt.push_back(i);
     return parseExpr(dummyStmt);
-}
-parseError("SyntaxError","Unknown statement");
-return nullptr;//to avoid compiler warning otherwise the parseError function exits after printing error message
-
+    }
+    parseError("SyntaxError","Unknown statement");
+    return nullptr;//to avoid compiler warning otherwise the parseError function exits after printing error message
 }
 
 Node* Parser::parse(const vector<Token>& tokens)
