@@ -1508,7 +1508,6 @@ Node* Parser::parse(const vector<Token>& tokens)
     {
         if(tokens[k].type== TokenType::NEWLINE_TOKEN)
         {
-
             vector<Token> line = {tokens.begin()+start,tokens.begin()+k};
             if(line.size()==0)
             {
@@ -1528,25 +1527,25 @@ Node* Parser::parse(const vector<Token>& tokens)
                 (c = line.back().type == TokenType::BEGIN_LIST_TOKEN)
             )
             {
-            if(line.size() == 1) ;//
-            else
-            {
-                if( line[0].type != TokenType::KEYWORD_TOKEN ||
-                    (line[0].type == TokenType::KEYWORD_TOKEN &&
-                        (line[0].content == "var" || line[0].content=="return" || line[0].content=="yield")
-                    )
-                )
+                if(line.size() == 1) ;//
+                else
                 {
-                int idx = (int)k -1;
-                int rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
-                if(a)
-                    rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
-                else if(b)
-                    rp = matchToken(idx,TokenType::RParen_TOKEN,tokens);
-                else if(c)
-                    rp = matchToken(idx,TokenType::END_LIST_TOKEN,tokens);
-                if(rp == -1)
-                    parseError("SyntaxError","'"+line.back().content+"' at the end of line is unmatched.");
+                    if( line[0].type != TokenType::KEYWORD_TOKEN ||
+                        (line[0].type == TokenType::KEYWORD_TOKEN &&
+                        (line[0].content == "var" || line[0].content=="return" || line[0].content=="yield")
+                        )   
+                    )
+                    {
+                    int idx = (int)k -1;
+                    int rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    if(a)
+                        rp = matchToken(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    else if(b)
+                        rp = matchToken(idx,TokenType::RParen_TOKEN,tokens);
+                    else if(c)
+                        rp = matchToken(idx,TokenType::END_LIST_TOKEN,tokens);
+                    if(rp == -1)
+                        parseError("SyntaxError","'"+line.back().content+"' at the end of line is unmatched.");
                 //rp currently includes ending bracket on some line
                 //that whole line should be included
                 while(tokens[rp].type!=NEWLINE_TOKEN)
