@@ -22,3 +22,5 @@ Debug
 .vs/
 *.so
 *.a
+compile_commands.json
+.cache
