@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 project(zuko)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(zuko zuko.cpp include/vm.cpp include/parser.cpp include/lexer.cpp include/builtinfunc.cpp include/utility.cpp include/overflow.cpp include/convo.cpp  include/compiler.cpp include/repl.cpp include/zobject.c include/zdict.c include/zlist.c include/strmap.c include/zbytearray.c include/module.c include/klass.c include/klassobject.c)
 include_directories(include/) # even modules use this (include/ZObject.h)
 if(UNIX)
