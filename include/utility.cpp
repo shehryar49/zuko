@@ -1,6 +1,7 @@
 #include "utility.h"
 #include "convo.h"
 #include "vm.h"
+#include "zobject.h"
 #include <algorithm>
 using namespace std;
 
@@ -320,7 +321,7 @@ void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_ma
    fwrite(&total,sizeof(int),1,f);
    for(int i=0;i<vm.total_constants;i+=1)
    {
-     string s = ZObjectToStr(vm.constants[i]);
+     string s = zobjectToStr(vm.constants[i]);
     // printf("writing constant %s\n",s.c_str());
      int L = s.length();
      fwrite(&L,sizeof(int),1,f);
@@ -398,7 +399,7 @@ string unescape(string s)
 	  return s;
 }
 
-string ZObjectToStr(const ZObject& a)
+string zobjectToStr(const zobject& a)
 {
         string IntToHex(int);
         if(a.type=='i')
@@ -430,15 +431,15 @@ string ZObjectToStr(const ZObject& a)
         }
 				else if(a.type=='w')
 				{
-          FunObject* p = (FunObject*)a.ptr;
+          zfun* p = (zfun*)a.ptr;
 					return "<Function "+(string)p->name +">";
 				}
         else if(a.type=='y')
           return "<Native Function>";
 				else if(a.type=='v')
-				  return "<Class "+(string)(((Klass*)a.ptr) -> name)+">";
+				  return "<Class "+(string)(((zclass*)a.ptr) -> name)+">";
 		    else if(a.type=='o')
-				  return "<"+(string)((KlassObject*)a.ptr) -> klass->name+" Object "+to_string((long long int)a.ptr)+" >";
+				  return "<"+(string)((zclass_object*)a.ptr) -> _klass->name+" Object "+to_string((long long int)a.ptr)+" >";
         else if(a.type=='q')
         {
             char buff[100];
@@ -461,25 +462,25 @@ string ZObjectToStr(const ZObject& a)
         else if(a.type=='j')
         {
 
-            string ZListToStr(ZList*,vector<void*>* = nullptr);
-            ZList* p = (ZList*)a.ptr;
-            return ZListToStr(p);
+            string zlistToStr(zlist*,vector<void*>* = nullptr);
+            zlist* p = (zlist*)a.ptr;
+            return zlistToStr(p);
         }
         else if(a.type==Z_STR)
         {
-          ZStr* str = (ZStr*)a.ptr;
+          zstr* str = (zstr*)a.ptr;
           return str->val;
         }
         else if(a.type=='a')
         {
-						string DictToStr(ZDict*,vector<void*>* = nullptr);
-            ZDict* p = (ZDict*)a.ptr;
+						string DictToStr(zdict*,vector<void*>* = nullptr);
+            zdict* p = (zdict*)a.ptr;
             return DictToStr(p);
         }
         return "nil";
     }
 
-string ZListToStr(ZList* p,vector<void*>* prev)
+string zlistToStr(zlist* p,vector<void*>* prev)
 {
   vector<void*> seen;
   if(prev!=nullptr)
@@ -494,18 +495,18 @@ string ZListToStr(ZList* p,vector<void*>* prev)
            res+="[...]";
          else
          {
-            res+=ZListToStr((ZList*)p->arr[k].ptr,&seen);
+            res+=zlistToStr((zlist*)p->arr[k].ptr,&seen);
          }
       }
 			else if(p->arr[k].type=='a')
       {
-				 string DictToStr(ZDict*,vector<void*>* = nullptr);
+				 string DictToStr(zdict*,vector<void*>* = nullptr);
 
          if( std::find(seen.begin(), seen.end(), p->arr[k].ptr) != seen.end())
            res+="{...}";
          else
          {
-            res+=DictToStr((ZDict*)p->arr[k].ptr,&seen);
+            res+=DictToStr((zdict*)p->arr[k].ptr,&seen);
          }
       }
 			else if(p->arr[k].type=='s')
@@ -514,7 +515,7 @@ string ZListToStr(ZList* p,vector<void*>* prev)
 			}
       else
       {
-        res+=ZObjectToStr(p->arr[k]);
+        res+=zobjectToStr(p->arr[k]);
       }
       if(k!=p->size-1)
         res+=",";
@@ -522,7 +523,7 @@ string ZListToStr(ZList* p,vector<void*>* prev)
   return res+"]";
 }
 
-string DictToStr(ZDict* p,vector<void*>* prev)
+string DictToStr(zdict* p,vector<void*>* prev)
 {
 
     string res = "{";
@@ -531,14 +532,14 @@ string DictToStr(ZDict* p,vector<void*>* prev)
 		if(prev!=nullptr)
 		  seen = *prev;
 		seen.push_back((void*)p);
-		ZDict d = *p;
+		zdict d = *p;
     for(size_t i=0;i<d.capacity;i++)
     {
        if(d.table[i].stat != OCCUPIED)
          continue;
        
-       ZObject key = d.table[i].key;
-       ZObject val = d.table[i].val;
+       zobject key = d.table[i].key;
+       zobject val = d.table[i].val;
        if(key.type=='s')
           res+= "\""+unescape(*(string*)key.ptr)+"\"";
        else if(key.type=='a')
@@ -547,7 +548,7 @@ string DictToStr(ZDict* p,vector<void*>* prev)
 					 res+="{...}";
 				 else
 				 {
-						res+=DictToStr((ZDict*)key.ptr,&seen);
+						res+=DictToStr((zdict*)key.ptr,&seen);
 				 }
 			 }
 			 else if(key.type=='j')
@@ -555,10 +556,10 @@ string DictToStr(ZDict* p,vector<void*>* prev)
 				 if(std::find(seen.begin(),seen.end(),key.ptr)!=seen.end())
 				   res+="[...]";
 				 else
-				   res+=ZListToStr((ZList*)key.ptr,&seen);
+				   res+=zlistToStr((zlist*)key.ptr,&seen);
 			 }
 			 else
-          res+=ZObjectToStr(key);
+          res+=zobjectToStr(key);
 					/////////////////
        res+=(" : ");
 			 //////////////
@@ -570,7 +571,7 @@ string DictToStr(ZDict* p,vector<void*>* prev)
 					 res+="{...}";
 				 else
 				 {
-						res+=DictToStr((ZDict*)val.ptr,&seen);
+						res+=DictToStr((zdict*)val.ptr,&seen);
 				 }
 			 }
 			 else if(val.type=='j')
@@ -578,10 +579,10 @@ string DictToStr(ZDict* p,vector<void*>* prev)
 				 if(std::find(seen.begin(),seen.end(),val.ptr)!=seen.end())
 					 res+="[...]";
 				 else
-					 res+=ZListToStr((ZList*)val.ptr,&seen);
+					 res+=zlistToStr((zlist*)val.ptr,&seen);
 			 }
        else
-          res+=ZObjectToStr(val);
+          res+=zobjectToStr(val);
        res+=',';
        k+=1;
     }

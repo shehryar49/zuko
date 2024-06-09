@@ -1,13 +1,13 @@
 #include "base64.h"
 #include <string>
 
-ZObject nil;
+zobject nil;
 char base64Table[64];
 
-ZObject init()
+zobject init()
 {
     nil.type = Z_NIL;
-    Module* m = vm_allocModule();
+    zmodule* m = vm_allocModule();
     m->name = "base64";
     Module_addNativeFun(m,"encode",&ENCODE);
     Module_addSigNativeFun(m,"decode",&DECODE,"s");
@@ -21,7 +21,7 @@ ZObject init()
         base64Table[k++] = i;    
     base64Table[62] = '+';
     base64Table[63] = '/';
-    return ZObjFromModule(m);
+    return zobj_from_module(m);
 }
 //
 char reverse_base64(char ch)
@@ -89,7 +89,7 @@ std::string base64_encode(unsigned char* blob,size_t len)
   }
   return res;
 }
-ZByteArr* base64_decode(unsigned char* str,size_t len)
+zbytearr* base64_decode(unsigned char* str,size_t len)
 {
   if(len == 0)
     return nullptr;
@@ -111,7 +111,7 @@ ZByteArr* base64_decode(unsigned char* str,size_t len)
 
   char mask = 0x3f; //initial mask
   size_t currBits = 6;
-  ZByteArr* res = vm_allocByteArray();
+  zbytearr* res = vm_allocByteArray();
 
   for(size_t k=0;k<len-1;k++)
   {
@@ -134,12 +134,12 @@ ZByteArr* base64_decode(unsigned char* str,size_t len)
       currBits = 6 - bitsToBorrow;
       mask = (0x3f >> bitsToBorrow);
     }
-    ZByteArr_push(res,ch);
+    zbytearr_push(res,ch);
   }
   return res;
 }
 //
-ZObject ENCODE(ZObject* args,int32_t n)
+zobject ENCODE(zobject* args,int32_t n)
 {
   if(n!=1)
     return Z_Err(ArgumentError,"1 argument needed!");
@@ -160,14 +160,14 @@ ZObject ENCODE(ZObject* args,int32_t n)
   else
     return Z_Err(TypeError,"Argument must be a string or bytearray!");
   std::string res = base64_encode(val,len);
-  return ZObjFromStr(res.c_str());
+  return zobj_from_str(res.c_str());
 }
 
-ZObject DECODE(ZObject* args,int32_t n)
+zobject DECODE(zobject* args,int32_t n)
 {
-  ZStr* str = AS_STR(args[0]);
-  ZByteArr* arr = base64_decode((unsigned char*)str->val,str->len);
+  zstr* str = AS_STR(args[0]);
+  zbytearr* arr = base64_decode((unsigned char*)str->val,str->len);
   if(!arr)
     return Z_Err(Error,"Invalid base64! Unable to decode!");
-  return ZObjFromByteArr(arr);
+  return zobj_from_bytearr(arr);
 }

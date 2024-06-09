@@ -23,26 +23,27 @@ SOFTWARE.*/
 #include "builtinfunc.h"
 #include "convo.h"
 #include "utility.h"
+#include <cstdio>
 using namespace std;
 
 
 extern unordered_map<string,BuiltinFunc> funcs;
 extern bool REPL_MODE;
-extern Klass* TypeError;
-extern Klass* ValueError;
-extern Klass* MathError; 
-extern Klass* NameError;
-extern Klass* IndexError;
-extern Klass* ArgumentError;
-extern Klass* FileIOError;
-extern Klass* KeyError;
-extern Klass* OverflowError;
-extern Klass* FileOpenError;
-extern Klass* FileSeekError; 
-extern Klass* ImportError;
-extern Klass* ThrowError;
-extern Klass* MaxRecursionError;
-extern Klass* AccessError;
+extern zclass* TypeError;
+extern zclass* ValueError;
+extern zclass* MathError; 
+extern zclass* NameError;
+extern zclass* IndexError;
+extern zclass* ArgumentError;
+extern zclass* FileIOError;
+extern zclass* KeyError;
+extern zclass* OverflowError;
+extern zclass* FileOpenError;
+extern zclass* FileSeekError; 
+extern zclass* ImportError;
+extern zclass* ThrowError;
+extern zclass* MaxRecursionError;
+extern zclass* AccessError;
 
 void REPL();
 void initFunctions();
@@ -96,7 +97,7 @@ if(p.num_of_constants > 0 && !REPL_MODE)
 {
     if(vm.constants)
         delete[] vm.constants;
-    vm.constants = new ZObject[p.num_of_constants];
+    vm.constants = new zobject[p.num_of_constants];
     vm.total_constants = 0;
 }
 initFunctions();
@@ -149,11 +150,11 @@ if(REPL_MODE)
     REPL();
 exit(1);
 }
-int32_t Compiler::isDuplicateConstant(ZObject x)
+int32_t Compiler::isDuplicateConstant(zobject x)
 {
     for (int32_t k = 0; k < vm.total_constants; k += 1)
     {
-        if (ZObject_equals(vm.constants[k],x))
+        if (zobject_equals(vm.constants[k],x))
             return k;
     }
     return -1;
@@ -172,7 +173,7 @@ strcpy(arr,n.c_str());
 // the GC does not know about this memory
 // the string table won't be deallocated until exit, so no point in checking if
 // strings in it are reachable or not(during collect phase of GC)
-ZStr str;
+zstr str;
 str.len = n.length();
 str.val = arr;
 vm.strings.push_back(str);
@@ -197,7 +198,7 @@ return (int32_t)vm.builtin.size()-1;
 }
 vector<uint8_t> Compiler::exprByteCode(Node* ast)
 {
-    ZObject reg;
+    zobject reg;
     vector<uint8_t> bytes;
     if (ast->childs.size() == 0)
     {
@@ -2150,15 +2151,15 @@ while((int)STACK_SIZE > size)
     }
 }
 }
-Klass* Compiler::makeErrKlass(string name,Klass* error)
+zclass* Compiler::makeErrKlass(string name,zclass* error)
 {
-Klass* k = vm_allocKlass();
+zclass* k = vm_allocKlass();
 int32_t idx = addToVMStringTable(name);
 k->name = vm.strings[idx].val;
 StrMap_assign(&(k->members),&(error->members));
 StrMap_assign(&(k->members),&(error->privateMembers));
 globals.emplace(name,STACK_SIZE++);
-ZList_push(&vm.STACK,ZObjFromKlass(k));
+zlist_push(&vm.STACK,zobj_from_class(k));
 return k;
 }
 vector<uint8_t>& Compiler::compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns,bool popGlobals)//compiles as a complete program adds NPOP_STACK and OP_EXIT
@@ -2179,15 +2180,15 @@ if(bytecode.size() == 0)
     globals.emplace("stdin",1);
     globals.emplace("stdout",2);
     int32_t k = 2;
-    ZList* l = vm_allocList();
+    zlist* l = vm_allocList();
     while (k < argc)
     {
-        ZStr* p = vm_allocString(strlen(argv[k]));
+        zstr* p = vm_allocString(strlen(argv[k]));
         memcpy(p->val,argv[k],strlen(argv[k]));
-        ZList_push(l,ZObjFromStrPtr(p));
+        zlist_push(l,zobj_from_str_ptr(p));
         k += 1;
     }
-    ZList_push(&vm.STACK,ZObjFromList(l));
+    zlist_push(&vm.STACK,zobj_from_list(l));
     zfile* STDIN = vm_alloczfile();
     STDIN->open = true;
     STDIN ->fp = stdin;
@@ -2196,22 +2197,22 @@ if(bytecode.size() == 0)
     STDOUT->open = true;
     STDOUT ->fp = stdout;
     
-    ZList_push(&vm.STACK,ZObjFromFile(STDIN));
-    ZList_push(&vm.STACK,ZObjFromFile(STDOUT));
-    
+    zlist_push(&vm.STACK,zobj_from_file(STDIN));
+    zlist_push(&vm.STACK,zobj_from_file(STDOUT));
+
     addToVMStringTable("msg");
-    ZObject nil;
+    zobject nil;
     nil.type = Z_NIL;
     Error = vm_allocKlass();
     Error->name = "Error";
     StrMap_emplace(&(Error->members),"msg",nil);
     globals.emplace("Error",3);
     addToVMStringTable("__construct__");
-    FunObject* fun = vm_allocFunObject();
+    zfun* fun = vm_allocfun_object();
     fun->name = "__construct__";
     fun->args = 2;
     fun->i = 5;
-    fun->klass = NULL;
+    fun->_klass = NULL;
     vm.important.push_back((void*)fun);
 
     bytecode.push_back(JMP);
@@ -2227,11 +2228,11 @@ if(bytecode.size() == 0)
     bytecode.push_back(OP_RETURN);
 
     bytes_done+=26;
-    ZObject construct;
+    zobject construct;
     construct.type = Z_FUNC;
     construct.ptr = (void*)fun;
     StrMap_emplace(&(Error->members),"__construct__",construct);
-    ZList_push(&vm.STACK,ZObjFromKlass(Error));
+    zlist_push(&vm.STACK,zobj_from_class(Error));
     STACK_SIZE+=1;
     TypeError = makeErrKlass("TypeError",Error);
     ValueError = makeErrKlass("ValueError",Error);

@@ -9,28 +9,28 @@
 extern "C"
 {
 
-    EXPORT ZObject init();
+    EXPORT zobject init();
     //
     //Functions
-    EXPORT ZObject STRERROR(ZObject*,int);
+    EXPORT zobject STRERROR(zobject*,int);
     //Methods of our Wrapper Curl Object(not real curl object)
-    EXPORT ZObject curlklass__construct__(ZObject*,int);//
-    EXPORT ZObject setopt(ZObject*,int);
-    EXPORT ZObject perform(ZObject*,int);
-    EXPORT ZObject cleanup(ZObject*,int);
-    EXPORT ZObject getinfo(ZObject*,int);
-    EXPORT ZObject ESCAPE(ZObject*,int);
-    EXPORT ZObject UNESCAPE(ZObject*,int);
-    EXPORT ZObject curlklass__del__(ZObject*,int);
+    EXPORT zobject curlklass__construct__(zobject*,int);//
+    EXPORT zobject setopt(zobject*,int);
+    EXPORT zobject perform(zobject*,int);
+    EXPORT zobject cleanup(zobject*,int);
+    EXPORT zobject getinfo(zobject*,int);
+    EXPORT zobject ESCAPE(zobject*,int);
+    EXPORT zobject UNESCAPE(zobject*,int);
+    EXPORT zobject curlklass__del__(zobject*,int);
     //Methods of MimeObject
-    EXPORT ZObject mime__construct__(ZObject*,int);
-    EXPORT ZObject addpart(ZObject*,int);
-    EXPORT ZObject MIME__del__(ZObject*,int);
+    EXPORT zobject mime__construct__(zobject*,int);
+    EXPORT zobject addpart(zobject*,int);
+    EXPORT zobject MIME__del__(zobject*,int);
     //Methods MimePartObject
-    EXPORT ZObject MIME_NAME(ZObject*,int);
-    EXPORT ZObject MIME_FILENAME(ZObject*,int);
-    EXPORT ZObject MIME_CONTENTTYPE(ZObject*,int);
-    EXPORT ZObject MIME_DATA(ZObject*,int);
-    EXPORT ZObject MIMEPART__del__(ZObject*,int);
+    EXPORT zobject MIME_NAME(zobject*,int);
+    EXPORT zobject MIME_FILENAME(zobject*,int);
+    EXPORT zobject MIME_CONTENTTYPE(zobject*,int);
+    EXPORT zobject MIME_DATA(zobject*,int);
+    EXPORT zobject MIMEPART__del__(zobject*,int);
     
 }

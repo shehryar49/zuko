@@ -4,8 +4,8 @@
 
 extern "C"
 {
-    ZObject init(ZObject*);
-    ZObject FORK(ZObject*,int32_t);
-    ZObject GETPID(ZObject*,int32_t);  
+    zobject init(zobject*);
+    zobject FORK(zobject*,int32_t);
+    zobject GETPID(zobject*,int32_t);  
 }
 #endif

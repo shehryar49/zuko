@@ -1,13 +1,13 @@
 #include "klassobject.h"
 
-ZObject KlassObj_getMember(KlassObject* ko,const char* name)
+zobject zclassobject_get(zclass_object* ko,const char* name)
 {
-  ZObject val;
+  zobject val;
   val.type = Z_NIL;
   StrMap_get(&(ko->members),name,&val);
   return val;
 }
-void KlassObj_setMember(KlassObject* ko,const char* name,ZObject val)
+void zclassobj_set(zclass_object* ko,const char* name,zobject val)
 {
   StrMap_set(&(ko->members),name,val);
 }

@@ -85,7 +85,7 @@ public:
   //by initializing it again
   void init(std::string filename,ProgramInfo& p);
   void compileError(std::string type,std::string msg);
-  int32_t isDuplicateConstant(ZObject x);
+  int32_t isDuplicateConstant(zobject x);
   int32_t addToVMStringTable(const std::string& n);
   void addLnTableEntry(size_t opcodeIdx);
   int32_t addBuiltin(const std::string& name);
@@ -96,7 +96,7 @@ public:
   void optimizeJMPS(vector<uint8_t>& bytecode);
   void reduceStackTo(int size);//for REPL
 
-  Klass* makeErrKlass(std::string name,Klass* error);
+  zclass* makeErrKlass(std::string name,zclass* error);
   vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true);//compiles as a complete program adds NPOP_STACK and OP_EXIT
 
 };

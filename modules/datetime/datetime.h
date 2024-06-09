@@ -12,11 +12,11 @@ The code is completely free to use and comes without any guarantee/warrantee
 #include "zapi.h"
 extern "C"
 {
-  EXPORT ZObject init();
-  EXPORT ZObject TIME(ZObject* args,int32_t n);
-  EXPORT ZObject CTIME(ZObject* args,int32_t n);
-  EXPORT ZObject LOCALTIME(ZObject* args,int32_t n);
-  EXPORT ZObject GMTIME(ZObject* args,int32_t n);
-  EXPORT ZObject TMKLASS__del__(ZObject* args,int32_t n);
+  EXPORT zobject init();
+  EXPORT zobject TIME(zobject* args,int32_t n);
+  EXPORT zobject CTIME(zobject* args,int32_t n);
+  EXPORT zobject LOCALTIME(zobject* args,int32_t n);
+  EXPORT zobject GMTIME(zobject* args,int32_t n);
+  EXPORT zobject TMKLASS__del__(zobject* args,int32_t n);
   
 }

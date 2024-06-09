@@ -24,6 +24,8 @@ SOFTWARE.*/
 
 
 
+
+#include "zbytearray.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -53,20 +55,20 @@ SOFTWARE.*/
 extern "C"{
 #endif
 
-typedef struct ZList ZList;
-typedef struct NativeFunction NativeFunction;
-typedef struct ZByteArr ZByteArr;
-typedef struct ZDict ZDict;
+typedef struct zlist zlist;
+typedef struct znativefun znativefun;
+
+typedef struct zdict zdict;
 typedef struct zfile zfile;
-typedef struct ZStr ZStr;
+typedef struct zstr zstr;
 typedef struct StrMap StrMap;
-typedef struct Klass Klass;
-typedef struct KlassObject KlassObject;
-typedef struct Module Module;
+typedef struct zclass zclass;
+typedef struct zclass_object zclass_object;
+typedef struct zmodule zmodule;
 
 
 
-typedef struct ZObject
+typedef struct zobject
 {
     union
     {
@@ -76,25 +78,25 @@ typedef struct ZObject
         void* ptr;
     };
     char type;
-}ZObject;
+}zobject;
 
-typedef ZObject(*NativeFunPtr)(ZObject*,int);
+typedef zobject(*NativeFunPtr)(zobject*,int);
 
 #define AS_BOOL(x) (bool)x.i
 #define AS_INT(x) x.i
 #define AS_INT64(x) x.l
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) (uint8_t)x.i
-#define AS_STR(x) ((ZStr*)x.ptr)
+#define AS_STR(x) ((zstr*)x.ptr)
 #define AS_DICT(x) (ZDict*)x.ptr
 #define AS_LIST(x) (ZList*)x.ptr
-#define AS_KLASS(x) (Klass*)x.ptr
-#define AS_KlASSOBJ(x) (KlassObject*)x.ptr
-#define AS_BYTEARRAY(x) (ZByteArr*)x.ptr
+#define AS_KLASS(x) (zclass*)x.ptr
+#define AS_KlASSOBJ(x) (zclass_object*)x.ptr
+#define AS_BYTEARRAY(x) (zbytearr*)x.ptr
 #define AS_FILEOBJECT(x) (zfile*)x.ptr
 #define AS_PTR(x) x.ptr
 
-bool ZObject_equals(ZObject,ZObject);
+bool zobject_equals(zobject,zobject);
 
 
 
@@ -105,20 +107,20 @@ inline bool isNumeric(char t)
   return (t == Z_INT || t == Z_FLOAT || t == Z_INT64);
 }
 
-ZObject ZObjFromStrPtr(ZStr*);
-ZObject ZObjFromInt(int32_t);
-ZObject ZObjFromDouble(double);
-ZObject ZObjFromInt64(int64_t);
-ZObject ZObjFromPtr(void*);
-ZObject ZObjFromByte(uint8_t);
-ZObject ZObjFromBool(bool);
-ZObject ZObjFromList(ZList*);
-ZObject ZObjFromDict(ZDict*);
-ZObject ZObjFromModule(Module*);
-ZObject ZObjFromKlass(Klass*);
-ZObject ZObjFromKlassObj(KlassObject*);
-ZObject ZObjFromByteArr(ZByteArr*);
-ZObject ZObjFromFile(zfile*);
+zobject zobj_from_str_ptr(zstr*);
+zobject zobj_from_int(int32_t);
+zobject zobj_from_double(double);
+zobject zobj_from_int64(int64_t);
+zobject zobj_from_ptr(void*);
+zobject zobj_from_byte(uint8_t);
+zobject zobj_from_bool(bool);
+zobject zobj_from_list(zlist*);
+zobject zobj_from_dict(zdict*);
+zobject zobj_from_module(zmodule*);
+zobject zobj_from_class(zclass*);
+zobject zobj_from_classobj(zclass_object*);
+zobject zobj_from_bytearr(zbytearr*);
+zobject zobj_from_file(zfile*);
 
 #ifdef __cplusplus
 }

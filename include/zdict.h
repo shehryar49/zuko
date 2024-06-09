@@ -7,7 +7,7 @@ extern "C"{
 #include <string.h>
 #include <stdbool.h>
 #include "zobject.h"
-#include "zstr.h"
+
 typedef enum slotStatus
 {
   EMPTY,
@@ -16,31 +16,30 @@ typedef enum slotStatus
 }slotStatus;
 typedef struct slot
 {
-  ZObject key;
-  ZObject val;
+  zobject key;
+  zobject val;
   slotStatus stat;
 }slot;
-typedef struct ZDict
+typedef struct zdict
 {
   slot* table;
   size_t size;
   size_t capacity;
-}ZDict;
+}zdict;
 
 size_t hashDJB2(const char* key,size_t M);
 
-size_t hashZObject(ZObject a,size_t M);
+size_t hashzobject(zobject a,size_t M);
 
-void ZDict_init(ZDict* h);
-void ZDict_set(ZDict* h,ZObject key,ZObject val);
-void ZDict_emplace(ZDict* h,ZObject key,ZObject val);
-bool ZDict_get(ZDict* h,ZObject key,ZObject* val);
-bool ZDict_erase(ZDict* h,ZObject key);
-bool ZDict_equal(ZDict* h,ZDict* other);
-
-void ZDict_assign(ZDict* h,ZDict* other); // makes deep copy
-void ZDict_clear(ZDict* h);
-void ZDict_destroy(ZDict* h);
+void zdict_init(zdict* h);
+void zdict_set(zdict* h,zobject key,zobject val);
+void zdict_emplace(zdict* h,zobject key,zobject val);
+bool zdict_get(zdict* h,zobject key,zobject* val);
+bool zdict_erase(zdict* h,zobject key);
+bool zdict_equal(zdict* h,zdict* other);
+void zdict_assign(zdict* h,zdict* other); // makes deep copy
+void zdict_clear(zdict* h);
+void zdict_destroy(zdict* h);
 
 #ifdef __cplusplus
 }

@@ -1,22 +1,23 @@
 #include "zapi.h"
+#include "zobject.h"
 
 //Error classes
-Klass* Error;
-Klass* TypeError;
-Klass* ValueError;
-Klass* MathError; 
-Klass* NameError;
-Klass* IndexError;
-Klass* ArgumentError;
-Klass* FileIOError;
-Klass* KeyError;
-Klass* OverflowError;
-Klass* FileOpenError;
-Klass* FileSeekError; 
-Klass* ImportError;
-Klass* ThrowError;
-Klass* MaxRecursionError;
-Klass* AccessError;
+zclass* Error;
+zclass* TypeError;
+zclass* ValueError;
+zclass* MathError; 
+zclass* NameError;
+zclass* IndexError;
+zclass* ArgumentError;
+zclass* FileIOError;
+zclass* KeyError;
+zclass* OverflowError;
+zclass* FileOpenError;
+zclass* FileSeekError; 
+zclass* ImportError;
+zclass* ThrowError;
+zclass* MaxRecursionError;
+zclass* AccessError;
 
 
 
@@ -27,8 +28,8 @@ fn2 vm_allocDict;
 fn3 vm_allocString;
 fn4 vm_allocMutString;
 fn5 vm_allocFileObject;
-fn6 vm_allocKlass;
-fn7 vm_allocKlassObject;
+fn6 vm_allocklass;
+fn7 vm_allocklassObject;
 fn8 vm_allocNativeFunObj;
 fn9 vm_allocModule;
 fn10 vm_allocByteArray;
@@ -46,8 +47,8 @@ int api_setup(apiFuncions* p,int ver)
   vm_allocString = p->a3;
   vm_allocMutString = p->a4;
   vm_allocFileObject = p->a5;
-  vm_allocKlass = p->a6;
-  vm_allocKlassObject = p->a7;
+  vm_allocklass = p->a6;
+  vm_allocklassObject = p->a7;
   vm_allocNativeFunObj = p->a8;
   vm_allocModule = p->a9;
   vm_allocByteArray = p->a10;
@@ -76,43 +77,43 @@ int api_setup(apiFuncions* p,int ver)
 
 //These helper functions utilized allocator functions
 //that is why they are defined here
-Klass* makeDerivedKlass(Klass* base)
+zclass* makeDerivedklass(zclass* base)
 {
-  Klass* child = vm_allocKlass();
-  ZObject super;
+  zclass* child = vm_allocklass();
+  zobject super;
   super.type = Z_CLASS;
   super.ptr = (void*)base;
   StrMap_assign(&(child->members),&(base->members));
   StrMap_assign(&(child->privateMembers),&(base->privateMembers));
-  Klass_setMember(child,"super",super);
+  zclass_setmember(child,"super",super);
   return child;
 }
 
-ZObject ZObjFromStr(const char* str)// makes deep copy of str
+zobject ZObjFromStr(const char* str)// makes deep copy of str
 {
   size_t len = strlen(str);
-  ZStr* ptr = vm_allocString(len);
+  zstr* ptr = vm_allocString(len);
   memcpy(ptr->val,str,len);
-  ZObject ret;
+  zobject ret;
   ret.type = 's';
   ret.ptr = (void*)ptr;
   return ret;
 }
-ZObject ZObjFromMethod(const char* name,NativeFunPtr r,Klass* k)
+zobject ZObjFromMethod(const char* name,NativeFunPtr r,zclass* k)
 {
-  ZObject ret;
-  NativeFunction* fn = vm_allocNativeFunObj();
+  zobject ret;
+  znativefun* fn = vm_allocNativeFunObj();
   fn->name = name;
-  fn->klass = k;
+  fn->_klass = k;
   fn->addr = r;
   ret.type = 'y';
   ret.ptr = (void*)fn;
   return ret;
 }
-ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
+zobject ZObjFromFunction(const char* name,NativeFunPtr r)
 {
-  ZObject ret;
-  NativeFunction* fn = vm_allocNativeFunObj();
+  zobject ret;
+  znativefun* fn = vm_allocNativeFunObj();
   fn->name = name;
   fn->addr = r;
   ret.type = 'y';
@@ -121,39 +122,39 @@ ZObject ZObjFromFunction(const char* name,NativeFunPtr r)
 }
 
 
-ZObject Z_Err(Klass* errKlass,const char* des)
+zobject Z_Err(zclass* errklass,const char* des)
 {
-  ZObject ret;
-  KlassObject* p = vm_allocKlassObject(errKlass);
-  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
+  zobject ret;
+  zclass_object* p = vm_allocklassObject(errklass);
+  StrMap_set(&(p->members),"msg",zobj_from_str(des)); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
 }
 
 
-void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p)
+void module_addNativeFun(zmodule* m,const char* name,NativeFunPtr p)
 {
-  ZObject val = ZObjFromFunction(name,p);
+  zobject val = zobj_from_function(name,p);
   StrMap_emplace(&(m->members),name,val);
 }
-void Module_addSigNativeFun(Module* m,const char* name,NativeFunPtr p,const char* sig)
+void module_addSigNativeFun(zmodule* m,const char* name,NativeFunPtr p,const char* sig)
 {
-  ZObject val = ZObjFromFunction(name,p);
-  NativeFunction* fn = (NativeFunction*)val.ptr;
+  zobject val = ZObjFromFunction(name,p);
+  znativefun* fn = (znativefun*)val.ptr;
   fn->signature = sig;
   StrMap_emplace(&(m->members),name,val);
 }
 
-void Klass_addNativeMethod(Klass* k,const char* name,NativeFunPtr p)
+void klass_addNativeMethod(zclass* k,const char* name,NativeFunPtr p)
 {
-  ZObject val = ZObjFromMethod(name,p,k);
+  zobject val = ZObjFromMethod(name,p,k);
   StrMap_emplace(&(k->members),name,val);
 }
-void Klass_addSigNativeMethod(Klass* k,const char* name,NativeFunPtr p,const char* sig)
+void klass_addSigNativeMethod(zclass* k,const char* name,NativeFunPtr p,const char* sig)
 {
-  ZObject val = ZObjFromMethod(name,p,k);
-  NativeFunction* fn = (NativeFunction*)val.ptr;
+  zobject val = ZObjFromMethod(name,p,k);
+  znativefun* fn = (znativefun*)val.ptr;
   fn->signature = sig;
   StrMap_emplace(&(k->members),name,val);
 }

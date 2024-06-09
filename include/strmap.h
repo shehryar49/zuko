@@ -11,13 +11,13 @@ extern "C" {
 #include <string.h>
 #include <stdbool.h>
 #include "zobject.h"
-struct ZObject;
-typedef struct ZObject ZObject;
+struct zobject;
+typedef struct zobject zobject;
 
 typedef enum SM_SlotStatus { SM_EMPTY, SM_OCCUPIED, SM_DELETED } SM_SlotStatus;
 typedef struct SM_Slot {
   const char *key;
-  ZObject val;
+  zobject val;
   SM_SlotStatus stat;
 } SM_Slot;
 
@@ -35,10 +35,10 @@ typedef struct StrMap {
 size_t hashDJB2(const char *, size_t);
 
 void StrMap_init(StrMap *h);
-void StrMap_set(StrMap *h, const char *key, ZObject val);
-void StrMap_emplace(StrMap *h, const char *key, ZObject val);
-bool StrMap_get(StrMap *h, const char *key, ZObject *val);
-ZObject *StrMap_getRef(StrMap *h, const char *key);
+void StrMap_set(StrMap *h, const char *key, zobject val);
+void StrMap_emplace(StrMap *h, const char *key, zobject val);
+bool StrMap_get(StrMap *h, const char *key, zobject *val);
+zobject *StrMap_getRef(StrMap *h, const char *key);
 bool StrMap_erase(StrMap *h, const char *key);
 void StrMap_assign(StrMap *h, StrMap *other); // makes deep copy
 void StrMap_destroy(StrMap *h);

@@ -1,5 +1,5 @@
 #include "zdict.h"
-
+#include "zstr.h"
 size_t hashDJB2(const char* key,size_t M)
 {
   //using djb2 hash function for strings
@@ -14,11 +14,11 @@ size_t hashDJB2(const char* key,size_t M)
   return hash & (M-1);
 }
 
-size_t hashZObject(ZObject a,size_t M)
+size_t hashzobject(zobject a,size_t M)
 {
   char t = a.type;
   if(t==Z_STR)
-      return hashDJB2(((ZStr*)a.ptr) -> val,M);
+      return hashDJB2(((zstr*)a.ptr) -> val,M);
   else if(t==Z_INT || t == Z_BOOL || t == Z_BYTE)
       return ((a.i * 31) & (M-1));
   else if(t==Z_INT64)
@@ -29,7 +29,7 @@ size_t hashZObject(ZObject a,size_t M)
   //other types not supported as keys in dictionaries
   return 0;
 }
-void ZDict_init(ZDict* h)
+void zdict_init(zdict* h)
 {
   h->table = (slot*)malloc(sizeof(slot)*4);
   h->size = 0;
@@ -37,14 +37,14 @@ void ZDict_init(ZDict* h)
   for(int i=0;i<4;i++)
     h->table[i].stat = EMPTY;
 }
-void ZDict_set(ZDict* h,ZObject key,ZObject val)
+void zdict_set(zdict* h,zobject key,zobject val)
 {
-  size_t idx = hashZObject(key,h->capacity);
+  size_t idx = hashzobject(key,h->capacity);
   int i = 1;
   bool reassigned = false;
   while(h->table[idx].stat == OCCUPIED)
   {
-    if(ZObject_equals(h->table[idx].key,key)) //same key, just reassign value
+    if(zobject_equals(h->table[idx].key,key)) //same key, just reassign value
     {
       reassigned = true;
       break;
@@ -70,18 +70,18 @@ void ZDict_set(ZDict* h,ZObject key,ZObject val)
     for(size_t i=0;i<oldcap;i++)
     {
       if(old[i].stat == OCCUPIED)
-        ZDict_set(h,old[i].key,old[i].val);
+        zdict_set(h,old[i].key,old[i].val);
     }
     free(old);
   }
 }
-void ZDict_emplace(ZDict* h,ZObject key,ZObject val)
+void zdict_emplace(zdict* h,zobject key,zobject val)
 {
-  size_t idx = hashZObject(key,h->capacity);
+  size_t idx = hashzobject(key,h->capacity);
   int i = 1;
   while(h->table[idx].stat == OCCUPIED)
   {
-    if(ZObject_equals(h->table[idx].key,key)) //same key, don't reassign value
+    if(zobject_equals(h->table[idx].key,key)) //same key, don't reassign value
       return;
     idx = (idx + i*i)  & (h->capacity - 1);
     i++;
@@ -103,18 +103,18 @@ void ZDict_emplace(ZDict* h,ZObject key,ZObject val)
     for(size_t i=0;i<oldcap;i++)
     {
       if(old[i].stat == OCCUPIED)
-        ZDict_set(h,old[i].key,old[i].val);
+        zdict_set(h,old[i].key,old[i].val);
     }
     free(old);
   }
 }
-bool ZDict_get(ZDict* h,ZObject key,ZObject* val)
+bool zdict_get(zdict* h,zobject key,zobject* val)
 {
-  size_t idx = hashZObject(key,h->capacity);
+  size_t idx = hashzobject(key,h->capacity);
   int i = 1;
   while(h->table[idx].stat != EMPTY)
   {
-    if(ZObject_equals(h->table[idx].key,key))
+    if(zobject_equals(h->table[idx].key,key))
     {
       *val = h->table[idx].val;
       return true;
@@ -124,13 +124,13 @@ bool ZDict_get(ZDict* h,ZObject key,ZObject* val)
   }
   return false;
 }
-bool ZDict_erase(ZDict* h,ZObject key)
+bool zdict_erase(zdict* h,zobject key)
 {
-  size_t idx = hashZObject(key,h->capacity);
+  size_t idx = hashzobject(key,h->capacity);
   int i = 1;
   while(h->table[idx].stat != EMPTY)
   {
-    if(ZObject_equals(h->table[idx].key,key))
+    if(zobject_equals(h->table[idx].key,key))
     {
       h->table[idx].stat = DELETED;
       h->table[idx].key.type = Z_NIL;
@@ -143,35 +143,35 @@ bool ZDict_erase(ZDict* h,ZObject key)
   }
   return false;
 }
-bool ZDict_equal(ZDict* h,ZDict* other)
+bool zdict_equal(zdict* h,zdict* other)
 {
   for(size_t idx = 0; idx < h->capacity;idx++)
   {
     if(h->table[idx].stat != OCCUPIED)
       continue;
-    ZObject val;
-    if(!ZDict_get(other,h->table[idx].key,&val) || !ZObject_equals(val,h->table[idx].val))
+    zobject val;
+    if(!zdict_get(other,h->table[idx].key,&val) || !zobject_equals(val,h->table[idx].val))
     {
       return false;
     }
   }
   return true;
 }
-void ZDict_assign(ZDict* h,ZDict* other) // makes deep copy
+void zdict_assign(zdict* h,zdict* other) // makes deep copy
 {
   for(size_t idx=0;idx<other->capacity;idx++)
   {
     if(other->table[idx].stat != OCCUPIED)
       continue;
-    ZDict_emplace(h,other->table[idx].key,other->table[idx].val);
+    zdict_emplace(h,other->table[idx].key,other->table[idx].val);
   }
 }
-void ZDict_clear(ZDict* h)
+void zdict_clear(zdict* h)
 {
   for(size_t idx=0;idx<h->capacity;idx++)
     h->table[idx].stat = EMPTY;
 }
-void ZDict_destroy(ZDict* h)
+void zdict_destroy(zdict* h)
 {
   free(h->table);
 }

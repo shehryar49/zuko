@@ -44,22 +44,22 @@ extern "C"{
 #endif
 
 //Error classes (defined in zapi.c)
-extern Klass* Error;
-extern Klass* TypeError;
-extern Klass* ValueError;
-extern Klass* MathError; 
-extern Klass* NameError;
-extern Klass* IndexError;
-extern Klass* ArgumentError;
-extern Klass* FileIOError;
-extern Klass* KeyError;
-extern Klass* OverflowError;
-extern Klass* FileOpenError;
-extern Klass* FileSeekError; 
-extern Klass* ImportError;
-extern Klass* ThrowError;
-extern Klass* MaxRecursionError;
-extern Klass* AccessError;
+extern zclass* Error;
+extern zclass* TypeError;
+extern zclass* ValueError;
+extern zclass* MathError; 
+extern zclass* NameError;
+extern zclass* IndexError;
+extern zclass* ArgumentError;
+extern zclass* FileIOError;
+extern zclass* KeyError;
+extern zclass* OverflowError;
+extern zclass* FileOpenError;
+extern zclass* FileSeekError; 
+extern zclass* ImportError;
+extern zclass* ThrowError;
+extern zclass* MaxRecursionError;
+extern zclass* AccessError;
 //these classes are set by the api_setup()
 
 
@@ -72,8 +72,8 @@ extern fn2 vm_allocDict;
 extern fn3 vm_allocString;
 extern fn4 vm_allocMutString;
 extern fn5 vm_allocFileObject;
-extern fn6 vm_allocKlass;
-extern fn7 vm_allocKlassObject;
+extern fn6 vm_allocklass;
+extern fn7 vm_allocklassObject;
 extern fn8 vm_allocNativeFunObj;
 extern fn9 vm_allocModule;
 extern fn10 vm_allocByteArray;
@@ -89,15 +89,15 @@ int api_setup(apiFuncions* p,int ver);
 
 //Some more helper functions for module developers
 
-Klass* makeDerivedKlass(Klass* base);
-ZObject ZObjFromStr(const char*);// makes deep copy of str
-ZObject Z_Err(Klass*,const char*);
-ZObject ZObjFromMethod(const char*,NativeFunPtr,Klass*);
-ZObject ZObjFromFunction(const char*,NativeFunPtr);
-void Module_addNativeFun(Module* m,const char* name,NativeFunPtr p);
-void Module_addSigNativeFun(Module* m,const char* name,NativeFunPtr p,const char* sig);
-void Klass_addNativeMethod(Klass* k,const char* name,NativeFunPtr p);
-void Klass_addSigNativeMethod(Klass* k,const char* name,NativeFunPtr p,const char* sig);
+zclass* makeDerivedklass(zclass* base);
+zobject zobj_from_str(const char*);// makes deep copy of str
+zobject Z_Err(zclass*,const char*);
+zobject zobj_from_method(const char*,NativeFunPtr,zclass*);
+zobject zobj_from_function(const char*,NativeFunPtr);
+void Module_addNativeFun(zmodule* m,const char* name,NativeFunPtr p);
+void Module_addSigNativeFun(zmodule* m,const char* name,NativeFunPtr p,const char* sig);
+void klass_addNativeMethod(zclass* k,const char* name,NativeFunPtr p);
+void klass_addSigNativeMethod(zclass* k,const char* name,NativeFunPtr p,const char* sig);
 
 #ifdef __cplusplus
 }

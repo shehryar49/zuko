@@ -55,8 +55,8 @@ const char* getOS();
 std::string replace(int startpos,int endpos,std::string x,std::string s);
 std::string replace_all(std::string x,std::string y,std::string s);//replaces all x strings in s with string y
 std::string unescape(std::string s);
-std::string ZObjectToStr(const ZObject& a);
-std::string ZListToStr(ZList* p,std::vector<void*>* prev=nullptr);
-std::string DictToStr(ZDict* p,std::vector<void*>* prev=nullptr);
+std::string zobjectToStr(const zobject& a);
+std::string ZListToStr(zlist* p,std::vector<void*>* prev=nullptr);
+std::string DictToStr(zdict* p,std::vector<void*>* prev=nullptr);
 
 #endif

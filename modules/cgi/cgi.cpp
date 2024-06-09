@@ -6,13 +6,15 @@
 #include <unordered_map>
 #include <algorithm>
 #include "cgi.h"
+#include "klassobject.h"
+#include "zobject.h"
 #ifdef _WIN32
   #include<io.h>
   #include <fcntl.h>
 #endif
 using namespace std;
 
-Klass* CgiFile;
+zclass* CgiFile;
 
 vector<string> split(string s,const string& x)
 {
@@ -89,7 +91,7 @@ vector<string> splitIgnQuotes(string& s,char x)
   return parts;
 }
 
-ZDict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadError)
+zdict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadError)
 {
 
   hadError = true;
@@ -108,7 +110,7 @@ ZDict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadErr
   string read;
   string aux ;
   b = "\r\n"+(string)"--"+boundary;
-  ZDict* d = vm_allocDict();
+  zdict* d = vm_allocDict();
   while(k<len)
   {
     headername = "";
@@ -218,25 +220,25 @@ ZDict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadErr
           return nullptr;
       }
       if(filename =="")
-        ZDict_emplace(d,ZObjFromStr(name.c_str()),ZObjFromStr(content.c_str()));
+        zdict_emplace(d,zobj_from_str(name.c_str()),zobj_from_str(content.c_str()));
       else
       {
         //file content uploaded
-        KlassObject* ki = vm_allocKlassObject(CgiFile);
-        KlassObj_setMember(ki,"filename",ZObjFromStr(filename.c_str()));
+        zclass_object* ki = vm_allocklassObject(CgiFile);
+        zclassobj_set(ki,"filename",zobj_from_str(filename.c_str()));
         if(headers.find("content-type")!=headers.end())
         {
           aux = headers["content-type"];
-          KlassObj_setMember(ki,"type",ZObjFromStr(aux.c_str()));
+          zclassobj_set(ki,"type",zobj_from_str(aux.c_str()));
         }
         auto btArr = vm_allocByteArray();
-        ZByteArr_resize(btArr,content.length());
+        zbytearr_resize(btArr,content.length());
         memcpy(btArr->arr,&content[0],content.length());
-        ZObject rr;
+        zobject rr;
         rr.type = Z_BYTEARR;
         rr.ptr = (void*)btArr;
-        KlassObj_setMember(ki,"content",rr);
-        ZDict_emplace(d,ZObjFromStr(name.c_str()),ZObjFromKlassObj(ki));
+        zclassobj_set(ki,"content",rr);
+        zdict_emplace(d,zobj_from_str(name.c_str()),zobj_from_classobj(ki));
       }
         
       headers.clear();
@@ -245,13 +247,13 @@ ZDict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadErr
   hadError = false;
   return d;
 }
-ZDict* GET()
+zdict* GET()
 {
        char* q = getenv("QUERY_STRING");
        if(!q)
          return nullptr;
        string query = q;
-       ZDict* m = vm_allocDict();
+       zdict* m = vm_allocDict();
        if(query == "")
          return m;
        vector<string> pairs = split(q,"&");
@@ -262,7 +264,7 @@ ZDict* GET()
              return nullptr;
            eq[0] = url_decode(eq[0]);
            eq[1] = url_decode(eq[1]);
-           ZDict_emplace(m,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
+           zdict_emplace(m,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
        }
        return m;
 }
@@ -289,7 +291,7 @@ void consumeSpace(const string& data,int& k)
     k++;
   
 }
-ZDict* POST(bool& err)
+zdict* POST(bool& err)
 {
 
        err = true;
@@ -306,7 +308,7 @@ ZDict* POST(bool& err)
        if(type=="application/x-www-form-urlencoded")
        {
          string data = s;
-         ZDict* m = vm_allocDict();
+         zdict* m = vm_allocDict();
          if(data.length() == 0)
          {
            err = false;
@@ -320,7 +322,7 @@ ZDict* POST(bool& err)
                return nullptr;
              eq[0] = url_decode(eq[0]);
              eq[1] = url_decode(eq[1]);
-             ZDict_emplace(m,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
+             zdict_emplace(m,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
          }
          err = false;
          return m;
@@ -352,7 +354,7 @@ ZDict* POST(bool& err)
        }
 
 }
-ZObject FormData(ZObject* args,int n)
+zobject FormData(zobject* args,int n)
 {
     if(n!=0)
         return Z_Err(ArgumentError,"0 arguments needed!");
@@ -361,20 +363,20 @@ ZObject FormData(ZObject* args,int n)
         return Z_Err(Error,"Environment variable REQUEST_METHOD not found!");
     if(string(method)=="GET")
     {
-       ZDict* d = vm_allocDict();
+       zdict* d = vm_allocDict();
        d = GET();
        if(!d)
           return Z_Err(Error,"Error parsing request(bad or unsupported format)");
-       return ZObjFromDict(d);
+       return zobj_from_dict(d);
        
     }
     else if(string(method)=="POST")
     {
        bool hadErr=false;
-       ZDict* d = POST(hadErr);
+       zdict* d = POST(hadErr);
        if(!d || hadErr)
           return Z_Err(Error,"Error parsing request(bad or unsupported format)");
-       return ZObjFromDict(d);
+       return zobj_from_dict(d);
     }
     else
     {
@@ -382,31 +384,31 @@ ZObject FormData(ZObject* args,int n)
       return Z_Err(ValueError,errmsg.c_str());
     }
 }
-ZObject nil;
-ZObject init()
+zobject nil;
+zobject init()
 {
     #ifdef _WIN32
     _setmode(_fileno(stdin), _O_BINARY);//we dont want CRLF replaced by LF when
     //reading from stdin
     #endif
     nil.type = 'n';
-    Module* d = vm_allocModule();
-    CgiFile = vm_allocKlass();
-    Klass_addMember(CgiFile,"filename",nil);
-    Klass_addMember(CgiFile,"content",nil);
-    Klass_addMember(CgiFile,"contentType",nil);
+    zmodule* d = vm_allocModule();
+    CgiFile = vm_allocklass();
+    zclass_addmember(CgiFile,"filename",nil);
+    zclass_addmember(CgiFile,"content",nil);
+    zclass_addmember(CgiFile,"contentType",nil);
     CgiFile->name = "cgi.File";
 
-    Module_addMember(d,"FormData",ZObjFromMethod("cgi.FormData",&FormData,CgiFile));
-    Module_addMember(d,"cookies",ZObjFromFunction("cgi.cookies",&cookies));
+    zmodule_add_member(d,"FormData",zobj_from_method("cgi.FormData",&FormData,CgiFile));
+    zmodule_add_member(d,"cookies",zobj_from_function("cgi.cookies",&cookies));
     
     //Function FormData is not a member of CgiFile class but we want the class  not to be
     //garbage collected when FormData function object is reachable 
-    Module_addMember(d,"File",ZObjFromKlass(CgiFile));
-    return ZObjFromModule(d);
+    zmodule_add_member(d,"File",zobj_from_class(CgiFile));
+    return zobj_from_module(d);
 }
 
-ZObject cookies(ZObject* args,int n)
+zobject cookies(zobject* args,int n)
 {
   if(n!=0)
     return Z_Err(ArgumentError,"0 arguments needed!");
@@ -415,15 +417,15 @@ ZObject cookies(ZObject* args,int n)
     return Z_Err(ValueError,"No cookies!");
   string data = cookie;
   vector<string> parts = split(data,"; ");
-  ZDict* dict = vm_allocDict();
+  zdict* dict = vm_allocDict();
   for(auto e: parts)
   {
     vector<string> eq = split(e,"=");
     if(eq.size()!=2)
       return Z_Err(ValueError,"Bad or unsupported format");
-    ZDict_emplace(dict,ZObjFromStr(eq[0].c_str()),ZObjFromStr(eq[1].c_str()));
+    zdict_emplace(dict,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
   }
-  return ZObjFromDict(dict);
+  return zobj_from_dict(dict);
 }
 extern "C" void unload()
 {

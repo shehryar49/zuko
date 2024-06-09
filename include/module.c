@@ -3,12 +3,12 @@
 #include "zobject.h"
 
 
-void Module_addKlass(Module* m,const char* name,Klass* p)
+void zmodule_add_class(zmodule* m,const char* name,zclass* p)
 {
-  ZObject val = ZObjFromKlass(p);  
+  zobject val = zobj_from_class(p);  
   StrMap_emplace(&(m->members),name,val);
 }
-void Module_addMember(Module* m,const char* name,ZObject val)
+void zmodule_add_member(zmodule* m,const char* name,zobject val)
 {
   StrMap_emplace(&(m->members),name,val);
 }

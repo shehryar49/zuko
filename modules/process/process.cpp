@@ -1,32 +1,33 @@
 #include "process.h"
+#include "zobject.h"
 #include <unistd.h>
 using namespace std;
 
-ZObject init(ZObject* rrr)
+zobject init(zobject* rrr)
 {
-  Module* prcMod = vm_allocModule();
+  zmodule* prcMod = vm_allocModule();
   Module_addNativeFun(prcMod,"fork",&FORK);
   Module_addNativeFun(prcMod,"getpid",&GETPID);
-  return ZObjFromModule(prcMod);
+  return zobj_from_module(prcMod);
 }
 
-ZObject FORK(ZObject* args,int32_t n)
+zobject FORK(zobject* args,int32_t n)
 {
   if(n != 0)
     return Z_Err(ArgumentError,"0 arguments needed!");
   int pid = fork();
   if(pid < 0)
     return Z_Err(Error,"fork() syscall failed.");
-  return ZObjFromInt64(pid);
+  return zobj_from_int64(pid);
 }
-ZObject GETPID(ZObject* args,int32_t n)
+zobject GETPID(zobject* args,int32_t n)
 {
   if(n != 0)
     return Z_Err(ArgumentError,"0 arguments needed!");
   int pid = getpid();
   if(pid < 0)
     return Z_Err(Error,"getpid() syscall failed.");
-  return ZObjFromInt64(pid);
+  return zobj_from_int64(pid);
 }
 
 

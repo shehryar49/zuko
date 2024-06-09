@@ -8,9 +8,9 @@
 #endif
 extern "C"
 {
-    EXPORT ZObject init();
-    EXPORT ZObject loads(ZObject*,int32_t);  
-    EXPORT ZObject dumps(ZObject*,int32_t);
+    EXPORT zobject init();
+    EXPORT zobject loads(zobject*,int32_t);  
+    EXPORT zobject dumps(zobject*,int32_t);
     EXPORT void unload();  
       
 }

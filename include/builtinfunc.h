@@ -29,116 +29,102 @@ SOFTWARE.*/
 #include <vector>
 #include <unordered_map>
 #include <string>
-typedef ZObject(*BuiltinFunc)(ZObject*,int32_t);
+typedef zobject(*BuiltinFunc)(zobject*,int32_t);
 
-ZObject Z_ISALPHA(ZObject* args,int32_t argc);
-ZObject ASCII(ZObject* args,int32_t argc);
-ZObject TOCHAR(ZObject* args,int32_t argc);
-void printZDict(ZDict* l,std::vector<void*> seen = {});
-void printList(ZList* l,std::vector<void*> seen = {});
-void printByteArray(ZByteArr* arr);
-ZObject print(ZObject* args,int32_t argc);
-ZObject PRINTF(ZObject* args,int32_t argc);
-ZObject FORMAT(ZObject* args,int32_t argc);
-ZObject println(ZObject* args,int32_t argc);
-ZObject input(ZObject* args,int32_t argc);
-ZObject TYPEOF(ZObject* args,int32_t argc);
-ZObject isInstanceOf(ZObject* args,int32_t argc);
-ZObject LEN(ZObject* args,int32_t argc);
-ZObject OPEN(ZObject* args,int32_t argc);
-ZObject READ(ZObject* args,int32_t argc);
-ZObject CLOSE(ZObject* args,int32_t argc);
-ZObject RAND(ZObject* args,int32_t argc);
-ZObject BYTEARRAY(ZObject* args,int32_t argc);
-ZObject WRITE(ZObject* args,int32_t argc);
-ZObject EXIT(ZObject* args,int32_t argc);
-ZObject REVERSE(ZObject* args,int32_t argc);
-ZObject BYTES(ZObject* args,int32_t argc);
-ZObject OBJINFO(ZObject* args,int32_t argc);
-ZObject moduleInfo(ZObject* args,int32_t argc);
-/*union FOO
-{
-  int32_t x;
-  unsigned char bytes[sizeof(x)];
-}FOO;
-union FOO1
-{
-  int64_t l;
-  unsigned char bytes[sizeof(l)];
-}FOO1;
-union FOO2
-{
-  double f;
-  unsigned char bytes[sizeof(f)];
-}FOO2;
-*/
+zobject Z_ISALPHA(zobject* args,int32_t argc);
+zobject ASCII(zobject* args,int32_t argc);
+zobject TOCHAR(zobject* args,int32_t argc);
+void printzdict(zdict* l,std::vector<void*> seen = {});
+void printList(zlist* l,std::vector<void*> seen = {});
+void printByteArray(zbytearr* arr);
+zobject print(zobject* args,int32_t argc);
+zobject PRINTF(zobject* args,int32_t argc);
+zobject FORMAT(zobject* args,int32_t argc);
+zobject println(zobject* args,int32_t argc);
+zobject input(zobject* args,int32_t argc);
+zobject TYPEOF(zobject* args,int32_t argc);
+zobject isInstanceOf(zobject* args,int32_t argc);
+zobject LEN(zobject* args,int32_t argc);
+zobject OPEN(zobject* args,int32_t argc);
+zobject READ(zobject* args,int32_t argc);
+zobject CLOSE(zobject* args,int32_t argc);
+zobject RAND(zobject* args,int32_t argc);
+zobject BYTEARRAY(zobject* args,int32_t argc);
+zobject WRITE(zobject* args,int32_t argc);
+zobject EXIT(zobject* args,int32_t argc);
+zobject REVERSE(zobject* args,int32_t argc);
+zobject BYTES(zobject* args,int32_t argc);
+zobject OBJINFO(zobject* args,int32_t argc);
+zobject moduleInfo(zobject* args,int32_t argc);
+
 ///////
 /////////
 
-ZObject SUBSTR(ZObject* args,int32_t argc);
-ZObject getFileSize(ZObject* args,int32_t argc);
-ZObject FTELL(ZObject* args,int32_t argc);
-ZObject REWIND(ZObject* args,int32_t argc);
-ZObject SYSTEM(ZObject* args,int32_t argc);
-ZObject SPLIT(ZObject* args,int32_t argc);
-ZObject GETENV(ZObject* args,int32_t argc);
-ZObject SHUFFLE(ZObject* args,int32_t argc);
-ZObject STR(ZObject* args,int32_t argc);
-ZObject FIND(ZObject* args,int32_t argc);
-ZObject TOINT(ZObject* args,int32_t argc);
-ZObject TOINT32(ZObject* args,int32_t argc);
-ZObject TOINT64(ZObject* args,int32_t argc);
-ZObject TOFLOAT(ZObject* args,int32_t argc);
-ZObject tonumeric(ZObject* args,int32_t argc);
-ZObject isnumeric(ZObject* args,int32_t argc);
-ZObject REPLACE(ZObject* args,int32_t argc);
-ZObject REPLACE_ONCE(ZObject* args,int32_t argc);
-ZObject SLEEP(ZObject* args,int32_t argc);
+zobject SUBSTR(zobject* args,int32_t argc);
+zobject getFileSize(zobject* args,int32_t argc);
+zobject FTELL(zobject* args,int32_t argc);
+zobject REWIND(zobject* args,int32_t argc);
+zobject SYSTEM(zobject* args,int32_t argc);
+zobject SPLIT(zobject* args,int32_t argc);
+zobject GETENV(zobject* args,int32_t argc);
+zobject SHUFFLE(zobject* args,int32_t argc);
+zobject STR(zobject* args,int32_t argc);
+zobject FIND(zobject* args,int32_t argc);
+zobject TOINT(zobject* args,int32_t argc);
+zobject TOINT32(zobject* args,int32_t argc);
+zobject TOINT64(zobject* args,int32_t argc);
+zobject TOFLOAT(zobject* args,int32_t argc);
+zobject tonumeric(zobject* args,int32_t argc);
+zobject isnumeric(zobject* args,int32_t argc);
+zobject REPLACE(zobject* args,int32_t argc);
+zobject REPLACE_ONCE(zobject* args,int32_t argc);
+zobject SLEEP(zobject* args,int32_t argc);
 
-ZObject TOBYTE(ZObject* args,int32_t argc);
-ZObject writelines(ZObject* args,int32_t argc);
-ZObject readlines(ZObject* args,int32_t argc);
+zobject TOBYTE(zobject* args,int32_t argc);
+zobject writelines(zobject* args,int32_t argc);
+zobject readlines(zobject* args,int32_t argc);
 void clean_stdin(void);
-ZObject FREAD(ZObject* args,int32_t argc);
-ZObject FWRITE(ZObject* args,int32_t argc);
-ZObject FSEEK(ZObject* args,int32_t argc);
+zobject FREAD(zobject* args,int32_t argc);
+zobject FWRITE(zobject* args,int32_t argc);
+zobject FSEEK(zobject* args,int32_t argc);
+zobject FFLUSH(zobject* args,int32_t argc);
 //
-ZList* makeListCopy(ZList);
-ZDict* makeDictCopy(ZDict);
+zlist* makeListCopy(zlist);
+zdict* makeDictCopy(zdict);
 
-ZObject COPY(ZObject* args,int32_t argc);
-ZObject POW(ZObject* args,int32_t argc);
-ZObject CLOCK(ZObject* args,int32_t argc);
+zobject COPY(zobject* args,int32_t argc);
+zobject POW(zobject* args,int32_t argc);
+zobject CLOCK(zobject* args,int32_t argc);
 ////////////////////
 //Builtin Methods
 //Methods work exactly like functions but their first argument should always
 //be an object
 //these are just functions that work on multiple supported types
 //for example POP functions works on both list,bytearrays and mutable strings
-ZObject POP(ZObject* args,int32_t argc);
-ZObject CLEAR(ZObject* args,int32_t argc);
-ZObject PUSH(ZObject* args,int32_t argc);
-ZObject FIND_METHOD(ZObject* args,int32_t argc);
-ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc);
-ZObject INSERTSTR(ZObject* args,int32_t argc);
-ZObject INSERT(ZObject* args,int32_t argc);
-ZObject ERASE(ZObject* args,int32_t argc);
-ZObject asMap(ZObject* args,int32_t argc);
-ZObject ASLIST(ZObject* args,int32_t argc);
-ZObject REVERSE_METHOD(ZObject* args,int32_t argc);
-ZObject EMPLACE(ZObject* args,int32_t argc);
-ZObject HASKEY(ZObject* args,int32_t argc);
-ZObject UNPACK(ZObject* args,int32_t argc);
+zobject POP(zobject* args,int32_t argc);
+zobject CLEAR(zobject* args,int32_t argc);
+zobject PUSH(zobject* args,int32_t argc);
+zobject FIND_METHOD(zobject* args,int32_t argc);
+zobject INSERTBYTEARRAY(zobject* args,int32_t argc);
+zobject INSERTSTR(zobject* args,int32_t argc);
+zobject INSERT(zobject* args,int32_t argc);
+zobject ERASE(zobject* args,int32_t argc);
+zobject asMap(zobject* args,int32_t argc);
+zobject ASLIST(zobject* args,int32_t argc);
+zobject REVERSE_METHOD(zobject* args,int32_t argc);
+zobject EMPLACE(zobject* args,int32_t argc);
+zobject HASKEY(zobject* args,int32_t argc);
+zobject UNPACK(zobject* args,int32_t argc);
 //String methods
-ZObject SUBSTR_METHOD(ZObject* args,int32_t argc);
-ZObject REPLACE_METHOD(ZObject* args,int32_t argc);
-ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc);
+zobject SUBSTR_METHOD(zobject* args,int32_t argc);
+zobject REPLACE_METHOD(zobject* args,int32_t argc);
+zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc);
 
 ////////////////////
 ///////////////
 void initFunctions();
 void initMethods();
-ZObject callmethod(std::string name,ZObject* args,int32_t argc);
+zobject callmethod(std::string name,zobject* args,int32_t argc);
 bool function_exists(std::string name);
 
 #endif

@@ -7,15 +7,15 @@ extern "C"{
 
 #include "strmap.h"
 
-typedef struct Module
+typedef struct zmodule
 {
   const char* name;
   StrMap members;
-}Module;
+}zmodule;
 
 
-void Module_addKlass(Module* m,const char* name,Klass* p);
-void Module_addMember(Module* m,const char* name,ZObject val);
+void zmodule_add_class(zmodule* m,const char* name,zclass* p);
+void zmodule_add_member(zmodule* m,const char* name,zobject val);
 
 #ifdef __cplusplus
 }

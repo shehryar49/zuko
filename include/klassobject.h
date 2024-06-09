@@ -5,23 +5,23 @@
 extern "C"{
 #endif
 
-struct Klass;
+typedef struct zclass zclass;
 struct StrMap;
-struct ZObject;
+typedef struct zobject zobject;
+#include "zobject.h"
 #include "strmap.h"
 
-struct StrMap;
 typedef struct StrMap StrMap;
 
-typedef struct KlassObject
+typedef struct zclass_object
 {
-  Klass* klass;
+  zclass* _klass; //class of the object
   StrMap members;
   StrMap privateMembers;
-}KlassObject;
+}zclass_object;
 
-ZObject KlassObj_getMember(KlassObject* ko,const char* name);
-void KlassObj_setMember(KlassObject* ko,const char* name,ZObject val);
+zobject zclassobj_get(zclass_object* ko,const char* name);
+void zclassobj_set(zclass_object* ko,const char* name,zobject val);
 
 #ifdef __cplusplus
 }

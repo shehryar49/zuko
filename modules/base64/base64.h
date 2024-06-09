@@ -9,9 +9,9 @@
 
 extern "C"
 {
-    ZObject init();
+    zobject init();
     
-    ZObject ENCODE(ZObject*,int32_t);
-    ZObject DECODE(ZObject*,int32_t);
+    zobject ENCODE(zobject*,int32_t);
+    zobject DECODE(zobject*,int32_t);
 }
 #endif

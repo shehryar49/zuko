@@ -10,10 +10,10 @@ using namespace std;
 
 extern "C"
 {
-    EXPORT ZObject init();
+    EXPORT zobject init();
     //Functions
-    EXPORT ZObject FormData(ZObject*,int);//returns a dictionary containing all the data sent by client
+    EXPORT zobject FormData(zobject*,int);//returns a dictionary containing all the data sent by client
     //handles GET,POST and multipart/form POST requests
-    EXPORT ZObject cookies(ZObject*,int);
+    EXPORT zobject cookies(zobject*,int);
 }
 #endif

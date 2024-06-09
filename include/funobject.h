@@ -4,17 +4,14 @@
 #include "klass.h"
 #include "zlist.h"
 // Struct to represent zuko code functions
-typedef struct FunObject
+typedef struct zfun
 {
-  Klass* klass;//functions can be binded to classes as methods in which case they will have access to private members of that class
+  zclass* _klass;//functions can be binded to classes as methods in which case they will have access to private members of that class
   //and also keep the class alive with them
   const char* name;
   size_t i;
   size_t args;
-  ZList opt; //default/optional parameters
-  #ifdef __cplusplus
-  FunObject& operator=(const FunObject&) = delete;
-  #endif
-}FunObject;
+  zlist opt; //default/optional parameters
+}zfun;
 
 #endif

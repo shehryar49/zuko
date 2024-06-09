@@ -1,12 +1,12 @@
-#include <iostream>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <unordered_map>
 #include "json.h"
+#include "zobject.h"
 using namespace std;
 enum TokenType
 {
@@ -50,7 +50,7 @@ struct Token
     content = cont;
   }
 };
-vector<Token> tokenize(ZStr* zstr,bool& hadErr,string& msg)
+vector<Token> tokenize(zstr* zstr,bool& hadErr,string& msg)
 {
   std::vector<Token> tokens;
   hadErr = true;
@@ -229,20 +229,20 @@ bool isValTok(Token t)
     return true;
   return false;
 }
-ZObject nil;
+zobject nil;
 
-ZObject TokToPObj(Token t)
+zobject TokToPObj(Token t)
 {
   if(t.type == NULLVAL)
     return nil;
   else if(t.type == STR)
-    return ZObjFromStr(t.content.c_str());
+    return zobj_from_str(t.content.c_str());
   else if(t.type == FLOAT)
-    return ZObjFromDouble(atof(t.content.c_str()));
+    return zobj_from_double(atof(t.content.c_str()));
   else if(t.type == NUM)
-    return ZObjFromInt64(atoll(t.content.c_str()));
+    return zobj_from_int64(atoll(t.content.c_str()));
   else if(t.type == BOOL)
-    return ZObjFromBool((t.content == "true") ? true : false);
+    return zobj_from_bool((t.content == "true") ? true : false);
   return nil;
 }
 
@@ -278,19 +278,19 @@ int match_lcb(int start,int end,vector<Token>& tokens)
     }
     return -1;
 }
-ZDict* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
+zdict* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
 
-ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
+zlist* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
-  ZList* M = vm_allocList();
+  zlist* M = vm_allocList();
   if(tokens[l].type != LSB || tokens[h].type!=RSB)
     return M;
   for(int k=l+1;k<h;k+=1)
   {
     if(isValTok(tokens[k]))
     {
-      ZList_push(M,TokToPObj(tokens[k]));
+      zlist_push(M,TokToPObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -301,12 +301,12 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
         msg = "Unmatched curly bracket at "+to_string(k);
         return M;
       }
-      ZObject subobj = ZObjFromDict(ObjFromTokens(tokens,k,r,err,msg));
+      zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
       if(err)
         return M;
       err = true;
       k = r+1;
-      ZList_push(M,subobj);
+      zlist_push(M,subobj);
     }
     else if(tokens[k].type == LSB) //list
     {
@@ -316,14 +316,14 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
         msg = "Unmatched square bracket at "+to_string(k);
         return M;
       }
-      ZObject sublist = ZObjFromList(ListFromTokens(tokens,k,r,err,msg));
+      zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
       if(err)
       {
         return M;
       }
       err = true;
       k = r+1;
-      ZList_push(M,sublist);
+      zlist_push(M,sublist);
     }
     else
     {
@@ -340,10 +340,10 @@ ZList* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
   return M;
 }
 
-ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
+zdict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
-  ZDict* M = vm_allocDict();
+  zdict* M = vm_allocDict();
   if(tokens[l].type != LCB || tokens[h].type!=RCB)
   {
     msg = "SyntaxError";
@@ -369,7 +369,7 @@ ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& ms
     //values begins at tokens[k]
     if(isValTok(tokens[k]))
     {
-      ZDict_emplace(M,ZObjFromStr(tokens[k-2].content.c_str()),TokToPObj(tokens[k]));
+      zdict_emplace(M,zobj_from_str(tokens[k-2].content.c_str()),TokToPObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -380,12 +380,12 @@ ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& ms
         msg = "Unmatched at bracket at "+to_string(k);
         return M;
       }
-      ZObject subobj = ZObjFromDict(ObjFromTokens(tokens,k,r,err,msg));
+      zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
       if(err)
         return M;
       err = true;
       k = r+1;    
-      ZDict_emplace(M,ZObjFromStr(key.c_str()),subobj);
+      zdict_emplace(M,zobj_from_str(key.c_str()),subobj);
     }
     else if(tokens[k].type == LSB) //list
     {
@@ -395,12 +395,12 @@ ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& ms
         msg = "Unmatched square bracket at "+to_string(k);
         return M;
       }
-      ZObject sublist = ZObjFromList(ListFromTokens(tokens,k,r,err,msg));
+      zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
       if(err)
         return M;
       err = true;
       k = r+1;
-      ZDict_emplace(M,ZObjFromStr(key.c_str()),sublist);
+      zdict_emplace(M,zobj_from_str(key.c_str()),sublist);
     }
     else
     {
@@ -418,7 +418,7 @@ ZDict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& ms
 }
 bool dumperror;
 std::string dumperrmsg;
-void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
+void PObjToStr(zobject p,std::string& res,std::unordered_map<void*,bool>& seen)
 {
   if(p.type == Z_INT)
     res+= to_string(p.i);
@@ -440,7 +440,7 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
     {
       res+="[";
       seen.emplace(p.ptr,true);
-      ZList* l = (ZList*)p.ptr;
+      zlist* l = (zlist*)p.ptr;
       size_t len = l->size;
       size_t k = 0;
       for(size_t idx=0;idx<l->size;idx++)
@@ -463,7 +463,7 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
     {
       res+="{";
       seen.emplace(p.ptr,true);
-      ZDict* d = (ZDict*)p.ptr;
+      zdict* d = (zdict*)p.ptr;
       size_t l = d->size;
       size_t k = 0;
       for(size_t idx = 0; idx < d->capacity;idx++)
@@ -477,7 +477,7 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
           dumperrmsg = "Dictionary key not a string!";
           return;
         }
-        res += "\"" + (string)(((ZStr*)e.key.ptr))->val + "\"";
+        res += "\"" + (string)(((zstr*)e.key.ptr))->val + "\"";
         res += ": ";
         PObjToStr(e.val,res,seen);
         if(dumperror)
@@ -490,31 +490,31 @@ void PObjToStr(ZObject p,std::string& res,std::unordered_map<void*,bool>& seen)
   }
 }
 ///
-Klass* parseError;
-Klass* tokenizeError;
+zclass* parseError;
+zclass* tokenizeError;
 ////
-ZObject init()
+zobject init()
 {
   nil.type = Z_NIL;
   //initialize custom errors
-  parseError = makeDerivedKlass(Error);
+  parseError = makeDerivedklass(Error);
   parseError->name = "ParseError";
-  tokenizeError = makeDerivedKlass(Error);
+  tokenizeError = makeDerivedklass(Error);
   tokenizeError->name = "TokenizeError";
   vm_markImportant(parseError);
   vm_markImportant(tokenizeError);
   //
-  Module* d = vm_allocModule();
+  zmodule* d = vm_allocModule();
   d->name = "json";
   Module_addNativeFun(d,"loads",&loads);
   Module_addNativeFun(d,"dumps",&dumps);
-  return ZObjFromModule(d);
+  return zobj_from_module(d);
 }
-ZObject loads(ZObject* args,int32_t n)
+zobject loads(zobject* args,int32_t n)
 {
   if(n!=1 || args[0].type!=Z_STR)
     return Z_Err(TypeError,"String argument required!");
-  ZStr* src = AS_STR(args[0]);
+  zstr* src = AS_STR(args[0]);
   bool hadErr;
   string msg;
   vector<Token> tokens = tokenize(src,hadErr,msg);
@@ -525,15 +525,15 @@ ZObject loads(ZObject* args,int32_t n)
   }
   if(tokens.size() == 0)
     return Z_Err(parseError,"Empty string!");
-  ZDict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
+  zdict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
   {
      msg = "Parsing failed. "+msg;
      return Z_Err(parseError,msg.c_str());
   }
-  return ZObjFromDict(m);
+  return zobj_from_dict(m);
 }
-ZObject dumps(ZObject* args,int32_t n)
+zobject dumps(zobject* args,int32_t n)
 {
   if(n!=1)
     return Z_Err(ArgumentError,"1 argument needed!");
@@ -546,7 +546,7 @@ ZObject dumps(ZObject* args,int32_t n)
   PObjToStr(args[0],res,seen);
   if(dumperror)
     return Z_Err(Error,dumperrmsg.c_str());
-  return ZObjFromStr(res.c_str());
+  return zobj_from_str(res.c_str());
 }
 void unload()
 {

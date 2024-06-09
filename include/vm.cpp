@@ -1,3 +1,5 @@
+#include "klassobject.h"
+#include "nativefun.h"
 #include "zuko.h"
 #include "vm.h"
 #include "zobject.h"
@@ -5,7 +7,7 @@
 using namespace std;
 
 
-inline void PromoteType(ZObject &a, char t)
+inline void PromoteType(zobject &a, char t)
 {
   if (a.type == Z_INT)
   {
@@ -66,7 +68,7 @@ string fullform(char t)
   else if (t == Z_FILESTREAM)
     return "File Stream";
   else if (t == Z_DICT)
-    return "ZDict";
+    return "zdict";
   else if (t == Z_MODULE)
     return "Module";
   else if (t == Z_FUNC)
@@ -94,28 +96,28 @@ string fullform(char t)
 extern bool REPL_MODE;
 void REPL();
 //Error classes
-Klass* Error;
-Klass* TypeError;
-Klass* ValueError;
-Klass* MathError; 
-Klass* NameError;
-Klass* IndexError;
-Klass* ArgumentError;
-Klass* FileIOError;
-Klass* KeyError;
-Klass* OverflowError;
-Klass* FileOpenError;
-Klass* FileSeekError; 
-Klass* ImportError;
-Klass* ThrowError;
-Klass* MaxRecursionError;
-Klass* AccessError;
+zclass* Error;
+zclass* TypeError;
+zclass* ValueError;
+zclass* MathError; 
+zclass* NameError;
+zclass* IndexError;
+zclass* ArgumentError;
+zclass* FileIOError;
+zclass* KeyError;
+zclass* OverflowError;
+zclass* FileOpenError;
+zclass* FileSeekError; 
+zclass* ImportError;
+zclass* ThrowError;
+zclass* MaxRecursionError;
+zclass* AccessError;
 
 
 VM::VM()
 {
-  ZList_init(&aux);
-  ZList_init(&STACK);
+  zlist_init(&aux);
+  zlist_init(&STACK);
 }
 void VM::load(vector<uint8_t>& bytecode,ProgramInfo& p)
 {
@@ -158,20 +160,20 @@ void VM::load(vector<uint8_t>& bytecode,ProgramInfo& p)
     api.k16 = AccessError;
     srand(time(0));
 }
-size_t VM::spitErr(Klass* e, string msg) // used to show a runtime error
+size_t VM::spitErr(zclass* e, string msg) // used to show a runtime error
 {
-ZObject p1;
+zobject p1;
 if (except_targ.size() != 0)//check if error catching is enabled
 {
     size_t T = STACK.size - tryStackCleanup.back();
     STACK.size -= T;
-    KlassObject *E = vm_allocKlassObject(e);
-    ZStr* s = vm_allocString(msg.length());
+    zclass_object* E = vm_allocKlassObject(e);
+    zstr* s = vm_allocString(msg.length());
     memcpy(s->val,&msg[0],msg.length());
-    StrMap_set(&(E->members),"msg",ZObjFromStrPtr(s));
+    StrMap_set(&(E->members),"msg",zobj_from_str_ptr(s));
     p1.type = Z_OBJ;
     p1.ptr = (void*)E;
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     T = frames.size() - tryLimitCleanup.back();
     frames.erase(frames.end() - T, frames.end());
     k = except_targ.back();
@@ -189,13 +191,13 @@ if(viaCO) //interpret was called via callObject, wrap the error in a nice object
     callstack.pop_back();
     }
     STACK.size = frames.back();
-    KlassObject *E = vm_allocKlassObject(e);
-    ZStr* s = vm_allocString(msg.length());
+    zclass_object* E = vm_allocKlassObject(e);
+    zstr* s = vm_allocString(msg.length());
     memcpy(s->val,&msg[0],msg.length());
-    StrMap_set(&(E->members),"msg",ZObjFromStrPtr(s));
+    StrMap_set(&(E->members),"msg",zobj_from_str_ptr(s));
     p1.type = Z_ERROBJ;
     p1.ptr = (void*)E;
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     this->k = program + program_size - 1;
     return k -program;
 }
@@ -248,7 +250,7 @@ this->k = program+program_size-1;//set instruction pointer to last instruction
 //which is always OP_EXIT
 
 if(!REPL_MODE)//nothing can be done, clear stack and exit
-    ZList_resize(&STACK,0);
+    zlist_resize(&STACK,0);
 
 return this->k - program;
 
@@ -262,13 +264,13 @@ if (allocated > GC_THRESHHOLD)
 }
 }
 
-inline static bool isHeapObj(const ZObject &obj)
+inline static bool isHeapObj(const zobject &obj)
 {
 if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != 'p' && obj.type != Z_BOOL)
     return true; // all other objects are on heap
 return false;
 }
-void VM::markV2(const ZObject &obj)
+void VM::markV2(const zobject &obj)
 {
 aux.size = 0;
 std::unordered_map<void *, MemInfo>::iterator it;
@@ -276,7 +278,7 @@ if (isHeapObj(obj) && (it = memory.find(obj.ptr)) != memory.end() && !(it->secon
 {
     // mark object alive and push it
     it->second.isMarked = true;
-    ZList_push(&aux,obj);
+    zlist_push(&aux,obj);
 }
 // if an object is on aux then
 //  - it is a heap object
@@ -284,15 +286,15 @@ if (isHeapObj(obj) && (it = memory.find(obj.ptr)) != memory.end() && !(it->secon
 //  - known to VM's memory pool i.e not from outside (any native module or something)
 
 // After following above constraints,aux will not have any duplicates or already marked objects
-ZObject curr;
+zobject curr;
 while (aux.size != 0)
 {
-    ZList_fastpop(&aux,&curr);
+    zlist_fastpop(&aux,&curr);
     // for each curr object we get ,it was already marked alive before pushing onto aux
     // so we only process objects referenced by it and not curr itself
     if (curr.type == Z_DICT)
     {
-    ZDict &d = *(ZDict *)curr.ptr;
+    zdict &d = *(zdict *)curr.ptr;
     for (size_t i=0;i<d.capacity;i++)
     {
         if(d.table[i].stat != OCCUPIED)
@@ -302,25 +304,25 @@ while (aux.size != 0)
         if (isHeapObj(d.table[i].key) && (it = memory.find(d.table[i].key.ptr)) != memory.end() && !(it->second.isMarked))
         {
             it->second.isMarked = true;
-            ZList_push(&aux,d.table[i].key);
+            zlist_push(&aux,d.table[i].key);
         }
         if (isHeapObj(d.table[i].val) && (it = memory.find(d.table[i].val.ptr)) != memory.end() && !(it->second.isMarked))
         {
             it->second.isMarked = true;
-            ZList_push(&aux,d.table[i].val);
+            zlist_push(&aux,d.table[i].val);
         }
     }
     }
     else if (curr.type == Z_LIST)
     {
-        ZList &d = *(ZList *)curr.ptr;
+        zlist &d = *(zlist *)curr.ptr;
         for (size_t i = 0;i<d.size;i++)
         {
-            ZObject e = d.arr[i];
+            zobject e = d.arr[i];
             if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
             {
             it->second.isMarked = true;
-            ZList_push(&aux,e);
+            zlist_push(&aux,e);
             }
         }
     }
@@ -329,27 +331,27 @@ while (aux.size != 0)
         Coroutine *g = (Coroutine *)curr.ptr;
         for (size_t i = 0;i<g->locals.size;i++)
         {
-            ZObject e = g->locals.arr[i];
+            zobject e = g->locals.arr[i];
             if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
             {
             it->second.isMarked = true;
-            ZList_push(&aux,e);
+            zlist_push(&aux,e);
             }
         }
-        FunObject *gf = g->fun;
+        zfun* gf = g->fun;
         it = memory.find((void *)gf);
         if (it != memory.end() && !(it->second.isMarked))
         {
-            ZObject tmp;
+            zobject tmp;
             tmp.type = Z_FUNC;
             tmp.ptr = (void *)gf;
             it->second.isMarked = true;
-            ZList_push(&aux,tmp);
+            zlist_push(&aux,tmp);
         }
     }
     else if (curr.type == Z_MODULE)
     {
-        Module *k = (Module *)curr.ptr;
+        zmodule* k = (zmodule*)curr.ptr;
         for (size_t idx=0; idx<  k->members.capacity;idx++)
         {
             if(k->members.table[idx].stat!= SM_OCCUPIED)
@@ -358,13 +360,13 @@ while (aux.size != 0)
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
             it->second.isMarked = true;
-            ZList_push(&aux,e.val);
+            zlist_push(&aux,e.val);
             }
         }
     }
     else if (curr.type == Z_CLASS)
     {
-        Klass *k = (Klass *)curr.ptr;
+        zclass* k = (zclass* )curr.ptr;
         for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
             if(k->members.table[idx].stat != SM_OCCUPIED)
@@ -373,7 +375,7 @@ while (aux.size != 0)
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
                 it->second.isMarked = true;
-                ZList_push(&aux,e.val);
+                zlist_push(&aux,e.val);
             }
             if( (it = memory.find((void*)e.key)) != memory.end() )
                 it->second.isMarked = true;
@@ -387,7 +389,7 @@ while (aux.size != 0)
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
             it->second.isMarked = true;
-            ZList_push(&aux,e.val);
+            zlist_push(&aux,e.val);
             }
             if( (it = memory.find((void*)e.key)) != memory.end() )
             it->second.isMarked = true;
@@ -395,29 +397,29 @@ while (aux.size != 0)
     }
     else if (curr.type == Z_NATIVE_FUNC)
     {
-        NativeFunction *fn = (NativeFunction *)curr.ptr;
-        it = memory.find((void *)fn->klass);
+        znativefun *fn = (znativefun*)curr.ptr;
+        it = memory.find((void *)fn->_klass);
         if (it != memory.end() && !(it->second.isMarked))
         {
-            ZObject tmp;
+            zobject tmp;
             tmp.type = Z_CLASS;
-            tmp.ptr = (void *)fn->klass;
+            tmp.ptr = (void *)fn->_klass;
             it->second.isMarked = true;
-            ZList_push(&aux,tmp);
+            zlist_push(&aux,tmp);
         }
     }
     else if (curr.type == Z_OBJ)
     {
-        KlassObject *k = (KlassObject *)curr.ptr;
-        Klass *kk = k->klass;
+        zclass_object*k = (zclass_object *)curr.ptr;
+        zclass* kk = k->_klass;
         it = memory.find((void *)kk);
         if (it != memory.end() && !(it->second.isMarked))
         {
-            ZObject tmp;
+            zobject tmp;
             tmp.type = Z_CLASS;
             tmp.ptr = (void *)kk;
             it->second.isMarked = true;
-            ZList_push(&aux,tmp);
+            zlist_push(&aux,tmp);
         }
         for (size_t idx = 0; idx < k->members.capacity;idx++)
         {
@@ -427,7 +429,7 @@ while (aux.size != 0)
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
                 it->second.isMarked = true;
-                ZList_push(&aux,e.val);
+                zlist_push(&aux,e.val);
             }
         }
         for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
@@ -438,29 +440,29 @@ while (aux.size != 0)
             if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
             {
                 it->second.isMarked = true;
-                ZList_push(&aux,e.val);
+                zlist_push(&aux,e.val);
             }
         }
     }
     else if (curr.type == Z_FUNC || curr.type == 'g')
     {
-        Klass *k = ((FunObject *)curr.ptr)->klass;
+        zclass* k = ((zfun *)curr.ptr)->_klass;
         it = memory.find((void *)k);
         if (it != memory.end() && !(it->second.isMarked))
         {
-            ZObject tmp;
+            zobject tmp;
             tmp.type = Z_CLASS;
             tmp.ptr = (void *)k;
             it->second.isMarked = true;
-            ZList_push(&aux,tmp);
+            zlist_push(&aux,tmp);
         }
-        for (size_t i = 0;i< ((FunObject *)curr.ptr)->opt.size;i++ )
+        for (size_t i = 0;i< ((zfun *)curr.ptr)->opt.size;i++ )
         {
-            ZObject e = ((FunObject*)curr.ptr)->opt.arr[i];
+            zobject e = ((zfun*)curr.ptr)->opt.arr[i];
             if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
             {
             it->second.isMarked = true;
-            ZList_push(&aux,e);
+            zlist_push(&aux,e);
             }
         }
     }
@@ -472,7 +474,7 @@ void VM::mark()
         markV2(STACK.arr[i]);
     for(auto e: important)
     {
-        ZObject p;
+        zobject p;
         p.ptr = e;
         p.type = memory[e].type;
         markV2(p);
@@ -495,17 +497,17 @@ for (auto e : memory)
     //call destructor of unmarked objects
     if (m.type == Z_OBJ)
     {
-        KlassObject *obj = (KlassObject *)e.first;
-        ZObject dummy;
+        zclass_object*obj = (zclass_object*)e.first;
+        zobject dummy;
         dummy.type = Z_OBJ;
         dummy.ptr = e.first;
-        ZObject cb;
+        zobject cb;
         if (StrMap_get(&(obj->members),"__del__",&cb))
         {
-        ZObject p1 = cb;
+        zobject p1 = cb;
         if(p1.type == Z_NATIVE_FUNC || p1.type == Z_FUNC)
         {
-            ZObject rr;
+            zobject rr;
             vm_callObject(&p1,&dummy,1,&rr);
         }
         }
@@ -519,38 +521,38 @@ for (auto e : toFree)
     
     if (m.type == Z_LIST)
     {
-    ZList_destroy((ZList*)e);
-    delete (ZList *)e;
-    allocated -= sizeof(ZList);
+        zlist_destroy((zlist*)e);
+        delete (zlist *)e;
+        allocated -= sizeof(zlist);
     }
     else if (m.type == Z_MODULE)
     {
-    Module* m = (Module*)e;
-    StrMap_destroy(&(m->members));
-    delete (Module *)e;
-    allocated -= sizeof(Module);
+        zmodule* m = (zmodule*)e;
+        StrMap_destroy(&(m->members));
+        delete (zmodule *)e;
+        allocated -= sizeof(zmodule);
     }
     else if (m.type == Z_CLASS)
     {
-    Klass* k = (Klass*)e;
-    StrMap_destroy(&(k->members));
-    StrMap_destroy(&(k->privateMembers));
-    delete (Klass *)e;
-    allocated -= sizeof(Klass);
+        zclass* k = (zclass*)e;
+        StrMap_destroy(&(k->members));
+        StrMap_destroy(&(k->privateMembers));
+        delete (zclass* )e;
+        allocated -= sizeof(zclass);
     }
     else if (m.type == Z_OBJ)
     {
-    KlassObject* k = (KlassObject*)e;
-    StrMap_destroy(&(k->members));
-    StrMap_destroy(&(k->privateMembers));  
-    delete (KlassObject *)e;
-    allocated -= sizeof(KlassObject);
+        zclass_object* k = (zclass_object*)e;
+        StrMap_destroy(&(k->members));
+        StrMap_destroy(&(k->privateMembers));  
+        delete (zclass_object*)e;
+        allocated -= sizeof(zclass_object);
     }
     else if (m.type == Z_DICT)
     {
-    ZDict_destroy((ZDict*)e);
-    delete (ZDict *)e;
-    allocated -= sizeof(ZDict);
+    zdict_destroy((zdict*)e);
+    delete (zdict *)e;
+    allocated -= sizeof(zdict);
     }
     else if (m.type == Z_FILESTREAM)
     {
@@ -562,43 +564,43 @@ for (auto e : toFree)
     }
     else if (m.type == Z_FUNC)
     {
-    ZList_destroy(&((FunObject*)e) ->opt);
-    delete (FunObject *)e;
-    allocated -= sizeof(FunObject);
+    zlist_destroy(&((zfun*)e) ->opt);
+    delete (zfun *)e;
+    allocated -= sizeof(zfun);
     }
     else if(m.type == Z_COROUTINE)
     {
-    delete (FunObject *)e;
-    allocated -= sizeof(FunObject);
+    delete (zfun *)e;
+    allocated -= sizeof(zfun);
     }
     else if (m.type == 'z')
     {
-    ZList_destroy(&((Coroutine*)e)->locals);
+    zlist_destroy(&((Coroutine*)e)->locals);
     delete (Coroutine *)e;
     allocated -= sizeof(Coroutine);
     }
     else if (m.type == Z_ERROBJ)
     {
-    delete (KlassObject *)e;
-    allocated -= sizeof(KlassObject);
+    delete (zclass_object*)e;
+    allocated -= sizeof(zclass_object);
     }
     else if (m.type == Z_STR)
     {
-    ZStr* p = (ZStr*)e;
-    allocated -= sizeof(ZStr) + p->len + 1;
+    zstr* p = (zstr*)e;
+    allocated -= sizeof(zstr) + p->len + 1;
     delete[] p->val;
     delete p;
     }      
     else if (m.type == Z_NATIVE_FUNC)
     {
-    delete (NativeFunction *)e;
-    allocated -= sizeof(NativeFunction);
+    delete (znativefun *)e;
+    allocated -= sizeof(znativefun);
     }
     else if(m.type == Z_BYTEARR)
     {
-    ZByteArr_destroy((ZByteArr*)e);
-    delete (ZByteArr*)e;
-    allocated -= sizeof(ZByteArr);
+    zbytearr_destroy((zbytearr*)e);
+    delete (zbytearr*)e;
+    allocated -= sizeof(zbytearr);
     }
     memory.erase(e);
 }
@@ -611,19 +613,19 @@ if (recycled < 4196) // a gc cycle is expensive so running it to collect not eve
     GC_THRESHHOLD *= 2;
 }
 }
-bool VM::invokeOperator(string meth, ZObject A, size_t args, const char* op, ZObject *rhs, bool raiseErrOnNF) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
+bool VM::invokeOperator(string meth, zobject A, size_t args, const char* op, zobject *rhs, bool raiseErrOnNF) // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
 {
     //Operators invoked by this function are either unary or binary
-    //So at max 1 argument is given that is ZObject rhs (non-NULL means usable)
+    //So at max 1 argument is given that is zobject rhs (non-NULL means usable)
     //raiseErrOnNF = whether to raise error on not found or not ?
-    KlassObject *obj = (KlassObject *)A.ptr;
-    ZObject p3;
+    zclass_object*obj = (zclass_object*)A.ptr;
+    zobject p3;
     static string s1;// to avoid multiple object creation across multiple invokeCalls
     if (StrMap_get(&(obj->members),meth.c_str(),&p3))
     {
         if (p3.type == Z_FUNC)
         {
-            FunObject *fn = (FunObject *)p3.ptr;
+            zfun *fn = (zfun *)p3.ptr;
             if (fn->opt.size != 0)
                 spitErr(ArgumentError, "Optional parameters not allowed for operator functions!");
             if (fn->args == args)
@@ -636,19 +638,19 @@ bool VM::invokeOperator(string meth, ZObject A, size_t args, const char* op, ZOb
                 }
                 executing.push_back(fn);
                 frames.push_back(STACK.size);
-                ZList_push(&STACK,A);
+                zlist_push(&STACK,A);
                 if (rhs != NULL)
-                    ZList_push(&STACK,*rhs);
+                    zlist_push(&STACK,*rhs);
                 k = program + fn->i;
                 return true;
             }
         }
         else if (p3.type == Z_NATIVE_FUNC)
         {
-            NativeFunction *fn = (NativeFunction*)p3.ptr;
+            znativefun *fn = (znativefun*)p3.ptr;
             NativeFunPtr M = fn->addr;
-            ZObject rr; 
-            ZObject argArr[2] = {A, (!rhs) ? nil : *rhs};
+            zobject rr; 
+            zobject argArr[2] = {A, (!rhs) ? nil : *rhs};
             // do typechecking 
             if(fn->signature)
             {
@@ -672,14 +674,14 @@ bool VM::invokeOperator(string meth, ZObject A, size_t args, const char* op, ZOb
         rr = M(argArr, args);
         if (rr.type == Z_ERROBJ)
         {
-            KlassObject *E = (KlassObject*)rr.ptr;
-            ZObject msg;
+            zclass_object*E = (zclass_object*)rr.ptr;
+            zobject msg;
             StrMap_get(&(E->members),"msg",&msg);
-            s1 = meth + "():  " + (string)((ZStr*)msg.ptr)->val;
-            spitErr(E->klass, s1);
+            s1 = meth + "():  " + (string)((zstr*)msg.ptr)->val;
+            spitErr(E->_klass, s1);
             return false;
         }
-        ZList_push(&STACK,rr);
+        zlist_push(&STACK,rr);
         k++;
         return true;
         }
@@ -776,25 +778,25 @@ int32_t i2;
     };
     #endif
 #endif
-ZObject p1;
-ZObject p2;
-ZObject p3;
-ZObject p4;
+zobject p1;
+zobject p2;
+zobject p3;
+zobject p4;
 string s1;
 string s2;
 char c1;
-//ZList pl1;      // zuko list 1
-ZList* pl_ptr1; // zuko list pointer 1
-//ZDict pd1;
-ZObject alwaysi32;
-ZObject alwaysByte;
-vector<ZObject> values;
-vector<ZObject> names;
+//zlist pl1;      // zuko list 1
+zlist* pl_ptr1; // zuko list pointer 1
+//zdict pd1;
+zobject alwaysi32;
+zobject alwaysByte;
+vector<zobject> values;
+vector<zobject> names;
 alwaysi32.type = Z_INT;
 alwaysByte.type = Z_BYTE;
 int32_t* alwaysi32ptr = &alwaysi32.i;
-ZDict *pd_ptr1;
-ZByteArr* bt_ptr1;
+zdict *pd_ptr1;
+zbytearr* bt_ptr1;
 k = program + offset;
 
 #ifndef ISTHREADED
@@ -811,7 +813,7 @@ while (*k != OP_EXIT)
     {
     k += 1;
     memcpy(&i1, k, 4);
-    ZList_push(&STACK,STACK.arr[i1]);
+    zlist_push(&STACK,STACK.arr[i1]);
     k += 4;
     NEXT_INST;
     }
@@ -819,7 +821,7 @@ while (*k != OP_EXIT)
     {
     k += 1;
     memcpy(&i1, k, 4);
-    ZList_push(&STACK,STACK.arr[frames.back() + i1]);
+    zlist_push(&STACK,STACK.arr[frames.back() + i1]);
     k += 4;
     NEXT_INST;
     }     
@@ -877,12 +879,12 @@ while (*k != OP_EXIT)
         memcpy(&listSize, k, sizeof(int32_t));
         k += 3;
         pl_ptr1 = vm_allocList();
-        ZList_resize(pl_ptr1,listSize);
-        memcpy(pl_ptr1->arr,STACK.arr + STACK.size-listSize,listSize*sizeof(ZObject));
-        ZList_eraseRange(&STACK,STACK.size - listSize,STACK.size - 1);
+        zlist_resize(pl_ptr1,listSize);
+        memcpy(pl_ptr1->arr,STACK.arr + STACK.size-listSize,listSize*sizeof(zobject));
+        zlist_erase_range(&STACK,STACK.size - listSize,STACK.size - 1);
         p1.type = Z_LIST;
         p1.ptr = (void *)pl_ptr1;
-        ZList_push(&STACK,p1);
+        zlist_push(&STACK,p1);
         DoThreshholdBusiness();
     }
     else if (c1 == Z_DICT)
@@ -893,31 +895,31 @@ while (*k != OP_EXIT)
         pd_ptr1 = vm_allocDict();
         while (i1 != 0)
         {
-        ZList_fastpop(&STACK,&p1);
-        ZList_fastpop(&STACK,&p2);
+        zlist_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p2);
         if(p2.type!=Z_INT && p2.type!=Z_INT64 && p2.type!=Z_FLOAT && p2.type!=Z_STR  && p2.type!=Z_BYTE && p2.type!=Z_BOOL)
         {
             spitErr(TypeError,"Key of type "+fullform(p2.type)+" not allowed.");
             NEXT_INST;
         }
-        if (ZDict_get(pd_ptr1,p2,&p4))
+        if (zdict_get(pd_ptr1,p2,&p4))
         {
             spitErr(ValueError, "Duplicate keys in dictionary not allowed!");
             NEXT_INST;
         }
-        ZDict_set(pd_ptr1,p2,p1);
+        zdict_set(pd_ptr1,p2,p1);
         i1 -= 1;
         }
         p1.ptr = (void *)pd_ptr1;
         p1.type = Z_DICT;
-        ZList_push(&STACK,p1);
+        zlist_push(&STACK,p1);
         DoThreshholdBusiness();
     }
     else if (c1 == 'v')
     {
         memcpy(&i1, k, sizeof(int32_t));
         k += 3;
-        ZList_push(&STACK,STACK.arr[frames.back() + i1]);
+        zlist_push(&STACK,STACK.arr[frames.back() + i1]);
     }
     k++; NEXT_INST;
     }
@@ -926,7 +928,7 @@ while (*k != OP_EXIT)
     k += 1;
     memcpy(&i1, k, 4);
     k += 4;
-    ZList_push(&STACK,constants[i1]);
+    zlist_push(&STACK,constants[i1]);
     NEXT_INST;
     }
     CASE_CP LOAD_INT32:
@@ -934,14 +936,14 @@ while (*k != OP_EXIT)
     k += 1;
     memcpy(alwaysi32ptr, k, 4);
     k += 4;
-    ZList_push(&STACK,alwaysi32);
+    zlist_push(&STACK,alwaysi32);
     NEXT_INST;
     }
     CASE_CP LOAD_BYTE:
     {
     k += 1;
     alwaysByte.i = *k;
-    ZList_push(&STACK,alwaysByte);
+    zlist_push(&STACK,alwaysByte);
     k++; NEXT_INST;
     }
     CASE_CP ASSIGN:
@@ -949,7 +951,7 @@ while (*k != OP_EXIT)
     k += 1;
     memcpy(&i1, k, 4);
     k += 4;
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     STACK.arr[frames.back() + i1] = p1;
     NEXT_INST;
     }
@@ -958,19 +960,19 @@ while (*k != OP_EXIT)
     k += 1;
     memcpy(&i1, k, 4);
     k += 4;
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     STACK.arr[i1] = p1;
     NEXT_INST;
     }
     CASE_CP ASSIGNINDEX:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p1);
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p3);
+    zlist_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p3);
     if (p3.type == Z_LIST)
     {
-        pl_ptr1 = (ZList *)p3.ptr;
+        pl_ptr1 = (zlist *)p3.ptr;
         int64_t idx = 0;
         if (p1.type == Z_INT)
         idx = p1.i;
@@ -983,14 +985,14 @@ while (*k != OP_EXIT)
         }
         if (idx < 0 || idx > (int64_t)pl_ptr1->size)
         {
-        spitErr(ValueError, "Error index " + ZObjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size));
+        spitErr(ValueError, "Error index " + zobjectToStr(p1) + " out of range for list of size " + to_string(pl_ptr1->size));
         NEXT_INST;
         }
         (*pl_ptr1).arr[idx] = p2;
     }
     else if (p3.type == Z_BYTEARR)
     {
-        bt_ptr1 = (ZByteArr*)p3.ptr;
+        bt_ptr1 = (zbytearr*)p3.ptr;
         int64_t idx = 0;
         if (p1.type == Z_INT)
         idx = p1.i;
@@ -1003,7 +1005,7 @@ while (*k != OP_EXIT)
         }
         if (idx < 0 || idx > (int64_t)bt_ptr1->size)
         {
-        spitErr(IndexError, "Error index " + ZObjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size));
+        spitErr(IndexError, "Error index " + zobjectToStr(p1) + " out of range for bytearray of size " + to_string(pl_ptr1->size));
         NEXT_INST;
         }
         if(p2.type!=Z_BYTE)
@@ -1015,8 +1017,8 @@ while (*k != OP_EXIT)
     }
     else if (p3.type == Z_DICT)
     {
-        pd_ptr1 = (ZDict *)p3.ptr;
-        ZDict_set(pd_ptr1,p1,p2);
+        pd_ptr1 = (zdict *)p3.ptr;
+        zdict_set(pd_ptr1,p1,p2);
     }
     else
     {
@@ -1036,13 +1038,13 @@ while (*k != OP_EXIT)
     p1=builtin[i1](STACK.arr+STACK.size - howmany, howmany);
     if (p1.type == Z_ERROBJ)
     {
-        KlassObject* E = (KlassObject*)p1.ptr;
-        ZObject msg;
+        zclass_object* E = (zclass_object*)p1.ptr;
+        zobject msg;
         StrMap_get(&(E->members),"msg",&msg);
-        spitErr(E->klass, AS_STD_STR(msg));
+        spitErr(E->_klass, AS_STD_STR(msg));
         NEXT_INST;
     }
-//        ZList_eraseRange(&STACK,STACK.size - howmany,STACK.size - 1);
+//        zlist_erase_range(&STACK,STACK.size - howmany,STACK.size - 1);
     STACK.size -= howmany;
     k++;
     NEXT_INST;
@@ -1057,14 +1059,14 @@ while (*k != OP_EXIT)
     p1 = builtin[i1](STACK.arr+STACK.size - i2, i2);
     if (p1.type == Z_ERROBJ)
     {
-        KlassObject* E = (KlassObject*)p1.ptr;
-        ZObject msg;
+        zclass_object* E = (zclass_object*)p1.ptr;
+        zobject msg;
         StrMap_get(&(E->members),"msg",&msg);
-        spitErr(E->klass, AS_STD_STR(msg));
+        spitErr(E->_klass, AS_STD_STR(msg));
         NEXT_INST;
     }
-    ZList_eraseRange(&STACK,STACK.size - i2,STACK.size - 1);
-    ZList_push(&STACK,p1);
+    zlist_erase_range(&STACK,STACK.size - i2,STACK.size - 1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP CALLMETHOD:
@@ -1078,7 +1080,7 @@ while (*k != OP_EXIT)
     p1 = STACK.arr[STACK.size-i2-1]; // Parent object from which member is being called
     if (p1.type == Z_MODULE)
     {
-        Module *m = (Module *)p1.ptr;
+        zmodule* m = (zmodule*)p1.ptr;
         if (!StrMap_get(&(m->members),method_name,&p3))
         {
         spitErr(NameError, "Error the module has no member " + (string)method_name + "!");
@@ -1086,9 +1088,9 @@ while (*k != OP_EXIT)
         }
         if (p3.type == Z_NATIVE_FUNC)
         {
-        NativeFunction *fn = (NativeFunction *)p3.ptr;
+        znativefun *fn = (znativefun *)p3.ptr;
         NativeFunPtr f = fn->addr;
-        ZObject *argArr = &STACK.arr[STACK.size-i2];
+        zobject *argArr = &STACK.arr[STACK.size-i2];
         if(fn->signature)
         {
             size_t len = strlen(fn->signature);
@@ -1113,11 +1115,11 @@ while (*k != OP_EXIT)
         if (p4.type == Z_ERROBJ)
         {
             // The module raised an error
-            KlassObject* E = (KlassObject*)p4.ptr;
-            ZObject msg;
+            zclass_object* E = (zclass_object*)p4.ptr;
+            zobject msg;
             StrMap_get(&(E->members),"msg",&msg);
             s1 = (string)method_name + "():  " +  AS_STD_STR(msg);
-            spitErr(E->klass,s1);
+            spitErr(E->_klass,s1);
             NEXT_INST;
         }
         if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
@@ -1125,28 +1127,28 @@ while (*k != OP_EXIT)
             spitErr(ValueError, "Error invalid response from module!");
             NEXT_INST;
         }
-        ZList_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
-        ZList_push(&STACK,p4);
+        zlist_erase_range(&STACK,STACK.size-i2-1,STACK.size-1);
+        zlist_push(&STACK,p4);
         }
         else if (p3.type == Z_CLASS)
         {
-        KlassObject *obj = vm_allocKlassObject((Klass*)p3.ptr); // instance of class
-        ZObject r;
+        zclass_object*obj = vm_allocKlassObject((zclass*)p3.ptr); // instance of class
+        zobject r;
         r.type = Z_OBJ;
         r.ptr = (void *)obj;
         STACK.arr[STACK.size-i2-1] = r;
-        ZObject construct;
+        zobject construct;
         if (StrMap_get(&(obj->members),"__construct__",&construct))
         {
             if (construct.type != Z_NATIVE_FUNC)
             {
-            spitErr(TypeError, "Error constructor of module's class " + (string)((Klass *)p3.ptr)->name + " is not a native function!");
+            spitErr(TypeError, "Error constructor of module's class " + (string)((zclass* )p3.ptr)->name + " is not a native function!");
             NEXT_INST;
             }
-            NativeFunction *fn = (NativeFunction *)construct.ptr;
+            znativefun *fn = (znativefun *)construct.ptr;
             NativeFunPtr p = fn->addr;
 
-            ZObject *args = &STACK.arr[STACK.size-i2-1];
+            zobject *args = &STACK.arr[STACK.size-i2-1];
             if(fn->signature)
             {
             size_t len = strlen(fn->signature);
@@ -1170,11 +1172,11 @@ while (*k != OP_EXIT)
             if (p1.type == Z_ERROBJ)
             {
             // The module raised an error
-            KlassObject* E = (KlassObject*)p1.ptr;
-            ZObject msg;
+            zclass_object* E = (zclass_object*)p1.ptr;
+            zobject msg;
             StrMap_get(&(E->members),"msg",&msg);
             s1 = (string)method_name + "():  " +  AS_STD_STR(msg);
-            spitErr(E->klass, s1);
+            spitErr(E->_klass, s1);
             NEXT_INST;
             }
         }
@@ -1190,35 +1192,35 @@ while (*k != OP_EXIT)
     }
     else if (p1.type == Z_LIST || p1.type == Z_DICT || p1.type == Z_BYTEARR || p1.type == Z_STR)
     {
-        ZObject callmethod(string, ZObject *, int32_t);
+        zobject callmethod(string, zobject *, int32_t);
         p3 = callmethod(method_name, &STACK.arr[STACK.size-i2-1], i2 + 1);
         if (p3.type == Z_ERROBJ)
         {
-        KlassObject* E = (KlassObject*)p3.ptr;
-        ZObject msg;
+        zclass_object* E = (zclass_object*)p3.ptr;
+        zobject msg;
         StrMap_get(&(E->members),"msg",&msg);
-        spitErr(E->klass, *(string *)(msg.ptr));
+        spitErr(E->_klass, *(string *)(msg.ptr));
         NEXT_INST;
         }
-        ZList_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
-        ZList_push(&STACK,p3);
+        zlist_erase_range(&STACK,STACK.size-i2-1,STACK.size-1);
+        zlist_push(&STACK,p3);
     }
     else if (p1.type == Z_OBJ)
     {
-        KlassObject *obj = (KlassObject *)p1.ptr;
-        ZObject tmp;
+        zclass_object*obj = (zclass_object*)p1.ptr;
+        zobject tmp;
 
         if (!StrMap_get(&(obj->members),method_name,&tmp))
         {
         if (StrMap_get(&(obj->privateMembers),method_name,&tmp))
         {
-            FunObject *p = executing.back();
+            zfun *p = executing.back();
             if (p == NULL)
             {
             spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
             NEXT_INST;
             }
-            if (p->klass == obj->klass)
+            if (p->_klass == obj->_klass)
             p4 = tmp;
             else
             {
@@ -1236,7 +1238,7 @@ while (*k != OP_EXIT)
           p4 = tmp;
         if (p4.type == Z_FUNC)
         {
-            FunObject *memFun = (FunObject *)p4.ptr;
+            zfun *memFun = (zfun *)p4.ptr;
             if ((size_t)i2 + 1 + memFun->opt.size < memFun->args || (size_t)i2 + 1 > memFun->args)
             {
                 spitErr(ArgumentError, "Error function " + (string)memFun->name + " takes " + to_string(memFun->args - 1) + " arguments," + to_string(i2) + " given!");
@@ -1253,7 +1255,7 @@ while (*k != OP_EXIT)
             // add default arguments
             for (size_t i = memFun->opt.size - (memFun->args - 1 - (size_t)i2); i < (memFun->opt.size); i++)
             {
-                ZList_push(&STACK,memFun->opt.arr[i]);
+                zlist_push(&STACK,memFun->opt.arr[i]);
             }
         //
             k = program + memFun->i;
@@ -1261,10 +1263,10 @@ while (*k != OP_EXIT)
         }
         else if (p4.type == Z_NATIVE_FUNC)
         {
-        NativeFunction *fn = (NativeFunction *)p4.ptr;
+        znativefun *fn = (znativefun *)p4.ptr;
         NativeFunPtr R = fn->addr;
-        ZObject *args = &STACK.arr[STACK.size-i2-1];
-        ZObject rr;
+        zobject *args = &STACK.arr[STACK.size-i2-1];
+        zobject rr;
         if(fn->signature)
         {
             size_t len = strlen(fn->signature);
@@ -1287,14 +1289,14 @@ while (*k != OP_EXIT)
         rr = R(args, i2 + 1);
         if (rr.type == Z_ERROBJ)
         {
-            KlassObject* E = (KlassObject *)rr.ptr;
-            ZObject msg;
+            zclass_object* E = (zclass_object*)rr.ptr;
+            zobject msg;
             StrMap_get(&(E->members),"msg",&msg);
-            spitErr(E->klass, (string)fn->name + ": " + AS_STD_STR(msg));
+            spitErr(E->_klass, (string)fn->name + ": " + AS_STD_STR(msg));
             NEXT_INST;
         }
-        ZList_eraseRange(&STACK,STACK.size-i2-1,STACK.size-1);
-        ZList_push(&STACK,rr);
+        zlist_erase_range(&STACK,STACK.size-i2-1,STACK.size-1);
+        zlist_push(&STACK,rr);
         }
         else
         {
@@ -1315,12 +1317,12 @@ while (*k != OP_EXIT)
             spitErr(NameError,"Error coroutine member isAlive() takes 0 arguments!");
             NEXT_INST;
         }
-        ZObject isAlive;
+        zobject isAlive;
         isAlive.type = Z_BOOL;
         isAlive.i = (g->state != STOPPED);
-        ZObject tmp;
-        ZList_fastpop(&STACK,&tmp);
-        ZList_push(&STACK,isAlive);
+        zobject tmp;
+        zlist_fastpop(&STACK,&tmp);
+        zlist_push(&STACK,isAlive);
         k++;
         NEXT_INST;
         }
@@ -1363,7 +1365,7 @@ while (*k != OP_EXIT)
         }
         executing.push_back(NULL);
         frames.push_back(STACK.size-i2);
-        ZList_insertList(&STACK,STACK.size,&(g->locals));
+        zlist_insert_list(&STACK,STACK.size,&(g->locals));
         g->state = RUNNING;
         g->giveValOnResume = false;
         k = program + g->curr;
@@ -1379,8 +1381,8 @@ while (*k != OP_EXIT)
     CASE_CP ASSIGNMEMB:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);//value
-    ZList_fastpop(&STACK,&p1);//parent
+    zlist_fastpop(&STACK,&p2);//value
+    zlist_fastpop(&STACK,&p1);//parent
     k++;
     memcpy(&i1, k, 4);
     k += 3;
@@ -1390,17 +1392,17 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error member assignment unsupported for " + fullform(p1.type));
         NEXT_INST;
     }
-    KlassObject *ptr = (KlassObject *)p1.ptr;
-    ZObject* ref;
+    zclass_object*ptr = (zclass_object*)p1.ptr;
+    zobject* ref;
     if (!(ref = StrMap_getRef(&(ptr->members),memberName)))
     {
         if (( ref = StrMap_getRef(&(ptr->privateMembers),memberName)))
         {
         // private member
-        FunObject *A = executing.back();
-        if (A == NULL || A->klass != ptr->klass)
+        zfun *A = executing.back();
+        if (A == NULL || A->_klass != ptr->_klass)
         {
-            spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->klass->name + "'s object!");
+            spitErr(AccessError, "Error cannot access private member " + s1 + " of class " + ptr->_klass->name + "'s object!");
             NEXT_INST;
         }
         *ref = p2;
@@ -1421,7 +1423,7 @@ while (*k != OP_EXIT)
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
     s1 = strings[i1].val;
-    typedef ZObject (*initFun)();
+    typedef zobject (*initFun)();
     typedef int (*apiFun)(apiFuncions *,int);
     #ifdef _WIN32
         s1 = "C:\\zuko\\modules\\" + s1 + ".dll";
@@ -1485,7 +1487,7 @@ while (*k != OP_EXIT)
         NEXT_INST;
     }
     moduleHandles.push_back(module);
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP OP_RETURN:
@@ -1504,20 +1506,20 @@ while (*k != OP_EXIT)
     CASE_CP YIELD:
     {
     executing.pop_back();
-    ZList_fastpop(&STACK,&p1);
-    ZObject* locals = STACK.arr + frames.back();
+    zlist_fastpop(&STACK,&p1);
+    zobject* locals = STACK.arr + frames.back();
     size_t total = STACK.size - frames.back();
     STACK.size = frames.back();
-    ZList_fastpop(&STACK,&p2);//genObj
+    zlist_fastpop(&STACK,&p2);//genObj
     Coroutine *g = (Coroutine *)p2.ptr;
-    ZList_resize(&(g->locals),total);
+    zlist_resize(&(g->locals),total);
     if(total != 0)
-        memcpy(g->locals.arr,locals,total*sizeof(ZObject));
+        memcpy(g->locals.arr,locals,total*sizeof(zobject));
     g->curr = k - program + 1;
     g->state = SUSPENDED;
     g->giveValOnResume = false;
     frames.pop_back();
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k = callstack[callstack.size() - 1] - 1;
     callstack.pop_back();
     k++; 
@@ -1526,20 +1528,20 @@ while (*k != OP_EXIT)
     CASE_CP YIELD_AND_EXPECTVAL:
     {
     executing.pop_back();
-    ZList_fastpop(&STACK,&p2);
-    ZObject* locals = STACK.arr + frames.back();
+    zlist_fastpop(&STACK,&p2);
+    zobject* locals = STACK.arr + frames.back();
     size_t total = STACK.size - frames.back();
     STACK.size = frames.back();
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     Coroutine *g = (Coroutine *)p1.ptr;
-    ZList_resize(&(g->locals),total);
+    zlist_resize(&(g->locals),total);
     if(total != 0)
-        memcpy(g->locals.arr,locals,total*sizeof(ZObject));
+        memcpy(g->locals.arr,locals,total*sizeof(zobject));
     g->curr = k - program + 1;
     g->state = SUSPENDED;
     g->giveValOnResume = true;
     frames.pop_back();
-    ZList_push(&STACK,p2);
+    zlist_push(&STACK,p2);
     k = callstack[callstack.size() - 1] - 1;
     callstack.pop_back();
     k++; NEXT_INST;
@@ -1547,24 +1549,24 @@ while (*k != OP_EXIT)
     CASE_CP LOAD_NIL:
     {
     p1.type = Z_NIL;
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP CO_STOP:
     {
     executing.pop_back();
-    ZObject val;
-    ZList_fastpop(&STACK,&val);
+    zobject val;
+    zlist_fastpop(&STACK,&val);
     //we don't really need to save the coroutines locals anymore
     STACK.size = frames.back();
-    ZObject genObj;
-    ZList_fastpop(&STACK,&genObj);
+    zobject genObj;
+    zlist_fastpop(&STACK,&genObj);
     Coroutine *g = (Coroutine *)genObj.ptr;
     g->locals.size = 0;
     g->curr = k - program + 1;
     g->state = STOPPED;
     frames.pop_back();
-    ZList_push(&STACK,val);
+    zlist_push(&STACK,val);
     k = callstack[callstack.size() - 1] - 1;
     callstack.pop_back();
     k++; NEXT_INST;
@@ -1587,21 +1589,21 @@ while (*k != OP_EXIT)
     {
     p1.type = Z_BOOL;
     p1.i = 1;
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP LOAD_FALSE:
     {
     p1.type = Z_BOOL;
     p1.i = 0;
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP LSHIFT:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__lshift__", p1, 2, "<<", &p2);
@@ -1632,14 +1634,14 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error operator << unsupported for type " + fullform(p1.type));
         NEXT_INST;
     }
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP RSHIFT:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__rshift__", p1, 2, ">>", &p2);
@@ -1670,14 +1672,14 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error operator >> unsupported for type " + fullform(p1.type));
         NEXT_INST;
     }
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP BITWISE_AND:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__bitwiseand__", p1, 2, "&", &p2);
@@ -1706,14 +1708,14 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error operator & unsupported for type " + fullform(p1.type));
         NEXT_INST;
     }
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP BITWISE_OR:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__bitwiseor__", p1, 2, "|", &p2);
@@ -1742,13 +1744,13 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error operator | unsupported for type " + fullform(p1.type));
         NEXT_INST;
     }
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP COMPLEMENT:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__complement__", p1, 1, "~");
@@ -1758,13 +1760,13 @@ while (*k != OP_EXIT)
     {
         p2.type = Z_INT;
         p2.i = ~p1.i;
-        ZList_push(&STACK,p2);
+        zlist_push(&STACK,p2);
     }
     else if (p1.type == Z_INT64)
     {
         p2.type = Z_INT64;
         p2.l = ~p1.l;
-        ZList_push(&STACK,p2);
+        zlist_push(&STACK,p2);
     }
     else if (p1.type == Z_BYTE)
     {
@@ -1773,7 +1775,7 @@ while (*k != OP_EXIT)
         uint8_t p = p1.i;
         p = ~p;
         p2.i = p; 
-        ZList_push(&STACK,p2);
+        zlist_push(&STACK,p2);
     }
     else
     {
@@ -1785,8 +1787,8 @@ while (*k != OP_EXIT)
     CASE_CP XOR:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__xor__", p1, 2, "^", &p2);
@@ -1815,14 +1817,14 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Error operator '^' unsupported for type " + fullform(p1.type));
         NEXT_INST;
     }
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP ADD:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__add__", p1, 2, "+", &p2);
@@ -1849,25 +1851,25 @@ while (*k != OP_EXIT)
     if (c1 == Z_LIST)
     {
         p3.type = Z_LIST;
-        ZList* a = (ZList*)p1.ptr;
-        ZList* b = (ZList *)p2.ptr;
-        ZList* res = vm_allocList();
-        ZList_resize(res,a->size + b->size);
-        memcpy(res->arr,a->arr,a->size*sizeof(ZObject));
-        memcpy(res->arr+a->size,b->arr,b->size*sizeof(ZObject));
+        zlist* a = (zlist*)p1.ptr;
+        zlist* b = (zlist *)p2.ptr;
+        zlist* res = vm_allocList();
+        zlist_resize(res,a->size + b->size);
+        memcpy(res->arr,a->arr,a->size*sizeof(zobject));
+        memcpy(res->arr+a->size,b->arr,b->size*sizeof(zobject));
         p3.ptr = (void *)res;
-        ZList_push(&STACK,p3);
+        zlist_push(&STACK,p3);
         DoThreshholdBusiness();
     }
     else if (c1 == Z_STR )
     {
-        ZStr* a = (ZStr*)p1.ptr;
-        ZStr* b = (ZStr*)p2.ptr;
+        zstr* a = (zstr*)p1.ptr;
+        zstr* b = (zstr*)p2.ptr;
         
-        ZStr* p = vm_allocString(a->len + b->len);
+        zstr* p = vm_allocString(a->len + b->len);
         memcpy(p->val, a->val, a->len);
         memcpy(p->val + a->len, b->val, b->len);
-        p3 = ZObjFromStrPtr(p);
+        p3 = zobj_from_str_ptr(p);
         STACK.arr[STACK.size++] = p3;
         DoThreshholdBusiness();
     }
@@ -1924,8 +1926,8 @@ while (*k != OP_EXIT)
     CASE_CP SMALLERTHAN:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if(p1.type == p2.type && isNumeric(p1.type))
         c1 = p1.type;
     else if (p1.type == Z_OBJ)
@@ -1957,13 +1959,13 @@ while (*k != OP_EXIT)
     else if (p1.type == Z_FLOAT)
         p3.i = (bool)(p1.f < p2.f);
     
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP GREATERTHAN:
     {
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if(p1.type == p2.type && isNumeric(p1.type))
         c1=p1.type;
     else if (p1.type == Z_OBJ)
@@ -1996,14 +1998,14 @@ while (*k != OP_EXIT)
     else if (p1.type == Z_FLOAT)
         p3.i = (bool)(p1.f > p2.f);
     
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP SMOREQ:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
             
     if(p1.type == p2.type && isNumeric(p1.type))
         c1 = p1.type;
@@ -2036,15 +2038,15 @@ while (*k != OP_EXIT)
     else if (p1.type == Z_FLOAT)
         p3.i = (bool)(p1.f <= p2.f);
     
-    //ZList_push(&STACK,p3);
+    //zlist_push(&STACK,p3);
     STACK.arr[STACK.size++] = p3;
     k++; NEXT_INST;
     }
     CASE_CP GROREQ:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if(p1.type == p2.type && isNumeric(p1.type))
         c1 = p1.type;
     else if (p1.type == Z_OBJ)
@@ -2076,14 +2078,14 @@ while (*k != OP_EXIT)
     else if (p1.type == Z_FLOAT)
         p3.i = (bool)(p1.f >= p2.f);
     
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP EQ:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_INT && p2.type == Z_INT64)
         PromoteType(p1, Z_INT64);
     else if (p1.type == Z_INT64 && p2.type == Z_INT)
@@ -2094,14 +2096,14 @@ while (*k != OP_EXIT)
         NEXT_INST;
     }
     p3.type = Z_BOOL;
-    p3.i = (bool)(ZObject_equals(p1,p2));
-    //IMPORTANT1  ZList_push(&STACK,p3);
+    p3.i = (bool)(zobject_equals(p1,p2));
+    //IMPORTANT1  zlist_push(&STACK,p3);
     STACK.arr[STACK.size++] = p3;
     k++; NEXT_INST;
     }
     CASE_CP NOT:
     {
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         orgk = k-program;
@@ -2115,12 +2117,12 @@ while (*k != OP_EXIT)
         NEXT_INST;
     }
     p1.i = (bool)!(p1.i);
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP NEG:
     {
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         orgk = k - program;
@@ -2163,13 +2165,13 @@ while (*k != OP_EXIT)
     {
         p1.f = -p1.f;
     }
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP INDEX:
     {
-    ZList_fastpop(&STACK,&p1);
-    ZList_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
     if (p2.type == Z_LIST)
     {
         if (p1.type != Z_INT && p1.type != Z_INT64)
@@ -2186,14 +2188,14 @@ while (*k != OP_EXIT)
         NEXT_INST;
         }
 
-        pl_ptr1 = (ZList *)p2.ptr;
+        pl_ptr1 = (zlist *)p2.ptr;
         if ((size_t)p1.l >= pl_ptr1->size)
         {
         orgk = k - program;
         spitErr(ValueError, "Error index is out of range!");
         NEXT_INST;
         }
-        ZList_push(&STACK,(*pl_ptr1).arr[p1.l]);
+        zlist_push(&STACK,(*pl_ptr1).arr[p1.l]);
         k++; NEXT_INST;
     }
     else if (p2.type == Z_BYTEARR)
@@ -2212,7 +2214,7 @@ while (*k != OP_EXIT)
         NEXT_INST;
         }
 
-        bt_ptr1 = (ZByteArr*)p2.ptr;
+        bt_ptr1 = (zbytearr*)p2.ptr;
         if ((size_t)p1.l >= bt_ptr1->size)
         {
         orgk = k - program;
@@ -2221,20 +2223,20 @@ while (*k != OP_EXIT)
         }
         p3.type = 'm';
         p3.i = bt_ptr1->arr[p1.l];
-        ZList_push(&STACK,p3);
+        zlist_push(&STACK,p3);
         k++; NEXT_INST;
     }
     else if (p2.type == Z_DICT)
     {
-        ZDict* d = (ZDict *)p2.ptr;
-        ZObject res;
-        if (!ZDict_get(d,p1,&res))
+        zdict* d = (zdict *)p2.ptr;
+        zobject res;
+        if (!zdict_get(d,p1,&res))
         {
         orgk = k - program;
-        spitErr(KeyError, "Error key " + ZObjectToStr(p1) + " not found in the dictionary!");
+        spitErr(KeyError, "Error key " + zobjectToStr(p1) + " not found in the dictionary!");
         NEXT_INST;
         }
-        ZList_push(&STACK,res);
+        zlist_push(&STACK,res);
     }
     else if (p2.type == Z_STR )
     {
@@ -2253,17 +2255,17 @@ while (*k != OP_EXIT)
         }
         char* s;
         size_t length;
-        s = ((ZStr*)p2.ptr) -> val;
-        length = ((ZStr*)p2.ptr) -> len;
+        s = ((zstr*)p2.ptr) -> val;
+        length = ((zstr*)p2.ptr) -> len;
         if ((size_t)p1.l >= length)
         {
         orgk = k - program;
         spitErr(ValueError, "Error index is out of range!");
         }
         char c = s[p1.l];
-        ZStr* p = vm_allocString(1);
+        zstr* p = vm_allocString(1);
         p->val[0] = c;
-        ZList_push(&STACK,ZObjFromStrPtr(p));
+        zlist_push(&STACK,zobj_from_str_ptr(p));
         DoThreshholdBusiness();
     }
     else if (p2.type == Z_OBJ)
@@ -2284,8 +2286,8 @@ while (*k != OP_EXIT)
     CASE_CP NOTEQ:
     {
 
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ && p2.type != Z_NIL)
     {
         invokeOperator("__noteq__", p1, 2, "!=", &p2, 0);
@@ -2296,15 +2298,15 @@ while (*k != OP_EXIT)
         PromoteType(p1, Z_INT64);
     else if (p1.type == Z_INT64 && p2.type == Z_INT)
         PromoteType(p2, Z_INT64);
-    p3.i = (bool)!(ZObject_equals(p1,p2));
-    ZList_push(&STACK,p3);
+    p3.i = (bool)!(zobject_equals(p1,p2));
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP IS:
     {
 
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if ((p1.type != Z_DICT && p1.type != Z_CLASS && p1.type != Z_LIST && p1.type != Z_OBJ && p1.type != Z_STR && p1.type != Z_MODULE && p1.type != Z_FUNC) || (p2.type != Z_CLASS && p2.type != Z_DICT && p2.type != Z_STR && p2.type != Z_FUNC && p2.type != Z_LIST && p2.type != Z_OBJ && p2.type != Z_MODULE))
     {
         orgk = k - program;
@@ -2313,19 +2315,19 @@ while (*k != OP_EXIT)
     }
     p3.type = Z_BOOL;
     p3.i = (bool)(p1.ptr == p2.ptr);
-    ZList_push(&STACK,p3);
+    zlist_push(&STACK,p3);
     k++; NEXT_INST;
     }
     CASE_CP MUL:
     {
-    ZList_fastpop(&STACK,&p2);
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p2);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_OBJ)
     {
         invokeOperator("__mul__", p1, 2, "*", &p2);
         NEXT_INST;
     }
-    ZObject c;
+    zobject c;
     char t;
     if(p1.type==p2.type && isNumeric(p1.type))
         t = p1.type;
@@ -2349,21 +2351,21 @@ while (*k != OP_EXIT)
         spitErr(ValueError,"Cannot multiply list by a negative integer!");
         NEXT_INST;
         }
-        ZList* src = (ZList*)p1.ptr;
-        ZList* res = vm_allocList();
+        zlist* src = (zlist*)p1.ptr;
+        zlist* res = vm_allocList();
         if(src->size!=0)
         {
         for(size_t i=1;i<=(size_t)p2.l;i++)
         {
             size_t idx = res->size;
-            ZList_resize(res,res->size+src->size);
-            memcpy(res->arr+idx,src->arr,src->size*sizeof(ZObject));
+            zlist_resize(res,res->size+src->size);
+            memcpy(res->arr+idx,src->arr,src->size*sizeof(zobject));
 //              res->insert(res->end(),src->begin(),src->end())
         }
         }
         p1.type = Z_LIST;
         p1.ptr = (void*)res;
-        ZList_push(&STACK,p1);
+        zlist_push(&STACK,p1);
         DoThreshholdBusiness();
         ++k;
         NEXT_INST;
@@ -2377,8 +2379,8 @@ while (*k != OP_EXIT)
         spitErr(ValueError,"Cannot multiply string by a negative integer!");
         NEXT_INST;
         }
-        ZStr* src = (ZStr*)p1.ptr;
-        ZStr* res = vm_allocString(src->len * p2.l);
+        zstr* src = (zstr*)p1.ptr;
+        zstr* res = vm_allocString(src->len * p2.l);
         if(src->len != 0)
         {
         for(size_t i=0;i<(size_t)p2.l;i++)
@@ -2386,7 +2388,7 @@ while (*k != OP_EXIT)
         }
         p1.type = Z_STR;
         p1.ptr = (void*)res;
-        ZList_push(&STACK,p1);
+        zlist_push(&STACK,p1);
         DoThreshholdBusiness();
         ++k;
         NEXT_INST;
@@ -2404,7 +2406,7 @@ while (*k != OP_EXIT)
         if (!multiplication_overflows(p1.i, p2.i))
         {
         c.i = p1.i * p2.i;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
         k++; NEXT_INST;
         }
         orgk = k - program;
@@ -2415,7 +2417,7 @@ while (*k != OP_EXIT)
         }
         c.type = Z_INT64;
         c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
     }
     else if (t == Z_FLOAT)
     {
@@ -2427,7 +2429,7 @@ while (*k != OP_EXIT)
         }
         c.type = Z_FLOAT;
         c.f = p1.f * p2.f;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
     }
     else if (t == Z_INT64)
     {
@@ -2439,15 +2441,15 @@ while (*k != OP_EXIT)
         }
         c.type = Z_INT64;
         c.l = p1.l * p2.l;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
     }
     k++; NEXT_INST;
     }
     CASE_CP MEMB:
     {
     orgk = k - program;
-    ZObject a;
-    ZList_fastpop(&STACK,&a);
+    zobject a;
+    zlist_fastpop(&STACK,&a);
     ++k;
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
@@ -2455,32 +2457,32 @@ while (*k != OP_EXIT)
     
     if (a.type == Z_MODULE)
     {
-        Module *m = (Module *)a.ptr;
+        zmodule*m = (zmodule*)a.ptr;
         
         if (!StrMap_get(&(m->members),mname,&p3))
         {
         spitErr(NameError, "Error module object has no member named '" + (string)mname + "' ");
         NEXT_INST;
         }
-        ZList_push(&STACK,p3);
+        zlist_push(&STACK,p3);
         ++k;
         NEXT_INST;
     }
     else if(a.type == Z_OBJ)
     {
-        KlassObject *ptr = (KlassObject *)a.ptr;
-        ZObject tmp;
+        zclass_object*ptr = (zclass_object*)a.ptr;
+        zobject tmp;
         if (!StrMap_get(&(ptr->members),mname,&tmp))
         {
             if(StrMap_get(&(ptr->privateMembers),mname,&tmp))
             {
-            FunObject *A = executing.back();
-            if (A == NULL || ptr->klass != A->klass)
+            zfun *A = executing.back();
+            if (A == NULL || ptr->_klass != A->_klass)
             {
-                spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->klass->name + "'s object!");
+                spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->_klass->name + "'s object!");
                 NEXT_INST;
             }
-            ZList_push(&STACK,tmp);
+            zlist_push(&STACK,tmp);
             k += 1;
             NEXT_INST;
             }
@@ -2491,28 +2493,28 @@ while (*k != OP_EXIT)
             }
         }
         
-        ZList_push(&STACK,tmp);
+        zlist_push(&STACK,tmp);
     }
     else if(a.type == Z_CLASS)
     {
-        Klass *ptr = (Klass *)a.ptr;
-        ZObject tmp;
+        zclass* ptr = (zclass* )a.ptr;
+        zobject tmp;
         if (!StrMap_get(&(ptr->members),mname,&tmp))
         {
             if (StrMap_get(&(ptr->privateMembers),mname,&tmp))
             {
-            FunObject *A = executing.back();
+            zfun *A = executing.back();
             if (A == NULL)
             {
                 spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->name + "!");
                 NEXT_INST;
             }
-            if (ptr != A->klass)
+            if (ptr != A->_klass)
             {
                 spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->name + "!");
                 NEXT_INST;
             }
-            ZList_push(&STACK,tmp);
+            zlist_push(&STACK,tmp);
             k += 1;
             NEXT_INST;
             }
@@ -2522,7 +2524,7 @@ while (*k != OP_EXIT)
             NEXT_INST;
             }
         }
-        ZList_push(&STACK,tmp);
+        zlist_push(&STACK,tmp);
     }
     else
     {
@@ -2540,7 +2542,7 @@ while (*k != OP_EXIT)
     int32_t idx;
     memcpy(&idx, k, sizeof(int32_t));
     k += 4;
-    FunObject *fn = vm_allocFunObject();
+    zfun *fn = vm_allocfun_object();
     fn->i = p;
     fn->args = *k;
     fn->name = strings[idx].val;
@@ -2548,10 +2550,10 @@ while (*k != OP_EXIT)
     p1.ptr = (void *)fn;
     k++;
     i2 = (int32_t)*k;
-    ZList_resize(&(fn -> opt),i2);
-    memcpy(fn->opt.arr,STACK.arr + STACK.size-i2,sizeof(ZObject)*i2);
-    ZList_eraseRange(&STACK,STACK.size - i2 , STACK.size - 1);
-    ZList_push(&STACK,p1);
+    zlist_resize(&(fn -> opt),i2);
+    memcpy(fn->opt.arr,STACK.arr + STACK.size-i2,sizeof(zobject)*i2);
+    zlist_erase_range(&STACK,STACK.size - i2 , STACK.size - 1);
+    zlist_push(&STACK,p1);
     DoThreshholdBusiness();
     k++; NEXT_INST;
     }
@@ -2564,15 +2566,15 @@ while (*k != OP_EXIT)
     int32_t idx;
     memcpy(&idx, k, sizeof(int32_t));
     k += 4;
-    ZObject co;
-    FunObject* fn = vm_allocCoroutine();
+    zobject co;
+    zfun* fn = vm_allocCoroutine();
     fn->args = *k;
     fn->i = p;
     fn->name = "Coroutine";
-    fn->klass = nullptr;
+    fn->_klass = nullptr;
     co.type = 'g';
     co.ptr = (void*)fn;
-    ZList_push(&STACK,co);
+    zlist_push(&STACK,co);
     k++; NEXT_INST;
     }
     CASE_CP BUILD_CLASS:
@@ -2584,37 +2586,37 @@ while (*k != OP_EXIT)
     int32_t idx;
     memcpy(&idx, k, sizeof(int32_t));
     k += 3;
-    ZObject klass;
-    klass.type = Z_CLASS;
-    Klass *obj = vm_allocKlass();
+    zobject zclass_packed;
+    zclass_packed.type = Z_CLASS;
+    zclass* obj = vm_allocKlass();
     obj->name = strings[idx].val;
     values.clear();
     names.clear();
     for (int32_t i = 1; i <= N; i++)
     {
-        ZList_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p1);
         if (p1.type == Z_FUNC)
         {
-        FunObject *ptr = (FunObject *)p1.ptr;
-        ptr->klass = obj;
+        zfun *ptr = (zfun *)p1.ptr;
+        ptr->_klass = obj;
         }
         values.push_back(p1);
     }
     for (int32_t i = 1; i <= N; i++)
     {
-        ZList_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p1);
         names.push_back(p1);
     }
     for (int32_t i = 0; i < N; i += 1)
     {
-        char* propName = ((ZStr*)names[i].ptr)->val;
+        char* propName = ((zstr*)names[i].ptr)->val;
         if (propName[0] == '@')
         StrMap_emplace(&(obj->privateMembers),propName+1,values[i]);
         else
         StrMap_emplace(&(obj->members),propName,values[i]);
     }
-    klass.ptr = (void *)obj;
-    ZList_push(&STACK,klass);
+    zclass_packed.ptr = (void *)obj;
+    zlist_push(&STACK,zclass_packed);
     k++; NEXT_INST;
     }
     CASE_CP BUILD_DERIVED_CLASS:
@@ -2628,39 +2630,39 @@ while (*k != OP_EXIT)
     k += 3;
     // N is total new class members
     // i1 is idx of class name in strings array
-    ZObject klass;
-    klass.type = Z_CLASS;
-    Klass *d = vm_allocKlass();
+    zobject zclass_packed;
+    zclass_packed.type = Z_CLASS;
+    zclass* d = vm_allocKlass();
     d->name = strings[i1].val; // strings are not deallocated until exit, so no problem
     names.clear();
     values.clear();
     for (int32_t i = 1; i <= N; i++)
     {
-        ZList_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p1);
         if (p1.type == Z_FUNC)
         {
-        FunObject *ptr = (FunObject *)p1.ptr;
-        ptr->klass = d;
+        zfun *ptr = (zfun *)p1.ptr;
+        ptr->_klass = d;
         }
         values.push_back(p1);
     }
     for (int32_t i = 1; i <= N; i++)
     {
-        ZList_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p1);
         names.push_back(p1);
     }
-    ZObject baseClass;
-    ZList_fastpop(&STACK,&baseClass);
+    zobject baseClass;
+    zlist_fastpop(&STACK,&baseClass);
     if (baseClass.type != Z_CLASS)
     {
         spitErr(TypeError, "Error class can not be derived from object of non class type!");
         NEXT_INST;
     }
-    Klass *Base = (Klass *)baseClass.ptr;
+    zclass* Base = (zclass* )baseClass.ptr;
 
     for (int32_t i = 0; i < N; i += 1)
     {
-        char* propName = ((ZStr*)names[i].ptr) -> val;
+        char* propName = ((zstr*)names[i].ptr) -> val;
         if (propName[0] == '@')
         StrMap_emplace(&(d->privateMembers),propName+1,values[i]);
         else
@@ -2675,7 +2677,7 @@ while (*k != OP_EXIT)
         const char* n = e.key;
         if (strcmp(n , "super") == 0)//do not add base class's super to this class
             continue;
-        ZObject* ref1;
+        zobject* ref1;
         if (!(ref1 = StrMap_getRef(&(d->members),n)))//member is not overriden in child
         {
             if (!(ref1 = StrMap_getRef(&(d->privateMembers),n)))
@@ -2683,14 +2685,14 @@ while (*k != OP_EXIT)
                 p1 = e.val;
                 if (p1.type == Z_FUNC)
                 {
-                    FunObject *p = (FunObject *)p1.ptr;
-                    FunObject *rep = vm_allocFunObject();
+                    zfun *p = (zfun *)p1.ptr;
+                    zfun *rep = vm_allocfun_object();
                     rep->args = p->args;
                     rep->i = p->i;
-                    rep->klass = d;
+                    rep->_klass = d;
                     rep->name = p->name;
-                    ZList_resize(&(rep->opt),p->opt.size);
-                    memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
+                    zlist_resize(&(rep->opt),p->opt.size);
+                    memcpy(rep->opt.arr,p->opt.arr,sizeof(zobject)*p->opt.size);
                     p1.type = Z_FUNC;
                     p1.ptr = (void *)rep;
                 }
@@ -2704,7 +2706,7 @@ while (*k != OP_EXIT)
             continue;
         auto& e = Base->privateMembers.table[it];
         const char* n = e.key;
-        ZObject* ref;
+        zobject* ref;
         if (!(ref = StrMap_getRef(&(d->privateMembers),n)))
         {
         if (!(ref = StrMap_getRef(&(d->members),n)))
@@ -2712,14 +2714,14 @@ while (*k != OP_EXIT)
             p1 = e.val;
             if (p1.type == Z_FUNC)
             {
-            FunObject *p = (FunObject *)p1.ptr;
-            FunObject *rep = vm_allocFunObject();
+            zfun *p = (zfun *)p1.ptr;
+            zfun *rep = vm_allocfun_object();
             rep->args = p->args;
             rep->i = p->i;
-            rep->klass = d;
+            rep->_klass = d;
             rep->name = p->name;
-            ZList_resize(&(rep->opt),p->opt.size);
-            memcpy(rep->opt.arr,p->opt.arr,sizeof(ZObject)*p->opt.size);
+            zlist_resize(&(rep->opt),p->opt.size);
+            memcpy(rep->opt.arr,p->opt.arr,sizeof(zobject)*p->opt.size);
             p1.type = Z_FUNC;
             p1.ptr = (void *)rep;
             }
@@ -2729,8 +2731,8 @@ while (*k != OP_EXIT)
     }
 
     StrMap_emplace(&(d->members),"super",baseClass);
-    klass.ptr = (void *)d;
-    ZList_push(&STACK,klass);
+    zclass_packed.ptr = (void *)d;
+    zlist_push(&STACK,zclass_packed);
     k++; NEXT_INST;
     }
     CASE_CP JMPIFFALSENOPOP:
@@ -2744,7 +2746,7 @@ while (*k != OP_EXIT)
         k = k + i1 + 1;
         NEXT_INST;
     }
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     k++; NEXT_INST;
     }
     CASE_CP NOPOPJMPIF:
@@ -2755,7 +2757,7 @@ while (*k != OP_EXIT)
     p1 = STACK.arr[STACK.size - 1];
     if (p1.type == Z_NIL || (p1.type == Z_BOOL && p1.i == 0))
     {
-        ZList_fastpop(&STACK,&p1);
+        zlist_fastpop(&STACK,&p1);
         k++; NEXT_INST;
     }
     else
@@ -2771,19 +2773,19 @@ while (*k != OP_EXIT)
     k += 3;
     p1.type = Z_STR;
     p1.ptr = (void *)&strings[i1];
-    ZList_push(&STACK,p1);
+    zlist_push(&STACK,p1);
     k++; NEXT_INST;
     }
     CASE_CP CALLUDF:
     {
     orgk = k - program;
-    ZObject fn;
-    ZList_fastpop(&STACK,&fn);
+    zobject fn;
+    zlist_fastpop(&STACK,&fn);
     k += 1;
     int32_t N = *k;
     if (fn.type == Z_FUNC)
     {
-        FunObject *obj = (FunObject *)fn.ptr;
+        zfun *obj = (zfun *)fn.ptr;
         if ((size_t)N + obj->opt.size < obj->args || (size_t)N > obj->args)
         {
         spitErr(ArgumentError, "Error function " + (string)obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
@@ -2797,17 +2799,17 @@ while (*k != OP_EXIT)
         NEXT_INST;
         }
         for (size_t i = obj->opt.size - (obj->args - N); i < obj->opt.size; i++)
-            ZList_push(&STACK,obj->opt.arr[i]);
+            zlist_push(&STACK,obj->opt.arr[i]);
         executing.push_back(obj);
         k = program + obj->i;
         NEXT_INST;
     }
     else if (fn.type == Z_NATIVE_FUNC)
     {
-        NativeFunction *A = (NativeFunction *)fn.ptr;
+        znativefun *A = (znativefun *)fn.ptr;
         NativeFunPtr f = A->addr;
         p4.type = Z_NIL;
-        ZObject* args = STACK.arr + (STACK.size-N);
+        zobject* args = STACK.arr + (STACK.size-N);
         if(A->signature)
         {
         size_t len = strlen(A->signature);
@@ -2831,7 +2833,7 @@ while (*k != OP_EXIT)
         if (p4.type == Z_ERROBJ)
         {
         s1 = "Native Function:  " + *(string *)p4.ptr;
-        spitErr((Klass*)p4.ptr, s1);
+        spitErr((zclass*)p4.ptr, s1);
         NEXT_INST;
         }
         if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
@@ -2839,37 +2841,37 @@ while (*k != OP_EXIT)
         spitErr(ValueError, "Error invalid response from module!");
         NEXT_INST;
         }
-        ZList_eraseRange(&STACK,STACK.size-N,STACK.size-1);
-        ZList_push(&STACK,p4);
+        zlist_erase_range(&STACK,STACK.size-N,STACK.size-1);
+        zlist_push(&STACK,p4);
     }
     else if (fn.type == Z_CLASS)
     {
 
-        KlassObject *obj = vm_allocKlassObject(AS_KLASS(fn)); // instance of class
+        zclass_object*obj = vm_allocKlassObject(AS_KLASS(fn)); // instance of class
 
 
-        s1 = ((Klass*)fn.ptr) -> name;
+        s1 = ((zclass*)fn.ptr) -> name;
         
-        ZObject construct;
+        zobject construct;
         if (StrMap_get(&(obj->members),"__construct__", &construct))
         {
         if (construct.type == Z_FUNC)
         {
-            FunObject *p = (FunObject *)construct.ptr;
+            zfun *p = (zfun *)construct.ptr;
             if ((size_t)N + p->opt.size + 1 < p->args || (size_t)N + 1 > p->args)
             {
-            spitErr(ArgumentError, "Error constructor of class " + (string)((Klass *)fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
+            spitErr(ArgumentError, "Error constructor of class " + (string)((zclass* )fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
             NEXT_INST;
             }
-            ZObject r;
+            zobject r;
             r.type = Z_OBJ;
             r.ptr = (void *)obj;
             callstack.push_back(k + 1);
-            ZList_insert(&STACK,STACK.size - N,r);
+            zlist_insert(&STACK,STACK.size - N,r);
             frames.push_back(STACK.size-N-1);
             for (size_t i = p->opt.size - (p->args - 1 - N); i < p->opt.size; i++)
             {
-            ZList_push(&STACK,p->opt.arr[i]);
+            zlist_push(&STACK,p->opt.arr[i]);
             }
             k = program + p->i;
             executing.push_back(p);
@@ -2878,12 +2880,12 @@ while (*k != OP_EXIT)
         }
         else if (construct.type == Z_NATIVE_FUNC)
         {
-            NativeFunction *M = (NativeFunction *)construct.ptr;
-            ZObject *args = NULL;
-            ZObject r;
+            znativefun *M = (znativefun *)construct.ptr;
+            zobject *args = NULL;
+            zobject r;
             r.type = Z_OBJ;
             r.ptr = (void *)obj;
-            ZList_insert(&STACK,STACK.size - N,r);
+            zlist_insert(&STACK,STACK.size - N,r);
             args = &STACK.arr[STACK.size - (N + 1)];
             if(M->signature)
             {
@@ -2905,24 +2907,24 @@ while (*k != OP_EXIT)
             }
             }
             p4 = M->addr(args, N + 1);
-            ZList_eraseRange(&STACK,STACK.size-(N+1),STACK.size-1);
+            zlist_erase_range(&STACK,STACK.size-(N+1),STACK.size-1);
             if (p4.type == Z_ERROBJ)
             {
-            KlassObject* E = (KlassObject*)p4.ptr;
-            ZObject msg;
+            zclass_object* E = (zclass_object*)p4.ptr;
+            zobject msg;
             StrMap_get(&(E->members),"msg",&msg);
-            char* errmsg = ((ZStr*)msg.ptr) -> val;
-            spitErr((Klass*)p4.ptr, s1+ "." + "__construct__:  " + errmsg);
+            char* errmsg = ((zstr*)msg.ptr) -> val;
+            spitErr((zclass*)p4.ptr, s1+ "." + "__construct__:  " + errmsg);
             NEXT_INST;
             }
-            ZList_push(&STACK,r);
+            zlist_push(&STACK,r);
             DoThreshholdBusiness();
             k++;
             NEXT_INST;
         }
         else
         {
-            spitErr(TypeError, "Error constructor of class " + (string)((Klass *)fn.ptr)->name + " is not a function!");
+            spitErr(TypeError, "Error constructor of class " + (string)((zclass* )fn.ptr)->name + " is not a function!");
             NEXT_INST;
         }
         }
@@ -2930,19 +2932,19 @@ while (*k != OP_EXIT)
         {
         if (N != 0)
         {
-            spitErr(ArgumentError, "Error constructor class " + (string)((Klass *)fn.ptr)->name + " takes 0 arguments!");
+            spitErr(ArgumentError, "Error constructor class " + (string)((zclass* )fn.ptr)->name + " takes 0 arguments!");
             NEXT_INST;
         }
         }
-        ZObject r;
+        zobject r;
         r.type = Z_OBJ;
         r.ptr = (void *)obj;
-        ZList_push(&STACK,r);
+        zlist_push(&STACK,r);
         DoThreshholdBusiness();
     }
     else if (fn.type == 'g')
     {
-        FunObject* f = (FunObject*)fn.ptr;
+        zfun* f = (zfun*)fn.ptr;
         if ((size_t)N != f->args)
         {
         spitErr(ArgumentError, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(f->args) + " arguments," + to_string(N) + " given!");
@@ -2952,16 +2954,16 @@ while (*k != OP_EXIT)
         g->fun = f;
         g->curr = f->i;
         g->state = SUSPENDED;
-        ZObject* locals = STACK.arr + STACK.size - N;
+        zobject* locals = STACK.arr + STACK.size - N;
         STACK.size -= N;
-        ZList_resize(&(g->locals),N);
+        zlist_resize(&(g->locals),N);
         if(N != 0)
-            memcpy(g->locals.arr,locals,N*sizeof(ZObject));
+            memcpy(g->locals.arr,locals,N*sizeof(zobject));
         g->giveValOnResume = false;
-        ZObject T;
+        zobject T;
         T.type = Z_COROUTINE_OBJ;
         T.ptr = g;
-        ZList_push(&STACK,T);
+        zlist_push(&STACK,T);
         DoThreshholdBusiness();
     }
     else
@@ -2973,15 +2975,15 @@ while (*k != OP_EXIT)
     }
     CASE_CP MOD:
     {
-    ZObject a,b;
-    ZList_fastpop(&STACK,&b);
-    ZList_fastpop(&STACK,&a);
+    zobject a,b;
+    zlist_fastpop(&STACK,&b);
+    zlist_fastpop(&STACK,&a);
     if (a.type == Z_OBJ)
     {
         invokeOperator("__mod__", a, 2, "%", &b);
         NEXT_INST;
     }
-    ZObject c;
+    zobject c;
     char t;
     if (isNumeric(a.type) && isNumeric(b.type))
     {
@@ -3022,10 +3024,10 @@ while (*k != OP_EXIT)
         /* handle error condition */
         c.type = Z_INT64;
         c.l = (int64_t)a.i % (int64_t)b.i;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
         }
         c.i = a.i % b.i;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
     }
     else if (t == Z_INT64)
     {
@@ -3043,7 +3045,7 @@ while (*k != OP_EXIT)
         NEXT_INST;
         }
         c.l = a.l % b.l;
-        ZList_push(&STACK,c);
+        zlist_push(&STACK,c);
     }
     k++; NEXT_INST;
     }
@@ -3091,15 +3093,15 @@ while (*k != OP_EXIT)
     }
     CASE_CP SUB:
     {
-    ZObject a,b;
-    ZList_fastpop(&STACK,&b);
-    ZList_fastpop(&STACK,&a);
+    zobject a,b;
+    zlist_fastpop(&STACK,&b);
+    zlist_fastpop(&STACK,&a);
     if (a.type == Z_OBJ)
     {
         invokeOperator("__sub__", a, 2, "-", &b);
         NEXT_INST;
     }
-    ZObject c;
+    zobject c;
     char t;
     if(a.type == b.type && isNumeric(a.type))
         t = a.type;
@@ -3169,15 +3171,15 @@ while (*k != OP_EXIT)
     }
     CASE_CP DIV:
     {
-    ZObject b,a;
-    ZList_fastpop(&STACK,&b);
-    ZList_fastpop(&STACK,&a);
+    zobject b,a;
+    zlist_fastpop(&STACK,&b);
+    zlist_fastpop(&STACK,&a);
     if (a.type == Z_OBJ)
     {
         invokeOperator("__div__", a, 2, "/", &b);
         NEXT_INST;
     }
-    ZObject c;
+    zobject c;
     char t = 0;
     if(a.type == b.type && isNumeric(a.type))
         t = a.type;
@@ -3273,7 +3275,7 @@ while (*k != OP_EXIT)
     int32_t N;
     memcpy(&N, k, sizeof(int32_t));
     k += 4;
-    ZList_eraseRange(&STACK,STACK.size - N,STACK.size - 1);  
+    zlist_erase_range(&STACK,STACK.size - N,STACK.size - 1);  
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
     int32_t where = k - program + i1;
@@ -3286,7 +3288,7 @@ while (*k != OP_EXIT)
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
     int32_t where = k - program + i1 + 1;
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     if (p1.i && p1.type == Z_BOOL)
         k = program + where - 1;
     k++; 
@@ -3295,14 +3297,14 @@ while (*k != OP_EXIT)
     CASE_CP THROW:
     {
     orgk = k - program;
-    ZList_fastpop(&STACK,&p3); //val
+    zlist_fastpop(&STACK,&p3); //val
     if(p3.type != Z_OBJ)
     {
         spitErr(TypeError,"Value of type "+fullform(p3.type)+" not throwable!");
         NEXT_INST;
     }
-    KlassObject* ki = (KlassObject*)p3.ptr;
-    ZObject msg;
+    zclass_object* ki = (zclass_object*)p3.ptr;
+    zobject msg;
     if( !StrMap_get(&(ki->members),"msg",&msg) || msg.type!=Z_STR)
     {
         spitErr(ThrowError,"Object does not have member 'msg' or it is not a string!");
@@ -3311,7 +3313,7 @@ while (*k != OP_EXIT)
     if (except_targ.size() == 0)
     {
         ///IMPORTANT
-        spitErr(ki->klass,((ZStr*)(msg.ptr))->val );
+        spitErr(ki->_klass,((zstr*)(msg.ptr))->val );
         NEXT_INST;
     }
     k = except_targ.back();
@@ -3365,7 +3367,7 @@ while (*k != OP_EXIT)
     k += 1;
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
-    ZList_fastpop(&STACK,&p1);
+    zlist_fastpop(&STACK,&p1);
     if (p1.type == Z_NIL || (p1.type == Z_BOOL && p1.i == 0))
     {
         k = k + i1 + 1;
@@ -3376,26 +3378,26 @@ while (*k != OP_EXIT)
     CASE_CP SELFMEMB:
     {
     orgk = k - program;
-    ZObject a = STACK.arr[frames.back()];
+    zobject a = STACK.arr[frames.back()];
     ++k;
     memcpy(&i1, k, sizeof(int32_t));
     k += 3;
     const char* mname = strings[i1].val;//optimize
     if(a.type == Z_OBJ)
     {
-        KlassObject *ptr = (KlassObject *)a.ptr;
-        ZObject tmp;
+        zclass_object*ptr = (zclass_object*)a.ptr;
+        zobject tmp;
         if (!StrMap_get(&(ptr->members),mname,&tmp))
         {
             if (StrMap_get(&(ptr->privateMembers),mname,&tmp))
             {
-            FunObject *A = executing.back();
-            if (A == NULL || A->klass != ptr->klass)
+            zfun *A = executing.back();
+            if (A == NULL || A->_klass != ptr->_klass)
             {
-                spitErr(AccessError, "Cannot access private member " + (string)mname + " of class " + ptr->klass->name + "'s object!");
+                spitErr(AccessError, "Cannot access private member " + (string)mname + " of class " + ptr->_klass->name + "'s object!");
                 NEXT_INST;
             }
-            ZList_push(&STACK,tmp);
+            zlist_push(&STACK,tmp);
             k += 1;
             NEXT_INST;
             }
@@ -3405,7 +3407,7 @@ while (*k != OP_EXIT)
             NEXT_INST;
             }
         }
-        ZList_push(&STACK,tmp);
+        zlist_push(&STACK,tmp);
     }
     else
     {
@@ -3417,9 +3419,9 @@ while (*k != OP_EXIT)
     CASE_CP ASSIGNSELFMEMB:
     {
     orgk = k - program;
-    ZObject val;
-    ZList_fastpop(&STACK,&val);
-    ZObject Parent = STACK.arr[frames.back()];
+    zobject val;
+    zlist_fastpop(&STACK,&val);
+    zobject Parent = STACK.arr[frames.back()];
     k++;
     memcpy(&i1, k, 4);
     k += 3;
@@ -3430,17 +3432,17 @@ while (*k != OP_EXIT)
         spitErr(TypeError, "Cannot access variable "+(string)s1+" ,self is not a class object!");
         NEXT_INST;
     }
-    KlassObject *ptr = (KlassObject *)Parent.ptr;
-    ZObject* ref;
+    zclass_object*ptr = (zclass_object*)Parent.ptr;
+    zobject* ref;
     if (! ( ref = StrMap_getRef(&(ptr->members),s1) ))
     {
         if (( ref = StrMap_getRef(&(ptr->privateMembers),s1) ))
         {
         // private member
-        FunObject *A = executing.back();
-        if (A == NULL || A->klass != ptr->klass)
+        zfun *A = executing.back();
+        if (A == NULL || A->_klass != ptr->_klass)
         {
-            spitErr(AccessError, "Cannot access private member " + (string)s1 + " of class " + ptr->klass->name + "'s object!");
+            spitErr(AccessError, "Cannot access private member " + (string)s1 + " of class " + ptr->_klass->name + "'s object!");
             NEXT_INST;
         }
         *ref = val;
@@ -3501,12 +3503,12 @@ for (auto it=memory.begin();it!=memory.end();)
     //call destructor for each object only once
     if (m.type == Z_OBJ)
     {
-    KlassObject *obj = (KlassObject *)(*it).first;
-    ZObject dummy;
+    zclass_object*obj = (zclass_object*)(*it).first;
+    zobject dummy;
     dummy.type = Z_OBJ;
     dummy.ptr = (*it).first;
-    ZObject rr;
-    ZObject p1;
+    zobject rr;
+    zobject p1;
     if (StrMap_get(&(obj->members),"__del__",&p1))
     {
         if(p1.type == Z_FUNC || p1.type==Z_NATIVE_FUNC)
@@ -3541,10 +3543,10 @@ for (auto e : moduleHandles)
 for (auto e : toerase) // deleting these here, because collectGarbage will call deletors too
 // and we have already done that
 {
-    KlassObject* p = (KlassObject*)e;
+    zclass_object* p = (zclass_object*)e;
     StrMap_destroy(&(p->members));
     StrMap_destroy(&(p->privateMembers));
-    delete (KlassObject*)e;
+    delete (zclass_object*)e;
 }
 if(constants)
     delete[] constants;
@@ -3553,8 +3555,8 @@ important.clear();
 mark(); // clearing the STACK and marking objects will result in all objects being deleted
 // which is what we want
 collectGarbage();
-ZList_destroy(&STACK);
-ZList_destroy(&aux);
+zlist_destroy(&STACK);
+zlist_destroy(&aux);
 for(auto e: strings)
 {
     delete[] e.val;
@@ -3562,50 +3564,50 @@ for(auto e: strings)
 }
 VM vm;
 //////////
-ZObject ZObjFromStr(const char* str)// makes deep copy of str
+zobject zobj_from_Str(const char* str)// makes deep copy of str
 {
   size_t len = strlen(str);
-  ZStr* ptr = vm_allocString(len);
+  zstr* ptr = vm_allocString(len);
   memcpy(ptr->val,str,len);
-  ZObject ret;
+  zobject ret;
   ret.type = 's';
   ret.ptr = (void*)ptr;
   return ret;
 }
-ZObject Z_Err(Klass* errKlass,const char* des)
+zobject Z_Err(zclass* errKlass,const char* des)
 {
-  ZObject ret;
-  KlassObject* p = vm_allocKlassObject(errKlass);
-  StrMap_set(&(p->members),"msg",ZObjFromStr(des)); // OPTIMIZE!
+  zobject ret;
+  zclass_object* p = vm_allocKlassObject(errKlass);
+  StrMap_set(&(p->members),"msg",zobj_from_Str(des)); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
 }
-ZList* vm_allocList()
+zlist* vm_allocList()
 {
-  ZList *p = new(nothrow) ZList;
+  zlist *p = new(nothrow) zlist;
   if (!p)
   {
     fprintf(stderr,"allocList(): error allocating memory!\n");
     exit(0);
   }
-  ZList_init(p);
-  vm.allocated += sizeof(ZList);
+  zlist_init(p);
+  vm.allocated += sizeof(zlist);
   MemInfo m;
   m.type = Z_LIST;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
-ZByteArr* vm_allocByteArray()
+zbytearr* vm_allocByteArray()
 {
-  auto p = new(nothrow) ZByteArr;
+  auto p = new(nothrow) zbytearr;
   if (!p)
   {
     fprintf(stderr,"allocByteArray(): error allocating memory!\n");
     exit(0);
   }
-  ZByteArr_init(p);
+  zbytearr_init(p);
   vm.allocated += sizeof(std::vector<uint8_t>);
   MemInfo m;
   m.type = Z_BYTEARR;
@@ -3634,13 +3636,13 @@ uint8_t* vm_allocRaw(size_t len)
   vm.memory.emplace((void *)p, m);
   return p;
 }
-ZStr* vm_allocString(size_t len)
+zstr* vm_allocString(size_t len)
 {
   /*
   if(len != 0)
     return NULL;*/
 
-  ZStr* str = new(nothrow) ZStr;
+  zstr* str = new(nothrow) zstr;
   char* buffer = new(nothrow) char[len+1];
   if (!buffer || !str)
   {
@@ -3653,7 +3655,7 @@ ZStr* vm_allocString(size_t len)
   str->val = buffer;
   str->len = len;
 
-  vm.allocated += len + 1 + sizeof(ZStr);
+  vm.allocated += len + 1 + sizeof(zstr);
   MemInfo m;
   m.type = Z_STR;
   m.isMarked = false;
@@ -3661,9 +3663,9 @@ ZStr* vm_allocString(size_t len)
   return str;
 }
 
-Klass* vm_allocKlass()
+zclass* vm_allocKlass()
 {
-  Klass* p = new(nothrow) Klass;
+  zclass* p = new(nothrow) zclass;
   if (!p)
   {
     fprintf(stderr,"allocKlass(): error allocating memory!\n");
@@ -3672,32 +3674,32 @@ Klass* vm_allocKlass()
   StrMap_init(&(p->members));
   StrMap_init(&(p->privateMembers));
 
-  vm.allocated += sizeof(Klass);
+  vm.allocated += sizeof(zclass);
   MemInfo m;
   m.type = Z_CLASS;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
-Module* vm_allocModule()
+zmodule* vm_allocModule()
 {
-  Module *p = new(nothrow) Module;
+  zmodule*p = new(nothrow) zmodule;
   if (!p)
   {
     fprintf(stderr,"allocModule(): error allocating memory!\n");
     exit(0);
   }
   StrMap_init(&(p->members));
-  vm.allocated += sizeof(Module);
+  vm.allocated += sizeof(zmodule);
   MemInfo m;
   m.type = Z_MODULE;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
-KlassObject* vm_allocKlassObject(Klass* k)
+zclass_object* vm_allocKlassObject(zclass* k)
 {
-  KlassObject *p = new KlassObject;
+  zclass_object* p = new zclass_object;
   if (!p)
   {
     fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
@@ -3707,8 +3709,8 @@ KlassObject* vm_allocKlassObject(Klass* k)
   StrMap_init(&(p->privateMembers));
   StrMap_assign(&(p->members),&(k->members));
   StrMap_assign(&(p->privateMembers),&(k->privateMembers));
-  p -> klass = k;
-  vm.allocated += sizeof(KlassObject);
+  p -> _klass = k;
+  vm.allocated += sizeof(zclass_object);
   MemInfo m;
   m.type = Z_OBJ;
   m.isMarked = false;
@@ -3728,36 +3730,36 @@ Coroutine* vm_allocCoObj()//allocates coroutine object
   m.type = 'z';
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
-  ZList_init(&(p->locals));
+  zlist_init(&(p->locals));
   return p;
 }
-FunObject* vm_allocFunObject()
+zfun* vm_allocfun_object()
 {
-  FunObject *p = new FunObject;
+  zfun *p = new zfun;
   if (!p)
   {
-    fprintf(stderr,"allocFunObject(): error allocating memory!\n");
+    fprintf(stderr,"alloczfun(): error allocating memory!\n");
     exit(0);
   }
-  p->klass = NULL;
-  vm.allocated += sizeof(FunObject);
+  p->_klass = NULL;
+  vm.allocated += sizeof(zfun);
   MemInfo m;
   m.type = Z_FUNC;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
-  ZList_init(&(p->opt));
+  zlist_init(&(p->opt));
   return p;
 }
-FunObject* vm_allocCoroutine() //coroutine can be represented by FunObject
+zfun* vm_allocCoroutine() //coroutine can be represented by zfun
 {
-  FunObject *p = new FunObject;
+  zfun *p = new zfun;
   if (!p)
   {
     fprintf(stderr,"allocCoroutine(): error allocating memory!\n");
     exit(0);
   }
-  p->klass = NULL;
-  vm.allocated += sizeof(FunObject);
+  p->_klass = NULL;
+  vm.allocated += sizeof(zfun);
   MemInfo m;
   m.type = 'g';
   m.isMarked = false;
@@ -3773,39 +3775,39 @@ zfile * vm_alloczfile()
     fprintf(stderr,"alloczfile(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(ZList);
+  vm.allocated += sizeof(zlist);
   MemInfo m;
   m.type = Z_FILESTREAM;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
-ZDict* vm_allocDict()
+zdict* vm_allocDict()
 {
-  ZDict *p = new ZDict;
+  zdict *p = new zdict;
   if (!p)
   {
     fprintf(stderr,"allocDict(): error allocating memory!\n");
     exit(0);
   }
-  ZDict_init(p);
-  vm.allocated += sizeof(ZDict);
+  zdict_init(p);
+  vm.allocated += sizeof(zdict);
   MemInfo m;
   m.type = Z_DICT;
   m.isMarked = false;
   vm.memory.emplace((void *)p, m);
   return p;
 }
-NativeFunction* vm_allocNativeFunObj()
+znativefun* vm_allocNativeFunObj()
 {
-  NativeFunction *p = new NativeFunction;
+  znativefun *p = new znativefun;
   if (!p)
   {
     fprintf(stderr,"allocNativeFun(): error allocating memory!\n");
     exit(0);
   }
   p->signature = NULL;
-  vm.allocated += sizeof(NativeFunction);
+  vm.allocated += sizeof(znativefun);
   MemInfo m;
   m.type = Z_NATIVE_FUNC;
   m.isMarked = false;
@@ -3813,12 +3815,12 @@ NativeFunction* vm_allocNativeFunObj()
   return p;
 }
 //callObject also behaves as a kind of try/catch since v0.31
-bool vm_callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
+bool vm_callObject(zobject* obj,zobject* args,int N,zobject* rr)
 {
   static char buffer[1024];
   if(obj->type == Z_FUNC)
   {
-     FunObject* fn = (FunObject*)obj->ptr;
+     zfun* fn = (zfun*)obj->ptr;
      if ((size_t)N + fn->opt.size < fn->args || (size_t)N > fn->args)
      {
       static char buffer[1024];
@@ -3831,22 +3833,22 @@ bool vm_callObject(ZObject* obj,ZObject* args,int N,ZObject* rr)
      vm.frames.push_back(vm.STACK.size);
      vm.executing.push_back(fn);
      for(int i=0;i<N;i++)
-       ZList_push(&vm.STACK,args[i]);
+       zlist_push(&vm.STACK,args[i]);
      for(size_t i = fn->opt.size - (fn->args - N); i < fn->opt.size; i++)
-       ZList_push(&vm.STACK,fn->opt.arr[i]);
+       zlist_push(&vm.STACK,fn->opt.arr[i]);
      bool a = vm.viaCO;
      vm.viaCO = true;
      vm.interpret(fn->i,false);
      vm.viaCO = a;
      vm.k = prev;
-     ZList_fastpop(&vm.STACK,rr);
+     zlist_fastpop(&vm.STACK,rr);
      return (rr->type != Z_ERROBJ);
   }
   else if (obj->type == Z_NATIVE_FUNC)
   {
-    NativeFunction *A = (NativeFunction *)obj->ptr;
+    znativefun *A = (znativefun *)obj->ptr;
     NativeFunPtr f = A->addr;
-    ZObject p4;
+    zobject p4;
     if(A->signature)
     {
       size_t len = strlen(A->signature);

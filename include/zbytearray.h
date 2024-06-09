@@ -9,25 +9,25 @@
 extern "C"{
 #endif
 
-typedef struct ZByteArr
+typedef struct zbyteArr
 {
   uint8_t* arr;
   size_t size;
   size_t capacity;
-}ZByteArr;
+}zbytearr;
 
-void ZByteArr_init(ZByteArr* p);
-void ZByteArr_push(ZByteArr* p,uint8_t val);
-void ZByteArr_erase(ZByteArr* p,size_t idx);
-void ZByteArr_eraseRange(ZByteArr* p,size_t i,size_t j);
-void ZByteArr_resize(ZByteArr* p,size_t newSize);
-bool ZByteArr_pop(ZByteArr* p,uint8_t* val);
-void ZByteArr_fastpop(ZByteArr* p,uint8_t* val);
-void ZByteArr_assign(ZByteArr* p,ZByteArr* val);
-void ZByteArr_insert(ZByteArr* p,size_t idx,uint8_t val);
-void ZByteArr_insertArr(ZByteArr* p,size_t idx,ZByteArr* sublist);
-bool ZByteArr_equal(ZByteArr* a,ZByteArr* b);
-void ZByteArr_destroy(ZByteArr* p);
+void zbytearr_init(zbytearr* p);
+void zbytearr_push(zbytearr* p,uint8_t val);
+void zbytearr_erase(zbytearr* p,size_t idx);
+void zbytearr_erase_range(zbytearr* p,size_t i,size_t j);
+void zbytearr_resize(zbytearr* p,size_t newSize);
+bool zbytearr_pop(zbytearr* p,uint8_t* val);
+void zbytearr_fastpop(zbytearr* p,uint8_t* val);
+void zbytearr_assign(zbytearr* p,zbytearr* val);
+void zbytearr_insert(zbytearr* p,size_t idx,uint8_t val);
+void zbytearr_insert_arr(zbytearr* p,size_t idx,zbytearr* sublist);
+bool zbytearr_equal(zbytearr* a,zbytearr* b);
+void zbytearr_destroy(zbytearr* p);
 #ifdef __cplusplus
 }
 #endif

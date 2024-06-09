@@ -10,19 +10,19 @@
 extern "C"
 {
 	//Functions
-	EXPORT ZObject init();
+	EXPORT zobject init();
 	//Methods
-	EXPORT ZObject socket__construct(ZObject*, int);
-	EXPORT ZObject socket_Setopt(ZObject*,int);
-	EXPORT ZObject socket_Bind( ZObject*,int);
-	EXPORT ZObject socket_Connect( ZObject*,int);
-	EXPORT ZObject socket_Send( ZObject*,int);
-	EXPORT ZObject socket_Recv( ZObject*,int);
-	EXPORT ZObject socket_Listen( ZObject*,int);
-	EXPORT ZObject socket_Accept( ZObject*,int);
-	EXPORT ZObject socket_Close( ZObject*,int);
-	EXPORT ZObject socket_SendTo( ZObject*, int);
-	EXPORT ZObject socket_RecvFrom( ZObject*, int);
-	EXPORT ZObject socket_del__( ZObject*, int);
+	EXPORT zobject socket__construct(zobject*, int);
+	EXPORT zobject socket_Setopt(zobject*,int);
+	EXPORT zobject socket_Bind( zobject*,int);
+	EXPORT zobject socket_Connect( zobject*,int);
+	EXPORT zobject socket_Send( zobject*,int);
+	EXPORT zobject socket_Recv( zobject*,int);
+	EXPORT zobject socket_Listen( zobject*,int);
+	EXPORT zobject socket_Accept( zobject*,int);
+	EXPORT zobject socket_Close( zobject*,int);
+	EXPORT zobject socket_SendTo( zobject*, int);
+	EXPORT zobject socket_RecvFrom( zobject*, int);
+	EXPORT zobject socket_del__( zobject*, int);
 }
 #endif

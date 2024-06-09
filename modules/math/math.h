@@ -6,27 +6,27 @@
 #endif
 extern "C"
 {
-    EXPORT ZObject init();
+    EXPORT zobject init();
     //Functions
-    EXPORT ZObject FLOOR(ZObject*,int);
-    EXPORT ZObject CEIL(ZObject*,int);
-    EXPORT ZObject ROUND(ZObject*,int);
-    EXPORT ZObject SIN(ZObject*,int);
-    EXPORT ZObject COS(ZObject*,int);
-    EXPORT ZObject TAN(ZObject*,int);
-    EXPORT ZObject ASIN(ZObject*,int);
-    EXPORT ZObject ACOS(ZObject*,int);
-    EXPORT ZObject ATAN(ZObject*,int);
-    EXPORT ZObject SINH(ZObject*,int);
-    EXPORT ZObject COSH(ZObject*,int);
-    EXPORT ZObject TANH(ZObject*,int);
-    EXPORT ZObject ASINH(ZObject*,int);
-    EXPORT ZObject ACOSH(ZObject*,int);
-    EXPORT ZObject ATANH(ZObject*,int);
-    EXPORT ZObject LOG(ZObject*,int);
-    EXPORT ZObject LOG10(ZObject*,int);
-    EXPORT ZObject SQRT(ZObject*,int);
-    EXPORT ZObject TRUNC(ZObject*,int);
-    EXPORT ZObject RADIANS(ZObject*,int);
+    EXPORT zobject FLOOR(zobject*,int);
+    EXPORT zobject CEIL(zobject*,int);
+    EXPORT zobject ROUND(zobject*,int);
+    EXPORT zobject SIN(zobject*,int);
+    EXPORT zobject COS(zobject*,int);
+    EXPORT zobject TAN(zobject*,int);
+    EXPORT zobject ASIN(zobject*,int);
+    EXPORT zobject ACOS(zobject*,int);
+    EXPORT zobject ATAN(zobject*,int);
+    EXPORT zobject SINH(zobject*,int);
+    EXPORT zobject COSH(zobject*,int);
+    EXPORT zobject TANH(zobject*,int);
+    EXPORT zobject ASINH(zobject*,int);
+    EXPORT zobject ACOSH(zobject*,int);
+    EXPORT zobject ATANH(zobject*,int);
+    EXPORT zobject LOG(zobject*,int);
+    EXPORT zobject LOG10(zobject*,int);
+    EXPORT zobject SQRT(zobject*,int);
+    EXPORT zobject TRUNC(zobject*,int);
+    EXPORT zobject RADIANS(zobject*,int);
 
 }

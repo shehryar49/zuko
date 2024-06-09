@@ -6,13 +6,13 @@
 extern "C"{
 #endif
 
-// Immuutable zuko string implementation
-typedef struct ZStr
+// Immutable zuko string implementation
+typedef struct zstr
 {
   char* val; //actually const char*
-  //but we need to write for the first time so ...
+  //but we need to write some value into it after malloc()  so ...
   size_t len; //for quick len check
-}ZStr;
+}zstr;
 
 #ifdef __cpluscplus
 }

@@ -7,16 +7,16 @@ extern "C"{
 
 #include "strmap.h"
 
-typedef struct Klass
+typedef struct zclass
 {
   const char* name;
   StrMap members;
   StrMap privateMembers;
-}Klass;
+}zclass;
 
 
-void Klass_addMember(Klass* k,const char* name,ZObject val);
-void Klass_setMember(Klass* k,const char* name,ZObject val);
+void zclass_addmember(zclass* k,const char* name,zobject val);
+void zclass_setmember(zclass* k,const char* name,zobject val);
 
 #ifdef __cplusplus
 }

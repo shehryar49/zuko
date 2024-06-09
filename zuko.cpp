@@ -1,6 +1,4 @@
 #include <signal.h>
-#include <time.h>
-#include <cstdint>
 #include "include/zuko.h"
 
 #define ZUKO_VER 0.3
@@ -10,7 +8,7 @@ void signalHandler(int signum)
 {
   if(signum==SIGABRT || signum==SIGFPE || signum==SIGILL || signum==SIGSEGV)
   {
-    char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed.Please report this incident.\n";
+    char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";
     #ifdef _WIN32
       size_t written = _write(_fileno(stderr),buff,sizeof(buff));
     #else

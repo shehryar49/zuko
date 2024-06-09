@@ -6,11 +6,11 @@
 #endif
 extern "C"
 {
-    EXPORT ZObject init();
+    EXPORT zobject init();
 
     //
     //Functions
-    EXPORT ZObject match(ZObject*,int);
-    EXPORT ZObject search(ZObject*,int);
-    EXPORT ZObject replace(ZObject*,int);
+    EXPORT zobject match(zobject*,int);
+    EXPORT zobject search(zobject*,int);
+    EXPORT zobject replace(zobject*,int);
 }

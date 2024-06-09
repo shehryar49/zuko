@@ -54,8 +54,8 @@ void REPL()
     {
       for(size_t i=0;i<vm.STACK.size;i++)
       {
-        ZObject e = vm.STACK.arr[i];
-        printf("%s\n",ZObjectToStr(e).c_str());
+        zobject e = vm.STACK.arr[i];
+        printf("%s\n",zobjectToStr(e).c_str());
       }
       continue;
     }
@@ -64,8 +64,8 @@ void REPL()
       printf("vm.total_constants = %d\n",vm.total_constants);
       for(int i=0;i<vm.total_constants;i++)
       {
-        ZObject e = vm.constants[i];
-        printf("%s\n",ZObjectToStr(e).c_str());
+        zobject e = vm.constants[i];
+        printf("%s\n",zobjectToStr(e).c_str());
       }
       continue;
     }
@@ -91,7 +91,7 @@ void REPL()
     parser.init(filename,p);
 
     ast = parser.parse(tokens);
-    ZObject* constants = new ZObject[p.num_of_constants];
+    zobject* constants = new zobject[p.num_of_constants];
     //copy previous constants
     for(int i=0;i<vm.total_constants;i++)
       constants[i] = vm.constants[i];
@@ -108,7 +108,7 @@ void REPL()
     //WriteByteCode(bytecode,LineNumberTable,files);// for debugging
     vm.interpret(offset,false);//
     if(vm.STACK.size > stackSize)
-        ZList_eraseRange(&vm.STACK,stackSize,vm.STACK.size - 1);
+        zlist_erase_range(&vm.STACK,stackSize,vm.STACK.size - 1);
     else if(vm.STACK.size < stackSize)
     {
       compiler.reduceStackTo(vm.STACK.size);

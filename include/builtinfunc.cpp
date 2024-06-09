@@ -11,14 +11,14 @@ using namespace std;
 std::unordered_map<string,BuiltinFunc> funcs;
 
 string fullform(char);
-void PromoteType(ZObject&,char);
+void PromoteType(zobject&,char);
 
-ZObject nil;
-ZObject quickErr(Klass* k,string s)
+zobject nil;
+zobject quickErr(zclass* k,string s)
 {
   return Z_Err(k,s.c_str());
 }
-bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x)
+bool validateArgTypes(string name,string e,zobject* args,int32_t argc,zobject& x)
 {
     if(e.length()!=(size_t)argc)
     {
@@ -27,7 +27,7 @@ bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x
     }
     for(int32_t f=1;f<=argc;f++)
     {
-        ZObject k = args[f-1];
+        zobject k = args[f-1];
         if(k.type!=e[f-1])
             {
            x = quickErr(TypeError,"Error argument "+str(f)+" of "+name+"() should be of type "+fullform(e[f-1]));
@@ -37,14 +37,14 @@ bool validateArgTypes(string name,string e,ZObject* args,int32_t argc,ZObject& x
     }
     return true;
 }
-ZObject Z_ISALPHA(ZObject* args,int32_t argc)
+zobject Z_ISALPHA(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return quickErr(ArgumentError,"Error isalpha() takes one argument!");
   if(args[0].type!=Z_STR)
     return quickErr(TypeError,"Error isalpha() takes a string argument!");
-  ZStr* s = AS_STR(args[0]);
-  ZObject ret = nil;
+  zstr* s = AS_STR(args[0]);
+  zobject ret = nil;
   ret.type = 'b';
   ret.i = 0;
   char* p = s->val;
@@ -58,34 +58,34 @@ ZObject Z_ISALPHA(ZObject* args,int32_t argc)
   return ret;
 }
 
-ZObject ASCII(ZObject* args,int32_t argc)
+zobject ASCII(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return quickErr(ArgumentError,"Error ascii() takes one argument!");
   if(args[0].type!='s')
     return quickErr(TypeError,"Error ascii() takes a string argument!");
-  ZStr* s = AS_STR(args[0]);
+  zstr* s = AS_STR(args[0]);
   if(s->len != 1)
       return quickErr(ValueError,"Error ascii() takes a string argument of length 1!");
  
-  ZObject ret = nil;
+  zobject ret = nil;
   ret.type = 'i';
   ret.i = s->val[0];
   return ret;
 }
-ZObject TOCHAR(ZObject* args,int32_t argc)
+zobject TOCHAR(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return quickErr(ArgumentError,"Error char() takes one argument!");
   if(args[0].type!='i')
     return quickErr(TypeError,"Error char() takes an integer argument!");
   char ch = (char)args[0].i;
-  ZStr* p = vm_allocString(1);
+  zstr* p = vm_allocString(1);
   p->val[0] = ch;
-  return ZObjFromStrPtr(p);
+  return zobj_from_str_ptr(p);
 }
 string unescape(string);
-void printZDict(ZDict* l,vector<void*> seen)
+void printzdict(zdict* l,vector<void*> seen)
 {
   if(std::find(seen.begin(),seen.end(),(void*)l)!=seen.end())
   {
@@ -100,39 +100,39 @@ void printZDict(ZDict* l,vector<void*> seen)
   {
     if(l->table[i].stat != OCCUPIED)
       continue;
-    ZObject key = l->table[i].key;
-    ZObject val = l->table[i].val;
-    void printList(ZList*,vector<void*> = {});
+    zobject key = l->table[i].key;
+    zobject val = l->table[i].val;
+    void printList(zlist*,vector<void*> = {});
 
     if(key.type=='j')
-      printList((ZList*)key.ptr,seen);
+      printList((zlist*)key.ptr,seen);
     else if(key.type=='a')
-      printZDict((ZDict*)key.ptr,seen);
+      printzdict((zdict*)key.ptr,seen);
     else if(key.type=='s')
     {
       printf("\"%s\"",unescape(AS_STR(key)->val).c_str());
     }
     else
-      printf("%s",ZObjectToStr(key).c_str());
+      printf("%s",zobjectToStr(key).c_str());
     printf(" : ");
     //
     if(val.type=='j')
-      printList((ZList*)val.ptr,seen);
+      printList((zlist*)val.ptr,seen);
     else if(val.type=='a')
-      printZDict((ZDict*)val.ptr,seen);
+      printzdict((zdict*)val.ptr,seen);
     else if(val.type=='s')
     {
       printf("\"%s\"",unescape(AS_STR(val)->val).c_str());
     }
     else
-      printf("%s",ZObjectToStr(val).c_str());
+      printf("%s",zobjectToStr(val).c_str());
     if(m!=k-1)
       printf(",");
     m+=1;
   }
   printf("}");
 }
-void printList(ZList* l,vector<void*> seen)
+void printList(zlist* l,vector<void*> seen)
 {
   if(std::find(seen.begin(),seen.end(),(void*)l)!=seen.end())
   {
@@ -141,22 +141,22 @@ void printList(ZList* l,vector<void*> seen)
   }
   seen.push_back((void*)l);
   size_t k = l->size;
-  ZObject val;
+  zobject val;
   printf("[");
   for(size_t i=0;i<k;i+=1)
   {
     val = l->arr[i];
     if(val.type=='j')
-      printList((ZList*)val.ptr,seen);
+      printList((zlist*)val.ptr,seen);
     else if(val.type=='a')
-      printZDict((ZDict*)val.ptr,seen);
+      printzdict((zdict*)val.ptr,seen);
     else if(val.type=='s')
     {
-      printf("\"%s\"",unescape(((ZStr*)val.ptr)->val).c_str());
+      printf("\"%s\"",unescape(((zstr*)val.ptr)->val).c_str());
     }
     else
     {
-      printf("%s",ZObjectToStr(val).c_str());
+      printf("%s",zobjectToStr(val).c_str());
     }
     if(i!=k-1)
       printf(",");
@@ -164,7 +164,7 @@ void printList(ZList* l,vector<void*> seen)
   printf("]");
 }
 
-void printByteArray(ZByteArr* arr)
+void printByteArray(zbytearr* arr)
 {
   string IntToHex(int);
   size_t len = arr->size;
@@ -177,44 +177,44 @@ void printByteArray(ZByteArr* arr)
   }
   printf("])");
 }
-ZObject print(ZObject* args,int32_t argc)
+zobject print(zobject* args,int32_t argc)
 {
     int32_t k = 0;
     while(k<argc)
     {
         if(args[k].type=='j')
-           printList((ZList*)args[k].ptr);
+           printList((zlist*)args[k].ptr);
         else if(args[k].type=='a')
-           printZDict((ZDict*)args[k].ptr);
+           printzdict((zdict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
-          printByteArray((ZByteArr*)args[k].ptr);
+          printByteArray((zbytearr*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
         {
-          KlassObject* ki = (KlassObject*)args[k].ptr;
-          ZObject r,ret;
+          zclass_object* ki = (zclass_object*)args[k].ptr;
+          zobject r,ret;
 
           if(StrMap_get(&(ki->members),"__print__",&r))
           {
             vm_callObject(&r,&r,1,&ret);
           }
           else
-            printf("%s",ZObjectToStr(args[k]).c_str());
+            printf("%s",zobjectToStr(args[k]).c_str());
         }
         else
-          printf("%s",ZObjectToStr(args[k]).c_str());
+          printf("%s",zobjectToStr(args[k]).c_str());
         k+=1;
     }
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = 'n';
     return ret;
 }
-ZObject PRINTF(ZObject* args,int32_t argc)
+zobject PRINTF(zobject* args,int32_t argc)
 {
     if(argc < 1)
       return quickErr(ArgumentError,"At least one argument needed!");
     if(args[0].type!='s')
       return quickErr(TypeError,"Argument 1 must be a string!");
-    ZStr* format = (ZStr*)args[0].ptr;
+    zstr* format = (zstr*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format->len;
     int32_t j = 1;
@@ -231,30 +231,30 @@ ZObject PRINTF(ZObject* args,int32_t argc)
           if(j>=argc)
             return quickErr(ArgumentError,"String format requires more arguments!");
           if(args[j].type=='j')
-           printList((ZList*)args[j].ptr);
+           printList((zlist*)args[j].ptr);
           else if(args[j].type=='a')
-           printZDict((ZDict*)args[j].ptr);
+           printzdict((zdict*)args[j].ptr);
           else if(args[j].type==Z_BYTEARR)
-          printByteArray((ZByteArr*)args[j].ptr);
+          printByteArray((zbytearr*)args[j].ptr);
           else
-           printf("%s",ZObjectToStr(args[j]).c_str());
+           printf("%s",zobjectToStr(args[j]).c_str());
           j+=1;
         }
         else
           printf("%c",format->val[k]);
         k+=1;
     }
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = 'n';
     return ret;
 }
-ZObject FORMAT(ZObject* args,int32_t argc)
+zobject FORMAT(zobject* args,int32_t argc)
 {
     if(argc < 1)
       return quickErr(ArgumentError,"At least one argument needed!");
     if(args[0].type!=Z_STR)
       return quickErr(TypeError,"Argument 1 must be a string!");
-    ZStr* format = (ZStr*)args[0].ptr;
+    zstr* format = (zstr*)args[0].ptr;
     int32_t k = 0;
     int32_t l = format->len;
     int32_t j = 1;
@@ -272,50 +272,50 @@ ZObject FORMAT(ZObject* args,int32_t argc)
           }
           if(j>=argc)
             return quickErr(ArgumentError,"String format requires more arguments!");
-          p += ZObjectToStr(args[j]);
+          p += zobjectToStr(args[j]);
           j+=1;
         }
         else
           p+=format->val[k];
         k+=1;
     }
-    ZStr* s = vm_allocString(p.length());
+    zstr* s = vm_allocString(p.length());
     strcpy(s->val,p.c_str());
-    return ZObjFromStrPtr(s);
+    return zobj_from_str_ptr(s);
 }
 
-//void printList(ZList);
+//void printList(zlist);
 
-ZObject println(ZObject* args,int32_t argc)
+zobject println(zobject* args,int32_t argc)
 {
     int32_t k = 0;
     while(k<argc)
     {
         if(args[k].type=='j')
-          printList((ZList*)args[k].ptr);
+          printList((zlist*)args[k].ptr);
         else if(args[k].type=='a')
-          printZDict((ZDict*)args[k].ptr);
+          printzdict((zdict*)args[k].ptr);
         else if(args[k].type==Z_BYTEARR)
-          printByteArray((ZByteArr*)args[k].ptr);
+          printByteArray((zbytearr*)args[k].ptr);
         else if(args[k].type == Z_OBJ)
         {
-          KlassObject* ki = (KlassObject*)args[k].ptr;
-          ZObject r,ret;
+          zclass_object* ki = (zclass_object*)args[k].ptr;
+          zobject r,ret;
           if(StrMap_get(&(ki->members),"__print__",&r))
             vm_callObject(&r,&r,1,&ret);
           else
-            printf("%s",ZObjectToStr(args[k]).c_str());
+            printf("%s",zobjectToStr(args[k]).c_str());
         }
         else
-          printf("%s",ZObjectToStr(args[k]).c_str());
+          printf("%s",zobjectToStr(args[k]).c_str());
         k+=1;
     }
     puts("");
-    ZObject ret = nil;
+    zobject ret = nil;
     return ret;
 }
 
-ZObject input(ZObject* args,int32_t argc)
+zobject input(zobject* args,int32_t argc)
 {
     if(argc!=0 && argc!=1)
     {
@@ -325,7 +325,7 @@ ZObject input(ZObject* args,int32_t argc)
     {
       if(args[0].type!='s')
         return quickErr(TypeError,"Error input() takes a string argument!");
-      char* prompt = ((ZStr*)args[0].ptr)->val;
+      char* prompt = ((zstr*)args[0].ptr)->val;
       printf("%s",prompt);
     }
     string s;
@@ -337,11 +337,11 @@ ZObject input(ZObject* args,int32_t argc)
           break;
         s+=ch;
     }
-    ZStr* p = vm_allocString(s.length());
+    zstr* p = vm_allocString(s.length());
     strcpy(p->val,s.c_str());
-    return ZObjFromStrPtr(p);
+    return zobj_from_str_ptr(p);
 }
-ZObject TYPEOF(ZObject* args,int32_t argc)
+zobject TYPEOF(zobject* args,int32_t argc)
 {
   if(argc!=1)
   {
@@ -349,55 +349,55 @@ ZObject TYPEOF(ZObject* args,int32_t argc)
   }
   string fullform(char);
   string s = fullform(args[0].type);
-  ZStr* p = vm_allocString(s.length());
+  zstr* p = vm_allocString(s.length());
   strcpy(p->val,s.c_str());
-  return ZObjFromStrPtr(p);
+  return zobj_from_str_ptr(p);
 }
-ZObject isInstanceOf(ZObject* args,int32_t argc)
+zobject isInstanceOf(zobject* args,int32_t argc)
 {
   if(argc!=2)
     return quickErr(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
   if(args[1].type!='v')
     return quickErr(TypeError,"Error second argument to  isInstanceOf() should be a class!");
-  ZObject ret = nil;
+  zobject ret = nil;
   ret.type = 'b';
   if(args[0].type!='o')
   {
     ret.i = 0;
     return ret;
   }
-  KlassObject* obj = (KlassObject*)args[0].ptr;
-  Klass* k = (Klass*)args[1].ptr;
-  ret.i = obj->klass == k;
+  zclass_object* obj = (zclass_object*)args[0].ptr;
+  zclass* k = (zclass*)args[1].ptr;
+  ret.i = obj->_klass == k;
   return ret;
 }
-ZObject LEN(ZObject* args,int32_t argc)
+zobject LEN(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return quickErr(ArgumentError,"Error len() takes one argument!");
 
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = Z_INT64;
     if(args[0].type=='s')
     {
-      ZStr* s = (ZStr*)args[0].ptr;
+      zstr* s = (zstr*)args[0].ptr;
       ret.l = s->len;
     }
     else if(args[0].type=='j')
-        ret.l = ((ZList*)args[0].ptr)->size;
+        ret.l = ((zlist*)args[0].ptr)->size;
     else if(args[0].type=='a')
-        ret.l = ((ZDict*)args[0].ptr)->size;
+        ret.l = ((zdict*)args[0].ptr)->size;
     else if(args[0].type == 'c')
-        ret.l = ((ZByteArr*)args[0].ptr)->size;
+        ret.l = ((zbytearr*)args[0].ptr)->size;
     else
         return quickErr(TypeError,"Error len() unsupported for type "+fullform(args[0].type));
     return ret;
 }
 //////////
-ZObject OPEN(ZObject* args,int32_t argc)
+zobject OPEN(zobject* args,int32_t argc)
 {
     string patt = "ss";
-    ZObject ret = nil;
+    zobject ret = nil;
     if(!validateArgTypes("open",patt,args,argc,ret))
       return ret;
     string filename = AS_STR(args[0])->val;
@@ -414,7 +414,7 @@ ZObject OPEN(ZObject* args,int32_t argc)
     ret.ptr = (void*)f;
     return ret;
 }
-ZObject READ(ZObject* args,int32_t argc)
+zobject READ(zobject* args,int32_t argc)
 {
     if(argc!=2 && argc!=1)
         return quickErr(ArgumentError,"Error read() function takes one or two arguments!");
@@ -425,7 +425,7 @@ ZObject READ(ZObject* args,int32_t argc)
     {
       if(args[1].type!='s')
         return quickErr(TypeError,"Error argument 2 to read() function should be of type string!");
-      ZStr* l = AS_STR(args[1]);
+      zstr* l = AS_STR(args[1]);
       if(l->len!=1)
         return quickErr(ValueError,"Error optional delimeter argument to read() should be string of length 1");
       delim = l->val[0];  
@@ -444,11 +444,11 @@ ZObject READ(ZObject* args,int32_t argc)
           break;
         p+=ch;
     }
-    ZStr* s = vm_allocString(p.length());
+    zstr* s = vm_allocString(p.length());
     strcpy(s->val,p.c_str());
-    return ZObjFromStrPtr(s);
+    return zobj_from_str_ptr(s);
 }
-ZObject CLOSE(ZObject* args,int32_t argc)
+zobject CLOSE(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return quickErr(ArgumentError,"Error close() takes 1 argument!");
@@ -464,27 +464,45 @@ ZObject CLOSE(ZObject* args,int32_t argc)
     if(f==stdin || f==stdout)
       return quickErr(ValueError,"Are you nuts?You should not close stdin or stdout!");
     fclose(f);
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type='n';
     fobj->open = false;
     return ret;
 }
-ZObject RAND(ZObject* args,int32_t argc)
+zobject FFLUSH(zobject* args,int32_t argc)
+{
+    if(argc!=1)
+        return quickErr(ArgumentError,"Error fflush() takes 1 argument!");
+    if(args[0].type!='u')
+        return quickErr(TypeError,"Error fflush() takes a file stream as an argument!");
+    zfile* fobj = (zfile*)args[0].ptr;
+    if(!fobj->open)
+    {
+     // return quickErr(ValueError,"Error file is closed!");
+    }
+    FILE* f = fobj->fp;
+    fflush(f);
+    zobject ret = nil;
+    ret.type='n';
+    fobj->open = false;
+    return ret;
+}
+zobject RAND(zobject* args,int32_t argc)
 {
     if(argc!=0)
         return quickErr(ArgumentError,"Error rand() takes 0 arguments!");
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.i = rand();
     ret.type= 'i';
     return ret;
 }
 //////////////
-ZObject BYTEARRAY(ZObject* args,int32_t argc)
+zobject BYTEARRAY(zobject* args,int32_t argc)
 {
-  ZObject ret = nil;
+  zobject ret = nil;
   if(argc==0)
   {
-    ZByteArr* arr = vm_allocByteArray();
+    zbytearr* arr = vm_allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     return ret;
@@ -495,32 +513,32 @@ ZObject BYTEARRAY(ZObject* args,int32_t argc)
     {
       return quickErr(TypeError,"Error bytearray() takes a list argument!");
     }
-    ZList* p = (ZList*)args[0].ptr;
+    zlist* p = (zlist*)args[0].ptr;
     size_t len = p->size;
-    ZByteArr* arr = vm_allocByteArray();
+    zbytearr* arr = vm_allocByteArray();
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)arr;
     for(size_t i=0;i<len;i++)
     {
       if(p->arr[i].type!=Z_BYTE)
         return quickErr(TypeError,"Error argument list given to bytearray() must contain only bytes!");
-      ZByteArr_push(arr,p->arr[i].i);
+      zbytearr_push(arr,p->arr[i].i);
     }
     return ret;
   }
   return quickErr(ArgumentError,"Error bytearray() takes 0 or 1 arguments!");
 }
 
-ZObject WRITE(ZObject* args,int32_t argc)
+zobject WRITE(zobject* args,int32_t argc)
 {
   //printf("writing %s\n",args[0].s.c_str());
   if(argc!=2)
     return quickErr(ArgumentError,"Error write() takes two arguments!");
   string patt = "su";
-  ZObject ret = nil;
+  zobject ret = nil;
   if(!validateArgTypes("write",patt,args,argc,ret))
     return ret;
-  ZStr* data = AS_STR(args[0]);
+  zstr* data = AS_STR(args[0]);
   zfile* p = (zfile*)args[1].ptr;
   FILE* fp = p->fp;
   if(fputs(data->val,fp)==EOF)
@@ -528,7 +546,7 @@ ZObject WRITE(ZObject* args,int32_t argc)
   ret.type = Z_NIL;
   return ret;
 }
-ZObject EXIT(ZObject* args,int32_t argc)
+zobject EXIT(zobject* args,int32_t argc)
 {
     int ret =  0;
     if(argc == 1)
@@ -543,83 +561,83 @@ ZObject EXIT(ZObject* args,int32_t argc)
     exit(ret);
 }
 ////////////////
-ZObject REVERSE(ZObject* args,int32_t argc)
+zobject REVERSE(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return quickErr(ArgumentError,"Error reverse() takes 1 argument!");
-    const ZObject& q  = args[0];
+    const zobject& q  = args[0];
     if(q.type!='s' && q.type!='j')
         return quickErr(TypeError,"Error reverse() takes a string or list argument!");
     if(q.type=='s')
     {
-        ZStr* data = AS_STR(q);
-        ZStr* l = vm_allocString(data->len);
+        zstr* data = AS_STR(q);
+        zstr* l = vm_allocString(data->len);
         size_t i = 0;
         for(int32_t k=data->len-1;k>=0;k--)
         {
             l->val[i++] = data->val[k];
         }
-        return ZObjFromStrPtr(l);
+        return zobj_from_str_ptr(l);
     }
-    ZList* l = vm_allocList();
-    ZList* currList = (ZList*)q.ptr;
+    zlist* l = vm_allocList();
+    zlist* currList = (zlist*)q.ptr;
     for(int32_t k =currList->size-1;k>=0;k--)
     {
-        ZList_push(l,currList->arr[k]);
+        zlist_push(l,currList->arr[k]);
     }
-    ZObject ret = nil;// = l;
+    zobject ret = nil;// = l;
     ret.type = 'j';
     ret.ptr = (void*)l;
     return ret;
 }///////
 /////////
-ZObject BYTES(ZObject* args,int32_t argc)
+zobject BYTES(zobject* args,int32_t argc)
 {
     if(argc!=1)
       return quickErr(ArgumentError,"Error bytes() takes one argument!");
     auto p = vm_allocByteArray();
-    const ZObject& e = args[0];
-    ZObject ret = nil;
+    const zobject& e = args[0];
+    zobject ret = nil;
     ret.type = Z_BYTEARR;
     ret.ptr = (void*)p;
     if(e.type=='i')
     {
-      ZByteArr_resize(p,4);
+      zbytearr_resize(p,4);
       memcpy(p->arr,&e.i,4);
       return ret;
     }
     else if(e.type=='l')
     {
-      ZByteArr_resize(p,8);
+      zbytearr_resize(p,8);
       memcpy(p->arr,&e.l,8);
       return ret;
     }
     else if(e.type=='f')
     {
-      ZByteArr_resize(p,4);
+      zbytearr_resize(p,4);
       memcpy(p->arr,&e.f,4);
       return ret;
     }
     else if(e.type=='s')
     {
-       ZStr* s = AS_STR(e);
+       zstr* s = AS_STR(e);
        char* ptr = s->val;
        char ch;
        while((ch = *ptr++))
-         ZByteArr_push(p,(uint8_t)ch);
+         zbytearr_push(p,(uint8_t)ch);
        return ret;
     }
     else if(e.type=='b')
     {
       if(e.i)
-        ZByteArr_push(p,1);
+        zbytearr_push(p,1);
       else
-        ZByteArr_push(p,0);
+        zbytearr_push(p,0);
       return ret;
     }
     else if(e.type == Z_BYTE)
     {
-      ZByteArr_push(p,e.i);
+      zbytearr_push(p,e.i);
       return ret;
     }
     else
@@ -628,13 +646,13 @@ ZObject BYTES(ZObject* args,int32_t argc)
     }
 }
 ///////////////
-ZObject OBJINFO(ZObject* args,int32_t argc)
+zobject OBJINFO(zobject* args,int32_t argc)
 {
     if(argc!=1)
       return quickErr(ArgumentError,"Error obj_info() takes 1 argument!");
     if( args[0].type=='o')
     {
-      KlassObject* k = (KlassObject*)args[0].ptr;
+      zclass_object* k = (zclass_object*)args[0].ptr;
       for(size_t idx = 0; idx < k->members.capacity;idx++)
       {
         if(k->members.table[idx].stat != SM_OCCUPIED)
@@ -651,7 +669,7 @@ ZObject OBJINFO(ZObject* args,int32_t argc)
         printf("%s: %s\n",e.key,fullform(e.val.type).c_str());
           
       }
-      ZObject ret = nil;
+      zobject ret = nil;
       return ret;
     }
     else
@@ -659,13 +677,13 @@ ZObject OBJINFO(ZObject* args,int32_t argc)
         return quickErr(TypeError,"Error argument is not an object of any class!");
     }
 }
-ZObject moduleInfo(ZObject* args,int32_t argc)
+zobject moduleInfo(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return quickErr(ArgumentError,"Error moduleInfo takes 1 argument!");
   if(args[0].type!=Z_MODULE)
     return quickErr(TypeError,"Argument must be a module object!");
-  Module* mod = (Module*)args[0].ptr;
+  zmodule* mod = (zmodule*)args[0].ptr;
   printf("Module %s\n",mod->name);
   printf("------------\n");
   for(size_t idx=0;idx<mod->members.capacity;idx++)
@@ -676,32 +694,32 @@ ZObject moduleInfo(ZObject* args,int32_t argc)
     printf("%s  %s\n",e.key,fullform(e.val.type).c_str());
 
   }
-  ZObject ret = nil;
+  zobject ret = nil;
   return ret;
 }
 
 /*
 --Deprecated--
 
-ZObject makeList(ZObject* args,int32_t argc)
+zobject makeList(zobject* args,int32_t argc)
 {
-        ZObject ret = nil;
+        zobject ret = nil;
         if(!validateArgTypes("makeList","js",args,argc,ret))
           return ret;
-        string& pattern = *(ZStr*)args[1].ptr;
+        string& pattern = *(zstr*)args[1].ptr;
         size_t k = 0;
-        ZList res;
+        zlist res;
         size_t i = 0;
         
         
-        ZList currList = *(ZList*)args[0].ptr;
+        zlist currList = *(zlist*)args[0].ptr;
         while(k<currList.size)
         {
             if(i>pattern.length()-1)
             {
                return quickErr(ValueError,"Error no pattern specified for the remaining bytes!");
             }
-            ZObject l = currList.arr[k];
+            zobject l = currList.arr[k];
             if(l.type!='m')
             {
                 return quickErr(ValueError,"Error list should only contain bytes!");
@@ -723,18 +741,18 @@ ZObject makeList(ZObject* args,int32_t argc)
                k+=1;
                l = currList.arr[k];
                FOO.bytes[3] = l.i;
-               ZObject e;
+               zobject e;
                e.type = 'i';
                e.i =(int32_t) FOO.x;
-               ZList_push(&res,e);
+               zlist_push(&res,e);
             }
             else if(pattern[i]=='b')
             {
 
-               ZObject e;
+               zobject e;
                e.type = 'b';
                e.i = b;
-              ZList_push(&res,e);
+              zlist_push(&res,e);
             }
             else if(pattern[i]=='l')
             {
@@ -764,17 +782,17 @@ ZObject makeList(ZObject* args,int32_t argc)
                k+=1;
                l = currList.arr[k];
                FOO1.bytes[7] = l.i;
-               ZObject e;
+               zobject e;
                e.type = 'l';
                e.l = FOO1.l;
 
-                             ZList_push(&res,e);
+                             zlist_push(&res,e);
             }
             else if(pattern[i]=='s')
             {
                 size_t j = k;
-                ZObject e;
-                ZStr* f = vm_allocString();
+                zobject e;
+                zstr* f = vm_allocString();
                 bool terminated = false;
                 while(true)
                 {
@@ -798,7 +816,7 @@ ZObject makeList(ZObject* args,int32_t argc)
                     return quickErr(ValueError,"Error the bytes are invalid to be converted to string!");
                 }
 
-                ZList_push(&res,ZObjFromStrPtr(f));
+                zlist_push(&res,zobj_from_str_ptr(f));
                 k  = j;
             }
             else if(pattern[i]=='f')
@@ -817,10 +835,10 @@ ZObject makeList(ZObject* args,int32_t argc)
                k+=1;
                l = currList.arr[k];
                FOO2.bytes[3] = l.i;
-               ZObject e;
+               zobject e;
                e.type = 'f';
                e.f = FOO2.f;
-               ZList_push(&res,e);
+               zlist_push(&res,e);
             }
             else
             {
@@ -833,8 +851,8 @@ ZObject makeList(ZObject* args,int32_t argc)
         {
             return quickErr(ValueError,"Error the list does not have enough bytes to follow the pattern!");
         }
-        ZList* p = vm_allocList();
-        ZList_assign(p,&res);
+        zlist* p = vm_allocList();
+        zlist_assign(p,&res);
         ret.ptr = (void*)p;
         ret.type = 'j';
         return ret;
@@ -842,7 +860,7 @@ ZObject makeList(ZObject* args,int32_t argc)
 ///////
 /////////
 
-ZObject SUBSTR(ZObject* args,int32_t argc)
+zobject SUBSTR(zobject* args,int32_t argc)
 {
     if(argc==3)
 		{
@@ -857,20 +875,20 @@ ZObject SUBSTR(ZObject* args,int32_t argc)
         
         if(args[0].l<0 || args[1].l<0 )
         {
-          ZStr* q = vm_allocString(0);
-          return ZObjFromStrPtr(q);
+          zstr* q = vm_allocString(0);
+          return zobj_from_str_ptr(q);
         }
-        ZStr* q = vm_allocString(args[1].l - args[0].l + 1);
-        ZStr* data = (ZStr*)args[2].ptr;
+        zstr* q = vm_allocString(args[1].l - args[0].l + 1);
+        zstr* data = (zstr*)args[2].ptr;
         strcpy(q->val,substr((int32_t)args[0].l,(int32_t)args[1].l,data->val).c_str());
-        return ZObjFromStrPtr(q);
+        return zobj_from_str_ptr(q);
 			}
 			else
         return quickErr(TypeError,"Error third argument of substr() should be a string!\n");
 		}
 		return quickErr(ArgumentError,"Error substr() takes three arguments!");
 }
-ZObject getFileSize(ZObject* args,int32_t argc)
+zobject getFileSize(zobject* args,int32_t argc)
 {
   if(argc==1)
   {
@@ -884,11 +902,11 @@ ZObject getFileSize(ZObject* args,int32_t argc)
     fseek(currF,0,SEEK_END);
     int64_t n = ftell(currF);
     rewind(currF);
-    return ZObjFromInt64(n);
+    return zobj_from_int64(n);
   }
   return quickErr(ArgumentError,"Error getFileSize() takes 1 argument!");
 }
-ZObject FTELL(ZObject* args,int32_t argc)
+zobject FTELL(zobject* args,int32_t argc)
 {
   if(argc==1)
   {
@@ -899,14 +917,14 @@ ZObject FTELL(ZObject* args,int32_t argc)
       return quickErr(FileIOError,"Error file is closed!");
     FILE* currF = p->fp;
     int64_t n = ftell(currF);
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = 'l';
     ret.l = (int64_t)n;
     return ret;
   }
   return quickErr(ArgumentError,"Error ftell() takes 1 argument!");
 }
-ZObject REWIND(ZObject* args,int32_t argc)
+zobject REWIND(zobject* args,int32_t argc)
 {
   if(argc==1)
   {
@@ -918,41 +936,41 @@ ZObject REWIND(ZObject* args,int32_t argc)
       return quickErr(FileIOError,"Unable to rewind closed file!");
     FILE* currF = p->fp;
     rewind(currF);
-    ZObject ret = nil;
+    zobject ret = nil;
     return ret;
   }
   return quickErr(ArgumentError,"Error rewind() takes 1 argument!");
 }
-ZObject SYSTEM(ZObject* args,int32_t argc)
+zobject SYSTEM(zobject* args,int32_t argc)
 {
   if(argc!=1)
       return quickErr(ArgumentError,"Error system() takes 1 argument!");
   if(args[0].type!='s')
       return quickErr(TypeError,"Error system() takes a string argument!");
-  ZStr* command = (ZStr*)args[0].ptr;
+  zstr* command = (zstr*)args[0].ptr;
   int32_t i = system(command->val);
-  return ZObjFromInt(i);
+  return zobj_from_int(i);
 }
-ZObject SPLIT(ZObject* args,int32_t argc)
+zobject SPLIT(zobject* args,int32_t argc)
 {
     if(argc==2)
 		{
 			if( (args[0].type=='s') && ( args[1].type=='s'))
 			{
-        ZStr* data = (ZStr*)args[0].ptr;
-        ZStr* delim = (ZStr*)args[1].ptr;
+        zstr* data = (zstr*)args[0].ptr;
+        zstr* delim = (zstr*)args[1].ptr;
 				vector<string> list = split(data->val,delim->val);
 				uint32_t  o = 0;
-				ZList* l = vm_allocList();
-				ZStr* value;
+				zlist* l = vm_allocList();
+				zstr* value;
 				while(o<list.size())
         {
           value = vm_allocString(list[o].length());
           strcpy(value->val,list[o].c_str());
-          ZList_push(l,ZObjFromStrPtr(value));
+          zlist_push(l,zobj_from_str_ptr(value));
           o+=1;
         }
-        ZObject ret;
+        zobject ret;
         ret.type = 'j';
         ret.ptr = l;
         return ret;
@@ -965,20 +983,20 @@ ZObject SPLIT(ZObject* args,int32_t argc)
 		}
 		return quickErr(ArgumentError,"Error split() takes two arguments!");
 }
-ZObject GETENV(ZObject* args,int32_t argc)
+zobject GETENV(zobject* args,int32_t argc)
 {
   if(argc==1)
   {
 
       if(args[0].type=='s' )
       {
-        ZStr* vname = (ZStr*)args[0].ptr;
+        zstr* vname = (zstr*)args[0].ptr;
         char* c = getenv(vname->val);
         if(!c)
           return nil;
-        ZStr* s = vm_allocString(strlen(c));
+        zstr* s = vm_allocString(strlen(c));
         strcpy(s->val,c);
-        return ZObjFromStrPtr(s);
+        return zobj_from_str_ptr(s);
       }
       else
       {
@@ -987,15 +1005,15 @@ ZObject GETENV(ZObject* args,int32_t argc)
   }
   return quickErr(ArgumentError,"Error getenv() takes one argument!");
 }
-ZObject SHUFFLE(ZObject* args,int32_t argc)
+zobject SHUFFLE(zobject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='j')
 			{
-			  ZList* p = (ZList*)args[0].ptr;
+			  zlist* p = (zlist*)args[0].ptr;
         std::random_shuffle(p->arr,p->arr+p->size);
-				ZObject ret = nil;
+				zobject ret = nil;
 				return ret;
 			}
 			else
@@ -1005,81 +1023,81 @@ ZObject SHUFFLE(ZObject* args,int32_t argc)
 		}
 		return quickErr(ArgumentError,"Error shuffle() takes exactly one argument!");
 }
-ZObject STR(ZObject* args,int32_t argc)
+zobject STR(zobject* args,int32_t argc)
 {
-    if(argc==1)
+  if(argc==1)
 	{
 		if(args[0].type=='i')
 		{
             string s = str(args[0].i);
-            ZStr* p = vm_allocString(s.length());
+            zstr* p = vm_allocString(s.length());
             strcpy(p->val,s.c_str());
-            return ZObjFromStrPtr(p);
+            return zobj_from_str_ptr(p);
 		}
 		else if(args[0].type=='f')
 		{
-            string s = str(args[0].f);
-            ZStr* p = vm_allocString(s.length());
-            strcpy(p->val,s.c_str());
-            return ZObjFromStrPtr(p);
+        string s = str(args[0].f);
+        zstr* p = vm_allocString(s.length());
+        strcpy(p->val,s.c_str());
+        return zobj_from_str_ptr(p);
 		}
-        else if(args[0].type=='l')
-        {
+    else if(args[0].type=='l')
+    {
             string s = str(args[0].l);
-            ZStr* p = vm_allocString(s.length());
+            zstr* p = vm_allocString(s.length());
             strcpy(p->val,s.c_str());
-            return ZObjFromStrPtr(p);
-        }
+            return zobj_from_str_ptr(p);
+    }
         else if(args[0].type == Z_BYTE)
         {
-            string s = ZObjectToStr(args[0]);
-            ZStr* p = vm_allocString(s.length());
+            string s = zobjectToStr(args[0]);
+            zstr* p = vm_allocString(s.length());
             strcpy(p->val,s.c_str());
-            return ZObjFromStrPtr(p);
+            return zobj_from_str_ptr(p);
         }
         else if(args[0].type == 'b')
         {
-            ZStr* s = vm_allocString(5);
+            zstr* s = vm_allocString(5);
             if(args[0].i)
                 strcpy(s->val,"true");
             else
                 strcpy(s->val,"false");
-            return ZObjFromStrPtr(s);
+            return zobj_from_str_ptr(s);
         }
         else if(args[0].type == 'j')
         {
-          string s = ZObjectToStr(args[0]);
-          ZStr* p = vm_allocString(s.length());
+          string s = zobjectToStr(args[0]);
+          zstr* p = vm_allocString(s.length());
           strcpy(p->val,s.c_str());
-          return ZObjFromStrPtr(p);
+          return zobj_from_str_ptr(p);
         }
         else if(args[0].type == 'a')
         {
-          string s = ZObjectToStr(args[0]);
-          ZStr* p = vm_allocString(s.length());
+          string s = zobjectToStr(args[0]);
+          zstr* p = vm_allocString(s.length());
           strcpy(p->val,s.c_str());
-          return ZObjFromStrPtr(p);
+          return zobj_from_str_ptr(p);
         }   
         else if(args[0].type == Z_BYTEARR)
         {
             string s;
-            ZByteArr* bytes = (ZByteArr*)args[0].ptr;
+            zbytearr* bytes = (zbytearr*)args[0].ptr;
             for(size_t i=0;i<bytes->size;i++)
             {
                 uint8_t byte = bytes->arr[i];
                 s.push_back((char)byte);
             }
-            ZStr* p = vm_allocString(s.length());
+            zstr* p = vm_allocString(s.length());
             strcpy(p->val,s.c_str());
-            return ZObjFromStrPtr(p);
+            return zobj_from_str_ptr(p);
         }
             return quickErr(TypeError,"Error str() unsupported for type "+fullform(args[0].type));
 		}
     return quickErr(ArgumentError,"Error str() takes only one argument!");
 }
-ZObject FIND(ZObject* args,int32_t argc)
+zobject FIND(zobject* args,int32_t argc)
 {
-  ZObject ret = nil;
+  zobject ret = nil;
   if(argc != 2)
     return quickErr(ArgumentError,"Error find() takes 2 arguments!");
   if(args[0].type != Z_STR)
@@ -1088,8 +1106,8 @@ ZObject FIND(ZObject* args,int32_t argc)
     return quickErr(TypeError,"Error second argument given to find() must be a stirng!");
   
   ret.type = 'l';
-  ZStr* a = (ZStr*)args[0].ptr;
-  string b = ((ZStr*)args[1].ptr) -> val;
+  zstr* a = (zstr*)args[0].ptr;
+  string b = ((zstr*)args[1].ptr) -> val;
   auto y = b.find(a->val); 
   if(y==std::string::npos)
     return nil;
@@ -1097,14 +1115,14 @@ ZObject FIND(ZObject* args,int32_t argc)
     ret.l = static_cast<int64_t>(y);
   return ret;
 }
-ZObject TOINT(ZObject* args,int32_t argc)
+zobject TOINT(zobject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='s')
 			{
-			    ZStr* q = ((ZStr*)args[0].ptr);
-			    ZObject ret = nil;
+			    zstr* q = ((zstr*)args[0].ptr);
+			    zobject ret = nil;
           if(isnum(q->val))
           {
               ret.i = Int(q->val);
@@ -1140,7 +1158,7 @@ ZObject TOINT(ZObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-               ZObject ret = nil;
+               zobject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1163,14 +1181,14 @@ ZObject TOINT(ZObject* args,int32_t argc)
 		return quickErr(ArgumentError,"Error int() takes exactly one argument!");
 		exit(0);
 }
-ZObject TOINT32(ZObject* args,int32_t argc)
+zobject TOINT32(zobject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='s')
 			{
-			    ZStr* q = (ZStr*)args[0].ptr;
-			    ZObject ret = nil;
+			    zstr* q = (zstr*)args[0].ptr;
+			    zobject ret = nil;
           if(isnum(q->val))
           {
               ret.i = Int(q->val);
@@ -1206,7 +1224,7 @@ ZObject TOINT32(ZObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-        ZObject ret = nil;
+        zobject ret = nil;
         double d = args[0].f;
         if(d<(double)INT_MIN)
           ret.i = INT_MIN;
@@ -1227,24 +1245,24 @@ ZObject TOINT32(ZObject* args,int32_t argc)
       else if(args[0].type == Z_INT64)
       {
         if(args[0].l > INT_MAX)
-          return ZObjFromInt(INT_MAX);
+          return zobj_from_int(INT_MAX);
         else if(args[0].l < INT_MIN)
-          return ZObjFromInt(INT_MIN);
-        return ZObjFromInt(static_cast<int32_t>(args[0].l)); 
+          return zobj_from_int(INT_MIN);
+        return zobj_from_int(static_cast<int32_t>(args[0].l)); 
       }
       return quickErr(TypeError,"Error int32() unsupported for type "+fullform(args[0].type));
 		}
 		return quickErr(ArgumentError,"Error int32() takes exactly one argument!");
 		exit(0);
 }
-ZObject TOINT64(ZObject* args,int32_t argc)
+zobject TOINT64(zobject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='s')
 			{
-			    ZStr* q = (ZStr*)args[0].ptr;
-			    ZObject ret = nil;
+			    zstr* q = (zstr*)args[0].ptr;
+			    zobject ret = nil;
           if(isnum(q->val))
           {
               ret.l = Int(q->val);
@@ -1277,7 +1295,7 @@ ZObject TOINT64(ZObject* args,int32_t argc)
       }
 			else if(args[0].type=='f')
 			{
-               ZObject ret = nil;
+               zobject ret = nil;
                double d = args[0].f;
                if(d<(double)LLONG_MIN)
                  ret.l = LLONG_MIN;
@@ -1301,19 +1319,19 @@ ZObject TOINT64(ZObject* args,int32_t argc)
 		return quickErr(ArgumentError,"Error int64() takes exactly one argument!");
 		exit(0);
 }
-ZObject TOFLOAT(ZObject* args,int32_t argc)
+zobject TOFLOAT(zobject* args,int32_t argc)
 {
     if(argc==1)
 		{
 			if(args[0].type=='s')
 			{
-        ZStr* q = (ZStr*)args[0].ptr;
+        zstr* q = (zstr*)args[0].ptr;
         if(isnum(q->val))
-          return ZObjFromDouble((double)Int(q->val));
+          return zobj_from_double((double)Int(q->val));
         else if(isInt64(q->val))
-          return ZObjFromDouble((double)toInt64(q->val));
+          return zobj_from_double((double)toInt64(q->val));
         else if(isaFloat(q->val))
-          return ZObjFromDouble(Float(q->val));
+          return zobj_from_double(Float(q->val));
         else
           return quickErr(ValueError,"The string cannot be converted to a float!\n");
 			}
@@ -1336,30 +1354,30 @@ ZObject TOFLOAT(ZObject* args,int32_t argc)
 		return quickErr(ArgumentError,"Error float() takes exactly one argument!");
 		exit(0);
 }
-ZObject tonumeric(ZObject* args,int32_t argc)
+zobject tonumeric(zobject* args,int32_t argc)
 {
     if(argc==1)
     {
       if(args[0].type=='s')
       {
-          ZStr* q = (ZStr*)args[0].ptr;
+          zstr* q = (zstr*)args[0].ptr;
           if(isnum(q->val))
           {
-              ZObject ret = nil;
+              zobject ret = nil;
               ret.type='i';
               ret.i = Int(q->val);
               return ret;
           }
           else if(isInt64(q->val))
           {
-              ZObject ret = nil;
+              zobject ret = nil;
               ret.type = 'l';
               ret.l = toInt64(q->val);
               return ret;
           }
           else if(isaFloat(q->val))
           {
-              ZObject ret = nil;
+              zobject ret = nil;
               ret.type = 'f';
               ret.f = Float(q->val);
               return ret;
@@ -1376,16 +1394,16 @@ ZObject tonumeric(ZObject* args,int32_t argc)
 		}
     return quickErr(ArgumentError,"Error tonumeric() takes one argument!");
 }
-ZObject isnumeric(ZObject* args,int32_t argc)
+zobject isnumeric(zobject* args,int32_t argc)
 {
-  ZObject ret = nil;
+  zobject ret = nil;
   ret.type = 'b';
   ret.i = 1;
     if(argc==1)
     {
             if(args[0].type=='s')
             {
-               ZStr* s = (ZStr*)args[0].ptr;
+               zstr* s = (zstr*)args[0].ptr;
                if(isnum(s->val))
                    return ret;
                else if(isInt64(s->val))
@@ -1405,7 +1423,7 @@ ZObject isnumeric(ZObject* args,int32_t argc)
     }
     return quickErr(ArgumentError,"Error isnumeric() takes 1 argument!");
 }
-ZObject REPLACE(ZObject* args,int32_t argc)
+zobject REPLACE(zobject* args,int32_t argc)
 {
         if(argc==3)
         {
@@ -1415,20 +1433,20 @@ ZObject REPLACE(ZObject* args,int32_t argc)
                return quickErr(TypeError,"Error second argument given to replace() must be a string!");
            if(args[2].type!='s')
                return quickErr(TypeError,"Error third argument given to replace() must be a string!");
-           ZStr* a = (ZStr*)args[0].ptr;
-           ZStr* b = (ZStr*)args[1].ptr;
-           ZStr* c = (ZStr*)args[2].ptr;
+           zstr* a = (zstr*)args[0].ptr;
+           zstr* b = (zstr*)args[1].ptr;
+           zstr* c = (zstr*)args[2].ptr;
            string s = replace_all(a->val,b->val,c->val);
-           ZStr* z = vm_allocString(s.length());
+           zstr* z = vm_allocString(s.length());
            strcpy(z->val,s.c_str());
-           return ZObjFromStrPtr(z);
+           return zobj_from_str_ptr(z);
         }
         else
         {
             return quickErr(ArgumentError,"Error replace() takes three arguments\n");
         }
 }
-ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
+zobject REPLACE_ONCE(zobject* args,int32_t argc)
 {
         if(argc==3)
         {
@@ -1438,26 +1456,26 @@ ZObject REPLACE_ONCE(ZObject* args,int32_t argc)
                return quickErr(TypeError,"Error second argument given to replace_once() must be a string!");
            if(args[2].type!='s')
                return quickErr(TypeError,"Error third argument given to replace_once() must be a string!");
-           ZStr* a = (ZStr*)args[0].ptr;
-           ZStr* b = (ZStr*)args[1].ptr;
-           ZStr* c = (ZStr*)args[2].ptr;
+           zstr* a = (zstr*)args[0].ptr;
+           zstr* b = (zstr*)args[1].ptr;
+           zstr* c = (zstr*)args[2].ptr;
            string s = replace(a->val,b->val,c->val);
-           ZStr* z = vm_allocString(s.length());
+           zstr* z = vm_allocString(s.length());
            strcpy(z->val,s.c_str());
-           return ZObjFromStrPtr(z);
+           return zobj_from_str_ptr(z);
         }
         else
         {
             return quickErr(ArgumentError,"Error replace_once() takes three arguments\n");
         }
 }
-ZObject SLEEP(ZObject* args,int32_t argc)
+zobject SLEEP(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return quickErr(ArgumentError,"Error sleep() takes 1 argument!");
     if(args[0].type=='i' && args[0].type!='l')
     {
-      ZObject r = args[0];
+      zobject r = args[0];
       PromoteType(r,'l');
       #ifdef _WIN32
       #include <windows.h>
@@ -1465,7 +1483,7 @@ ZObject SLEEP(ZObject* args,int32_t argc)
       #else
         usleep(r.l*1000);
       #endif
-      ZObject ret = nil;
+      zobject ret = nil;
       return ret;
     }
     else
@@ -1475,7 +1493,7 @@ ZObject SLEEP(ZObject* args,int32_t argc)
 }
 
 
-ZObject TOBYTE(ZObject* args,int32_t argc)
+zobject TOBYTE(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return quickErr(ArgumentError,"Error byte() takes 1 argument!");
@@ -1500,7 +1518,7 @@ ZObject TOBYTE(ZObject* args,int32_t argc)
   args[0].type = Z_BYTE;
   return args[0];
 }
-ZObject writelines(ZObject* args,int32_t argc)
+zobject writelines(zobject* args,int32_t argc)
 {
      if(argc==2)
         {
@@ -1508,10 +1526,10 @@ ZObject writelines(ZObject* args,int32_t argc)
                 return quickErr(TypeError,"Error first argument of writelines() should be a list!");
             if(args[1].type=='u')
             {
-                ZList* lines = (ZList*)args[0].ptr;
+                zlist* lines = (zlist*)args[0].ptr;
                 uint32_t f = 0;
                 string data = "";
-                ZObject m;
+                zobject m;
                 zfile* p = (zfile*)args[1].ptr;
                 FILE* currF = p->fp;
                 while(f<lines->size)
@@ -1519,7 +1537,7 @@ ZObject writelines(ZObject* args,int32_t argc)
                     m = (lines->arr[f]);
                     if(m.type!='s')
                       return quickErr(ValueError,"List provided to writelines should consist of string elements only!");
-                    ZStr* line = (ZStr*)m.ptr;
+                    zstr* line = (zstr*)m.ptr;
                     fputs(line->val,currF);
                     if(f!=lines->size-1)
                         fputc('\n',currF);
@@ -1535,7 +1553,7 @@ ZObject writelines(ZObject* args,int32_t argc)
             exit(0);
         }
 }
-ZObject readlines(ZObject* args,int32_t argc)
+zobject readlines(zobject* args,int32_t argc)
 {
     if(argc==1)
     {
@@ -1546,7 +1564,7 @@ ZObject readlines(ZObject* args,int32_t argc)
       if(!fobj.open)
         return quickErr(ValueError,"Error the file stream is closed!");
       FILE* currF = fobj.fp;
-      ZList* lines = vm_allocList();
+      zlist* lines = vm_allocList();
       string reg; 
       int32_t k = 0;
 
@@ -1560,9 +1578,9 @@ ZObject readlines(ZObject* args,int32_t argc)
           else if(ch=='\n')
           {
               k+=1;
-              ZStr* line = vm_allocString(reg.length());
+              zstr* line = vm_allocString(reg.length());
               strcpy(line->val,reg.c_str());
-              ZList_push(lines,ZObjFromStrPtr(line));
+              zlist_push(lines,zobj_from_str_ptr(line));
               reg = "";
 
           }
@@ -1571,10 +1589,10 @@ ZObject readlines(ZObject* args,int32_t argc)
             reg+=ch;
           }
       }
-      ZStr* line = vm_allocString(reg.length());
+      zstr* line = vm_allocString(reg.length());
       strcpy(line->val,reg.c_str());
-      ZList_push(lines,ZObjFromStrPtr(line));
-      ZObject ret;
+      zlist_push(lines,zobj_from_str_ptr(line));
+      zobject ret;
       ret.type = 'j';
       ret.ptr = (void*)lines;
       return ret;
@@ -1593,7 +1611,7 @@ void clean_stdin(void)
         c = getchar();
     }
 }
-ZObject FREAD(ZObject* args,int32_t argc)
+zobject FREAD(zobject* args,int32_t argc)
 {
     if(argc!=3)
         return quickErr(ArgumentError,"Error fread() takes 3 arguments!");
@@ -1603,11 +1621,11 @@ ZObject FREAD(ZObject* args,int32_t argc)
         return quickErr(TypeError,"Error second argument of fread() should be an integer!");
     if(args[2].type!='u')
       return quickErr(TypeError,"Error third argument of fread() should be a file stream!");
-    ZObject a = args[1];
+    zobject a = args[1];
     PromoteType(a,'l');
     int64_t e = a.l;
-    auto p = (ZByteArr*)args[0].ptr;
-    ZByteArr_resize(p,e);
+    auto p = (zbytearr*)args[0].ptr;
+    zbytearr_resize(p,e);
     zfile fobj = *(zfile*)args[2].ptr;
     if(!fobj.open)
       return quickErr(ValueError,"Error the file stream is closed!");
@@ -1617,17 +1635,17 @@ ZObject FREAD(ZObject* args,int32_t argc)
         return quickErr(FileIOError,"Error unable to read specified bytes from the file.");
     if(currF == stdin)
       clean_stdin();//the newline character can cause problem with future inputs or REPL
-    return ZObjFromInt64(read);;
+    return zobj_from_int64(read);;
 }
-ZObject FWRITE(ZObject* args,int32_t argc)
+zobject FWRITE(zobject* args,int32_t argc)
 {
-    ZObject ret = nil;
+    zobject ret = nil;
     size_t S = 0;
     if(argc==2)
     {
     if(!validateArgTypes("fwrite","cu",args,argc,ret))
       return ret;
-     S = ((ZByteArr*)args[0].ptr)->size; 
+     S = ((zbytearr*)args[0].ptr)->size; 
     }
     else if(argc==3)
     {
@@ -1642,7 +1660,7 @@ ZObject FWRITE(ZObject* args,int32_t argc)
     {
       return quickErr(ArgumentError,"Error fwrite takes either 2 or 3 arguments");
     }
-    auto l = (ZByteArr*)args[0].ptr;
+    auto l = (zbytearr*)args[0].ptr;
     if(S > l->size)
       return quickErr(ValueError,"Error the bytearray needs to have specified number of bytes!");
     if(l->size == 0)
@@ -1658,13 +1676,13 @@ ZObject FWRITE(ZObject* args,int32_t argc)
         return quickErr(FileIOError,"Error unable to write the bytes to file!");
 
     }
-    return ZObjFromInt64(written);
+    return zobj_from_int64(written);
 }
-ZObject FSEEK(ZObject* args,int32_t argc)
+zobject FSEEK(zobject* args,int32_t argc)
 {
     if(argc!=3)
         return quickErr(ArgumentError,"Error fseek() takes 3 arguments!");
-    ZObject ret = nil;
+    zobject ret = nil;
     if(!validateArgTypes("fseek","uii",args,argc,ret))
       return ret;
     int32_t w = 0;
@@ -1692,43 +1710,43 @@ ZObject FSEEK(ZObject* args,int32_t argc)
     return ret;
 }
 //
-ZList* makeListCopy(ZList);
-ZDict* makeDictCopy(ZDict);
+zlist* makeListCopy(zlist);
+zdict* makeDictCopy(zdict);
 //
-ZDict* makeDictCopy(ZDict v)
+zdict* makeDictCopy(zdict v)
 {
-  ZDict* d = vm_allocDict();
+  zdict* d = vm_allocDict();
   for(size_t i=0;i<d->capacity;i++)
   {
     if(d->table[i].stat != OCCUPIED)
       continue;
-    ZObject key,val;
+    zobject key,val;
     key = d->table[i].key;
     val = d->table[i].val;
-    ZDict_set(d,key,val);
+    zdict_set(d,key,val);
   }
   return d;
 }
-ZList* makeListCopy(ZList v)
+zlist* makeListCopy(zlist v)
 {
-  ZList* p = vm_allocList();
+  zlist* p = vm_allocList();
   for(size_t i = 0;i<v.size;i++)
   {
-    ZObject e = v.arr[i];
-    ZObject elem;
+    zobject e = v.arr[i];
+    zobject elem;
     elem = e;
-    ZList_push(p,elem);
+    zlist_push(p,elem);
   }
   return p;
 }
-ZObject COPY(ZObject* args,int32_t argc)
+zobject COPY(zobject* args,int32_t argc)
 {
   if(argc!=1)
       return quickErr(ArgumentError,"Error clone() takes one argument!");
   if(args[0].type=='a')
   {
-     ZDict v = *(ZDict*)args[0].ptr;
-     ZObject ret = nil;
+     zdict v = *(zdict*)args[0].ptr;
+     zobject ret = nil;
      ret.type = 'a';
      ret.ptr = (void*)makeDictCopy(v);
      return ret;
@@ -1736,8 +1754,8 @@ ZObject COPY(ZObject* args,int32_t argc)
   }
   else if(args[0].type=='j')
   {
-    ZList v = *(ZList*)args[0].ptr;
-    ZObject ret = nil;
+    zlist v = *(zlist*)args[0].ptr;
+    zobject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)makeListCopy(v);
     return ret;
@@ -1745,15 +1763,15 @@ ZObject COPY(ZObject* args,int32_t argc)
   else
     return quickErr(TypeError,"Error clone() takes a list or dictionary as an argument!");
 }
-ZObject POW(ZObject* args,int32_t argc)
+zobject POW(zobject* args,int32_t argc)
 {
     if(argc!=2)
     {
         return quickErr(ArgumentError,"pow() takes 2 arguments!");
     }
-    ZObject a = args[0];
-    ZObject b = args[1];
-    ZObject c;
+    zobject a = args[0];
+    zobject b = args[1];
+    zobject c;
     c.type = Z_NIL;
     char t;
     if(isNumeric(a.type) && isNumeric(b.type))
@@ -1810,11 +1828,11 @@ ZObject POW(ZObject* args,int32_t argc)
       }
         return c;//to avoid warning otherwise this stmt is never executed
 }
-ZObject CLOCK(ZObject* args,int32_t argc)
+zobject CLOCK(zobject* args,int32_t argc)
 {
   if(argc!=0)
     return quickErr(ArgumentError,"Error clock() takes 0 arguments!");
-  ZObject ret = nil;
+  zobject ret = nil;
   ret.type = 'f';
   ret.f = static_cast<double> (clock());
   return ret;
@@ -1826,7 +1844,7 @@ ZObject CLOCK(ZObject* args,int32_t argc)
 //be an object
 //these are just functions that work on multiple supported types
 //for example POP functions works on both list,bytearrays and mutable strings
-ZObject POP(ZObject* args,int32_t argc)
+zobject POP(zobject* args,int32_t argc)
 {
   if(args[0].type!=Z_LIST && args[0].type!=Z_BYTEARR )
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named pop()");
@@ -1834,22 +1852,22 @@ ZObject POP(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method pop() takes 0 arguments!");//args[0] is self
   if(args[0].type == 'c')
   {
-    ZObject ret = nil;
+    zobject ret = nil;
 
-    auto p = (ZByteArr*)args[0].ptr;
+    auto p = (zbytearr*)args[0].ptr;
     uint8_t res;
-    ZByteArr_pop(p,&res);
+    zbytearr_pop(p,&res);
     ret.type = Z_BYTE;
     ret.i = res;
     return ret;
   }
   else
   {
-    ZList* p = (ZList*)args[0].ptr;
-    ZObject ret = nil;
+    zlist* p = (zlist*)args[0].ptr;
+    zobject ret = nil;
     if(p->size!=0)
     {
-      ZList_pop(p,&ret);
+      zlist_pop(p,&ret);
     }
     else
       return quickErr(ValueError,"List is empty.No value to pop!");
@@ -1858,7 +1876,7 @@ ZObject POP(ZObject* args,int32_t argc)
   return nil;
 }
 
-ZObject CLEAR(ZObject* args,int32_t argc)
+zobject CLEAR(zobject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type != Z_BYTEARR)
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named clear()");
@@ -1866,17 +1884,17 @@ ZObject CLEAR(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method clear() takes 0 arguments!");
   if(args[0].type == Z_BYTEARR)
   {
-    ZByteArr* arr = (ZByteArr*)args[0].ptr;
+    zbytearr* arr = (zbytearr*)args[0].ptr;
     arr->size = 0;
   }
   else
   {
-    ZList* p = (ZList*)args[0].ptr;
-    ZList_resize(p,0);
+    zlist* p = (zlist*)args[0].ptr;
+    zlist_resize(p,0);
   }
   return nil;
 }
-ZObject PUSH(ZObject* args,int32_t argc)
+zobject PUSH(zobject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type!='c')
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named push()");
@@ -1884,24 +1902,24 @@ ZObject PUSH(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method push() takes 1 argument!");
   if(args[0].type == 'j')
   {
-    ZList* p = (ZList*)args[0].ptr;
+    zlist* p = (zlist*)args[0].ptr;
 
-    ZList_push(p,args[1]);
-    ZObject ret = nil;
+    zlist_push(p,args[1]);
+    zobject ret = nil;
     return ret;
   }
   else
   {
-    ZByteArr* p = (ZByteArr*)args[0].ptr;
+    zbytearr* p = (zbytearr*)args[0].ptr;
     if(args[1].type != Z_BYTE)
      return quickErr(TypeError,"Can only push a byte to a bytearray!");
-    ZByteArr_push(p,args[1].i);
-    ZObject ret = nil;
+    zbytearr_push(p,args[1].i);
+    zobject ret = nil;
     return ret;
   }
 }
 
-ZObject FIND_METHOD(ZObject* args,int32_t argc)
+zobject FIND_METHOD(zobject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type!=Z_BYTEARR && args[0].type!=Z_STR)
     return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named find()");
@@ -1909,11 +1927,11 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method find() takes 1 arguments!");
   if(args[0].type == 'j')
   {
-    ZList* p = (ZList*)args[0].ptr;
-    ZObject ret = nil;
+    zlist* p = (zlist*)args[0].ptr;
+    zobject ret = nil;
     for(size_t k=0;k<p->size;k+=1)
     {
-      if(ZObject_equals(p->arr[k],args[1]))
+      if(zobject_equals(p->arr[k],args[1]))
       {
         ret.type = 'i';
         ret.i = k;
@@ -1924,19 +1942,19 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
   }
   else if(args[0].type == Z_STR )
   {
-    string p = ((ZStr*)args[0].ptr) -> val;
+    string p = ((zstr*)args[0].ptr) -> val;
     if(args[1].type != Z_STR)
       return quickErr(TypeError,"Argument 1 of str.find() must be a string!");
-    ZStr* tofind = (ZStr*)args[1].ptr;
+    zstr* tofind = (zstr*)args[1].ptr;
     size_t idx = p.find(tofind->val);
     if(idx == std::string::npos)
       return nil;
-    return ZObjFromInt64((int64_t)idx);
+    return zobj_from_int64((int64_t)idx);
   }
   else
   {
-    ZByteArr* p = (ZByteArr*)args[0].ptr;
-    ZObject ret = nil;
+    zbytearr* p = (zbytearr*)args[0].ptr;
+    zobject ret = nil;
     for(size_t k=0;k<p->size;k+=1)
     {
       if(p->arr[k]==(uint8_t)args[1].i)
@@ -1949,13 +1967,13 @@ ZObject FIND_METHOD(ZObject* args,int32_t argc)
     return ret;
   }
 }
-ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
+zobject INSERTBYTEARRAY(zobject* args,int32_t argc)
 {
   if(argc==3)
   {
-    ZByteArr* p = (ZByteArr*)args[0].ptr;
-    ZObject idx = args[1];
-    ZObject val = args[2];
+    zbytearr* p = (zbytearr*)args[0].ptr;
+    zobject idx = args[1];
+    zobject val = args[2];
     if(idx.type!='i' && idx.type!='l')
       return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
@@ -1965,29 +1983,29 @@ ZObject INSERTBYTEARRAY(ZObject* args,int32_t argc)
           return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type=='c')
     {
-      auto subarr = (ZByteArr*)val.ptr;
-      ZByteArr_insertArr(p,idx.l,subarr);
+      auto subarr = (zbytearr*)val.ptr;
+      zbytearr_insert_arr(p,idx.l,subarr);
     }
     else if(val.type == Z_BYTE)
     {
-      ZByteArr_insert(p,idx.l,val.i);
+      zbytearr_insert(p,idx.l,val.i);
     }
     else
       return quickErr(TypeError,"Error method insert() takes a byte or bytearray argument!");
-    ZObject ret = nil;
+    zobject ret = nil;
     return ret;
   }
   else
     return quickErr(ArgumentError,"Error method insert() takes 2 arguments!");
 }
 
-ZObject INSERTSTR(ZObject* args,int32_t argc)
+zobject INSERTSTR(zobject* args,int32_t argc)
 {
   if(argc==3)
   {
-    string p = ((ZStr*)args[0].ptr) -> val;
-    ZObject idx = args[1];
-    ZObject val = args[2];
+    string p = ((zstr*)args[0].ptr) -> val;
+    zobject idx = args[1];
+    zobject val = args[2];
     if(idx.type!='i' && idx.type!='l')
       return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
@@ -1997,12 +2015,12 @@ ZObject INSERTSTR(ZObject* args,int32_t argc)
           return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type==Z_STR)
     {
-      ZStr* sub = (ZStr*)val.ptr;
-      ZStr* result = vm_allocString(sub->len + p.length());
+      zstr* sub = (zstr*)val.ptr;
+      zstr* result = vm_allocString(sub->len + p.length());
       string q = sub->val;
       p.insert(p.begin()+idx.l,q.begin(),q.end());
       strcpy(result->val,p.c_str());
-      return ZObjFromStrPtr(result);
+      return zobj_from_str_ptr(result);
     }
     else
       return quickErr(TypeError,"Error method insert() takes a string argument!");
@@ -2011,7 +2029,7 @@ ZObject INSERTSTR(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method insert() takes 2 arguments!");
 }
 
-ZObject INSERT(ZObject* args,int32_t argc)
+zobject INSERT(zobject* args,int32_t argc)
 {
   if(args[0].type == 'c')
     return INSERTBYTEARRAY(args,argc);
@@ -2021,9 +2039,9 @@ ZObject INSERT(ZObject* args,int32_t argc)
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named insert()");
   if(argc==3)
   {
-    ZList* p = (ZList*)args[0].ptr;
-    ZObject idx = args[1];
-    ZObject val = args[2];
+    zlist* p = (zlist*)args[0].ptr;
+    zobject idx = args[1];
+    zobject val = args[2];
     if(idx.type!='i' && idx.type!='l')
       return quickErr(TypeError,"Error method insert() expects an integer argument for position!");
     PromoteType(idx,'l');
@@ -2033,28 +2051,28 @@ ZObject INSERT(ZObject* args,int32_t argc)
           return quickErr(ValueError,"Error insertion position out of range!");
     if(val.type=='j')
     {
-      ZList* sublist = (ZList*)val.ptr;
-      ZList_insertList(p,idx.l,sublist);
+      zlist* sublist = (zlist*)val.ptr;
+      zlist_insert_list(p,idx.l,sublist);
     }
     else
     {
-      ZList_insert(p,idx.l,val);
+      zlist_insert(p,idx.l,val);
     }
-    ZObject ret = nil;
+    zobject ret = nil;
     return ret;
   }
   else
     return quickErr(ArgumentError,"Error method insert() takes 3 arguments!");
 }
-ZObject ERASE(ZObject* args,int32_t argc)
+zobject ERASE(zobject* args,int32_t argc)
 {
   if(args[0].type=='j')
   {
     if(argc!=2 && argc!=3)
       return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
-    ZList* p = (ZList*)args[0].ptr;
-    ZObject idx1 = args[1];
-    ZObject idx2;
+    zlist* p = (zlist*)args[0].ptr;
+    zobject idx1 = args[1];
+    zobject idx2;
     if(argc==3)
      idx2 = args[2];
     else
@@ -2069,20 +2087,20 @@ ZObject ERASE(ZObject* args,int32_t argc)
         return quickErr(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size || (size_t)idx2.l >= p->size)
         return quickErr(ValueError,"Error index out of range!");
-    ZList_eraseRange(p,idx1.l,idx2.l);
-    ZObject ret = nil;
+    zlist_erase_range(p,idx1.l,idx2.l);
+    zobject ret = nil;
     return ret;
   }
   else if(args[0].type=='a')
   {
      if(argc!=2)
        return quickErr(ArgumentError,"Error dictionary method erase() takes 2 arguments!");
-    ZDict* d = (ZDict*)args[0].ptr;
-    ZObject key = args[1];
+    zdict* d = (zdict*)args[0].ptr;
+    zobject key = args[1];
     if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
       return quickErr(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
-    bool b = ZDict_erase(d,key);
-    ZObject ret;
+    bool b = zdict_erase(d,key);
+    zobject ret;
     ret.type = Z_BOOL;
     ret.i = b;
     return ret;
@@ -2091,9 +2109,9 @@ ZObject ERASE(ZObject* args,int32_t argc)
   {
     if(argc!=2 && argc!=3)
       return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
-    ZByteArr* p = (ZByteArr*)args[0].ptr;
-    ZObject idx1 = args[1];
-    ZObject idx2;
+    zbytearr* p = (zbytearr*)args[0].ptr;
+    zobject idx1 = args[1];
+    zobject idx2;
     if(argc==3)
      idx2 = args[2];
     else
@@ -2108,17 +2126,17 @@ ZObject ERASE(ZObject* args,int32_t argc)
         return quickErr(ValueError,"Error index is negative!");
     if((size_t)idx1.l >= p->size || (size_t)idx2.l >= p->size)
         return quickErr(ValueError,"Error index out of range!");
-    ZByteArr_eraseRange(p,idx1.l,idx2.l);
-    ZObject ret = nil;
+    zbytearr_erase_range(p,idx1.l,idx2.l);
+    zobject ret = nil;
     return ret;
   }
   else if(args[0].type == Z_STR)
   {
     if(argc!=2 && argc!=3)
       return quickErr(ArgumentError,"Error erase() takes 2 or 3 arguments!");
-    ZStr* p = (ZStr*)args[0].ptr;
-    ZObject idx1 = args[1];
-    ZObject idx2;
+    zstr* p = (zstr*)args[0].ptr;
+    zobject idx1 = args[1];
+    zobject idx2;
     if(argc==3)
      idx2 = args[2];
     else
@@ -2136,64 +2154,64 @@ ZObject ERASE(ZObject* args,int32_t argc)
     string s = p->val;
     s.erase(s.begin()+idx1.l,s.begin()+idx2.l+1);
 
-    ZStr* res = vm_allocString(s.length());
+    zstr* res = vm_allocString(s.length());
     strcpy(res->val,s.c_str());
-    return ZObjFromStrPtr(res);
+    return zobj_from_str_ptr(res);
   }
   else
   {
       return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
   }
 }
-ZObject asMap(ZObject* args,int32_t argc)
+zobject asMap(zobject* args,int32_t argc)
 {
     if(args[0].type!='j')
       return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
     if(argc!=1)
       return quickErr(ArgumentError,"Error list member asMap() takes 0 arguments!");
-    ZList l = *(ZList*)args[0].ptr;
-    ZObject x;
+    zlist l = *(zlist*)args[0].ptr;
+    zobject x;
     x.type = 'l';
     size_t i = 0;
-    ZDict* d = vm_allocDict();
+    zdict* d = vm_allocDict();
 
     for(;i<l.size;i++)
     {
        x.l = i;
-       ZDict_emplace(d,x,l.arr[i]);
+       zdict_emplace(d,x,l.arr[i]);
     }
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = 'a';
     ret.ptr = (void*)d;
     return ret;
 }
-ZObject ASLIST(ZObject* args,int32_t argc)
+zobject ASLIST(zobject* args,int32_t argc)
 {
     if(args[0].type!='a')
       return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named asList()");
     if(argc!=1)
       return quickErr(ArgumentError,"Error dictionary member asList() takes 0 arguments!");
-    ZDict d = *(ZDict*)args[0].ptr;
-    ZList* list = vm_allocList();
+    zdict d = *(zdict*)args[0].ptr;
+    zlist* list = vm_allocList();
     for(size_t i=0;i<d.capacity;i++)
     {
       if(d.table[i].stat != OCCUPIED)
         continue;
-      ZList* sub = vm_allocList();
-      ZList_push(sub,d.table[i].key);
-      ZList_push(sub,d.table[i].val);
+      zlist* sub = vm_allocList();
+      zlist_push(sub,d.table[i].key);
+      zlist_push(sub,d.table[i].val);
       
-      ZObject x;
+      zobject x;
       x.type = 'j';
       x.ptr = (void*)sub;
-      ZList_push(list,x);
+      zlist_push(list,x);
     }
-    ZObject ret = nil;
+    zobject ret = nil;
     ret.type = 'j';
     ret.ptr = (void*)list;
     return ret;
 }
-ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
+zobject REVERSE_METHOD(zobject* args,int32_t argc)
 {
   if(args[0].type!='j' && args[0].type != Z_STR)
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named reverse()");
@@ -2201,19 +2219,19 @@ ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error method reverse() takes 0 arguments!");
   if(args[0].type == Z_STR)
   {
-    ZStr* str = (ZStr*)args[0].ptr;
-    ZStr* p = vm_allocString(str->len);
+    zstr* str = (zstr*)args[0].ptr;
+    zstr* p = vm_allocString(str->len);
     size_t i = 0;
     while(i < str->len)
     {
       p->val[i] = str->val[str->len - i - 1];
       i+=1;
     }
-    return ZObjFromStrPtr(p);
+    return zobj_from_str_ptr(p);
   }
   else
   {
-    ZList* p = (ZList*)args[0].ptr;
+    zlist* p = (zlist*)args[0].ptr;
     if(p -> size == 0)
       return nil;
     size_t l = 0;
@@ -2221,49 +2239,49 @@ ZObject REVERSE_METHOD(ZObject* args,int32_t argc)
 
     while(l < h)
     {
-      ZObject tmp = p->arr[l];
+      zobject tmp = p->arr[l];
       p->arr[l] = p->arr[h];
       p->arr[h] = tmp;
       l++;
       h--;
     }
   }
-  ZObject ret = nil;
+  zobject ret = nil;
   return ret;
 }
-ZObject EMPLACE(ZObject* args,int32_t argc)
+zobject EMPLACE(zobject* args,int32_t argc)
 {
   if(args[0].type!='a')
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named emplace()");
   if(argc!=3)
     return quickErr(ArgumentError,"Error method emplace() takes 2 arguments!");
-  ZDict* p = (ZDict*)args[0].ptr;
-  ZObject& key = args[1];
+  zdict* p = (zdict*)args[0].ptr;
+  zobject& key = args[1];
   if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
     return quickErr(TypeError,"Error key of type "+fullform(key.type)+" not allowed.");
 
-  ZDict_emplace(p,key,args[2]);
-  ZObject ret = nil;
+  zdict_emplace(p,key,args[2]);
+  zobject ret = nil;
   return ret;
 
 }
-ZObject HASKEY(ZObject* args,int32_t argc)
+zobject HASKEY(zobject* args,int32_t argc)
 {
   if(args[0].type!='a')
          return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no method named hasKey()");
   if(argc!=2)
     return quickErr(ArgumentError,"Error method hasKey() takes 1 argument!");
-  ZDict* p = (ZDict*)args[0].ptr;
+  zdict* p = (zdict*)args[0].ptr;
 
-  ZObject ret = nil;
-  ZObject tmp;
+  zobject ret = nil;
+  zobject tmp;
   ret.type= 'b';
-  ret.i = ZDict_get(p,args[1],&tmp);
+  ret.i = zdict_get(p,args[1],&tmp);
 
   return ret;
 
 }
-ZObject UNPACK(ZObject* args,int32_t argc)
+zobject UNPACK(zobject* args,int32_t argc)
 {
   if(args[0].type!=Z_BYTEARR)
     return quickErr(NameError,"Error object has no member unpack()");
@@ -2271,16 +2289,16 @@ ZObject UNPACK(ZObject* args,int32_t argc)
     return quickErr(ArgumentError,"Error unpack() takes 2 arguments!");
   if(args[1].type!=Z_STR)
     return quickErr(TypeError,"Error unpack() takes a string argument!");
-  auto arr = (ZByteArr*)args[0].ptr;
-  string pattern = ((ZStr*)args[1].ptr)->val;
+  auto arr = (zbytearr*)args[0].ptr;
+  string pattern = ((zstr*)args[1].ptr)->val;
   size_t k = 0;
   int32_t int32;
   int64_t int64;
   double d;
   bool b;
   string str;
-  ZList* lp = vm_allocList();
-  ZList* res = lp;
+  zlist* lp = vm_allocList();
+  zlist* res = lp;
   for(size_t i=0;i<pattern.length();i++)
   {
     char ch = pattern[i];
@@ -2289,7 +2307,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       if(k+3 >= arr->size)
          return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&int32,arr->arr+k,4);
-      ZList_push(res,ZObjFromInt(int32));
+      zlist_push(res,zobj_from_int(int32));
       k+=4;
     }
     else if(ch == 'l')
@@ -2297,7 +2315,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       if(k+7 >= arr->size)
          return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&int64,arr->arr+k,8);
-      ZList_push(res,ZObjFromInt(int64));      
+      zlist_push(res,zobj_from_int(int64));      
       k+=8;
     }
     else if(ch == 'f')
@@ -2305,7 +2323,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       if(k+7 >= arr->size)
          return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&d,arr->arr+k,8);
-      ZList_push(res,ZObjFromDouble(d));
+      zlist_push(res,zobj_from_double(d));
       k+=8;
     }
     else if(ch == 'b')
@@ -2313,7 +2331,7 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       if(k >= arr->size)
          return quickErr(ValueError,"Error making element "+to_string(res->size)+" from bytearray(not enough bytes)!");
       memcpy(&b,arr->arr+k,1);
-      ZList_push(res,ZObjFromBool(b));
+      zlist_push(res,zobj_from_bool(b));
       k+=1;
     }
     else if(ch == 's')
@@ -2345,15 +2363,15 @@ ZObject UNPACK(ZObject* args,int32_t argc)
       }
       auto p = vm_allocString(str.length());
       strcpy(p->val,str.c_str());
-      ZList_push(res,ZObjFromStrPtr(p));
+      zlist_push(res,zobj_from_str_ptr(p));
     }
     else
       return quickErr(ValueError,"Error invalid char in pattern string!"); 
   }
-  return ZObjFromList(lp);
+  return zobj_from_list(lp);
 }
 //String methods
-ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
+zobject SUBSTR_METHOD(zobject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
     return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named substr");
@@ -2366,25 +2384,25 @@ ZObject SUBSTR_METHOD(ZObject* args,int32_t argc)
   
   PromoteType(args[1],'l');
   PromoteType(args[2],'l');
-  ZStr* data = (ZStr*)args[0].ptr;
+  zstr* data = (zstr*)args[0].ptr;
   if(args[1].l < 0 || args[2].l < 0)
   {
-    static ZStr empty;
+    static zstr empty;
     empty.len = 0;
     static char arr[] = "";
     empty.val = arr;
-    return ZObjFromStrPtr(&empty);
+    return zobj_from_str_ptr(&empty);
   }
   else
   {
     string s = substr((int32_t)args[1].l,(int32_t)args[2].l,data->val);
-    ZStr* res = vm_allocString(s.length());
+    zstr* res = vm_allocString(s.length());
     strcpy(res->val,s.c_str());
-    return ZObjFromStrPtr(res);
+    return zobj_from_str_ptr(res);
   }
   return nil; //stupid MSVC gives warning, fuck you microsoft 
 }
-ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
+zobject REPLACE_METHOD(zobject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
     return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
@@ -2395,13 +2413,13 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
         if(args[2].type!='s')
             return quickErr(TypeError,"Error second argument given to replace() must be a string!");
       
-        string c = ((ZStr*)args[0].ptr)->val;
-        string a = ((ZStr*)args[1].ptr) -> val;
-        string b = ((ZStr*)args[2].ptr) -> val;
+        string c = ((zstr*)args[0].ptr)->val;
+        string a = ((zstr*)args[1].ptr) -> val;
+        string b = ((zstr*)args[2].ptr) -> val;
         string s = replace_all(a,b,c); // can be optimized but not today
-        ZStr* z = vm_allocString(c.length());
+        zstr* z = vm_allocString(c.length());
         strcpy(z->val,s.c_str());
-        return ZObjFromStrPtr(z);
+        return zobj_from_str_ptr(z);
     }
     else
     {
@@ -2409,7 +2427,7 @@ ZObject REPLACE_METHOD(ZObject* args,int32_t argc)
     }
     
 }
-ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
+zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc)
 {
   if(args[0].type != Z_STR)
     return quickErr(NameError,"Error type "+fullform(args[0].type)+" has no member named replace");
@@ -2420,13 +2438,13 @@ ZObject REPLACE_ONCE_METHOD(ZObject* args,int32_t argc)
         if(args[2].type!='s')
             return quickErr(TypeError,"Error second argument given to replace() must be a string!");
       
-        string a = ((ZStr*)args[1].ptr) -> val;
-        string b = ((ZStr*)args[2].ptr) -> val;        
-        string c = ( ((ZStr*)args[0].ptr) )->val;
+        string a = ((zstr*)args[1].ptr) -> val;
+        string b = ((zstr*)args[2].ptr) -> val;        
+        string c = ( ((zstr*)args[0].ptr) )->val;
         string s = replace(a,b,c);
-        ZStr* z = vm_allocString(c.length());
+        zstr* z = vm_allocString(c.length());
         strcpy(z->val,s.c_str());
-        return ZObjFromStrPtr(z);
+        return zobj_from_str_ptr(z);
         
     }
     else
@@ -2491,6 +2509,7 @@ void initFunctions()
   funcs.emplace("bytearray",&BYTEARRAY);
   funcs.emplace("moduleInfo",&moduleInfo);
   funcs.emplace("format",&FORMAT);
+  funcs.emplace("fflush",&FFLUSH);
 
 }
 std::unordered_map<string,BuiltinFunc> methods;
@@ -2514,7 +2533,7 @@ void initMethods()
   methods.emplace("replace_once",REPLACE_ONCE_METHOD);
 
 }
-ZObject callmethod(string name,ZObject* args,int32_t argc)
+zobject callmethod(string name,zobject* args,int32_t argc)
 {
      if(methods.find(name)==methods.end())
        return quickErr(NameError,"Error "+fullform(args[0].type)+" type has no method named "+name+"()");

@@ -10,10 +10,10 @@ typedef enum CoState
 typedef struct Coroutine
 {
   int curr;//index in bytecode from where to resume the coroutine
-  ZList locals;
+  zlist locals;
   CoState state;
   const char* name;
-  FunObject* fun;//function from which this coroutine object was made
+  zfun* fun;//function from which this coroutine object was made
   bool giveValOnResume;
   #ifdef __cpluscplus
     Coroutine(const Coroutine&) = delete;

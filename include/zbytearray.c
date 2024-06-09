@@ -1,12 +1,12 @@
 #include "zbytearray.h"
 
-void ZByteArr_init(ZByteArr* p)
+void zbytearr_init(zbytearr* p)
 {
     p->arr = (uint8_t*)malloc(sizeof(uint8_t)*4); 
     p->capacity = 4;
     p->size = 0;
 }
- void ZByteArr_push(ZByteArr* p,uint8_t val)
+ void zbytearr_push(zbytearr* p,uint8_t val)
 {
     if(p -> size >= p->capacity)
     {
@@ -16,7 +16,7 @@ void ZByteArr_init(ZByteArr* p)
     p->arr[p->size++] = val;
  
 }
-void ZByteArr_erase(ZByteArr* p,size_t idx)
+void zbytearr_erase(zbytearr* p,size_t idx)
 {
     if(idx < p->size)
     {
@@ -27,7 +27,7 @@ void ZByteArr_erase(ZByteArr* p,size_t idx)
       p->size -= 1;
     }
 }
-void ZByteArr_eraseRange(ZByteArr* p,size_t i,size_t j)
+void zbytearr_erase_range(zbytearr* p,size_t i,size_t j)
 {
   if(i <= j && i < p->size && j<p->size)
   {
@@ -48,7 +48,7 @@ void ZByteArr_eraseRange(ZByteArr* p,size_t i,size_t j)
 
   }
 }
-void ZByteArr_resize(ZByteArr* p,size_t newSize)
+void zbytearr_resize(zbytearr* p,size_t newSize)
 {
   if(newSize <= p->size)
   {
@@ -67,7 +67,7 @@ void ZByteArr_resize(ZByteArr* p,size_t newSize)
     p->size = newSize;
   }
 }
-bool ZByteArr_pop(ZByteArr* p,uint8_t* val)
+bool zbytearr_pop(zbytearr* p,uint8_t* val)
 {
     if(p->size == 0)
       return false;
@@ -75,11 +75,11 @@ bool ZByteArr_pop(ZByteArr* p,uint8_t* val)
     *val = p->arr[p->size];
     return true;
 }
- void ZByteArr_fastpop(ZByteArr* p,uint8_t* val)
+ void zbytearr_fastpop(zbytearr* p,uint8_t* val)
 {
   *val = p->arr[--p->size];
 }
-void ZByteArr_assign(ZByteArr* p,ZByteArr* val)
+void zbytearr_assign(zbytearr* p,zbytearr* val)
 {
     if(val->size > 0)
     {
@@ -94,17 +94,17 @@ void ZByteArr_assign(ZByteArr* p,ZByteArr* val)
         return;
     }
 }
-void ZByteArr_insert(ZByteArr* p,size_t idx,uint8_t val)
+void zbytearr_insert(zbytearr* p,size_t idx,uint8_t val)
 {
   if(idx == p->size) //push
   {
-    ZByteArr_push(p,val);
+    zbytearr_push(p,val);
     return;
   }
   if(idx < p->size)
   {
 
-    ZByteArr_push(p,val);
+    zbytearr_push(p,val);
     size_t i = p->size - 1;
     while(i > idx)
     {
@@ -114,13 +114,13 @@ void ZByteArr_insert(ZByteArr* p,size_t idx,uint8_t val)
     p->arr[idx] = val;
   }
 }
-void ZByteArr_insertArr(ZByteArr* p,size_t idx,ZByteArr* sublist)
+void zbytearr_insert_arr(zbytearr* p,size_t idx,zbytearr* sublist)
 {
   if(sublist -> size == 0)
     return;
   if(idx == p->size)
   {
-    ZByteArr_resize(p,p->size + sublist->size);
+    zbytearr_resize(p,p->size + sublist->size);
     memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(uint8_t));
     return;
   }
@@ -129,12 +129,12 @@ void ZByteArr_insertArr(ZByteArr* p,size_t idx,ZByteArr* sublist)
     // 1 2 3 4 0 0
 
     size_t i = p->size;
-    ZByteArr_resize(p,p->size + sublist->size);
+    zbytearr_resize(p,p->size + sublist->size);
     memcpy(p->arr + i,p->arr+idx,sizeof(uint8_t)*sublist->size);
     memcpy(p->arr+idx,sublist->arr,sizeof(uint8_t)*sublist->size);
   }
 }
-bool ZByteArr_equal(ZByteArr* a,ZByteArr* b)
+bool zbytearr_equal(zbytearr* a,zbytearr* b)
 {
   if(a->size != b->size)
     return false;
@@ -145,7 +145,7 @@ bool ZByteArr_equal(ZByteArr* a,ZByteArr* b)
   }
   return true;
 }
-void ZByteArr_destroy(ZByteArr* p)
+void zbytearr_destroy(zbytearr* p)
 {
     free(p->arr);
 }

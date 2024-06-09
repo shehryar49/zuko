@@ -8,7 +8,7 @@ void StrMap_init(StrMap *h) {
   for (int i = 0; i < 4; i++)
     h->table[i].stat = SM_EMPTY;
 }
-void StrMap_set(StrMap *h, const char *key, ZObject val) {
+void StrMap_set(StrMap *h, const char *key, zobject val) {
   size_t idx;
   idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -44,7 +44,7 @@ void StrMap_set(StrMap *h, const char *key, ZObject val) {
     free(old);
   }
 }
-void StrMap_emplace(StrMap *h, const char *key, ZObject val) {
+void StrMap_emplace(StrMap *h, const char *key, zobject val) {
   size_t idx;
   idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -75,7 +75,7 @@ void StrMap_emplace(StrMap *h, const char *key, ZObject val) {
     free(old);
   }
 }
-bool StrMap_get(StrMap *h, const char *key, ZObject *val) {
+bool StrMap_get(StrMap *h, const char *key, zobject *val) {
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
   while (h->table[idx].stat != SM_EMPTY) {
@@ -88,7 +88,7 @@ bool StrMap_get(StrMap *h, const char *key, ZObject *val) {
   }
   return false;
 }
-ZObject *StrMap_getRef(StrMap *h, const char *key) {
+zobject *StrMap_getRef(StrMap *h, const char *key) {
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
   while (h->table[idx].stat != SM_EMPTY) {
