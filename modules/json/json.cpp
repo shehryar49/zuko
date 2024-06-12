@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include "json.h"
+#include "zapi.h"
 #include "zobject.h"
 using namespace std;
 enum TokenType
@@ -283,7 +284,7 @@ zdict* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
 zlist* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
-  zlist* M = vm_allocList();
+  zlist* M = vm_alloc_zlist();
   if(tokens[l].type != LSB || tokens[h].type!=RSB)
     return M;
   for(int k=l+1;k<h;k+=1)
@@ -343,7 +344,7 @@ zlist* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
 zdict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
   err = true;
-  zdict* M = vm_allocDict();
+  zdict* M = vm_alloc_zdict();
   if(tokens[l].type != LCB || tokens[h].type!=RCB)
   {
     msg = "SyntaxError";
@@ -497,23 +498,23 @@ zobject init()
 {
   nil.type = Z_NIL;
   //initialize custom errors
-  parseError = makeDerivedklass(Error);
+  parseError = zclass_make_derived(Error);
   parseError->name = "ParseError";
-  tokenizeError = makeDerivedklass(Error);
+  tokenizeError = zclass_make_derived(Error);
   tokenizeError->name = "TokenizeError";
-  vm_markImportant(parseError);
-  vm_markImportant(tokenizeError);
+  vm_mark_important(parseError);
+  vm_mark_important(tokenizeError);
   //
-  zmodule* d = vm_allocModule();
+  zmodule* d = vm_alloc_zmodule();
   d->name = "json";
-  Module_addNativeFun(d,"loads",&loads);
-  Module_addNativeFun(d,"dumps",&dumps);
+  zmodule_add_fun(d,"loads",&loads);
+  zmodule_add_fun(d,"dumps",&dumps);
   return zobj_from_module(d);
 }
 zobject loads(zobject* args,int32_t n)
 {
   if(n!=1 || args[0].type!=Z_STR)
-    return Z_Err(TypeError,"String argument required!");
+    return z_err(TypeError,"String argument required!");
   zstr* src = AS_STR(args[0]);
   bool hadErr;
   string msg;
@@ -521,35 +522,35 @@ zobject loads(zobject* args,int32_t n)
   if(hadErr)
   {
     msg = "Tokenization failed. "+msg; 
-    return Z_Err(tokenizeError,msg.c_str());
+    return z_err(tokenizeError,msg.c_str());
   }
   if(tokens.size() == 0)
-    return Z_Err(parseError,"Empty string!");
+    return z_err(parseError,"Empty string!");
   zdict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
   if(hadErr)
   {
      msg = "Parsing failed. "+msg;
-     return Z_Err(parseError,msg.c_str());
+     return z_err(parseError,msg.c_str());
   }
   return zobj_from_dict(m);
 }
 zobject dumps(zobject* args,int32_t n)
 {
   if(n!=1)
-    return Z_Err(ArgumentError,"1 argument needed!");
+    return z_err(ArgumentError,"1 argument needed!");
   if(args[0].type != Z_DICT)
-    return Z_Err(TypeError,"Argument must be a dictionary!");
+    return z_err(TypeError,"Argument must be a dictionary!");
   dumperrmsg = "";
   dumperror = false;
   string res;
   std::unordered_map<void*,bool> seen;
   PObjToStr(args[0],res,seen);
   if(dumperror)
-    return Z_Err(Error,dumperrmsg.c_str());
+    return z_err(Error,dumperrmsg.c_str());
   return zobj_from_str(res.c_str());
 }
 void unload()
 {
-  vm_unmarkImportant(parseError);
-  vm_unmarkImportant(tokenizeError);
+  vm_unmark_important(parseError);
+  vm_unmark_important(tokenizeError);
 }

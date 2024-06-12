@@ -1,4 +1,5 @@
 #include "base64.h"
+#include "zapi.h"
 #include <string>
 
 zobject nil;
@@ -7,10 +8,10 @@ char base64Table[64];
 zobject init()
 {
     nil.type = Z_NIL;
-    zmodule* m = vm_allocModule();
+    zmodule* m = vm_alloc_zmodule();
     m->name = "base64";
-    Module_addNativeFun(m,"encode",&ENCODE);
-    Module_addSigNativeFun(m,"decode",&DECODE,"s");
+    zmodule_add_fun(m,"encode",&ENCODE);
+    zmodule_add_sig_fun(m,"decode",&DECODE,"s");
     //init base64Table
     size_t k = 0;
     for(char i='A';i<='Z';i++)
@@ -111,7 +112,7 @@ zbytearr* base64_decode(unsigned char* str,size_t len)
 
   char mask = 0x3f; //initial mask
   size_t currBits = 6;
-  zbytearr* res = vm_allocByteArray();
+  zbytearr* res = vm_alloc_zbytearr();
 
   for(size_t k=0;k<len-1;k++)
   {
@@ -142,7 +143,7 @@ zbytearr* base64_decode(unsigned char* str,size_t len)
 zobject ENCODE(zobject* args,int32_t n)
 {
   if(n!=1)
-    return Z_Err(ArgumentError,"1 argument needed!");
+    return z_err(ArgumentError,"1 argument needed!");
   unsigned char* val;
   size_t len;
   if(args[0].type == Z_STR)
@@ -158,7 +159,7 @@ zobject ENCODE(zobject* args,int32_t n)
     len = arr->size;
   }
   else
-    return Z_Err(TypeError,"Argument must be a string or bytearray!");
+    return z_err(TypeError,"Argument must be a string or bytearray!");
   std::string res = base64_encode(val,len);
   return zobj_from_str(res.c_str());
 }
@@ -168,6 +169,6 @@ zobject DECODE(zobject* args,int32_t n)
   zstr* str = AS_STR(args[0]);
   zbytearr* arr = base64_decode((unsigned char*)str->val,str->len);
   if(!arr)
-    return Z_Err(Error,"Invalid base64! Unable to decode!");
+    return z_err(Error,"Invalid base64! Unable to decode!");
   return zobj_from_bytearr(arr);
 }

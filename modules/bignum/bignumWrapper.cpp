@@ -37,14 +37,14 @@ extern "C"
   zobject bignum__construct(zobject* args,int n)
   {
     if(n!=2)
-      return Z_Err(ArgumentError,"2 arguments needed!");
+      return z_err(ArgumentError,"2 arguments needed!");
     if(args[0].type!='o' || args[1].type!='s')
-      return Z_Err(TypeError,"Invalid argument types!");
+      return z_err(TypeError,"Invalid argument types!");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-       return Z_Err(TypeError,"First argument must be an object of class bignum");
+       return z_err(TypeError,"First argument must be an object of class bignum");
     bignum* b = new bignum(AS_STR(args[1]) -> val);
     if(!b)
-      return Z_Err(Error,"Error allocating memory");
+      return z_err(Error,"Error allocating memory");
     zclass_object* k = (zclass_object*)args[0].ptr;
     StrMap_set(&(k->members),".ptr",zobj_from_ptr((void*)b));
     return nil;
@@ -52,25 +52,25 @@ extern "C"
   zobject init()
   {
     nil.type = 'n';
-    zmodule* d  = vm_allocModule();
+    zmodule* d  = vm_alloc_zmodule();
     d->name = "bignum";
-    bignumKlass = vm_allocklass();
+    bignumKlass = vm_alloc_zclass();
     bignumKlass->name = "bignum";
-    klass_addNativeMethod(bignumKlass,"__construct__",&bignum__construct);
+    zclass_add_method(bignumKlass,"__construct__",&bignum__construct);
     zclass_addmember(bignumKlass,".ptr",nil);
-    klass_addNativeMethod(bignumKlass,"__add__",&bignum__add);
-    klass_addNativeMethod(bignumKlass,"__sub__",&bignum__sub);
-    klass_addNativeMethod(bignumKlass,"__div__",&bignum__div);
-    klass_addNativeMethod(bignumKlass,"__mul__",&bignum__mul);
-    klass_addNativeMethod(bignumKlass,"__smallerthan__",&bignum__smallerthan);
-    klass_addNativeMethod(bignumKlass,"__smallerthaneq__",&bignum__smallerthaneq);
-    klass_addNativeMethod(bignumKlass,"__greaterthan__",&bignum__greaterthan);
-    klass_addNativeMethod(bignumKlass,"__greaterthaneq__",&bignum__greaterthaneq);
-    klass_addNativeMethod(bignumKlass,"__eq__",&bignum__eq);
-    klass_addNativeMethod(bignumKlass,"__noteq__",&bignum__noteq);
-    klass_addNativeMethod(bignumKlass,"strval",&bignum__strval);
-    klass_addNativeMethod(bignumKlass,"increment",&bignum__increment);
-    klass_addNativeMethod(bignumKlass,"__del__",&bignum__destroy);
+    zclass_add_method(bignumKlass,"__add__",&bignum__add);
+    zclass_add_method(bignumKlass,"__sub__",&bignum__sub);
+    zclass_add_method(bignumKlass,"__div__",&bignum__div);
+    zclass_add_method(bignumKlass,"__mul__",&bignum__mul);
+    zclass_add_method(bignumKlass,"__smallerthan__",&bignum__smallerthan);
+    zclass_add_method(bignumKlass,"__smallerthaneq__",&bignum__smallerthaneq);
+    zclass_add_method(bignumKlass,"__greaterthan__",&bignum__greaterthan);
+    zclass_add_method(bignumKlass,"__greaterthaneq__",&bignum__greaterthaneq);
+    zclass_add_method(bignumKlass,"__eq__",&bignum__eq);
+    zclass_add_method(bignumKlass,"__noteq__",&bignum__noteq);
+    zclass_add_method(bignumKlass,"strval",&bignum__strval);
+    zclass_add_method(bignumKlass,"increment",&bignum__increment);
+    zclass_add_method(bignumKlass,"__del__",&bignum__destroy);
    
     //add class to module
     zmodule_add_class(d,"bignum",bignumKlass);
@@ -79,17 +79,17 @@ extern "C"
   zobject bignum__add(zobject* args,int n)
   {
     if(n!=2)
-      return Z_Err(ValueError,"2 arguments needed");
+      return z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
     bignum* a = (bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     bignum* b = (bignum*)AS_PTR(zclassobj_get(rhs,".ptr"));
     bignum* c = new bignum((*a)+(*b));
-    zclass_object* ret = vm_allocklassObject(bignumKlass);
+    zclass_object* ret = vm_alloc_zclassobj(bignumKlass);
     zclassobj_set(ret,".ptr",zobj_from_ptr(c));
     //store new object in return result
     return zobj_from_classobj(ret);
@@ -97,18 +97,18 @@ extern "C"
   zobject bignum__sub(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
     
     bignum* a = (bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     bignum* b = (bignum*)AS_PTR(zclassobj_get(rhs,".ptr"));
     bignum* c = new bignum((*a)-(*b));
-    zclass_object* ret = vm_allocklassObject(bignumKlass);
+    zclass_object* ret = vm_alloc_zclassobj(bignumKlass);
     zclassobj_set(ret,".ptr",zobj_from_ptr(c));
     //store new object in return result
     return zobj_from_classobj(ret);
@@ -116,18 +116,18 @@ extern "C"
   zobject bignum__div(zobject* args,int n)
   {
     if(n!=2)
-      return Z_Err(ValueError,"2 arguments needed");
+      return z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return Z_Err(TypeError,"Error bignum object needed"); 
+      return z_err(TypeError,"Error bignum object needed"); 
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return Z_Err(TypeError,"Error bignum object needed"); 
+      return z_err(TypeError,"Error bignum object needed"); 
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
     bignum* a = (bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     bignum* b = (bignum*)AS_PTR(zclassobj_get(rhs,".ptr"));
     bignum* c = new bignum((*a)/(*b));
-    zclass_object* ret = vm_allocklassObject(bignumKlass);
+    zclass_object* ret = vm_alloc_zclassobj(bignumKlass);
     zclassobj_set(ret,".ptr",zobj_from_ptr(c));
     //store new object in return result
     return zobj_from_classobj(ret);
@@ -135,11 +135,11 @@ extern "C"
   zobject bignum__mul(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -147,7 +147,7 @@ extern "C"
     bignum* a = (bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     bignum* b = (bignum*)AS_PTR(zclassobj_get(rhs,".ptr"));
     bignum* c = new bignum((*a)*(*b));
-    zclass_object* ret = vm_allocklassObject(bignumKlass);
+    zclass_object* ret = vm_alloc_zclassobj(bignumKlass);
     zclassobj_set(ret,".ptr",zobj_from_ptr(c));
     //store new object in return result
     return zobj_from_classobj(ret);
@@ -155,11 +155,11 @@ extern "C"
   zobject bignum__eq(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -174,11 +174,11 @@ extern "C"
   zobject bignum__noteq(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -193,11 +193,11 @@ extern "C"
   zobject bignum__smallerthan(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -212,11 +212,11 @@ extern "C"
   zobject bignum__greaterthan(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -232,11 +232,11 @@ extern "C"
   zobject bignum__smallerthaneq(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
     
@@ -250,11 +250,11 @@ extern "C"
   zobject bignum__greaterthaneq(zobject* args,int n)
   {
     if(n!=2)
-      return  Z_Err(ValueError,"2 arguments needed");
+      return  z_err(ValueError,"2 arguments needed");
     if(args[0].type!='o' || args[1].type!='o')
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     if(((zclass_object*)args[0].ptr)->_klass!=bignumKlass ||((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return  Z_Err(TypeError,"Error bignum object needed");
+      return  z_err(TypeError,"Error bignum object needed");
     
     zclass_object* self = (zclass_object*)args[0].ptr;
     zclass_object* rhs = (zclass_object*)args[1].ptr;
@@ -280,9 +280,9 @@ extern "C"
   zobject bignum__strval(zobject* args,int n)
   {
     if(n!=1)
-      return Z_Err(ArgumentError,"1 argument needed");
+      return z_err(ArgumentError,"1 argument needed");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return Z_Err(TypeError,"Error bignum object needed!");
+      return z_err(TypeError,"Error bignum object needed!");
     zclass_object* self = (zclass_object*)args[0].ptr;
     bignum a = *(bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     return zobj_from_str(a.str().c_str());
@@ -290,9 +290,9 @@ extern "C"
   zobject bignum__increment(zobject* args,int32_t n)
   {
      if(n!=1)
-      return Z_Err(ArgumentError,"1 argument needed");
+      return z_err(ArgumentError,"1 argument needed");
     if(args[0].type!=Z_OBJ || ((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
-      return Z_Err(TypeError,"Error bignum object needed!");
+      return z_err(TypeError,"Error bignum object needed!");
     zclass_object* self = (zclass_object*)args[0].ptr;
     zobject ptr;
     StrMap_get(&(self->members),".ptr",&ptr);

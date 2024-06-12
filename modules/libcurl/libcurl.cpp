@@ -5,6 +5,7 @@ The original code of libcurl is not modified in anyway. This is just a wrapper a
 and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
+#include "zapi.h"
 #include "zobject.h"
 #ifdef _WIN32
   #define CURL_STATICLIB
@@ -41,14 +42,14 @@ size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
   //send newly received memory to callback function
-  auto btArr = vm_allocByteArray();
+  auto btArr = vm_alloc_zbytearr();
   zbytearr_resize(btArr,realsize);
   memcpy(btArr->arr, contents, realsize);
   zobject rr;
   zobject p1;
   p1.type = Z_BYTEARR;
   p1.ptr = (void*)btArr;
-  vm_callObject(&wmcallback,&p1,1,&rr);
+  vm_call_object(&wmcallback,&p1,1,&rr);
   return realsize;
 }
 //xfer function
@@ -65,7 +66,7 @@ int xferfun(void* clientp,curl_off_t dltotal,curl_off_t dlnow,curl_off_t ultotal
   args[2] = r;
   r.l = ulnow;
   args[3] = r;
-  vm_callObject(&xfercallback,args,4,&r);
+  vm_call_object(&xfercallback,args,4,&r);
   if(r.type == Z_INT)
     return r.i;
   return 0;
@@ -89,41 +90,41 @@ zclass* mimepartklass;
 zobject callback;//write function callback
 zobject quickErr(zclass* k,string s)
 {
-  return Z_Err(k,s.c_str());
+  return z_err(k,s.c_str());
 }
 zobject init()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     nil.type = Z_NIL;
-    zmodule* d = vm_allocModule();
+    zmodule* d = vm_alloc_zmodule();
     //
-    curlklass = vm_allocklass();
+    curlklass = vm_alloc_zclass();
     curlklass->name = "Curl";
 
-    klass_addNativeMethod(curlklass,"__construct__",&curlklass__construct__);
-    klass_addNativeMethod(curlklass,"perform",&perform);
-    klass_addNativeMethod(curlklass,"setopt",&setopt);
-    klass_addNativeMethod(curlklass,"getinfo",&getinfo);
-    klass_addNativeMethod(curlklass,"__del__",&curlklass__del__);
-    klass_addNativeMethod(curlklass,"escape",&ESCAPE);
-    klass_addNativeMethod(curlklass,"unescape",&UNESCAPE);
+    zclass_add_method(curlklass,"__construct__",&curlklass__construct__);
+    zclass_add_method(curlklass,"perform",&perform);
+    zclass_add_method(curlklass,"setopt",&setopt);
+    zclass_add_method(curlklass,"getinfo",&getinfo);
+    zclass_add_method(curlklass,"__del__",&curlklass__del__);
+    zclass_add_method(curlklass,"escape",&ESCAPE);
+    zclass_add_method(curlklass,"unescape",&UNESCAPE);
     
     //
-    mimepartklass = vm_allocklass();
+    mimepartklass = vm_alloc_zclass();
     mimepartklass->name = "mimepart";
     //
-    mimeklass = vm_allocklass();
+    mimeklass = vm_alloc_zclass();
     mimeklass->name = "mime";
     //add methods to object
-    klass_addNativeMethod(mimeklass,"__construct__",&mime__construct__);
-    klass_addNativeMethod(mimeklass,"addpart",&addpart);
-    klass_addNativeMethod(mimeklass,"__del__",&MIME__del__);
+    zclass_add_method(mimeklass,"__construct__",&mime__construct__);
+    zclass_add_method(mimeklass,"addpart",&addpart);
+    zclass_add_method(mimeklass,"__del__",&MIME__del__);
     
     
     
     zmodule_add_class(d,"Curl",curlklass);
     zmodule_add_class(d,"mime",mimeklass);
-    Module_addNativeFun(d,"strerror",&STRERROR);
+    zmodule_add_fun(d,"strerror",&STRERROR);
     zmodule_add_member(d,("OPT_URL"),zobj_from_int64(CURLOPT_URL));
     zmodule_add_member(d,("OPT_PORT"),zobj_from_int64(CURLOPT_PORT));
     zmodule_add_member(d,("OPT_POSTFIELDS"),zobj_from_int64(CURLOPT_POSTFIELDS));
@@ -143,9 +144,9 @@ zobject init()
     zmodule_add_member(d,("VERSION_MAJOR"),zobj_from_int(LIBCURL_VERSION_MAJOR));
     zmodule_add_member(d,("VERSION_MINOR"),zobj_from_int(LIBCURL_VERSION_MINOR));
     
-    vm_markImportant(curlklass);
-    vm_markImportant(mimeklass);
-    vm_markImportant(mimepartklass);
+    vm_mark_important(curlklass);
+    vm_mark_important(mimeklass);
+    vm_mark_important(mimepartklass);
     return zobj_from_module(d);
 }
 zobject curlklass__del__(zobject* args,int n)//
@@ -170,12 +171,12 @@ zobject STRERROR(zobject* args,int n)
 {
   if(n!=1)
   {
-    return Z_Err(ArgumentError,"1 argument needed!");
+    return z_err(ArgumentError,"1 argument needed!");
     
   }
   if(args[0].type!='l')
   {
-    return Z_Err(TypeError,"Integer argument needed!");
+    return z_err(TypeError,"Integer argument needed!");
     
   }
   const char* s = curl_easy_strerror((CURLcode)args[0].l);
@@ -184,13 +185,13 @@ zobject STRERROR(zobject* args,int n)
 zobject curlklass__construct__(zobject* args,int n)
 {
   if(n!=1)
-    return Z_Err(ArgumentError,"1 arguments needed!");
+    return z_err(ArgumentError,"1 arguments needed!");
     
   zclass_object* curobj = (zclass_object*)args[0].ptr;
   CURL* curl = curl_easy_init();
   if(!curl)
   {
-    return Z_Err(Error,"failed");
+    return z_err(Error,"failed");
     
   }
   //Return an object
@@ -205,7 +206,7 @@ zobject curlklass__construct__(zobject* args,int n)
 zobject MIME__del__(zobject* args,int n)
 {
     if(n!=1)
-        return Z_Err(ArgumentError,"1 argument needed!");
+        return z_err(ArgumentError,"1 argument needed!");
     zclass_object* k = (zclass_object*)args[0].ptr;
     curl_mime* obj = (curl_mime*)AS_PTR(zclassobj_get(k,".handle"));
     curl_mime_free(obj);
@@ -215,12 +216,12 @@ zobject mime__construct__(zobject* args,int n)
 {
   if(n!=2)
   {
-    return Z_Err(ArgumentError,"2 arguments needed!");
+    return z_err(ArgumentError,"2 arguments needed!");
     
   }
   if(args[1].type!='o' || ((zclass_object*)args[1].ptr)->_klass!=curlklass)
   {
-    return Z_Err(TypeError,"Curl Object needed!");
+    return z_err(TypeError,"Curl Object needed!");
     
   }
   zclass_object* d = (zclass_object*)args[0].ptr;
@@ -236,11 +237,11 @@ zobject mime__construct__(zobject* args,int n)
 zobject MIME_NAME(zobject* args,int n)
 {
     if(n!=2)
-        return Z_Err(ArgumentError,"2 argument needed!");
+        return z_err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Z_Err(TypeError,"Argument 2 must be string!");
+        return z_err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepartklass)
-      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
+      return z_err(TypeError,"Argument 1 must be a MimePart object");
   zclass_object* d = (zclass_object*)args[0].ptr;
   MimePart* obj = (MimePart*)AS_PTR(zclassobj_get(d,".handle"));
   zstr* name = AS_STR(args[1]);
@@ -250,11 +251,11 @@ zobject MIME_NAME(zobject* args,int n)
 zobject MIME_FILENAME(zobject* args,int n)
 {
     if(n!=2)
-        return Z_Err(ArgumentError,"2 argument needed!");
+        return z_err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Z_Err(TypeError,"Argument 2 must be string!");
+        return z_err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepartklass)
-      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
+      return z_err(TypeError,"Argument 1 must be a MimePart object");
   zclass_object* d = (zclass_object*)args[0].ptr;
   MimePart* obj = (MimePart*)AS_PTR(zclassobj_get(d,".handle"));
   zstr* name = AS_STR(args[1]);
@@ -264,11 +265,11 @@ zobject MIME_FILENAME(zobject* args,int n)
 zobject MIME_CONTENTTYPE(zobject* args,int n)
 {
     if(n!=2)
-        return Z_Err(ArgumentError,"2 argument needed!");
+        return z_err(ArgumentError,"2 argument needed!");
     if(args[1].type!='s')
-        return Z_Err(TypeError,"Argument 2 must be string!");
+        return z_err(TypeError,"Argument 2 must be string!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepartklass)
-      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
+      return z_err(TypeError,"Argument 1 must be a MimePart object");
   zclass_object* d = (zclass_object*)args[0].ptr;
   MimePart* obj = (MimePart*)AS_PTR(zclassobj_get(d,".handle"));
   zstr* name = AS_STR(args[1]);
@@ -278,11 +279,11 @@ zobject MIME_CONTENTTYPE(zobject* args,int n)
 zobject MIME_DATA(zobject* args,int n)
 {
     if(n!=2)
-        return Z_Err(ArgumentError,"1 argument needed!");
+        return z_err(ArgumentError,"1 argument needed!");
     if(args[1].type!='c')
-      return Z_Err(TypeError,"Argument 2 must be a Byte array!");
+      return z_err(TypeError,"Argument 2 must be a Byte array!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepartklass)
-      return Z_Err(TypeError,"Argument 1 must be a MimePart object");
+      return z_err(TypeError,"Argument 1 must be a MimePart object");
     zclass_object* d = (zclass_object*)args[0].ptr;
     MimePart* obj = (MimePart*)AS_PTR(zclassobj_get(d,".handle"));
     auto l = AS_BYTEARRAY(args[1]);
@@ -293,16 +294,16 @@ zobject MIME_DATA(zobject* args,int n)
 zobject addpart(zobject* args,int n)
 {
     if(n!=1)
-        return Z_Err(ArgumentError,"1 arguments needed!");
+        return z_err(ArgumentError,"1 arguments needed!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimeklass)
-      return Z_Err(TypeError,"Argument 1 must be a Mime object");
+      return z_err(TypeError,"Argument 1 must be a Mime object");
     zclass_object* d = (zclass_object*)args[0].ptr;
     curl_mime* obj = (curl_mime*)AS_PTR(zclassobj_get(d,".handle"));
     curl_mimepart* mimepart = curl_mime_addpart(obj);
     MimePart* mp = new MimePart;
     mp->mimepart = mimepart;
     //add methods to object
-    zclass_object* part = vm_allocklassObject(mimepartklass);
+    zclass_object* part = vm_alloc_zclassobj(mimepartklass);
     zclassobj_set(part,"data",zobj_from_method("mimepart.data",&MIME_DATA,mimepartklass));
     zclassobj_set(part,("name"),zobj_from_method("mimepart.name",&MIME_NAME,mimepartklass));
     zclassobj_set(part,("filename"),zobj_from_method("mimepart.filename",&MIME_FILENAME,mimepartklass));
@@ -315,7 +316,7 @@ zobject addpart(zobject* args,int n)
 zobject MIMEPART__del__(zobject* args,int n)
 {
     if(n!=1)
-        return Z_Err(ArgumentError,"1 argument needed!");
+        return z_err(ArgumentError,"1 argument needed!");
     zclass_object* k = (zclass_object*)args[0].ptr;
     MimePart* obj = (MimePart*)zclassobj_get(k,".handle").ptr;
     delete obj;
@@ -325,17 +326,17 @@ zobject setopt(zobject* args,int n)
 {
     if(n!=3)
     {
-        return Z_Err(ArgumentError,"3 arguments needed!");
+        return z_err(ArgumentError,"3 arguments needed!");
         
     }
     if(args[1].type!=Z_INT64)
     {
-        return Z_Err(TypeError,"Argument 2 must an Integer!");
+        return z_err(TypeError,"Argument 2 must an Integer!");
         
     }
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=curlklass)
     {
-      return Z_Err(TypeError,"Argument 1 must be a Curl object");
+      return z_err(TypeError,"Argument 1 must be a Curl object");
       
     }
     long long int opt = args[1].l;
@@ -343,7 +344,7 @@ zobject setopt(zobject* args,int n)
     {
       if(args[2].type!=Z_STR)
       {
-        return Z_Err(TypeError,"URL option requires a string value");
+        return z_err(TypeError,"URL option requires a string value");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -351,14 +352,14 @@ zobject setopt(zobject* args,int n)
       obj->url = AS_STR(args[2])->val;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->url.c_str());
       if( res!= CURLE_OK)
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
       
     }
     else if(opt==CURLOPT_FOLLOWLOCATION)
     {
       if(args[2].type!=Z_INT)
       {
-        return Z_Err(TypeError,"FOLLOWLOCATION option requires an integer value");
+        return z_err(TypeError,"FOLLOWLOCATION option requires an integer value");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -366,7 +367,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
     }
@@ -374,7 +375,7 @@ zobject setopt(zobject* args,int n)
     {
       if(args[2].type!=Z_INT)
       {
-        return Z_Err(TypeError,"VERBOSE option requires an integer value");
+        return z_err(TypeError,"VERBOSE option requires an integer value");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -382,7 +383,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
     }
@@ -390,7 +391,7 @@ zobject setopt(zobject* args,int n)
     {
       if(args[2].type!=Z_INT)
       {
-        return Z_Err(TypeError,"PORT option requires an integer value");
+        return z_err(TypeError,"PORT option requires an integer value");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -398,7 +399,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,args[2].i);
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
     }
@@ -406,7 +407,7 @@ zobject setopt(zobject* args,int n)
     {
       if(args[2].type!=Z_OBJ)
       {
-        return Z_Err(TypeError,"MIMEPOST option requires a MimeObject");
+        return z_err(TypeError,"MIMEPOST option requires a MimeObject");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -416,7 +417,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,m);
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
     }
@@ -431,15 +432,15 @@ zobject setopt(zobject* args,int n)
         CurlObject* obj = (CurlObject*)zclassobj_get(d,".handle").ptr;
         CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,&WMCallbackHandler);
         if( res!= CURLE_OK)
-          return Z_Err(Error,curl_easy_strerror(res));
+          return z_err(Error,curl_easy_strerror(res));
         return nil;
       }
       if(args[2].type!=Z_INT )
-        return Z_Err(TypeError,"WRITEFUNCTION option requires an integer value");
+        return z_err(TypeError,"WRITEFUNCTION option requires an integer value");
       if(args[2].i!=0)
         return quickErr(TypeError,"Invalid option value "+to_string(args[2].i));
       zclass_object* d = (zclass_object*)args[0].ptr;
-      auto btArr = vm_allocByteArray();
+      auto btArr = vm_alloc_zbytearr();
       zobject p1;
       p1.type = 'c';
       p1.ptr = (void*)btArr;
@@ -448,7 +449,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,&WriteMemoryCallback);
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
       curl_easy_setopt(obj->handle,CURLOPT_WRITEDATA,btArr);
@@ -457,7 +458,7 @@ zobject setopt(zobject* args,int n)
     {
       if(args[2].type!=Z_STR)
       {
-        return Z_Err(TypeError,"USERAGENT option requires a string value");
+        return z_err(TypeError,"USERAGENT option requires a string value");
          
       }
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -466,7 +467,7 @@ zobject setopt(zobject* args,int n)
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,obj->useragent.c_str());
       if( res!= CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
     }
@@ -476,27 +477,27 @@ zobject setopt(zobject* args,int n)
       CurlObject* obj = (CurlObject*)zclassobj_get(d,".handle").ptr;
       CURLcode res = curl_easy_setopt(obj->handle,CURLOPT_NOPROGRESS,args[2].i);
       if(res != CURLE_OK)
-	      return Z_Err(Error,curl_easy_strerror(res));
+	      return z_err(Error,curl_easy_strerror(res));
     }
     else if(opt == CURLOPT_XFERINFOFUNCTION)
     {
       if(args[2].type!=Z_FUNC)
-        return Z_Err(TypeError,"XFERINFOFUNCTION option must be a callback function!");
+        return z_err(TypeError,"XFERINFOFUNCTION option must be a callback function!");
       zclass_object* d = (zclass_object*)args[0].ptr;
       zclassobj_set(d,".xfercallback",args[2]);
       xfercallback = args[2];
       CurlObject* obj = (CurlObject*)zclassobj_get(d,".handle").ptr;
       CURLcode res = curl_easy_setopt(obj->handle,CURLOPT_XFERINFOFUNCTION,xferfun);
       if(res != CURLE_OK)
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
     }
     else if(opt==CURLOPT_POSTFIELDS)
     {
       if(args[2].type!=Z_BYTEARR)
-        return Z_Err(TypeError,"POSTFIELDS option requires a byte array!");
+        return z_err(TypeError,"POSTFIELDS option requires a byte array!");
       vector<uint8_t>& l = *(vector<uint8_t>*)args[2].ptr;
       if(l.size()==0)
-        return Z_Err(ValueError,"Empty bytearray");
+        return z_err(ValueError,"Empty bytearray");
       char* postfields = new char[l.size()];
       memcpy(postfields,&l[0],l.size());
       zclass_object* d = (zclass_object*)args[0].ptr;
@@ -504,13 +505,13 @@ zobject setopt(zobject* args,int n)
       obj->postfields = postfields;
       CURLcode res = curl_easy_setopt(obj->handle,(CURLoption)opt,postfields);
       if( res!= CURLE_OK)
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
       res = curl_easy_setopt(obj->handle,CURLOPT_POSTFIELDSIZE,l.size());
       
     }
     else
     {
-      return Z_Err(ValueError,"Unknown option used");
+      return z_err(ValueError,"Unknown option used");
       
     }
     return nil;
@@ -519,7 +520,7 @@ zobject perform(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed!");
+        return z_err(ArgumentError,"1 argument needed!");
         
     }
     zclass_object* d = (zclass_object*)args[0].ptr;
@@ -532,17 +533,17 @@ zobject getinfo(zobject* args,int n)
 {
     if(n!=2)
     {
-        return Z_Err(ArgumentError,"2 arguments needed!");
+        return z_err(ArgumentError,"2 arguments needed!");
         
     }
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=curlklass)
     {
-      return Z_Err(TypeError,"Argument 1 must be a Curl object");
+      return z_err(TypeError,"Argument 1 must be a Curl object");
       
     }
     if(args[1].type!='l')
     {
-      return Z_Err(TypeError,"Argument 2 must an Integer!");
+      return z_err(TypeError,"Argument 2 must an Integer!");
       
     }
     zclass_object* d = (zclass_object*)args[0].ptr;
@@ -565,7 +566,7 @@ zobject getinfo(zobject* args,int n)
       CURLcode res = curl_easy_getinfo(handle,(CURLINFO)args[1].l,&out);
       if(res!=CURLE_OK)
       {
-        return Z_Err(Error,curl_easy_strerror(res));
+        return z_err(Error,curl_easy_strerror(res));
         
       }
       return zobj_from_int64((long long int)out);
@@ -577,12 +578,12 @@ zobject cleanup(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 arguments needed!");
+        return z_err(ArgumentError,"1 arguments needed!");
         
     }
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=curlklass)
     {
-      return Z_Err(TypeError,"Argument 1 must be a Curl object");
+      return z_err(TypeError,"Argument 1 must be a Curl object");
       
     }
     zclass_object* d = (zclass_object*)args[0].ptr;
@@ -597,17 +598,17 @@ zobject ESCAPE(zobject* args,int n)
 {
   if(n!=2)
   {
-    return Z_Err(ArgumentError,"2 Arguments required.");
+    return z_err(ArgumentError,"2 Arguments required.");
     
   }
   if(args[0].type != Z_OBJ || ((zclass_object*)args[0].ptr) -> _klass !=curlklass)
   {
-    return Z_Err(TypeError,"Argument 1 must be a Curl Object");
+    return z_err(TypeError,"Argument 1 must be a Curl Object");
     
   }
   if(args[1].type!=Z_STR)
   {
-    return Z_Err(TypeError,"Argument 1 must be a string");
+    return z_err(TypeError,"Argument 1 must be a string");
     
   }
   zclass_object* ki = (zclass_object*)args[0].ptr;
@@ -622,17 +623,17 @@ zobject UNESCAPE(zobject* args,int n)
 {
   if(n!=2)
   {
-    return Z_Err(ArgumentError,"2 Arguments required.");
+    return z_err(ArgumentError,"2 Arguments required.");
     
   }
   if(args[0].type != Z_OBJ || ((zclass_object*)args[0].ptr) -> _klass !=curlklass)
   {
-    return Z_Err(TypeError,"Argument 1 must be a Curl Object");
+    return z_err(TypeError,"Argument 1 must be a Curl Object");
     
   }
   if(args[1].type!=Z_STR)
   {
-    return Z_Err(TypeError,"Argument 1 must be a string");
+    return z_err(TypeError,"Argument 1 must be a string");
     
   }
   zclass_object* ki = (zclass_object*)args[0].ptr;
@@ -647,7 +648,7 @@ zobject UNESCAPE(zobject* args,int n)
 extern "C" void unload()
 {
   curl_global_cleanup();
-  vm_unmarkImportant(curlklass);
-  vm_unmarkImportant(mimeklass);
-  vm_unmarkImportant(mimepartklass);
+  vm_unmark_important(curlklass);
+  vm_unmark_important(mimeklass);
+  vm_unmark_important(mimepartklass);
 }

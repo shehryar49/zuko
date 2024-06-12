@@ -67,19 +67,19 @@ extern zclass* AccessError;
 
 /**************/
 //Allocator function pointers (defined in zapi.c)
-extern fn1 vm_allocList;
-extern fn2 vm_allocDict;
-extern fn3 vm_allocString;
-extern fn4 vm_allocMutString;
-extern fn5 vm_allocFileObject;
-extern fn6 vm_allocklass;
-extern fn7 vm_allocklassObject;
-extern fn8 vm_allocNativeFunObj;
-extern fn9 vm_allocModule;
-extern fn10 vm_allocByteArray;
-extern fn11 vm_callObject;
-extern fn12 vm_markImportant;
-extern fn13 vm_unmarkImportant;
+extern fn1 vm_alloc_zlist;
+extern fn2 vm_alloc_zdict;
+extern fn3 vm_alloc_zstr;
+extern fn4 vm_allocMutString;//unused
+extern fn5 vm_alloc_zfile;
+extern fn6 vm_alloc_zclass;
+extern fn7 vm_alloc_zclassobj;
+extern fn8 vm_alloc_znativefun;
+extern fn9 vm_alloc_zmodule;
+extern fn10 vm_alloc_zbytearr;
+extern fn11 vm_call_object;
+extern fn12 vm_mark_important;
+extern fn13 vm_unmark_important;
   
 
 #ifdef _WIN32
@@ -89,15 +89,15 @@ int api_setup(apiFuncions* p,int ver);
 
 //Some more helper functions for module developers
 
-zclass* makeDerivedklass(zclass* base);
+zclass* zclass_make_derived(zclass* base);
 zobject zobj_from_str(const char*);// makes deep copy of str
-zobject Z_Err(zclass*,const char*);
+zobject z_err(zclass*,const char*);
 zobject zobj_from_method(const char*,NativeFunPtr,zclass*);
 zobject zobj_from_function(const char*,NativeFunPtr);
-void Module_addNativeFun(zmodule* m,const char* name,NativeFunPtr p);
-void Module_addSigNativeFun(zmodule* m,const char* name,NativeFunPtr p,const char* sig);
-void klass_addNativeMethod(zclass* k,const char* name,NativeFunPtr p);
-void klass_addSigNativeMethod(zclass* k,const char* name,NativeFunPtr p,const char* sig);
+void zmodule_add_fun(zmodule* m,const char* name,NativeFunPtr p);
+void zmodule_add_sig_fun(zmodule* m,const char* name,NativeFunPtr p,const char* sig);
+void zclass_add_method(zclass* k,const char* name,NativeFunPtr p);
+void zclass_add_sig_method(zclass* k,const char* name,NativeFunPtr p,const char* sig);
 
 #ifdef __cplusplus
 }

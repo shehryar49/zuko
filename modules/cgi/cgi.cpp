@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "cgi.h"
 #include "klassobject.h"
+#include "zapi.h"
 #include "zobject.h"
 #ifdef _WIN32
   #include<io.h>
@@ -110,7 +111,7 @@ zdict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadErr
   string read;
   string aux ;
   b = "\r\n"+(string)"--"+boundary;
-  zdict* d = vm_allocDict();
+  zdict* d = vm_alloc_zdict();
   while(k<len)
   {
     headername = "";
@@ -224,14 +225,14 @@ zdict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadErr
       else
       {
         //file content uploaded
-        zclass_object* ki = vm_allocklassObject(CgiFile);
+        zclass_object* ki = vm_alloc_zclassobj(CgiFile);
         zclassobj_set(ki,"filename",zobj_from_str(filename.c_str()));
         if(headers.find("content-type")!=headers.end())
         {
           aux = headers["content-type"];
           zclassobj_set(ki,"type",zobj_from_str(aux.c_str()));
         }
-        auto btArr = vm_allocByteArray();
+        auto btArr = vm_alloc_zbytearr();
         zbytearr_resize(btArr,content.length());
         memcpy(btArr->arr,&content[0],content.length());
         zobject rr;
@@ -253,7 +254,7 @@ zdict* GET()
        if(!q)
          return nullptr;
        string query = q;
-       zdict* m = vm_allocDict();
+       zdict* m = vm_alloc_zdict();
        if(query == "")
          return m;
        vector<string> pairs = split(q,"&");
@@ -308,7 +309,7 @@ zdict* POST(bool& err)
        if(type=="application/x-www-form-urlencoded")
        {
          string data = s;
-         zdict* m = vm_allocDict();
+         zdict* m = vm_alloc_zdict();
          if(data.length() == 0)
          {
            err = false;
@@ -357,16 +358,16 @@ zdict* POST(bool& err)
 zobject FormData(zobject* args,int n)
 {
     if(n!=0)
-        return Z_Err(ArgumentError,"0 arguments needed!");
+        return z_err(ArgumentError,"0 arguments needed!");
     char* method = getenv("REQUEST_METHOD");
     if(!method)
-        return Z_Err(Error,"Environment variable REQUEST_METHOD not found!");
+        return z_err(Error,"Environment variable REQUEST_METHOD not found!");
     if(string(method)=="GET")
     {
-       zdict* d = vm_allocDict();
+       zdict* d = vm_alloc_zdict();
        d = GET();
        if(!d)
-          return Z_Err(Error,"Error parsing request(bad or unsupported format)");
+          return z_err(Error,"Error parsing request(bad or unsupported format)");
        return zobj_from_dict(d);
        
     }
@@ -375,13 +376,13 @@ zobject FormData(zobject* args,int n)
        bool hadErr=false;
        zdict* d = POST(hadErr);
        if(!d || hadErr)
-          return Z_Err(Error,"Error parsing request(bad or unsupported format)");
+          return z_err(Error,"Error parsing request(bad or unsupported format)");
        return zobj_from_dict(d);
     }
     else
     {
       string errmsg = (string)"Unknown method " + method;
-      return Z_Err(ValueError,errmsg.c_str());
+      return z_err(ValueError,errmsg.c_str());
     }
 }
 zobject nil;
@@ -392,8 +393,8 @@ zobject init()
     //reading from stdin
     #endif
     nil.type = 'n';
-    zmodule* d = vm_allocModule();
-    CgiFile = vm_allocklass();
+    zmodule* d = vm_alloc_zmodule();
+    CgiFile = vm_alloc_zclass();
     zclass_addmember(CgiFile,"filename",nil);
     zclass_addmember(CgiFile,"content",nil);
     zclass_addmember(CgiFile,"contentType",nil);
@@ -411,18 +412,18 @@ zobject init()
 zobject cookies(zobject* args,int n)
 {
   if(n!=0)
-    return Z_Err(ArgumentError,"0 arguments needed!");
+    return z_err(ArgumentError,"0 arguments needed!");
   char* cookie = getenv("HTTP_COOKIE");
   if(!cookie)
-    return Z_Err(ValueError,"No cookies!");
+    return z_err(ValueError,"No cookies!");
   string data = cookie;
   vector<string> parts = split(data,"; ");
-  zdict* dict = vm_allocDict();
+  zdict* dict = vm_alloc_zdict();
   for(auto e: parts)
   {
     vector<string> eq = split(e,"=");
     if(eq.size()!=2)
-      return Z_Err(ValueError,"Bad or unsupported format");
+      return z_err(ValueError,"Bad or unsupported format");
     zdict_emplace(dict,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
   }
   return zobj_from_dict(dict);

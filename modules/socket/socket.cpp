@@ -1,4 +1,5 @@
 #include "socket.h"
+#include "zapi.h"
 #include "zobject.h"
 #include <string.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ zobject nil;
 
 inline zobject quickErr(zclass* k,string msg) // uses std::string instead of cstring
 {
-  return Z_Err(k,msg.c_str());
+  return z_err(k,msg.c_str());
 }
 EXPORT zobject init()
 {
@@ -53,24 +54,24 @@ EXPORT zobject init()
           return quickErr(Error, errMsg);
       }
     #endif
-    zmodule* d = vm_allocModule();
-    socketKlass = vm_allocklass();
+    zmodule* d = vm_alloc_zmodule();
+    socketKlass = vm_alloc_zclass();
     socketKlass->name = "socket";
     
-    klass_addNativeMethod(socketKlass,"__construct__",&socket__construct);
-    klass_addNativeMethod(socketKlass,"bind",&socket_Bind);
-    klass_addNativeMethod(socketKlass,"connect",  &socket_Connect);
-    klass_addNativeMethod(socketKlass,"send",  &socket_Send);
-    klass_addNativeMethod(socketKlass,"recv",  & socket_Recv);
-    klass_addNativeMethod(socketKlass,"listen",  & socket_Listen);
-    klass_addNativeMethod(socketKlass,"accept",  &socket_Accept);
-    klass_addNativeMethod(socketKlass,"sendto",  &socket_SendTo);
-    klass_addNativeMethod(socketKlass,"recvfrom", &socket_RecvFrom);
-    klass_addNativeMethod(socketKlass,"close",  & socket_Close);
-    klass_addNativeMethod(socketKlass,"__del__", &socket_del__);
+    zclass_add_method(socketKlass,"__construct__",&socket__construct);
+    zclass_add_method(socketKlass,"bind",&socket_Bind);
+    zclass_add_method(socketKlass,"connect",  &socket_Connect);
+    zclass_add_method(socketKlass,"send",  &socket_Send);
+    zclass_add_method(socketKlass,"recv",  & socket_Recv);
+    zclass_add_method(socketKlass,"listen",  & socket_Listen);
+    zclass_add_method(socketKlass,"accept",  &socket_Accept);
+    zclass_add_method(socketKlass,"sendto",  &socket_SendTo);
+    zclass_add_method(socketKlass,"recvfrom", &socket_RecvFrom);
+    zclass_add_method(socketKlass,"close",  & socket_Close);
+    zclass_add_method(socketKlass,"__del__", &socket_del__);
     zclass_addmember(socketKlass,".internalPTR",nil );
     
-    udpResKlass = vm_allocklass();
+    udpResKlass = vm_alloc_zclass();
     zclass_addmember(udpResKlass,("addr"), nil);
     zclass_addmember(udpResKlass,("data"), nil);
 
@@ -209,7 +210,7 @@ EXPORT zobject socket_Accept( zobject* args, int n)
         return quickErr(Error,strerror(errno));
     #endif
     
-    zclass_object* d = vm_allocklassObject(socketKlass);
+    zclass_object* d = vm_alloc_zclassobj(socketKlass);
     zclassobj_set(d,".sock",zobj_from_int(new_socket));
     return zobj_from_classobj(d);
     
@@ -296,7 +297,7 @@ EXPORT zobject socket_Recv( zobject* args, int n)
       return quickErr(Error,strerror(errno));
     #endif
 
-    auto l = vm_allocByteArray();
+    auto l = vm_alloc_zbytearr();
     for (int i = 0; i < read; i++)
     {
         zbytearr_push(l,msg[i]);
@@ -338,7 +339,7 @@ EXPORT zobject socket_RecvFrom( zobject* args, int n)
         return quickErr(Error,strerror(errno));
     #endif
 
-    auto l = vm_allocByteArray();
+    auto l = vm_alloc_zbytearr();
     for (int i = 0; i < read; i++)
     {
         zbytearr_push(l,msg[i]);
@@ -348,7 +349,7 @@ EXPORT zobject socket_RecvFrom( zobject* args, int n)
     data.ptr = (void*)l;
     char* ip = inet_ntoa(cliaddr.sin_addr);
 
-    zclass_object* d = vm_allocklassObject(udpResKlass);
+    zclass_object* d = vm_alloc_zclassobj(udpResKlass);
    
     zclassobj_set(d,"addr", zobj_from_str(ip));
     zclassobj_set(d,"data", data);

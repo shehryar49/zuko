@@ -8,30 +8,30 @@ zobject init()
 {
 
     nil.type = Z_NIL;
-    zmodule* moduleObject = vm_allocModule();//allocate a module object
+    zmodule* moduleObject = vm_alloc_zmodule();//allocate a module object
 
     moduleObject->name = "math";//module name is math
     //Add functions to the module
-    Module_addNativeFun(moduleObject,"floor",&FLOOR);
-    Module_addNativeFun(moduleObject,"ceil",&CEIL);
-    Module_addNativeFun(moduleObject,"round",&ROUND);
-    Module_addNativeFun(moduleObject,"sin",&SIN);
-    Module_addNativeFun(moduleObject,"cos",&COS);
-    Module_addNativeFun(moduleObject,"tan",&TAN);
-    Module_addNativeFun(moduleObject,"asin",&ASIN);
-    Module_addNativeFun(moduleObject,"acos",&ACOS);
-    Module_addNativeFun(moduleObject,"atan",&ATAN);
-    Module_addNativeFun(moduleObject,"sinh",&SINH);
-    Module_addNativeFun(moduleObject,"cosh",&COSH);
-    Module_addNativeFun(moduleObject,"tanh",&TANH);
-    Module_addNativeFun(moduleObject,"asinh",&ASINH);
-    Module_addNativeFun(moduleObject,"acosh",&ACOSH);
-    Module_addNativeFun(moduleObject,"atanh",&ATANH);
-    Module_addNativeFun(moduleObject,"sqrt",&SQRT);
-    Module_addNativeFun(moduleObject,"trunc",&TRUNC);
-    Module_addNativeFun(moduleObject,"radians",&RADIANS);
-    Module_addNativeFun(moduleObject,"log",&LOG);
-    Module_addNativeFun(moduleObject,"log10",&LOG10);
+    zmodule_add_fun(moduleObject,"floor",&FLOOR);
+    zmodule_add_fun(moduleObject,"ceil",&CEIL);
+    zmodule_add_fun(moduleObject,"round",&ROUND);
+    zmodule_add_fun(moduleObject,"sin",&SIN);
+    zmodule_add_fun(moduleObject,"cos",&COS);
+    zmodule_add_fun(moduleObject,"tan",&TAN);
+    zmodule_add_fun(moduleObject,"asin",&ASIN);
+    zmodule_add_fun(moduleObject,"acos",&ACOS);
+    zmodule_add_fun(moduleObject,"atan",&ATAN);
+    zmodule_add_fun(moduleObject,"sinh",&SINH);
+    zmodule_add_fun(moduleObject,"cosh",&COSH);
+    zmodule_add_fun(moduleObject,"tanh",&TANH);
+    zmodule_add_fun(moduleObject,"asinh",&ASINH);
+    zmodule_add_fun(moduleObject,"acosh",&ACOSH);
+    zmodule_add_fun(moduleObject,"atanh",&ATANH);
+    zmodule_add_fun(moduleObject,"sqrt",&SQRT);
+    zmodule_add_fun(moduleObject,"trunc",&TRUNC);
+    zmodule_add_fun(moduleObject,"radians",&RADIANS);
+    zmodule_add_fun(moduleObject,"log",&LOG);
+    zmodule_add_fun(moduleObject,"log10",&LOG10);
     return zobj_from_module(moduleObject);
 }
 
@@ -39,11 +39,11 @@ zobject FLOOR(zobject* args,int n)
 {
     //rr stands for return result
     if(n!=1)
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
     if(args[0].type=='i' || args[0].type=='l')
         return args[0];
     if(args[0].type!=Z_FLOAT)
-        return Z_Err(TypeError,"Numeric argument needed!");    
+        return z_err(TypeError,"Numeric argument needed!");    
     double res = (floor(args[0].f));
     if(res>=LLONG_MIN && res<=LLONG_MAX)
       return zobj_from_int64((long long int)res);
@@ -54,7 +54,7 @@ zobject CEIL(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -64,7 +64,7 @@ zobject CEIL(zobject* args,int n)
     }
     if(args[0].type!=Z_FLOAT)
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
     double res = (ceil(args[0].f));
@@ -77,7 +77,7 @@ zobject TRUNC(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -87,7 +87,7 @@ zobject TRUNC(zobject* args,int n)
     }
     if(args[0].type!=Z_FLOAT)
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
     double res = (trunc(args[0].f));
@@ -100,7 +100,7 @@ zobject ROUND(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type=='i' || args[0].type=='l')
@@ -110,7 +110,7 @@ zobject ROUND(zobject* args,int n)
     }
     if(args[0].type!=Z_FLOAT)
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
     double res = (round(args[0].f));
@@ -123,7 +123,7 @@ zobject SQRT(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -143,7 +143,7 @@ zobject SQRT(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -151,7 +151,7 @@ zobject RADIANS(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     double pi = 2*acos(0.0);
@@ -172,7 +172,7 @@ zobject RADIANS(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -180,14 +180,14 @@ zobject LOG(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].f));
@@ -197,7 +197,7 @@ zobject LOG(zobject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].i));
@@ -207,7 +207,7 @@ zobject LOG(zobject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log(args[0].l));
@@ -215,7 +215,7 @@ zobject LOG(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -223,14 +223,14 @@ zobject LOG10(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].f));
@@ -240,7 +240,7 @@ zobject LOG10(zobject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].i));
@@ -250,7 +250,7 @@ zobject LOG10(zobject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Z_Err(MathError,"Input outside log;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside log;'s domain interval [1,inf)");
             
         }
         double res = (log10(args[0].l));
@@ -258,7 +258,7 @@ zobject LOG10(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -266,7 +266,7 @@ zobject SIN(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -286,7 +286,7 @@ zobject SIN(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -294,7 +294,7 @@ zobject COS(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -314,7 +314,7 @@ zobject COS(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -322,14 +322,14 @@ zobject TAN(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(cos(args[0].f)==0)
         {
-            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return z_err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].f));
@@ -339,7 +339,7 @@ zobject TAN(zobject* args,int n)
     {
         if(cos(args[0].i)==0)
         {
-            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return z_err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].i));
@@ -349,7 +349,7 @@ zobject TAN(zobject* args,int n)
     {
         if(cos(args[0].l)==0)
         {
-            return Z_Err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
+            return z_err(MathError,"Input outside tan;'s domain interval R - {pi/2 + npi}");
             
         }
         double res = (tan(args[0].l));
@@ -357,7 +357,7 @@ zobject TAN(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -365,7 +365,7 @@ zobject SINH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -385,7 +385,7 @@ zobject SINH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -393,7 +393,7 @@ zobject COSH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -413,7 +413,7 @@ zobject COSH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -421,7 +421,7 @@ zobject TANH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -441,7 +441,7 @@ zobject TANH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -449,14 +449,14 @@ zobject ASIN(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].f));
@@ -466,7 +466,7 @@ zobject ASIN(zobject* args,int n)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].i));
@@ -476,7 +476,7 @@ zobject ASIN(zobject* args,int n)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Z_Err(MathError,"Input outside asin;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside asin;'s domain interval [-1,1]");
             
         }
         double res = (asin(args[0].l));
@@ -484,7 +484,7 @@ zobject ASIN(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -492,14 +492,14 @@ zobject ACOS(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f < -1 || args[0].f>1)
         {
-            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].f));
@@ -509,7 +509,7 @@ zobject ACOS(zobject* args,int n)
     {
         if(args[0].i < -1 || args[0].i>1)
         {
-            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].i));
@@ -519,7 +519,7 @@ zobject ACOS(zobject* args,int n)
     {
         if(args[0].l < -1 || args[0].l>1)
         {
-            return Z_Err(MathError,"Input outside acos;'s domain interval [-1,1]");
+            return z_err(MathError,"Input outside acos;'s domain interval [-1,1]");
             
         }
         double res = (acos(args[0].l));
@@ -527,7 +527,7 @@ zobject ACOS(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -535,7 +535,7 @@ zobject ATAN(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -555,7 +555,7 @@ zobject ATAN(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -563,7 +563,7 @@ zobject ASINH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
@@ -583,7 +583,7 @@ zobject ASINH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -591,14 +591,14 @@ zobject ACOSH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f<1)
         {
-            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].f));
@@ -608,7 +608,7 @@ zobject ACOSH(zobject* args,int n)
     {
         if(args[0].i<1)
         {
-            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].i));
@@ -618,7 +618,7 @@ zobject ACOSH(zobject* args,int n)
     {
         if(args[0].l<1)
         {
-            return Z_Err(MathError,"Input outside acosh;'s domain interval [1,inf)");
+            return z_err(MathError,"Input outside acosh;'s domain interval [1,inf)");
             
         }
         double res = (acosh(args[0].l));
@@ -626,7 +626,7 @@ zobject ACOSH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
@@ -634,14 +634,14 @@ zobject ATANH(zobject* args,int n)
 {
     if(n!=1)
     {
-        return Z_Err(ArgumentError,"1 argument needed");
+        return z_err(ArgumentError,"1 argument needed");
         
     }
     if(args[0].type==Z_FLOAT)
     {
         if(args[0].f <= -1 || args[0].f>=1)
         {
-            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return z_err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].f));
@@ -651,7 +651,7 @@ zobject ATANH(zobject* args,int n)
     {
         if(args[0].i <= -1 || args[0].i>=1)
         {
-            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return z_err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].i));
@@ -661,7 +661,7 @@ zobject ATANH(zobject* args,int n)
     {
         if(args[0].l <= -1 || args[0].l>=1)
         {
-            return Z_Err(MathError,"Input outside atanh;'s domain interval (-1,1)");
+            return z_err(MathError,"Input outside atanh;'s domain interval (-1,1)");
             
         }
         double res = (atanh(args[0].l));
@@ -669,7 +669,7 @@ zobject ATANH(zobject* args,int n)
     }
     else
     {
-        return Z_Err(TypeError,"Numeric argument needed!");
+        return z_err(TypeError,"Numeric argument needed!");
         
     }
 }
