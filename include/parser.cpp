@@ -1111,35 +1111,35 @@ Node* Parser::parseStmt(vector<Token> tokens)
     }
     if(tokens[0].type==TokenType::KEYWORD_TOKEN && tokens[0].content=="namespace")
     {
-    if(tokens.size()!=2)
-        parseError("SyntaxError","Invalid Syntax");
-    if(tokens[1].type!=ID_TOKEN)
-        parseError("SyntaxError","Invalid Syntax");
-    Node* ast = NewNode(NodeType::NAMESPACE);
-    Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-    ast->childs.push_back(n);
-    string fnprefix;
-    if(tokens[1].content.find("::")!=string::npos)
-        parseError("SyntaxError","Invalid Syntax");
+        if(tokens.size()!=2)
+            parseError("SyntaxError","Invalid Syntax");
+        if(tokens[1].type!=ID_TOKEN)
+            parseError("SyntaxError","Invalid Syntax");
+        Node* ast = NewNode(NodeType::NAMESPACE);
+        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+        ast->childs.push_back(n);
+        string fnprefix;
+        if(tokens[1].content.find("::")!=string::npos)
+            parseError("SyntaxError","Invalid Syntax");
 
-    ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
-    return ast;
+        ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
+        return ast;
     }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="if")
     {
         if(tokens.size()>=4)
         {
-    if(tokens[1].type== TokenType::LParen_TOKEN  && tokens.back().type== TokenType::RParen_TOKEN)
-    {
-        vector<Token> expr = {tokens.begin()+2,tokens.end()-1};
-        Node* ast = NewNode(NodeType::IF);
-        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-        ast->childs.push_back(n);
-        Node* conditions = NewNode(NodeType::conditions);
-        conditions->childs.push_back(parseExpr(expr));
-        ast->childs.push_back(conditions);
-        return ast;
-    }
+            if(tokens[1].type== TokenType::LParen_TOKEN  && tokens.back().type== TokenType::RParen_TOKEN)
+            {
+                vector<Token> expr = {tokens.begin()+2,tokens.end()-1};
+                Node* ast = NewNode(NodeType::IF);
+                Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+                ast->childs.push_back(n);
+                Node* conditions = NewNode(NodeType::conditions);
+                conditions->childs.push_back(parseExpr(expr));
+                ast->childs.push_back(conditions);
+                return ast;
+            }
         }
     }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="import")
@@ -1148,41 +1148,41 @@ Node* Parser::parseStmt(vector<Token> tokens)
         vector<Token> t;
         if(tokens.size()==2)
         {
-        if(tokens[1].type==ID_TOKEN)
+            if(tokens[1].type==ID_TOKEN)
+            {
+                t.push_back(tokens[1]);
+                Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+                ast->childs.push_back(n);
+                ast->childs.push_back(parseExpr(t));
+                return ast;
+            }
+            if(tokens[1].type== TokenType::STRING_TOKEN)
+            {
+                t.push_back(tokens[1]);
+                Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+                ast->childs.push_back(n);
+                ast->childs.push_back(NewNode(NodeType::STR,tokens[1].content));
+                return ast;
+            }
+            else
+            {
+                    //line_num = tokens[1].ln;
+                    parseError("SyntaxError","Invalid Syntax");
+            }
+        }
+        else if(tokens.size()==4 && tokens[2].content == "as")
         {
+            if(tokens[1].type!=ID_TOKEN || tokens[2].type!=KEYWORD_TOKEN || tokens[2].content!="as" || tokens[3].type!=ID_TOKEN)
+            {
+                parseError("SyntaxError","Invalid Syntax");
+            }
+            ast->type = NodeType::importas;
             t.push_back(tokens[1]);
             Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
             ast->childs.push_back(n);
             ast->childs.push_back(parseExpr(t));
+            ast->childs.push_back(NewNode(NodeType::ID,tokens[3].content));
             return ast;
-        }
-        if(tokens[1].type== TokenType::STRING_TOKEN)
-        {
-            t.push_back(tokens[1]);
-            Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-            ast->childs.push_back(n);
-            ast->childs.push_back(NewNode(NodeType::STR,tokens[1].content));
-            return ast;
-        }
-        else
-        {
-                //line_num = tokens[1].ln;
-                parseError("SyntaxError","Invalid Syntax");
-        }
-        }
-        else if(tokens.size()==4 && tokens[2].content == "as")
-        {
-        if(tokens[1].type!=ID_TOKEN || tokens[2].type!=KEYWORD_TOKEN || tokens[2].content!="as" || tokens[3].type!=ID_TOKEN)
-        {
-            parseError("SyntaxError","Invalid Syntax");
-        }
-        ast->type = NodeType::importas;
-        t.push_back(tokens[1]);
-        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-        ast->childs.push_back(n);
-        ast->childs.push_back(parseExpr(t));
-        ast->childs.push_back(NewNode(NodeType::ID,tokens[3].content));
-        return ast;
         }
         else if(tokens.size()==4)
         {
@@ -1216,112 +1216,112 @@ Node* Parser::parseStmt(vector<Token> tokens)
     }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="yield")
     {
-    foundYield = true;
-    Node* ast = NewNode(NodeType::YIELD);
-    vector<Token> t = {tokens.begin()+1,tokens.end()};
-    if(t.size()==0)
-        parseError("SyntaxError","Error expected expression after yield keyword");
-    Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-    ast->childs.push_back(n);
-    ast->childs.push_back(parseExpr(t));
-    return ast;
+        foundYield = true;
+        Node* ast = NewNode(NodeType::YIELD);
+        vector<Token> t = {tokens.begin()+1,tokens.end()};
+        if(t.size()==0)
+            parseError("SyntaxError","Error expected expression after yield keyword");
+        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+        ast->childs.push_back(n);
+        ast->childs.push_back(parseExpr(t));
+        return ast;
     }
     if(tokens[0].type== TokenType::KEYWORD_TOKEN && tokens[0].content=="function")
     {
-    if(tokens.size()<4)
-        parseError("SyntaxError","Invalid Syntax");
-    if(tokens.back().type==L_CURLY_BRACKET_TOKEN)
-        tokens.pop_back();
-    if(tokens[1].type!=ID_TOKEN || tokens.back().type!=TokenType::RParen_TOKEN)
-        parseError("SyntaxError","Invalid Syntax");
-    if(tokens[1].content.find("::")!=string::npos)
-        parseError("SyntaxError","Invalid Syntax");
-    string fnprefix = prefixes.back();
-    if(atGlobalLevel())
-        tokens[1].content = fnprefix+tokens[1].content;
-    if(isPrivate)
-        tokens[1].content = "@" + tokens[1].content;
-    Node* ast = NewNode(NodeType::FUNC);
-    Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
-    ast->childs.push_back(n);
-    ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
-    ast->childs.push_back(NewNode(NodeType::args));
-    if(tokens.size()==4)
-        return ast;
-    vector<Token> args = {tokens.begin()+3,tokens.end()-1};
-    if(args.size()<2)
-        parseError("SyntaxError","Invalid Syntax");
-    size_t k = 0;
-    bool found_default = false;//found any default argument
-    string tname;
-    while(k<args.size())
-    {
-    if((args[k].type== TokenType::KEYWORD_TOKEN && args[k].content=="var"))
-    {
-        if(k==args.size()-1)
+        if(tokens.size()<4)
             parseError("SyntaxError","Invalid Syntax");
-        if(args[k+1].type!= TokenType::ID_TOKEN)
+        if(tokens.back().type==L_CURLY_BRACKET_TOKEN)
+            tokens.pop_back();
+        if(tokens[1].type!=ID_TOKEN || tokens.back().type!=TokenType::RParen_TOKEN)
             parseError("SyntaxError","Invalid Syntax");
-        ast->childs[2]->childs.push_back(NewNode(NodeType::ID,args[k+1].content));
-        k+=1;
-        if(k<args.size()-1)// or k+1 < args.size() or in simple English(there are more parameters)
+        if(tokens[1].content.find("::")!=string::npos)
+            parseError("SyntaxError","Invalid Syntax");
+        string fnprefix = prefixes.back();
+        if(atGlobalLevel())
+            tokens[1].content = fnprefix+tokens[1].content;
+        if(isPrivate)
+            tokens[1].content = "@" + tokens[1].content;
+        Node* ast = NewNode(NodeType::FUNC);
+        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+        ast->childs.push_back(n);
+        ast->childs.push_back(NewNode(NodeType::ID,tokens[1].content));
+        ast->childs.push_back(NewNode(NodeType::args));
+        if(tokens.size()==4)
+            return ast;
+        vector<Token> args = {tokens.begin()+3,tokens.end()-1};
+        if(args.size()<2)
+            parseError("SyntaxError","Invalid Syntax");
+        size_t k = 0;
+        bool found_default = false;//found any default argument
+        string tname;
+        while(k<args.size())
         {
-        k+=1;//it must be a comma
-        if(args[k].type==OP_TOKEN && args[k].content=="=")//default parameters
-        {
+            if((args[k].type== TokenType::KEYWORD_TOKEN && args[k].content=="var"))
+            {
+                if(k==args.size()-1)
+                    parseError("SyntaxError","Invalid Syntax");
+                if(args[k+1].type!= TokenType::ID_TOKEN)
+                    parseError("SyntaxError","Invalid Syntax");
+                ast->childs[2]->childs.push_back(NewNode(NodeType::ID,args[k+1].content));
+                k+=1;
+                if(k<args.size()-1)// or k+1 < args.size() or in simple English(there are more parameters)
+                {
+                k+=1;//it must be a comma
+                if(args[k].type==OP_TOKEN && args[k].content=="=")//default parameters
+                {
+                    k+=1;
+                    if(k >= args.size())
+                        parseError("SyntaxError","Invalid Syntax");
+                    int j = k;
+                    int i1 = 0;
+                    int i2 = 0;
+                    int i3 = 0;
+                    bool found = false;
+                    for(;j<(int)args.size();j++)
+                    {
+                    if(args[j].type==L_CURLY_BRACKET_TOKEN)
+                        i1+=1;
+                    else if(args[j].type==R_CURLY_BRACKET_TOKEN)
+                        i1-=1;
+                    else if(args[j].type==BEGIN_LIST_TOKEN)
+                        i2+=1;
+                    else if(args[j].type==END_LIST_TOKEN)
+                        i2-=1;
+                    else if(args[j].type==LParen_TOKEN)
+                        i3+=1;
+                    else if(args[j].type==RParen_TOKEN)
+                        i3-=1;
+                    else if(args[j].type==COMMA_TOKEN && i1==0 && i2==0 && i3==0)
+                    {
+                        found = true;
+                        break;
+                    }
+                    }
+                    if(!found && (size_t)j!=args.size())
+                        parseError("SyntaxError","Invalid Syntax");
+                    found_default = true;
+                    vector<Token> default_expr = {args.begin()+k,args.begin()+j};
+                    ast->childs[2]->childs.back()->childs.push_back(parseExpr(default_expr));
+                    k = j+1;
+                    continue;
+                }
+                if(found_default)
+                    parseError("SyntaxError","Invalid Syntax");
+                if(args[k].type!= TokenType::COMMA_TOKEN)
+                    parseError("SyntaxError","Invalid Syntax");
+                if(k==args.size()-1)
+                    parseError("SyntaxError","Invalid Syntax");
+                k+=1;
+                continue;
+                }
+            }
+            else
+                parseError("SyntaxError","Invalid Syntax");
+            if(found_default)
+                parseError("SyntaxError","Invalid Syntax");
             k+=1;
-            if(k >= args.size())
-                parseError("SyntaxError","Invalid Syntax");
-            int j = k;
-            int i1 = 0;
-            int i2 = 0;
-            int i3 = 0;
-            bool found = false;
-            for(;j<(int)args.size();j++)
-            {
-            if(args[j].type==L_CURLY_BRACKET_TOKEN)
-                i1+=1;
-            else if(args[j].type==R_CURLY_BRACKET_TOKEN)
-                i1-=1;
-            else if(args[j].type==BEGIN_LIST_TOKEN)
-                i2+=1;
-            else if(args[j].type==END_LIST_TOKEN)
-                i2-=1;
-            else if(args[j].type==LParen_TOKEN)
-                i3+=1;
-            else if(args[j].type==RParen_TOKEN)
-                i3-=1;
-            else if(args[j].type==COMMA_TOKEN && i1==0 && i2==0 && i3==0)
-            {
-                found = true;
-                break;
-            }
-            }
-            if(!found && (size_t)j!=args.size())
-                parseError("SyntaxError","Invalid Syntax");
-            found_default = true;
-            vector<Token> default_expr = {args.begin()+k,args.begin()+j};
-            ast->childs[2]->childs.back()->childs.push_back(parseExpr(default_expr));
-            k = j+1;
-            continue;
         }
-        if(found_default)
-            parseError("SyntaxError","Invalid Syntax");
-        if(args[k].type!= TokenType::COMMA_TOKEN)
-            parseError("SyntaxError","Invalid Syntax");
-        if(k==args.size()-1)
-            parseError("SyntaxError","Invalid Syntax");
-        k+=1;
-        continue;
-        }
-    }
-    else
-        parseError("SyntaxError","Invalid Syntax");
-    if(found_default)
-        parseError("SyntaxError","Invalid Syntax");
-    k+=1;
-    }
-    return ast;
+        return ast;
     }
     int k=0;
     while(k<(int)tokens.size())
@@ -1407,51 +1407,51 @@ Node* Parser::parseStmt(vector<Token> tokens)
     k = tokens.size()-1;
     while(k>=0)
     {
-    if(tokens[k].type==TokenType::RParen_TOKEN)
-    {
-    int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
-    if(i==-1)
-        parseError("SyntaxError","Invalid Syntax");
-    k = i;
-    }
-    else if(tokens[k].type== TokenType::END_LIST_TOKEN)
-    {
-        int i = matchTokenRight(k,TokenType::BEGIN_LIST_TOKEN,tokens);
+        if(tokens[k].type==TokenType::RParen_TOKEN)
+        {
+        int i = matchTokenRight(k,TokenType::LParen_TOKEN,tokens);
+        if(i==-1)
+            parseError("SyntaxError","Invalid Syntax");
+        k = i;
+        }
+        else if(tokens[k].type== TokenType::END_LIST_TOKEN)
+        {
+            int i = matchTokenRight(k,TokenType::BEGIN_LIST_TOKEN,tokens);
+            if(i==-1)
+                parseError("SyntaxError","Invalid Syntax");
+            k=i;
+        }
+        else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
+        {
+        int i = matchTokenRight(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         k=i;
-    }
-    else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
-    {
-    int i = matchTokenRight(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
-    if(i==-1)
-        parseError("SyntaxError","Invalid Syntax");
-    k=i;
-    }
-    else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="."))
-    {
-    vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
-    vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
-    if(lhs.size()==0 || rhs.size()==0)
-        parseError("SyntaxError","Invalid Syntax");
-    Node* ast = NewNode(NodeType::memb);
-    Node* line = NewNode(NodeType::line,to_string(tokens[0].ln));
-    ast->childs.push_back(line);
-    ast->childs.push_back(parseExpr(lhs));
-    ast->childs.push_back(parseExpr(rhs));
-    //rhs must be a function call as stated above
+        }
+        else if(tokens[k].type== TokenType::OP_TOKEN && (tokens[k].content=="."))
+        {
+        vector<Token> lhs = {tokens.begin(),tokens.begin()+k};
+        vector<Token> rhs = {tokens.begin()+k+1,tokens.end()};
+        if(lhs.size()==0 || rhs.size()==0)
+            parseError("SyntaxError","Invalid Syntax");
+        Node* ast = NewNode(NodeType::memb);
+        Node* line = NewNode(NodeType::line,to_string(tokens[0].ln));
+        ast->childs.push_back(line);
+        ast->childs.push_back(parseExpr(lhs));
+        ast->childs.push_back(parseExpr(rhs));
+        //rhs must be a function call as stated above
 
-    if(ast->childs.back()->type!=NodeType::call)
-    {
-        deleteAST(ast);
-        break;
-    }
-    // if(L->type!=NodeType::memb && L->type!=NodeType::ID && L->type!=NodeType::index && L->type!=NodeType::call)
-    //   {
-    //    deleteAST(ast);
-    //    break;
-    //   }
-    return ast;
+        if(ast->childs.back()->type!=NodeType::call)
+        {
+            deleteAST(ast);
+            break;
+        }
+        // if(L->type!=NodeType::memb && L->type!=NodeType::ID && L->type!=NodeType::index && L->type!=NodeType::call)
+        //   {
+        //    deleteAST(ast);
+        //    break;
+        //   }
+        return ast;
     }
     k-=1;
     }
@@ -2172,21 +2172,21 @@ Node* Parser::parse(const vector<Token>& tokens)
             }
             else if(ast->type==NodeType::RETURN_NODE)
             {
-            if(!infunc)
-            {
-                parseError("SyntaxError","Error use of return statement outside functon!");
-            }
-            if(start==0)
-            {
-                Final = ast;
-                e = Final;
-            }
-            else
-            {
-                e->childs.push_back(ast);
-                e = e->childs.back();
-            }
-            start = k+1;
+                if(!infunc)
+                {
+                    parseError("SyntaxError","Error use of return statement outside functon!");
+                }
+                if(start==0)
+                {
+                    Final = ast;
+                    e = Final;
+                }
+                else
+                {
+                    e->childs.push_back(ast);
+                    e = e->childs.back();
+                }
+                start = k+1;
             }
             else if(ast->type==NodeType::import)
             {

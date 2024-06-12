@@ -21,6 +21,9 @@ void signalHandler(int signum)
 
 int main(int argc, const char* argv[])
 {
+    // Handle crashes
+    // Very unlikely but ...
+    // Shit happens
     signal(SIGFPE,signalHandler);
     signal(SIGILL,signalHandler);
     signal(SIGABRT,signalHandler);
@@ -74,11 +77,11 @@ int main(int argc, const char* argv[])
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
-    //WriteByteCode(((string)filename+(string)"b").c_str(),bytecode,p.LineNumberTable,p.files);
-    
+
     vm.load(bytecode,p);
    
-    //it's showtime
+    // It's showtime
     vm.interpret();
+    // Hasta La Vista Baby
     return 0;
 }
