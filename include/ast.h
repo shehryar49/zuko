@@ -96,6 +96,7 @@ enum class NodeType
   ID,
   conditions,
 };
+// No oop nonsense
 struct Node
 {
   std::string val;
