@@ -1,8 +1,9 @@
 # Official Repository of Zuko Programming Langauge
 
-Zuko is a dynamically typed and lightweight programming language written in C++. Zuko is compiled to bytecode and then interpreted by a virtual machine. 
+Zuko is a dynamically typed and lightweight programming language written in C++. Zuko is compiled to bytecode and then interpreted by a virtual machine. It aims to be minimalistic and as fast as possible without a JIT. 
 
 # HOW TO COMPILE:
+Download source code of the latest release.
 ## Visual Studio:
     
 - Install CMake
