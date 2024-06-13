@@ -148,7 +148,7 @@ public:
   friend void REPL();
   VM();
   
-  void load(std::vector<uint8_t>& bytecode,ProgramInfo& p);
+  void load(std::vector<uint8_t>& bytecode,ZukoSource& p);
   void interpret(size_t offset = 0, bool panic = true); //by default panic if stack is not empty when finished
   //in REPL mode panic is set to false
   ~VM();

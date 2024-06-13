@@ -88,7 +88,7 @@ private:
   Node* parseExpr(const vector<Token>& tokens);
   Node* parseStmt(vector<Token> tokens);
 public:
-  void init(string fname,ProgramInfo& p);
+  void set_source(ZukoSource& p,size_t root_idx = 0); // for error printing and stuff
   Node* parse(const vector<Token>& tokens);
 };
 #endif

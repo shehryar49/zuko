@@ -122,6 +122,7 @@ zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc);
 
 ////////////////////
 ///////////////
+extern std::unordered_map<std::string,BuiltinFunc> funcs;
 void initFunctions();
 void initMethods();
 zobject callmethod(std::string name,zobject* args,int32_t argc);

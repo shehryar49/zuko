@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include "parser.h"
+#include "programinfo.h"
 #include "token.h"
 #include "utility.h"
 #include <cctype>
@@ -465,23 +466,27 @@ void Lexer::id(size_t& k,vector<Token>& tokenlist)
     tokenlist.push_back(i);
     k = j;
 }
-vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
+vector<Token> Lexer::generateTokens(const ZukoSource& src,bool printErr,size_t root_idx )
 {
-    //fname is the filename
-    //s is the file source
+    if(root_idx >= src.files.size())
+    {
+        hadErr = true;
+        errmsg = "root_idx out of range!";
+        return {};
+    }
+    filename = src.files[root_idx];
+    source_code = src.sources[root_idx];
 
-    line_num = 1;
-    filename = fname;
-    source_code = s;
     srcLen = source_code.length();
     this->printErr = printErr;
+    line_num = 1;
     size_t k = 0;
     char c;
     string tmp;
     vector<Token> tokenlist;
     while(!hadErr && k<srcLen)
     {
-        c = s[k];
+        c = source_code[k];
         if(c=='"')
             str(k, tokenlist);
         else if(c=='@')
@@ -495,19 +500,19 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
             numeric(k,tokenlist);
         else if(c=='>' || c=='<')
         {
-            if(k+1 < srcLen && s[k+1]=='=')
+            if(k+1 < srcLen && source_code[k+1]=='=')
             {
                 tmp = c;
                 tmp += '=';
                 tokenlist.push_back(Token(OP_TOKEN,tmp,line_num));
                 k = k+1;
             }
-            else if(c=='<' && k+1<srcLen &&  s[k+1]=='<')
+            else if(c=='<' && k+1<srcLen &&  source_code[k+1]=='<')
             {
                 tokenlist.push_back(Token(OP_TOKEN,"<<",line_num));
                 k+=1;
             }
-            else if(c=='>' && k+1 < srcLen && s[k+1]=='>')
+            else if(c=='>' && k+1 < srcLen && source_code[k+1]=='>')
             {
                 tokenlist.push_back(Token(OP_TOKEN,">>",line_num));
                 k+=1;
@@ -519,7 +524,7 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
             tokenlist.push_back(Token(OP_TOKEN,'.',line_num));        
         else if(c=='+' || c=='-')
         {
-            if(k!=srcLen-1 && s[k+1]=='=')
+            if(k!=srcLen-1 && source_code[k+1]=='=')
             {
                 tmp = c;
                 tmp +="=";
@@ -531,7 +536,7 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
         }
         else if(c=='/' || c=='*' || c=='%' || c=='^' || c=='&' || c=='|' || c=='~')
         {
-            if(k!=srcLen-1 && s[k+1] == '=')
+            if(k!=srcLen-1 && source_code[k+1] == '=')
             {
                 tmp = c;
                 tmp+="=";
@@ -543,7 +548,7 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
         }
         else if(c=='!')
         {
-            if(k!=srcLen-1 && s[k+1] == '=')
+            if(k!=srcLen-1 && source_code[k+1] == '=')
             {
                 k+=1;
                 tokenlist.push_back(Token(OP_TOKEN,"!=",line_num));
@@ -553,7 +558,7 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
         }
         else if(c=='=')
         {
-            if(k!=srcLen-1 && s[k+1]=='=')
+            if(k!=srcLen-1 && source_code[k+1]=='=')
             {
                 tokenlist.push_back(Token(OP_TOKEN,"==",line_num));
                 k+=1;
@@ -598,7 +603,7 @@ vector<Token> Lexer::generateTokens(string fname,const string& s,bool printErr)
       return {}; // empty tokenlist indicates error
     stripNewlines(tokenlist);//removes newlines start and end of token list
     if (tokenlist.size() == 0)
-      return {Token(EOP_TOKEN,"",0)}; // empty program
+      return {Token(EOP_TOKEN,"",0),Token(NEWLINE_TOKEN,"\n",0)}; // empty program
     
     //the following is just the way, parser expects it to be 
     tokenlist.push_back(Token(NEWLINE_TOKEN,"\n",0));

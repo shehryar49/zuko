@@ -1,5 +1,6 @@
 #include "klassobject.h"
 #include "nativefun.h"
+#include "programinfo.h"
 #include "zuko.h"
 #include "vm.h"
 #include "zobject.h"
@@ -120,7 +121,7 @@ VM::VM()
   zlist_init(&aux);
   zlist_init(&STACK);
 }
-void VM::load(vector<uint8_t>& bytecode,ProgramInfo& p)
+void VM::load(vector<uint8_t>& bytecode,ZukoSource& p)
 {
     program = &bytecode[0];
     program_size = bytecode.size();

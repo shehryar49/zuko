@@ -21,8 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef COMPILER_H_
 #define COMPILER_H_
+#include "builtinfunc.h"
+#include "programinfo.h"
 #include "vm.h"
-#include "lexer.h"
 #include "parser.h"
 #include "opcode.h"
 #include "zfileobj.h"
@@ -44,60 +45,71 @@ class Compiler
 private:
   int32_t STACK_SIZE = 0;//simulating STACK's size
   int32_t scope = 0;
+  int32_t localsBegin;
+  int32_t foo = 0;
+  int32_t fnScope;
+  int32_t* num_of_constants;
   size_t line_num = 1;
-
+  size_t bytes_done = 0;
+  short fileTOP;
+  std::string filename;
+  std::string className;
 
   std::unordered_map<string,bool> symRef;
+  std::unordered_map<size_t,ByteSrc>* LineNumberTable;
+  SymbolTable globals;
+  
   std::vector<SymbolTable> locals;
   std::vector<std::string> prefixes = {""};
-  int32_t* num_of_constants;
-  std::string filename;
   std::vector<std::string>* files;
   std::vector<string>* sources;
-  short fileTOP;
-  std::unordered_map<size_t,ByteSrc>* LineNumberTable;
-  bool compileAllFuncs;
   //For optimizing short circuit jumps after code generation
   std::vector<size_t> andJMPS;
-  std::vector<size_t> orJMPS;
-  //Context
+  std::vector<size_t> orJMPS;  
+  std::vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
+  // the enclosing loop to backpatch the offset
+  std::vector<int32_t> contIdx; // same as above
+  std::vector<string> classMemb;
+  std::vector<uint8_t> bytecode; // bytecode generated so far
+  std::vector<Pair> backpatches;
+
+  //Context and other options
   bool inConstructor = false;
   bool inGen = false;
   bool inclass = false;
   bool infunc = false;
-  std::vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
-  // the enclosing loop to backpatch the offset
-  std::vector<int32_t> contIdx; // same as above
-  int32_t localsBegin;
-  std::string className;
-  std::vector<string> classMemb;
-  int32_t foo = 0;
-  int32_t fnScope;
-  bool returnStmtAtFnScope;
-  std::vector<uint8_t> bytecode;
-  std::vector<Pair> backpatches;
+  bool compileAllFuncs = false;
+  bool returnStmtAtFnScope = false;
+
+  void compileError(std::string type,std::string msg);
+  void add_lntable_entry(size_t opcodeIdx);
+  void optimize_jmps(vector<uint8_t>& bytecode);
+
+  int32_t is_duplicate_constant(zobject x);
+  int32_t add_to_vm_strings(const std::string& n);
+  int32_t add_builtin_to_vm(const std::string& name);
+  int32_t resolve_name(std::string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL);  
+  
+  vector<uint8_t> expr_bytecode(Node* ast);
+  vector<string> scan_class(Node* ast);
+  vector<uint8_t> compile(Node* ast);
+
+  zclass* make_error_class(std::string name,zclass* error);
+
 public:
   friend void REPL();
-  SymbolTable globals;
-  size_t bytes_done = 0;
-  //init function is used instead of constructor
+
+  //set_source function is used instead of constructor
   //this way the Compiler class becomes reusable
   //by initializing it again
-  void init(std::string filename,ProgramInfo& p);
-  void compileError(std::string type,std::string msg);
-  int32_t isDuplicateConstant(zobject x);
-  int32_t addToVMStringTable(const std::string& n);
-  void addLnTableEntry(size_t opcodeIdx);
-  int32_t addBuiltin(const std::string& name);
-  vector<uint8_t> exprByteCode(Node* ast);
-  vector<string> scanClass(Node* ast);
-  int32_t resolveName(std::string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL);
-  vector<uint8_t> compile(Node* ast);
-  void optimizeJMPS(vector<uint8_t>& bytecode);
+  void set_source(ZukoSource& p,size_t root_idx = 0);
+  void add_builtin(const std::string& name,BuiltinFunc fn);  
   void reduceStackTo(int size);//for REPL
 
-  zclass* makeErrKlass(std::string name,zclass* error);
-  vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],bool compileNonRefFns = false,bool popGlobals=true);//compiles as a complete program adds NPOP_STACK and OP_EXIT
+  //Compile options
+  static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
+  static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
+  vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],int32_t options = OPT_POP_GLOBALS);//compiles as a complete program adds NPOP_STACK and OP_EXIT
 
 };
 #endif

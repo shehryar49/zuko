@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include <string.h>
 #include "convo.h"
+#include "programinfo.h"
 #include "token.h"
 
 extern bool REPL_MODE;
@@ -231,13 +232,18 @@ int findTokenConsecutive(Token t,int start,const vector<Token>& tokens)
 }
 
 
-void Parser::init(string fname,ProgramInfo& p)
+void Parser::set_source(ZukoSource& p,size_t root_idx)
 {
+    if(root_idx >= p.files.size())
+    {
+        fprintf(stderr,"Parser.init() failed. Invalid root_idx!");
+        return;
+    }
     num_of_constants = &p.num_of_constants;
     refGraph = &p.refGraph;
     files = &p.files;
     sources = &p.sources;
-    filename = fname;
+    filename = p.files[root_idx];
     currSym = ".main";
     inclass = false;
     infunc = false;
@@ -2220,7 +2226,9 @@ Node* Parser::parse(const vector<Token>& tokens)
                     fclose(file);
                     sources->push_back(src);
                     Lexer lex;
-                    vector<Token> tokens = lex.generateTokens(filename,src);
+                    ZukoSource tmp;
+                    tmp.addFile(filename,src);
+                    vector<Token> tokens = lex.generateTokens(tmp);
                     bool empty_file = false;
                     if(tokens.size() == 1 && tokens[0].type==EOP_TOKEN)
                       empty_file = true;

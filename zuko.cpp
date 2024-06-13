@@ -1,5 +1,8 @@
 #include <signal.h>
 #include "include/zuko.h"
+#include "programinfo.h"
+#include "repl.h"
+#include "zobject.h"
 
 #define ZUKO_VER 0.3
 #define ZUKO_VER_PATCH 3
@@ -18,7 +21,6 @@ void signalHandler(int signum)
   }
 }
 
-
 int main(int argc, const char* argv[])
 {
     // Handle crashes
@@ -30,13 +32,13 @@ int main(int argc, const char* argv[])
     signal(SIGSEGV,signalHandler);
     if (argc < 2)
     {
+      REPL_MODE = true; //enable REPL_MODE
       printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", ZUKO_VER,ZUKO_VER_PATCH,__DATE__,__TIME__,getOS());
       REPL();
       return 0;
     }
     string source_code;
     string filename;
-    ProgramInfo p;
     if(argc>=3 && strncmp(argv[1],"-c",2)==0)
     {
       filename = "argv";
@@ -49,36 +51,33 @@ int main(int argc, const char* argv[])
     }
     //the  program currently consists of 1 file only
     //unless this 1 file imports other zuko files
-    //add this 1 file's name and source to ProgramInfo 
-    p.files.push_back(filename);//add filename
-    p.sources.push_back(source_code);//add source
-    //parser can add more files to the program by adding them in ProgramInfo
+    ZukoSource src;
+    src.addFile(filename,source_code); //first file is the root file
+    //parser can add more files to the program
      
     vector<uint8_t> bytecode;
     //the variables in curly brackets below are temporary
     //they are not needed during program execution
     {
         Lexer lex;
-        vector<Token> tokens = lex.generateTokens(filename,source_code);
+        vector<Token> tokens = lex.generateTokens(src);
         if(lex.hadErr)//had an error which was printed
-          return 0;
-        else if(tokens.size() == 1 && tokens[0].type == EOP_TOKEN)//empty program nothing to do
           return 0;
         
         Parser parser;
-        parser.init(filename,p);//init parser with root filename and ProgramInfo
+        parser.set_source(src);
         Node* ast = parser.parse(tokens); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
         //printAST(ast);
         
         Compiler compiler;
-        compiler.init(filename,p);//init compiler with root filename and ProgramInfo
+        compiler.set_source(src);//init compiler with root filename and ZukoSource
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
 
-    vm.load(bytecode,p);
+    vm.load(bytecode,src);
    
     // It's showtime
     vm.interpret();

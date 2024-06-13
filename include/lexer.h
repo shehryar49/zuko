@@ -21,14 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef LEXER_H_
 #define LEXER_H_
-//#include "utility.h"
+
 #include <string>
 #include <vector>
+#include "programinfo.h"
 #include "token.h"
-
-
-
-
 
 class Lexer
 {
@@ -56,6 +53,6 @@ public:
   bool hadErr = false;
   std::string errmsg;
   ///
-  vector<Token> generateTokens(string fname,const string& s,bool printErr = true);
+  vector<Token> generateTokens(const ZukoSource& src,bool printErr = true,size_t root_idx = 0);
 };
 #endif // LEXER_H_
