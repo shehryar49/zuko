@@ -135,7 +135,7 @@ private:
   void mark();
   void collectGarbage();
   inline void DoThreshholdBusiness();
-  bool invokeOperator(std::string meth, zobject A, size_t args, const char* op, zobject *rhs = NULL, bool raiseErrOnNF = true); // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
+  bool invokeOperator(const std::string& meth, zobject A, size_t args, const char* op, zobject *rhs = NULL, bool raiseErrOnNF = true); // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
 public:
   size_t allocated = 0;
   std::unordered_map<void*, MemInfo> memory;
