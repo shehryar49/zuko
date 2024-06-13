@@ -2229,7 +2229,7 @@ vector<uint8_t>& Compiler::compileProgram(Node* ast,int32_t argc,const char* arg
         Error->name = "Error";
         StrMap_emplace(&(Error->members),"msg",nil);
         //Any class inheriting from Error will have 'msg'
-        globals.emplace("Error",4);
+        globals.emplace("Error",STACK_SIZE);
         add_to_vm_strings("__construct__");
         zfun* fun = vm_alloc_zfun();
         fun->name = "__construct__";
