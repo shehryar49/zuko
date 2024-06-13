@@ -5,6 +5,7 @@
 #include "utility.h"
 #include <cctype>
 #include <float.h>
+#include <string>
 #include <time.h>
 #include <limits.h>
 extern bool REPL_MODE;
@@ -93,6 +94,11 @@ Token Lexer::resolveMacro(const string& name)
     {
         macro.type = STRING_TOKEN;
         macro.content = getOS();
+    }
+    else if(name == "version")
+    {
+        macro.type = STRING_TOKEN;
+        macro.content = "0.3.3";
     }
     else 
         macro.type = EOP_TOKEN;//to indicate macro not found
