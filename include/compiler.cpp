@@ -23,6 +23,7 @@ SOFTWARE.*/
 #include "builtinfunc.h"
 #include "convo.h"
 #include "utility.h"
+#include "vm.h"
 #include <cstdio>
 using namespace std;
 
@@ -2153,7 +2154,7 @@ while((int)STACK_SIZE > size)
 }
 zclass* Compiler::makeErrKlass(string name,zclass* error)
 {
-zclass* k = vm_allocKlass();
+zclass* k = vm_alloc_zclass();
 int32_t idx = addToVMStringTable(name);
 k->name = vm.strings[idx].val;
 StrMap_assign(&(k->members),&(error->members));
@@ -2180,20 +2181,20 @@ if(bytecode.size() == 0)
     globals.emplace("stdin",1);
     globals.emplace("stdout",2);
     int32_t k = 2;
-    zlist* l = vm_allocList();
+    zlist* l = vm_alloc_zlist();
     while (k < argc)
     {
-        zstr* p = vm_allocString(strlen(argv[k]));
+        zstr* p = vm_alloc_zstr(strlen(argv[k]));
         memcpy(p->val,argv[k],strlen(argv[k]));
         zlist_push(l,zobj_from_str_ptr(p));
         k += 1;
     }
     zlist_push(&vm.STACK,zobj_from_list(l));
-    zfile* STDIN = vm_alloczfile();
+    zfile* STDIN = vm_alloc_zfile();
     STDIN->open = true;
     STDIN ->fp = stdin;
 
-    zfile* STDOUT = vm_alloczfile();
+    zfile* STDOUT = vm_alloc_zfile();
     STDOUT->open = true;
     STDOUT ->fp = stdout;
     
@@ -2203,12 +2204,13 @@ if(bytecode.size() == 0)
     addToVMStringTable("msg");
     zobject nil;
     nil.type = Z_NIL;
-    Error = vm_allocKlass();
+    Error = vm_alloc_zclass();
     Error->name = "Error";
     StrMap_emplace(&(Error->members),"msg",nil);
+    //Any class inheriting from Error will have 'msg'
     globals.emplace("Error",3);
     addToVMStringTable("__construct__");
-    zfun* fun = vm_allocfun_object();
+    zfun* fun = vm_alloc_zfun();
     fun->name = "__construct__";
     fun->args = 2;
     fun->i = 5;

@@ -97,9 +97,10 @@ zobject init()
     curl_global_init(CURL_GLOBAL_DEFAULT);
     nil.type = Z_NIL;
     zmodule* d = vm_alloc_zmodule();
+    d->name = "libcurl";
     //
     curlklass = vm_alloc_zclass();
-    curlklass->name = "Curl";
+    curlklass->name = "curl";
 
     zclass_add_method(curlklass,"__construct__",&curlklass__construct__);
     zclass_add_method(curlklass,"perform",&perform);
@@ -122,7 +123,7 @@ zobject init()
     
     
     
-    zmodule_add_class(d,"Curl",curlklass);
+    zmodule_add_class(d,"curl",curlklass);
     zmodule_add_class(d,"mime",mimeklass);
     zmodule_add_fun(d,"strerror",&STRERROR);
     zmodule_add_member(d,("OPT_URL"),zobj_from_int64(CURLOPT_URL));

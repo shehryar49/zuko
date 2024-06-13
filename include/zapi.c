@@ -122,7 +122,7 @@ zobject zobj_from_function(const char* name,NativeFunPtr r)
 }
 
 
-zobject Z_Err(zclass* errklass,const char* des)
+zobject z_err(zclass* errklass,const char* des)
 {
   zobject ret;
   zclass_object* p = vm_alloc_zclassobj(errklass);

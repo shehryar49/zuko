@@ -1,9 +1,11 @@
 #include "convo.h"
+#include <algorithm>
 
+using namespace std;
 string str(double f)
 {
 	string x = to_string(f);
-  
+	//Remove zeros at the end if any
 	while(x.length()>=1 && x[x.length()-1]=='0')//remove zeros at end
 	    x.pop_back();
     if(x.length()>=1 && x[x.length()-1]=='.')

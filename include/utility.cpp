@@ -290,7 +290,7 @@ string& readfile(string filename)
   fclose(fp);
   return src;
 }
-void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
+/*void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,vector<string>& files)
 {
 
    FILE* f = fopen(fname,"wb");
@@ -336,7 +336,7 @@ void WriteByteCode(const char* fname,vector<uint8_t>& bytecode,std::unordered_ma
     fwrite(arr,sizeof(uint8_t),bytecode.size(),f);
     fclose(f);
     delete[] arr;
-}
+}*/
 
 const char* getOS()
 {

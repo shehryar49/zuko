@@ -1,8 +1,9 @@
 #ifndef ZUKO_H_
 #define ZUKO_H_
-
+//This header should only be included by the zuko interpreter
 #define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
 //not defining this macro will always result in the simple switch based interpret loop
+
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <string.h>
 #include <math.h>
 #include <cstdint>
+
 #if defined(__linux__) || defined(__APPLE__)
     #include <dlfcn.h>
     #include <unistd.h>
