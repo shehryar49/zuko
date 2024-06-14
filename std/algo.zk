@@ -9,9 +9,7 @@ namespace algo
   {
     #-
     desc: Sorts a list using bubble sort
-
     param nums: A list of numbers or objects supprting '>' operator
-
     returns: nil
     -#
     var n = len(arr)
@@ -36,9 +34,7 @@ namespace algo
   {
     #-
     desc: Sorts a list using insertion sort
-
     param nums: A list of numbers or objects supprting '<' operator
-
     returns: nil
     -#
     var i = 1
@@ -64,9 +60,7 @@ namespace algo
   {
     #-
     desc: Sorts a list using bubble sort
-
     param nums: A list of numbers or objects supprting '<' operator
-
     returns: nil
     -#
     var i = 0
@@ -90,11 +84,8 @@ namespace algo
   {
     #-
     desc: Searches for an element in a sorted list using binary search.
-
     param nums: A sorted list
-
     param x: Element to search for
-
     returns: Index of element if found, nil otherwise
     -#
     var l = 0
@@ -115,11 +106,8 @@ namespace algo
   {
     #-
     desc: Searches for an element in a list using linear search.
-
     param nums: A list
-
     param x: Element to search for
-
     returns: Index of element if found, nil otherwise
     -#
     for(var i=0 to len(arr)-1 step 1)
@@ -151,13 +139,9 @@ namespace algo
   {
     #-
     desc: Sorts a list inplace using quicksort
-
     param nums: A list of numbers
-
     param l: Start idx
-
     param h: End idx
-
     returns: nil
     -#
     if(l<h)
@@ -204,13 +188,9 @@ namespace algo
   {
     #-
     desc: Sorts a list inplace using mergesort
-
     param nums: A list of numbers
-
     param l: Start idx
-
     param h: End idx
-
     returns: nil
     -#
     if(l<h)
@@ -225,13 +205,9 @@ namespace algo
   {
     #-
     desc: Returns a portion of a list
-
     param list: A list
-
     param l: Start idx
-
     param h: End idx
-
     returns: A new list having elements of original list from l to h
     -#
     var res = []
@@ -245,12 +221,9 @@ namespace algo
   {
     #-
     desc: Filters elements from a list using given function
-
     param fn: A callback function f(x) which returns true or false indicating whether x is to be included in the
               new list or not.
-
     param list: A list
-
     returns: a new list
     -#
     var res = []
@@ -265,11 +238,8 @@ namespace algo
   {
     #-
     desc: Applies a function on all elements of the list.
-
     param fn: A callback function f(x)
-
     param list: A list
-
     returns: nil
     -#
         var i = 0
@@ -283,9 +253,7 @@ namespace algo
   {
     #-
     desc: Returns max from a list
-
     param list: A list whose elements support '>' operator
-
     returns: the max element
     -#
     var l = len(list)
@@ -303,9 +271,7 @@ namespace algo
   {
     #-
     desc: Returns min from a list
-
     param list: A list whose elements support '<' operator
-
     returns: the min element
     -#
     var l = len(list)
@@ -324,11 +290,8 @@ namespace algo
     #Counts elements in the list fulfilling the given criteria
     #-
     desc: Counts elements in the list fulfilling a certain criteria. The criteria is a callback function.
-
     param fn: A callback function f(x) returning either true or false
-
     param list: A list
-
     returns: Count of elements that make fn(x) return true
     -#
     var count = 0
@@ -404,9 +367,7 @@ namespace algo
   {
     #-
     desc: Counts the number of set bits in an integer 32 bit
-
     param x: An integer 32 bit
-
     returns: number of set bits
     -#
     var f = 1
