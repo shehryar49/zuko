@@ -1,4 +1,4 @@
-# Plutonium Algorithm Standard Library
+# Zuko Algorithm Standard Library
 # 6 Feb 2022 Written by Shahryar Ahmad
 # Do not edit unless you really know what you are doing ;)
 # The code is completely free to use/modify and comes without any warantee
@@ -7,6 +7,13 @@ namespace algo
 {
   function bubbleSort(var arr)
   {
+    #-
+    desc: Sorts a list using bubble sort
+
+    param nums: A list of numbers or objects supprting '>' operator
+
+    returns: nil
+    -#
     var n = len(arr)
     var i = 1
     while(i<=n-1)
@@ -27,6 +34,13 @@ namespace algo
   }
   function insertionSort(var arr)
   {
+    #-
+    desc: Sorts a list using insertion sort
+
+    param nums: A list of numbers or objects supprting '<' operator
+
+    returns: nil
+    -#
     var i = 1
     while(i<len(arr))
     {
@@ -48,6 +62,13 @@ namespace algo
   }
   function selectionSort(var arr)
   {
+    #-
+    desc: Sorts a list using bubble sort
+
+    param nums: A list of numbers or objects supprting '<' operator
+
+    returns: nil
+    -#
     var i = 0
     while(i<len(arr))
     {
@@ -67,6 +88,15 @@ namespace algo
   }
   function binary_search(var arr,var x)
   {
+    #-
+    desc: Searches for an element in a sorted list using binary search.
+
+    param nums: A sorted list
+
+    param x: Element to search for
+
+    returns: Index of element if found, nil otherwise
+    -#
     var l = 0
     var h = len(arr)-1
     while(l<=h)
@@ -83,6 +113,15 @@ namespace algo
   }
   function linear_search(var arr,var x)
   {
+    #-
+    desc: Searches for an element in a list using linear search.
+
+    param nums: A list
+
+    param x: Element to search for
+
+    returns: Index of element if found, nil otherwise
+    -#
     for(var i=0 to len(arr)-1 step 1)
     {
       if(arr[i]==x)
@@ -110,6 +149,17 @@ namespace algo
   }
   function quickSort(var arr,var l,var h)
   {
+    #-
+    desc: Sorts a list inplace using quicksort
+
+    param nums: A list of numbers
+
+    param l: Start idx
+
+    param h: End idx
+
+    returns: nil
+    -#
     if(l<h)
     {
       var p = __partition(l,h,arr)
@@ -152,6 +202,17 @@ namespace algo
   } 
   function mergeSort(var arr,var l,var h)
   {
+    #-
+    desc: Sorts a list inplace using mergesort
+
+    param nums: A list of numbers
+
+    param l: Start idx
+
+    param h: End idx
+
+    returns: nil
+    -#
     if(l<h)
     {
         var mid = (l+h)/2
@@ -162,6 +223,17 @@ namespace algo
   }
   function sublist(var l,var h,var list)
   {
+    #-
+    desc: Returns a portion of a list
+
+    param list: A list
+
+    param l: Start idx
+
+    param h: End idx
+
+    returns: A new list having elements of original list from l to h
+    -#
     var res = []
     for(var i=l to h step 1)
     {
@@ -171,6 +243,16 @@ namespace algo
   }
   function filter(var fn,var list)
   {
+    #-
+    desc: Filters elements from a list using given function
+
+    param fn: A callback function f(x) which returns true or false indicating whether x is to be included in the
+              new list or not.
+
+    param list: A list
+
+    returns: a new list
+    -#
     var res = []
     foreach(var elem: list)
     {
@@ -181,6 +263,15 @@ namespace algo
   }
   function apply(var fn,var list) #applies function fn on all elements of list
   {
+    #-
+    desc: Applies a function on all elements of the list.
+
+    param fn: A callback function f(x)
+
+    param list: A list
+
+    returns: nil
+    -#
         var i = 0
         while(i<len(list))
         {
@@ -188,8 +279,15 @@ namespace algo
             i+=1
         }
   } 
-  function Max(var list)
+  function max(var list)
   {
+    #-
+    desc: Returns max from a list
+
+    param list: A list whose elements support '>' operator
+
+    returns: the max element
+    -#
     var l = len(list)
     if(l==0)
       return nil
@@ -201,8 +299,15 @@ namespace algo
     }
     return max
   }
-  function Min(var list)
+  function min(var list)
   {
+    #-
+    desc: Returns min from a list
+
+    param list: A list whose elements support '<' operator
+
+    returns: the min element
+    -#
     var l = len(list)
     if(l==0)
       return nil
@@ -217,6 +322,15 @@ namespace algo
   function count(var fn,var list)
   {
     #Counts elements in the list fulfilling the given criteria
+    #-
+    desc: Counts elements in the list fulfilling a certain criteria. The criteria is a callback function.
+
+    param fn: A callback function f(x) returning either true or false
+
+    param list: A list
+
+    returns: Count of elements that make fn(x) return true
+    -#
     var count = 0
     foreach(var elem: list)
     {
@@ -288,6 +402,13 @@ namespace algo
   }
   function count_set_bits(var x)
   {
+    #-
+    desc: Counts the number of set bits in an integer 32 bit
+
+    param x: An integer 32 bit
+
+    returns: number of set bits
+    -#
     var f = 1
     var count = 0
     while(f<=x)
