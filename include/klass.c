@@ -2,11 +2,11 @@
 #include "nativefun.h"
 
 
-void klass_addmember(zclass* k,const char* name,zobject val)
+void zclass_addmember(zclass* k,const char* name,zobject val)
 {
   StrMap_emplace(&(k->members),name,val);
 }
-void klass_setmember(zclass* k,const char* name,zobject val)
+void zclass_setmember(zclass* k,const char* name,zobject val)
 {
   StrMap_set(&(k->members),name,val);
 }
