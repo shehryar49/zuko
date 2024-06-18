@@ -515,8 +515,8 @@ void VM::collectGarbage()
     }
     for (auto e : toFree)
     {
+
         MemInfo m = memory[e];
-        
         if (m.type == Z_LIST)
         {
             zlist_destroy((zlist*)e);
@@ -562,46 +562,47 @@ void VM::collectGarbage()
         }
         else if (m.type == Z_FUNC)
         {
-        zlist_destroy(&((zfun*)e) ->opt);
-        delete (zfun *)e;
-        allocated -= sizeof(zfun);
+            zlist_destroy(&((zfun*)e) ->opt);
+            delete (zfun *)e;
+            allocated -= sizeof(zfun);
         }
         else if(m.type == Z_COROUTINE)
         {
-        delete (zfun *)e;
-        allocated -= sizeof(zfun);
+            delete (zfun *)e;
+            allocated -= sizeof(zfun);
         }
         else if (m.type == 'z')
         {
-        zlist_destroy(&((Coroutine*)e)->locals);
-        delete (Coroutine *)e;
-        allocated -= sizeof(Coroutine);
+            zlist_destroy(&((Coroutine*)e)->locals);
+            delete (Coroutine *)e;
+            allocated -= sizeof(Coroutine);
         }
         else if (m.type == Z_ERROBJ)
         {
-        delete (zclass_object*)e;
-        allocated -= sizeof(zclass_object);
+            delete (zclass_object*)e;
+            allocated -= sizeof(zclass_object);
         }
         else if (m.type == Z_STR)
         {
-        zstr* p = (zstr*)e;
-        allocated -= sizeof(zstr) + p->len + 1;
-        delete[] p->val;
-        delete p;
+            zstr* p = (zstr*)e;
+            allocated -= sizeof(zstr) + p->len + 1;
+            delete[] p->val;
+            delete p;
         }      
         else if (m.type == Z_NATIVE_FUNC)
         {
-        delete (znativefun *)e;
-        allocated -= sizeof(znativefun);
+            delete (znativefun *)e;
+            allocated -= sizeof(znativefun);
         }
         else if(m.type == Z_BYTEARR)
         {
-        zbytearr_destroy((zbytearr*)e);
-        delete (zbytearr*)e;
-        allocated -= sizeof(zbytearr);
+            zbytearr_destroy((zbytearr*)e);
+            delete (zbytearr*)e;
+            allocated -= sizeof(zbytearr);
         }
         memory.erase(e);
     }
+
     size_t recycled = pre - allocated;
     if (recycled < 4196) // a gc cycle is expensive so running it to collect not even 4196 bytes is useless
     {
@@ -3487,7 +3488,7 @@ VM::~VM()
         #ifdef _WIN32
         unload ufn = (unload)GetProcAddress(e, "unload");
         if (ufn)
-        ufn();
+            ufn();
         #else
         unload ufn = (unload)dlsym(e, "unload");
         if (ufn)

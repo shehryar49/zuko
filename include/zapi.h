@@ -94,6 +94,12 @@ zobject zobj_from_str(const char*);// makes deep copy of str
 zobject z_err(zclass*,const char*);
 zobject zobj_from_method(const char*,NativeFunPtr,zclass*);
 zobject zobj_from_function(const char*,NativeFunPtr);
+inline zobject zobj_nil()
+{
+    zobject ret;
+    ret.type = Z_NIL;
+    return ret;
+}
 void zmodule_add_fun(zmodule* m,const char* name,NativeFunPtr p);
 void zmodule_add_sig_fun(zmodule* m,const char* name,NativeFunPtr p,const char* sig);
 void zclass_add_method(zclass* k,const char* name,NativeFunPtr p);

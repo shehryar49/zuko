@@ -1,6 +1,6 @@
 #include "klassobject.h"
 
-zobject zclassobject_get(zclass_object* ko,const char* name)
+zobject zclassobj_get(zclass_object* ko,const char* name)
 {
   zobject val;
   val.type = Z_NIL;
