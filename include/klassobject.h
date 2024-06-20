@@ -6,8 +6,8 @@ extern "C"{
 #endif
 
 typedef struct zclass zclass;
-struct StrMap;
 typedef struct zobject zobject;
+
 #include "zobject.h"
 #include "strmap.h"
 
