@@ -28,9 +28,7 @@ zobject quickErr(zclass*,std::string);
 size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
 {
   zclass_object* obj = (zclass_object*)userp;
-  puts("here");
   zobject wmcallback = zclassobj_get(obj,".wmcallback");
-  printf("wmcallback.type = %c\n",wmcallback.type);
   size_t realsize = size * nmemb;
   //send newly received memory to callback function
   auto btArr = vm_alloc_zbytearr();
