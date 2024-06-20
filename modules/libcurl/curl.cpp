@@ -1,9 +1,5 @@
 #include "curl.h"
 #include "curl_slist.h"
-#include "klassobject.h"
-#include "zapi.h"
-#include "zbytearray.h"
-#include "zobject.h"
 #include <cstdint>
 #include <curl/curl.h>
 #include <curl/easy.h>
