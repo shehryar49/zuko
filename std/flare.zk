@@ -1,0 +1,103 @@
+import libcurl
+
+namespace flare
+{
+    class response
+    {
+        var content = nil
+        var http_code = nil
+        var content_type = nil
+        function __construct__(var a,var b,var c)
+        {
+            self.content = a
+            self.http_code = b 
+            self.content_type = c
+        }
+    }
+    class FlareError extends Error
+    {}
+
+    function get(var url)
+    {
+        var curl = libcurl.curl()
+        curl.setopt(libcurl.OPT_URL,url)
+        curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+        curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+        var res = curl.perform()
+        if(res != libcurl.CURLE_OK)
+            throw FlareError(libcurl.strerror(res))
+        var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
+        var type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        return response(curl.data,http_code,type)
+    }
+    function post(var url,var data,var content_type = nil)
+    {
+        var curl = libcurl.curl()
+        if(content_type != nil)
+        {
+            var headers = libcurl.slist()
+            headers.append("Content-Type: "+content_type)
+            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+        }
+
+        curl.setopt(libcurl.OPT_URL,url)
+        curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+        curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+        curl.setopt(libcurl.OPT_POSTFIELDS,(data))
+        curl.setopt(libcurl.OPT_POST,1)
+
+        var res = curl.perform()
+        if(res != libcurl.CURLE_OK)
+            throw FlareError(libcurl.strerror(res))
+        var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
+        content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        return response(curl.data,http_code,content_type)
+    }
+    function put(var url,var data,var content_type = nil)
+    {
+        var curl = libcurl.curl()
+        if(content_type != nil)
+        {
+            var headers = libcurl.slist()
+            headers.append("Content-Type: "+content_type)
+            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+        }
+
+        curl.setopt(libcurl.OPT_URL,url)
+        curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+        curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+        curl.setopt(libcurl.OPT_POSTFIELDS,(data))
+        curl.setopt(libcurl.OPT_CUSTOMREQUEST,"PUT")
+
+        var res = curl.perform()
+        if(res != libcurl.CURLE_OK)
+            throw FlareError(libcurl.strerror(res))
+        var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
+        content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        return response(curl.data,http_code,content_type)
+    }
+    function delete(var url,var data,var content_type = nil)
+    {
+        var curl = libcurl.curl()
+        if(content_type != nil)
+        {
+            var headers = libcurl.slist()
+            headers.append("Content-Type: "+content_type)
+            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+        }
+
+        curl.setopt(libcurl.OPT_URL,url)
+        curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+        curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+        curl.setopt(libcurl.OPT_POSTFIELDS,(data))
+        curl.setopt(libcurl.OPT_CUSTOMREQUEST,"DELETE")
+
+        var res = curl.perform()
+        if(res != libcurl.CURLE_OK)
+            throw FlareError(libcurl.strerror(res))
+        var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
+        content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        return response(curl.data,http_code,content_type)
+    }
+    
+}
