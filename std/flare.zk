@@ -17,12 +17,22 @@ namespace flare
     class FlareError extends Error
     {}
 
-    function get(var url)
+    function get(var url,var data = nil,var content_type = nil)
     {
         var curl = libcurl.curl()
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+        if(data != nil)
+            curl.setopt(libcurl.OPT_POSTFIELDS,data)
+        if(content_type != nil)
+        {
+            var headers = libcurl.slist()
+            headers.append("Content-Type: "+content_type)
+            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+        }
+        curl.setopt(libcurl.OPT_CUSTOMREQUEST,"GET")
+        
         var res = curl.perform()
         if(res != libcurl.CURLE_OK)
             throw FlareError(libcurl.strerror(res))
