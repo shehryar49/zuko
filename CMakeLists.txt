@@ -89,7 +89,7 @@ endif()
 
 # libcurl
 find_package(CURL REQUIRED) 
-add_library(libcurl SHARED modules/libcurl/libcurl.cpp modules/libcurl/libcurl.h modules/libcurl/curl.h modules/libcurl/curl.cpp modules/libcurl/mime.h modules/libcurl/mime.cpp modules/libcurl/mimepart.h modules/libcurl/mimepart.cpp)
+add_library(libcurl SHARED modules/libcurl/libcurl.cpp modules/libcurl/libcurl.h modules/libcurl/curl.h modules/libcurl/curl.cpp modules/libcurl/mime.h modules/libcurl/mime.cpp modules/libcurl/mimepart.h modules/libcurl/mimepart.cpp modules/libcurl/curl_slist.cpp)
 target_include_directories(libcurl PUBLIC include)
 target_link_libraries(libcurl ${CURL_LIBRARIES})
 set_target_properties(libcurl PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)  
