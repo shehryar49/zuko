@@ -700,6 +700,40 @@ zobject moduleInfo(zobject* args,int32_t argc)
   zobject ret = nil;
   return ret;
 }
+zobject TOLOWER(zobject* args,int32_t n)
+{
+  if(n!=1)
+    return z_err(ArgumentError,"1 argument required!");
+  if(args[0].type != Z_STR)
+    return z_err(TypeError,"Argument 1 must be a string!");
+  zstr* str = AS_STR(args[0]);
+  zstr* lower = vm_alloc_zstr(str->len);
+  char* p = str->val;
+  size_t k =0;
+  while(k < str->len)
+  {
+    lower->val[k] = tolower(str->val[k]);
+    k++;
+  }
+  return zobj_from_str_ptr(lower);
+}
+zobject TOUPPER(zobject* args,int32_t n)
+{
+  if(n!=1)
+    return z_err(ArgumentError,"1 argument required!");
+  if(args[0].type != Z_STR)
+    return z_err(TypeError,"Argument 1 must be a string!");
+  zstr* str = AS_STR(args[0]);
+  zstr* upper = vm_alloc_zstr(str->len);
+  char* p = str->val;
+  size_t k =0;
+  while(k < str->len)
+  {
+    upper->val[k] = toupper(str->val[k]);
+    k++;
+  }
+  return zobj_from_str_ptr(upper);
+}
 
 /*
 --Deprecated--
@@ -2512,6 +2546,8 @@ void initFunctions()
   funcs.emplace("moduleInfo",&moduleInfo);
   funcs.emplace("format",&FORMAT);
   funcs.emplace("fflush",&FFLUSH);
+  funcs.emplace("tolower",&TOLOWER);
+  funcs.emplace("toupper",&TOUPPER);
 
 }
 std::unordered_map<string,BuiltinFunc> methods;
