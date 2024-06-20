@@ -8,6 +8,7 @@ namespace ansi
 {
   var RESET = "\x1b[0m"
   var BOLD = "\x1b[1m"
+  var UNDERLINE = "\x1b[4m"
   var FG_BLACK = "\x1b[30m"
   var FG_RED = "\x1b[31m"
   var FG_GREEN = "\x1b[32m"
