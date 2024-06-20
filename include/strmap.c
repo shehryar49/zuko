@@ -88,24 +88,27 @@ bool StrMap_get(StrMap *h, const char *key, zobject *val) {
   }
   return false;
 }
-zobject *StrMap_getRef(StrMap *h, const char *key) {
+zobject* StrMap_getRef(StrMap *h, const char *key) 
+{
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
-  while (h->table[idx].stat != SM_EMPTY) {
-    if (strcmp(h->table[idx].key, key) == 0) {
-
+  while (h->table[idx].stat != SM_EMPTY) 
+  {
+    if (strcmp(h->table[idx].key, key) == 0) 
       return &(h->table[idx].val);
-    }
     idx = (idx + i * i) & (h->capacity - 1);
     i++;
   }
   return NULL;
 }
-bool StrMap_erase(StrMap *h, const char *key) {
+bool StrMap_erase(StrMap *h, const char *key) 
+{
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
-  while (h->table[idx].stat != SM_EMPTY) {
-    if (strcmp(h->table[idx].key, key) == 0) {
+  while (h->table[idx].stat != SM_EMPTY) 
+  {
+    if (strcmp(h->table[idx].key, key) == 0)
+    {
       h->table[idx].stat = SM_DELETED;
       h->table[idx].key = NULL;
       h->table[idx].val.type = Z_NIL;
