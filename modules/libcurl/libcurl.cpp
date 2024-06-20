@@ -81,6 +81,9 @@ zobject init()
     zmodule_add_member(d,"OPT_XFERINFOFUNCTION",zobj_from_int64(CURLOPT_XFERINFOFUNCTION));
     zmodule_add_member(d,"OPT_NOPROGRESS",zobj_from_int64(CURLOPT_NOPROGRESS));
     zmodule_add_member(d,"OPT_HTTPHEADER",zobj_from_int64(CURLOPT_HTTPHEADER));
+    zmodule_add_member(d,"OPT_UPLOAD",zobj_from_int64(CURLOPT_UPLOAD));
+    zmodule_add_member(d,"OPT_CUSTOMREQUEST",zobj_from_int64(CURLOPT_CUSTOMREQUEST));
+    
     zmodule_add_member(d,"CURLE_OK",zobj_from_int64(CURLE_OK));
     zmodule_add_member(d,"WriteMemory",zobj_from_int(0));
     zmodule_add_member(d,"INFO_CONTENT_TYPE",zobj_from_int64((long long int)CURLINFO_CONTENT_TYPE));

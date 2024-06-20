@@ -81,19 +81,11 @@ zobject zcurl_construct(zobject* args,int n)
 zobject zcurl_setopt(zobject* args,int n)
 {
     if(n!=3)
-    {
         return z_err(ArgumentError,"3 arguments needed!");   
-    }
     if(args[1].type!=Z_INT64)
-    {
         return z_err(TypeError,"Argument 2 must an Integer!");
-        
-    }
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=curl_class)
-    {
       return z_err(TypeError,"Argument 1 must be a Curl object");
-      
-    }
     long long int opt = args[1].l;
     if(opt==CURLOPT_URL)
     {
@@ -213,10 +205,7 @@ zobject zcurl_setopt(zobject* args,int n)
     else if(opt==CURLOPT_USERAGENT)
     {
       if(args[2].type!=Z_STR)
-      {
         return z_err(TypeError,"USERAGENT option requires a string value");
-         
-      }
       zclass_object* d = (zclass_object*)args[0].ptr;
       CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
       CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,AS_STR(args[2])->val);
@@ -226,11 +215,29 @@ zobject zcurl_setopt(zobject* args,int n)
         
       }
     }
+    else if(opt==CURLOPT_CUSTOMREQUEST)
+    {
+      if(args[2].type!=Z_STR)
+        return z_err(TypeError,"CUSTOMREQUEST option requires a string value");
+      zclass_object* d = (zclass_object*)args[0].ptr;
+      CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
+      CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,AS_STR(args[2])->val);
+      if( res!= CURLE_OK)
+        return z_err(Error,curl_easy_strerror(res));
+    }
     else if( opt == CURLOPT_NOPROGRESS)
     {
       zclass_object* d = (zclass_object*)args[0].ptr;
       CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
       CURLcode res = curl_easy_setopt(obj,CURLOPT_NOPROGRESS,args[2].i);
+      if(res != CURLE_OK)
+	      return z_err(Error,curl_easy_strerror(res));
+    }
+    else if( opt == CURLOPT_UPLOAD)
+    {
+      zclass_object* d = (zclass_object*)args[0].ptr;
+      CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
+      CURLcode res = curl_easy_setopt(obj,CURLOPT_UPLOAD,args[2].i);
       if(res != CURLE_OK)
 	      return z_err(Error,curl_easy_strerror(res));
     }
