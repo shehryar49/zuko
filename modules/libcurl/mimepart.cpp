@@ -65,10 +65,5 @@ zobject mimepart_data(zobject* args,int n)
 zobject mimepart__del__(zobject* args,int n)
 {
     return zobj_nil();
-/*   if(n!=1)
-        return z_err(ArgumentError,"1 argument needed!");
-    zclass_object* k = (zclass_object*)args[0].ptr;
-    curl_mimepart* obj = (curl_mimepart*)zclassobj_get(k,".handle").ptr;
-    delete obj;
-    return zobj_nil();*/
+
 }

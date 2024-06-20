@@ -10,6 +10,6 @@ extern "C"
 {
 
     EXPORT zobject init(); //initialize the module
-    EXPORT zobject zlibcurlmod_strerror(zobject*,int);
+    EXPORT zobject wrapped_strerror(zobject*,int);
     EXPORT void unload(); // module cleanup   
 }

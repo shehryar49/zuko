@@ -1,11 +1,10 @@
 #include "curl.h"
-#include "klassobject.h"
-#include "zapi.h"
+#include "curl_slist.h"
 #include "zobject.h"
 #include <curl/curl.h>
-#include <curl/easy.h>
 #include <string>
 #include <vector>
+
 using namespace std;
 
 zclass* curl_class;
@@ -85,8 +84,7 @@ zobject zcurl_setopt(zobject* args,int n)
 {
     if(n!=3)
     {
-        return z_err(ArgumentError,"3 arguments needed!");
-        
+        return z_err(ArgumentError,"3 arguments needed!");   
     }
     if(args[1].type!=Z_INT64)
     {
@@ -238,6 +236,26 @@ zobject zcurl_setopt(zobject* args,int n)
       if(res != CURLE_OK)
 	      return z_err(Error,curl_easy_strerror(res));
     }
+    else if(opt == CURLOPT_HTTPHEADER)
+    {
+      if(args[2].type != Z_OBJ || ((zclass_object*)args[2].ptr)->_klass != slist_class)
+        return z_err(TypeError,"Argument 1 must be an object of libcurl.slist");
+      zclass_object* obj = (zclass_object*)args[2].ptr;
+      CURL* handle = (CURL*)zclassobj_get((zclass_object*)args[0].ptr,".handle").ptr;
+      curl_slist* list;
+      list = (curl_slist*)zclassobj_get(obj,".handle").ptr;
+      CURLcode res = curl_easy_setopt(handle,CURLOPT_HTTPHEADER,list);
+      if(res != CURLE_OK)
+	      return z_err(Error,curl_easy_strerror(res));
+    }
+    else if( opt == CURLOPT_POST)
+    {
+      zclass_object* d = (zclass_object*)args[0].ptr;
+      CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
+      CURLcode res = curl_easy_setopt(obj,CURLOPT_POST,args[2].i);
+      if(res != CURLE_OK)
+	      return z_err(Error,curl_easy_strerror(res));
+    }
     else if(opt == CURLOPT_XFERINFOFUNCTION)
     {
       if(args[2].type!=Z_FUNC)
@@ -266,10 +284,10 @@ zobject zcurl_setopt(zobject* args,int n)
       res = curl_easy_setopt(obj,CURLOPT_POSTFIELDSIZE,l.size());
       
     }
+
     else
     {
       return z_err(ValueError,"Unknown option used");
-      
     }
     return zobj_nil();
 }
@@ -329,7 +347,7 @@ zobject zcurl_getinfo(zobject* args,int n)
     }
     return zobj_nil();
 }
-zobject zcurl__del__(zobject* args,int n)//
+zobject zcurl__del__(zobject* args,int n)
 {
     if(n != 1 || args[0].type != Z_OBJ)
       return zobj_nil();
@@ -374,20 +392,11 @@ zobject zcurl_escape(zobject* args,int n)
 zobject zcurl_unescape(zobject* args,int n)
 {
   if(n!=2)
-  {
     return z_err(ArgumentError,"2 Arguments required.");
-    
-  }
   if(args[0].type != Z_OBJ || ((zclass_object*)args[0].ptr) -> _klass !=curl_class)
-  {
     return z_err(TypeError,"Argument 1 must be a Curl Object");
-    
-  }
   if(args[1].type!=Z_STR)
-  {
     return z_err(TypeError,"Argument 1 must be a string");
-    
-  }
   zclass_object* ki = (zclass_object*)args[0].ptr;
   CURL* handle = (CURL*)zclassobj_get(ki,".handle").ptr;
   zstr* str = AS_STR(args[1]);
