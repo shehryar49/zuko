@@ -29,7 +29,7 @@ function WriteMemory(var bytes)
 function downloadFile(var url,var outputPath)
 {
   openedFile = open(outputPath,"wb")
-  var req = libcurl.Curl()
+  var req = libcurl.curl()
   req.setopt(libcurl.OPT_URL,url)
   req.setopt(libcurl.OPT_FOLLOWLOCATION,1)
   req.setopt(libcurl.OPT_WRITEFUNCTION,WriteMemory)
@@ -95,7 +95,7 @@ function clean()
 }
 function updatePackageList()
 {
-  var c = libcurl.Curl()
+  var c = libcurl.curl()
   c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/"+ZUKO_VERSION+"/packages.txt")
   c.setopt(libcurl.OPT_FOLLOWLOCATION,1)
   c.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
