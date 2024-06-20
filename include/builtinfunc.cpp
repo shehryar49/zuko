@@ -658,7 +658,10 @@ zobject OBJINFO(zobject* args,int32_t argc)
         if(k->members.table[idx].stat != SM_OCCUPIED)
           continue;
         auto& e = k->members.table[idx];
-        printf("%s: %s\n",e.key,fullform(e.val.type).c_str());
+        if(e.val.type == Z_POINTER)
+          printf("%s: %p\n",e.key,e.val.ptr);
+        else
+          printf("%s: %s\n",e.key,fullform(e.val.type).c_str());
           
       }
       for(size_t idx = 0; idx < k->privateMembers.capacity;idx++)
