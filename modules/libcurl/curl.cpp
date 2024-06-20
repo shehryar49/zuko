@@ -1,17 +1,23 @@
 #include "curl.h"
 #include "curl_slist.h"
+#include "klassobject.h"
+#include "zapi.h"
+#include "zbytearray.h"
 #include "zobject.h"
+#include <cstdint>
 #include <curl/curl.h>
+#include <curl/easy.h>
 #include <string>
 #include <vector>
 
 using namespace std;
 
 zclass* curl_class;
+zobject quickErr(zclass*,std::string);
 
 //Default WriteMemory function
 //pushes all the bytes to a bytearray
-size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
   zbytearr* mem = (zbytearr*)userp;
@@ -21,58 +27,98 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
   return realsize;
 }
 //WriteMemory function which calls zuko callback and passes the bytes
-//zobject wmcallback;
-//zobject xfercallback;
-zobject quickErr(zclass*,std::string);
-
-size_t WMCallbackHandler(void *contents, size_t size, size_t nmemb, void *userp)
+size_t wm_callback_handler(void *contents, size_t size, size_t nmemb, void *userp)
 {
   zclass_object* obj = (zclass_object*)userp;
   zobject wmcallback = zclassobj_get(obj,".wmcallback");
+  zobject writedata = zclassobj_get(obj,".writedata");
+
   size_t realsize = size * nmemb;
-  //send newly received memory to callback function
   auto btArr = vm_alloc_zbytearr();
   zbytearr_resize(btArr,realsize);
   memcpy(btArr->arr, contents, realsize);
   zobject rr;
-  zobject p1;
-  p1.type = Z_BYTEARR;
-  p1.ptr = (void*)btArr;
-  vm_call_object(&wmcallback,&p1,1,&rr);
+  zobject p1 = zobj_from_bytearr(btArr);
+  //send newly received memory to callback function
+  if(writedata.type != Z_NIL)
+  {
+    zobject args[] = {p1,writedata};
+    vm_call_object(&wmcallback,args,2, &rr);
+  }
+  else
+    vm_call_object(&wmcallback,&p1,1,&rr);
   return realsize;
 }
 //xfer function
 int xferfun(void* clientp,curl_off_t dltotal,curl_off_t dlnow,curl_off_t ultotal,curl_off_t ulnow)
 {
+
   zclass_object* obj = (zclass_object*)clientp;
   zobject xfercallback = zclassobj_get(obj,".xfercallback");
-  zobject args[4];
+  zobject xferinfodata = zclassobj_get(obj,".xferinfodata");
+
+  zobject args[5] = {
+    xferinfodata,
+    zobj_from_int64(dltotal),
+    zobj_from_int64(dlnow),
+    zobj_from_int64(ultotal),
+    zobj_from_int64(ulnow)
+  };
   zobject r;
-  r.type = Z_INT64;
-  r.l = dltotal;
-  args[0] = r;
-  r.l = dlnow;
-  args[1] = r;
-  r.l = ultotal;
-  args[2] = r;
-  r.l = ulnow;
-  args[3] = r;
-  vm_call_object(&xfercallback,args,4,&r);
+  bool good = vm_call_object(&xfercallback,args,5,&r);
   if(r.type == Z_INT)
     return r.i;
   return 0;
 }
+size_t read_callback_handler(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+  zclass_object* curl_object = (zclass_object*)userdata;
+  zobject readfunction = zclassobj_get(curl_object,".readfunction");
+  zobject readdata = zclassobj_get(curl_object,".readdata");
 
+  /* copy as much data as possible into the 'ptr' buffer, but no more than
+     'size' * 'nmemb' bytes! */
+  
+  zobject args[] = {
+    zobj_from_int64(size*nmemb),
+    readdata
+  };
+  zobject rr;
+  bool good = vm_call_object(&readfunction,args,2,&rr);
+  if(!good || rr.type!=Z_BYTEARR)
+    return 0;
+  zbytearr* bytes = (zbytearr*)rr.ptr;
+  if(bytes->size > size*nmemb)
+    return 0;
+  memcpy(ptr,bytes->arr,bytes->size*sizeof(uint8_t));
+
+  return (curl_off_t)bytes->size; 
+}
+size_t header_callback_handler(char *buffer, size_t size,size_t nitems, void *userdata)
+{
+  /* received header is nitems * size long in 'buffer' NOT ZERO TERMINATED */
+  /* 'userdata' is set with CURLOPT_HEADERDATA */
+  zclass_object* curl_object = (zclass_object*)userdata;
+  zobject headerfn = zclassobj_get(curl_object,".headerfn");
+  zobject headerdata = zclassobj_get(curl_object,".headerdata");
+
+  zstr* str = vm_alloc_zstr(size*nitems);
+  memcpy(str->val,buffer,size*nitems);
+  zobject args[] = {zobj_from_str_ptr(str),headerdata};
+  zobject rr;
+  vm_call_object(&headerfn,args,2,&rr);
+  return nitems * size;
+}
 zobject zcurl_construct(zobject* args,int n)
 {
   if(n!=1)
-    return z_err(ArgumentError,"1 arguments needed!");
-    
+    return z_err(ArgumentError,"1 arguments needed!");  
   zclass_object* curobj = (zclass_object*)args[0].ptr;
+  if(args[0].type != Z_OBJ || curobj->_klass!=curl_class)
+    return z_err(TypeError,"Argument 1 must be an object of libcurl.curl class");
   CURL* curl = curl_easy_init();
   if(!curl)
-    return z_err(Error,"failed");
-  
+    return z_err(Error,"curl_easy_init() failed");
   //Return an object
   zclassobj_set(curobj,".handle",zobj_from_ptr(curl));
   return zobj_nil();
@@ -136,10 +182,7 @@ zobject zcurl_setopt(zobject* args,int n)
     else if(opt==CURLOPT_PORT)
     {
       if(args[2].type!=Z_INT)
-      {
         return z_err(TypeError,"PORT option requires an integer value");
-         
-      }
       zclass_object* d = (zclass_object*)args[0].ptr;
       CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
       CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,args[2].i);
@@ -173,11 +216,9 @@ zobject zcurl_setopt(zobject* args,int n)
       {
         //set callback
         zclass_object* d = (zclass_object*)args[0].ptr;
-        zclassobj_set(d,"wmcallback",args[2]);
-       // wmcallback = args[2];
         CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
         zclassobj_set(d,".wmcallback",args[2]);
-        CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&WMCallbackHandler);
+        CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&wm_callback_handler);
         if( res!= CURLE_OK)
           return z_err(Error,curl_easy_strerror(res));
         curl_easy_setopt(obj,CURLOPT_WRITEDATA, d);
@@ -194,13 +235,63 @@ zobject zcurl_setopt(zobject* args,int n)
       p1.ptr = (void*)btArr;
       zclassobj_set(d,"data",p1);
       CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
-      CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&WriteMemoryCallback);
+      CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&write_memory_callback);
       if( res!= CURLE_OK)
       {
         return z_err(Error,curl_easy_strerror(res));
         
       }
       curl_easy_setopt(obj,CURLOPT_WRITEDATA,btArr);
+    }
+    else if(opt == CURLOPT_READFUNCTION)
+    {
+      if(args[2].type == Z_FUNC || args[2].type == Z_NATIVE_FUNC)
+      {
+        //set callback
+        zclass_object* d = (zclass_object*)args[0].ptr;
+        CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
+        zclassobj_set(d,".readfunction",args[2]);
+        CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&read_callback_handler);
+        if( res!= CURLE_OK)
+          return z_err(Error,curl_easy_strerror(res));
+        curl_easy_setopt(obj,CURLOPT_WRITEDATA, d);
+        return zobj_nil();
+      }
+    }
+    else if(opt == CURLOPT_HEADERFUNCTION)
+    {
+      if(args[2].type == Z_FUNC || args[2].type == Z_NATIVE_FUNC)
+      {
+        //set callback
+        zclass_object* d = (zclass_object*)args[0].ptr;
+        CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
+        zclassobj_set(d,".headerfn",args[2]);
+        CURLcode res = curl_easy_setopt(obj,(CURLoption)opt,&header_callback_handler);
+        if( res!= CURLE_OK)
+          return z_err(Error,curl_easy_strerror(res));
+        curl_easy_setopt(obj,CURLOPT_HEADERDATA, d);
+        return zobj_nil();
+      }
+    }
+    else if(opt == CURLOPT_READDATA)
+    {
+      zclass_object* curl_object = (zclass_object*)args[0].ptr;
+      zclassobj_set(curl_object,".readdata",args[2]);
+    }
+    else if(opt == CURLOPT_WRITEDATA)
+    {
+      zclass_object* curl_object = (zclass_object*)args[0].ptr;
+      zclassobj_set(curl_object,".writedata",args[2]);
+    }
+    else if(opt == CURLOPT_XFERINFODATA)
+    {
+      zclass_object* curl_object = (zclass_object*)args[0].ptr;
+      zclassobj_set(curl_object,".xferinfodata",args[2]);
+    }
+    else if(opt == CURLOPT_HEADERDATA)
+    {
+      zclass_object* curl_object = (zclass_object*)args[0].ptr;
+      zclassobj_set(curl_object,".headerdata",args[2]);
     }
     else if(opt==CURLOPT_USERAGENT)
     {
@@ -263,15 +354,15 @@ zobject zcurl_setopt(zobject* args,int n)
     }
     else if(opt == CURLOPT_XFERINFOFUNCTION)
     {
-      if(args[2].type!=Z_FUNC)
+      if(args[2].type!=Z_FUNC && args[2].type != Z_NATIVE_FUNC)
         return z_err(TypeError,"XFERINFOFUNCTION option must be a callback function!");
       zclass_object* d = (zclass_object*)args[0].ptr;
-      zclassobj_set(d,".xfercallback",args[2]);
       CURL* obj = (CURL*)zclassobj_get(d,".handle").ptr;
       zclassobj_set(d,".xfercallback",args[2]);
       CURLcode res = curl_easy_setopt(obj,CURLOPT_XFERINFOFUNCTION,xferfun);
       if(res != CURLE_OK)
         return z_err(Error,curl_easy_strerror(res));
+      curl_easy_setopt(obj,CURLOPT_XFERINFODATA,d);
     }
     else if(opt==CURLOPT_POSTFIELDS)
     {
@@ -289,7 +380,6 @@ zobject zcurl_setopt(zobject* args,int n)
       res = curl_easy_setopt(obj,CURLOPT_POSTFIELDSIZE,l.size());
       
     }
-
     else
     {
       return z_err(ValueError,"Unknown option used");

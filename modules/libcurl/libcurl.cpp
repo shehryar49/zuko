@@ -76,9 +76,17 @@ zobject init()
     zmodule_add_member(d,"OPT_USERAGENT",zobj_from_int64(CURLOPT_USERAGENT));
     zmodule_add_member(d,"OPT_FOLLOWLOCATION",zobj_from_int64(CURLOPT_FOLLOWLOCATION));
     zmodule_add_member(d,"OPT_WRITEFUNCTION",zobj_from_int64(CURLOPT_WRITEFUNCTION));
+    zmodule_add_member(d,"OPT_WRITEDATA",zobj_from_int64(CURLOPT_WRITEDATA));
+    zmodule_add_member(d,"OPT_READFUNCTION",zobj_from_int64(CURLOPT_READFUNCTION));
+    zmodule_add_member(d,"OPT_READDATA",zobj_from_int64(CURLOPT_READDATA));
+    zmodule_add_member(d,"OPT_HEADERFUNCTION",zobj_from_int64(CURLOPT_HEADERFUNCTION));
+    zmodule_add_member(d,"OPT_HEADERDATA",zobj_from_int64(CURLOPT_HEADERDATA));
+
     zmodule_add_member(d,"OPT_MIMEPOST",zobj_from_int64(CURLOPT_MIMEPOST));
     zmodule_add_member(d,"OPT_VERBOSE",zobj_from_int64(CURLOPT_VERBOSE));
     zmodule_add_member(d,"OPT_XFERINFOFUNCTION",zobj_from_int64(CURLOPT_XFERINFOFUNCTION));
+    zmodule_add_member(d,"OPT_XFERINFODATA",zobj_from_int64(CURLOPT_XFERINFODATA));
+    
     zmodule_add_member(d,"OPT_NOPROGRESS",zobj_from_int64(CURLOPT_NOPROGRESS));
     zmodule_add_member(d,"OPT_HTTPHEADER",zobj_from_int64(CURLOPT_HTTPHEADER));
     zmodule_add_member(d,"OPT_UPLOAD",zobj_from_int64(CURLOPT_UPLOAD));
