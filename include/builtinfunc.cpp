@@ -990,7 +990,7 @@ zobject SYSTEM(zobject* args,int32_t argc)
 }
 zobject SPLIT(zobject* args,int32_t argc)
 {
-    if(argc==2)
+  if(argc==2)
 	{
 		if( (args[0].type=='s') && ( args[1].type=='s'))
 		{
@@ -1012,10 +1012,10 @@ zobject SPLIT(zobject* args,int32_t argc)
             ret.ptr = l;
             return ret;
 		}
-	    else
-        {
-            return quickErr(TypeError,"Error split() takes both string arguments!\n");
-        }
+    else
+    {
+        return quickErr(TypeError,"Error split() takes both string arguments!\n");
+    }
 	}
 	return quickErr(ArgumentError,"Error split() takes two arguments!");
 }
