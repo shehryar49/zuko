@@ -70,7 +70,7 @@ extern zclass* AccessError;
 extern fn1 vm_alloc_zlist;
 extern fn2 vm_alloc_zdict;
 extern fn3 vm_alloc_zstr;
-extern fn4 vm_allocMutString;//unused
+//extern fn4 vm_alloc_raw;
 extern fn5 vm_alloc_zfile;
 extern fn6 vm_alloc_zclass;
 extern fn7 vm_alloc_zclassobj;
@@ -80,7 +80,6 @@ extern fn10 vm_alloc_zbytearr;
 extern fn11 vm_call_object;
 extern fn12 vm_mark_important;
 extern fn13 vm_unmark_important;
-  
 
 #ifdef _WIN32
 __declspec(dllexport)

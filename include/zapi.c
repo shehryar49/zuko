@@ -1,3 +1,4 @@
+#define ZUKO_BUILDING_MODULE
 #include "zapi.h"
 #include "zobject.h"
 

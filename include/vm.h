@@ -22,6 +22,7 @@ SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
 
+#include <cstdint>
 #include <vector>
 #include "apifunctions.h" 
 #include "builtinfunc.h"
@@ -49,6 +50,7 @@ struct MemInfo //Data structure used by GC
 {
   char type;
   bool isMarked;
+  size_t size; // only used for Z_RAW
 };
 
 
@@ -73,6 +75,8 @@ extern "C"
   bool vm_call_object(zobject*,zobject*,int,zobject*);
   void vm_mark_important(void* mem);
   void vm_unmark_important(void* mem);
+  uint8_t* vm_realloc_raw(void*,size_t);
+  uint8_t* vm_alloc_raw(size_t);
 }
 //
 //Error classes (defined in vm.cpp)
@@ -114,6 +118,7 @@ private:
 
   std::vector<zfun*> executing = {NULL}; // pointer to zuko function object we are executing, NULL means control is not in a function
   size_t GC_THRESHHOLD;
+  size_t GC_MIN_COLLECT;
   std::unordered_map<size_t, ByteSrc> *LineNumberTable;
   std::vector<std::string> *files;
   std::vector<std::string> *sources;
@@ -140,6 +145,7 @@ public:
   size_t allocated = 0;
   std::unordered_map<void*, MemInfo> memory;
   friend class Compiler;
+  friend zobject SET_GC_PARAMS(zobject*,int32_t);
   //These functions are outside the class, so they can be called by C code
   friend bool vm_call_object(zobject*,zobject*,int,zobject*);
   friend void vm_mark_important(void*);

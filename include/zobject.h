@@ -90,8 +90,8 @@ typedef zobject(*NativeFunPtr)(zobject*,int);
 #define AS_STR(x) ((zstr*)x.ptr)
 #define AS_DICT(x) (ZDict*)x.ptr
 #define AS_LIST(x) (ZList*)x.ptr
-#define AS_KLASS(x) (zclass*)x.ptr
-#define AS_KlASSOBJ(x) (zclass_object*)x.ptr
+#define AS_CLASS(x) (zclass*)x.ptr
+#define AS_ClASSOBJ(x) (zclass_object*)x.ptr
 #define AS_BYTEARRAY(x) (zbytearr*)x.ptr
 #define AS_FILEOBJECT(x) (zfile*)x.ptr
 #define AS_PTR(x) x.ptr

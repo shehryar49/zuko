@@ -70,17 +70,13 @@ int main(int argc, const char* argv[])
         //printAST(ast);
         
         Compiler compiler;
-        compiler.set_source(src);//init compiler with root filename and ZukoSource
+        compiler.set_source(src);//init compiler with ZukoSource
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
         deleteAST(ast);
     }
-
-    vm.load(bytecode,src);
-   
+    vm.load(bytecode,src); // vm uses the src for printing errors and stuff
     // It's showtime
     vm.interpret();
-    // Hasta La Vista Baby
-
-    
+    // Hasta La Vista Baby    
     return 0;
 }

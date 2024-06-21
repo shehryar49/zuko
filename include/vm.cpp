@@ -1,10 +1,15 @@
+#include "coroutineobj.h"
 #include "klassobject.h"
 #include "nativefun.h"
 #include "programinfo.h"
+#include "zbytearray.h"
 #include "zuko.h"
 #include "vm.h"
 #include "zobject.h"
-#include <dlfcn.h>
+#include <cstdint>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -126,6 +131,7 @@ void VM::load(vector<uint8_t>& bytecode,ZukoSource& p)
     program = &bytecode[0];
     program_size = bytecode.size();
     GC_THRESHHOLD = 4196;//chosen at random
+    GC_MIN_COLLECT = 4196;
     LineNumberTable = &p.LineNumberTable;
     files = &p.files;
     sources = &p.sources;
@@ -255,16 +261,16 @@ size_t VM::spitErr(zclass* e, string msg) // used to show a runtime error
 }
 inline void VM::DoThreshholdBusiness()
 {
-if (allocated > GC_THRESHHOLD)
-{
-    mark();
-    collectGarbage();
-}
+    if (allocated > GC_THRESHHOLD)
+    {
+        mark();
+        collectGarbage();
+    }
 }
 
 inline static bool isHeapObj(const zobject &obj)
 {
-if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != 'p' && obj.type != Z_BOOL)
+if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != Z_BOOL && obj.type != Z_POINTER)
     return true; // all other objects are on heap
 return false;
 }
@@ -520,14 +526,14 @@ void VM::collectGarbage()
         if (m.type == Z_LIST)
         {
             zlist_destroy((zlist*)e);
-            delete (zlist *)e;
+            free(e);
             allocated -= sizeof(zlist);
         }
         else if (m.type == Z_MODULE)
         {
             zmodule* m = (zmodule*)e;
             StrMap_destroy(&(m->members));
-            delete (zmodule *)e;
+            free(e);
             allocated -= sizeof(zmodule);
         }
         else if (m.type == Z_CLASS)
@@ -535,7 +541,7 @@ void VM::collectGarbage()
             zclass* k = (zclass*)e;
             StrMap_destroy(&(k->members));
             StrMap_destroy(&(k->privateMembers));
-            delete (zclass* )e;
+            free(e);
             allocated -= sizeof(zclass);
         }
         else if (m.type == Z_OBJ)
@@ -543,51 +549,51 @@ void VM::collectGarbage()
             zclass_object* k = (zclass_object*)e;
             StrMap_destroy(&(k->members));
             StrMap_destroy(&(k->privateMembers));  
-            delete (zclass_object*)e;
+            free(e);
             allocated -= sizeof(zclass_object);
         }
         else if (m.type == Z_DICT)
         {
-        zdict_destroy((zdict*)e);
-        delete (zdict *)e;
-        allocated -= sizeof(zdict);
+            zdict_destroy((zdict*)e);
+            free(e);
+            allocated -= sizeof(zdict);
         }
         else if (m.type == Z_FILESTREAM)
         {
-        zfile* zf = (zfile*)e;
-        if(zf->open)
-            fclose(zf->fp);
-        delete (zfile *)e;
-        allocated -= sizeof(zfile);
+            zfile* zf = (zfile*)e;
+            if(zf->open)
+                fclose(zf->fp);
+            free(e);
+            allocated -= sizeof(zfile);
         }
         else if (m.type == Z_FUNC)
         {
             zlist_destroy(&((zfun*)e) ->opt);
-            delete (zfun *)e;
+            free(e);
             allocated -= sizeof(zfun);
         }
         else if(m.type == Z_COROUTINE)
         {
-            delete (zfun *)e;
+            free(e);
             allocated -= sizeof(zfun);
         }
         else if (m.type == 'z')
         {
             zlist_destroy(&((Coroutine*)e)->locals);
-            delete (Coroutine *)e;
+            free(e);
             allocated -= sizeof(Coroutine);
         }
         else if (m.type == Z_ERROBJ)
         {
-            delete (zclass_object*)e;
+            free(e);
             allocated -= sizeof(zclass_object);
         }
         else if (m.type == Z_STR)
         {
             zstr* p = (zstr*)e;
             allocated -= sizeof(zstr) + p->len + 1;
-            delete[] p->val;
-            delete p;
+            free(p->val);
+            free(p);
         }      
         else if (m.type == Z_NATIVE_FUNC)
         {
@@ -597,17 +603,20 @@ void VM::collectGarbage()
         else if(m.type == Z_BYTEARR)
         {
             zbytearr_destroy((zbytearr*)e);
-            delete (zbytearr*)e;
+            free(e);
             allocated -= sizeof(zbytearr);
+        }
+        else if(m.type == Z_RAW)
+        {
+            free(e);
+            allocated-= m.size;
         }
         memory.erase(e);
     }
 
     size_t recycled = pre - allocated;
-    if (recycled < 4196) // a gc cycle is expensive so running it to collect not even 4196 bytes is useless
+    if (recycled < 4196) // a gc cycle is expensive so if we are collecting enough bytes we update the threshold
     {
-        // if this is the case we update the threshhold so that next time we collect more bytes
-        // the number 4196 was picked randomly and it seems to work well
         GC_THRESHHOLD *= 2;
     }
 }
@@ -1206,30 +1215,30 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
 
             if (!StrMap_get(&(obj->members),method_name,&tmp))
             {
-            if (StrMap_get(&(obj->privateMembers),method_name,&tmp))
-            {
-                zfun *p = executing.back();
-                if (p == NULL)
+                if (StrMap_get(&(obj->privateMembers),method_name,&tmp))
                 {
-                spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
-                NEXT_INST;
+                    zfun *p = executing.back();
+                    if (p == NULL)
+                    {
+                    spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
+                    NEXT_INST;
+                    }
+                    if (p->_klass == obj->_klass)
+                    p4 = tmp;
+                    else
+                    {
+                    spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
+                    NEXT_INST;
+                    }
                 }
-                if (p->_klass == obj->_klass)
-                p4 = tmp;
                 else
                 {
-                spitErr(NameError, "Error " + (string)method_name + " is private member of object!");
-                NEXT_INST;
+                    spitErr(NameError, "Error object has no member " + (string)method_name);
+                    NEXT_INST;
                 }
             }
             else
-            {
-                spitErr(NameError, "Error object has no member " + (string)method_name);
-                NEXT_INST;
-            }
-            }
-            else
-            p4 = tmp;
+                p4 = tmp;
             if (p4.type == Z_FUNC)
             {
                 zfun *memFun = (zfun *)p4.ptr;
@@ -1257,51 +1266,51 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             }
             else if (p4.type == Z_NATIVE_FUNC)
             {
-            znativefun *fn = (znativefun *)p4.ptr;
-            NativeFunPtr R = fn->addr;
-            zobject *args = &STACK.arr[STACK.size-i2-1];
-            zobject rr;
-            if(fn->signature)
-            {
-                size_t len = strlen(fn->signature);
-                if(len != i2+1)
+                znativefun *fn = (znativefun *)p4.ptr;
+                NativeFunPtr R = fn->addr;
+                zobject *args = &STACK.arr[STACK.size-i2-1];
+                zobject rr;
+                if(fn->signature)
                 {
-                spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, "+to_string(i2)+" given!");
-                NEXT_INST;
+                    size_t len = strlen(fn->signature);
+                    if(len != i2+1)
+                    {
+                    spitErr(ArgumentError,(string)"Native function "+ (string)fn->name + (string)" takes "+to_string(len)+" arguments, "+to_string(i2)+" given!");
+                    NEXT_INST;
+                    }
+                    size_t i = 0;
+                    while(i<i2+1)
+                    {
+                    if(args[i].type != fn->signature[i])
+                    {
+                        spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+                        NEXT_INST;
+                    }
+                    i+=1;
+                    }
                 }
-                size_t i = 0;
-                while(i<i2+1)
+                rr = R(args, i2 + 1);
+                if (rr.type == Z_ERROBJ)
                 {
-                if(args[i].type != fn->signature[i])
-                {
-                    spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)fn->name+(string)+"should be a "+fullform(fn->signature[i]));
+                    zclass_object* E = (zclass_object*)rr.ptr;
+                    zobject msg;
+                    StrMap_get(&(E->members),"msg",&msg);
+                    spitErr(E->_klass, (string)fn->name + ": " + AS_STD_STR(msg));
                     NEXT_INST;
                 }
-                i+=1;
-                }
-            }
-            rr = R(args, i2 + 1);
-            if (rr.type == Z_ERROBJ)
-            {
-                zclass_object* E = (zclass_object*)rr.ptr;
-                zobject msg;
-                StrMap_get(&(E->members),"msg",&msg);
-                spitErr(E->_klass, (string)fn->name + ": " + AS_STD_STR(msg));
-                NEXT_INST;
-            }
-            zlist_erase_range(&STACK,STACK.size-i2-1,STACK.size-1);
-            zlist_push(&STACK,rr);
+                zlist_erase_range(&STACK,STACK.size-i2-1,STACK.size-1);
+                zlist_push(&STACK,rr);
             }
             else
             {
-            spitErr(NameError, "Error member " + (string)method_name + " of object is not callable!");
-            NEXT_INST;
+                spitErr(NameError, "Error member " + (string)method_name + " of object is not callable!");
+                NEXT_INST;
             }
         }
         else if (p1.type == 'z')
         {
             if(i2!=0)
-            p4 = STACK.arr[STACK.size - 1];
+                p4 = STACK.arr[STACK.size - 1];
             Coroutine *g = (Coroutine *)p1.ptr;
             s1 = method_name;
             if (s1 == "isAlive")
@@ -2837,7 +2846,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (fn.type == Z_CLASS)
         {
 
-            zclass_object*obj = vm_alloc_zclassobj(AS_KLASS(fn)); // instance of class
+            zclass_object*obj = vm_alloc_zclassobj(AS_CLASS(fn)); // instance of class
 
 
             s1 = ((zclass*)fn.ptr) -> name;
@@ -3539,7 +3548,7 @@ zobject z_err(zclass* errKlass,const char* des)
 }
 zlist* vm_alloc_zlist()
 {
-  zlist *p = new(nothrow) zlist;
+  zlist* p = (zlist*)malloc(sizeof(zlist));
   if (!p)
   {
     fprintf(stderr,"allocList(): error allocating memory!\n");
@@ -3555,7 +3564,7 @@ zlist* vm_alloc_zlist()
 }
 zbytearr* vm_alloc_zbytearr()
 {
-  auto p = new(nothrow) zbytearr;
+  zbytearr* p = (zbytearr*)malloc(sizeof(zbytearr));
   if (!p)
   {
     fprintf(stderr,"allocByteArray(): error allocating memory!\n");
@@ -3569,38 +3578,58 @@ zbytearr* vm_alloc_zbytearr()
   vm.memory.emplace((void *)p, m);
   return p;
 }
-uint8_t* vm_allocRaw(size_t len)
+/*uint8_t* vm_alloc_raw(size_t len)
 {
-  // the stupid user who failed to send a valid
-  // length, will likely fail to add NULL check
-  // why degrade performance?
-  //if(len == 0)
-  // return NULL;
-
-  uint8_t* p = new(nothrow) uint8_t[len];
+  //len is the number of bytes
+  uint8_t* p = (uint8_t*)malloc(len*sizeof(uint8_t));
   if (!p)
   {
     fprintf(stderr,"allocRaw(): error allocating memory!\n");
     exit(0);
   }
-  vm.allocated += sizeof(len);
+  vm.allocated += len;
   MemInfo m;
   m.type = Z_RAW;
   m.isMarked = false;
+  m.size = len;
   vm.memory.emplace((void *)p, m);
   return p;
 }
+uint8_t* vm_realloc_raw(void* prev,size_t newsize)
+{
+  //newsize is the number of bytes
+  uint8_t* p = (uint8_t*)realloc(prev,sizeof(uint8_t)*newsize);
+  if (!p)
+  {
+    fprintf(stderr,"realloc_raw(): error allocating memory!\n");
+    exit(0);
+  }
+  if(p == prev) // previous block expanded
+  {
+    vm.memory[prev].size = newsize;
+    return p;
+  }
+  else  //new block allocated previous freed
+  {
+    vm.allocated -= vm.memory[prev].size;
+    vm.memory.erase(prev);
+    vm.allocated += newsize;
+    MemInfo m;
+    m.type = Z_RAW;
+    m.isMarked = false;
+    m.size = newsize;
+    vm.memory.emplace((void *)p, m);
+    return p;
+  }
+}*/
+
 zstr* vm_alloc_zstr(size_t len)
 {
-  /*
-  if(len != 0)
-    return NULL;*/
-
-  zstr* str = new(nothrow) zstr;
-  char* buffer = new(nothrow) char[len+1];
+  zstr* str = (zstr*)malloc(sizeof(zstr));
+  char* buffer = (char*)malloc(sizeof(char)*(len+1));
   if (!buffer || !str)
   {
-    fprintf(stderr,"allocString(): error allocating memory!\n");
+    fprintf(stderr,"alloc_zstr(): error allocating memory!\n");
     exit(0);
   }
   //The string owns this buffer
@@ -3616,10 +3645,9 @@ zstr* vm_alloc_zstr(size_t len)
   vm.memory.emplace((void *)str, m);
   return str;
 }
-
 zclass* vm_alloc_zclass()
 {
-  zclass* p = new(nothrow) zclass;
+  zclass* p = (zclass*)malloc(sizeof(zclass));
   if (!p)
   {
     fprintf(stderr,"allocKlass(): error allocating memory!\n");
@@ -3637,7 +3665,7 @@ zclass* vm_alloc_zclass()
 }
 zmodule* vm_alloc_zmodule()
 {
-  zmodule*p = new(nothrow) zmodule;
+  zmodule* p = (zmodule*)malloc(sizeof(zmodule));
   if (!p)
   {
     fprintf(stderr,"allocModule(): error allocating memory!\n");
@@ -3653,7 +3681,7 @@ zmodule* vm_alloc_zmodule()
 }
 zclass_object* vm_alloc_zclassobj(zclass* k)
 {
-  zclass_object* p = new zclass_object;
+  zclass_object* p = (zclass_object*)malloc(sizeof(zclass_object));
   if (!p)
   {
     fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
@@ -3673,7 +3701,7 @@ zclass_object* vm_alloc_zclassobj(zclass* k)
 }
 Coroutine* vm_alloc_coro_obj()//allocates coroutine object
 {
-  Coroutine *p = new(nothrow) Coroutine;
+  Coroutine* p = (Coroutine*)malloc(sizeof(Coroutine));
   if (!p)
   {
     fprintf(stderr,"allocCoObj(): error allocating memory!\n");
@@ -3689,7 +3717,7 @@ Coroutine* vm_alloc_coro_obj()//allocates coroutine object
 }
 zfun* vm_alloc_zfun()
 {
-  zfun *p = new zfun;
+  zfun* p = (zfun*)malloc(sizeof(zfun));
   if (!p)
   {
     fprintf(stderr,"alloczfun(): error allocating memory!\n");
@@ -3706,7 +3734,7 @@ zfun* vm_alloc_zfun()
 }
 zfun* vm_alloc_coro() //coroutine can be represented by zfun
 {
-  zfun *p = new zfun;
+  zfun* p = (zfun*)malloc(sizeof(zfun));
   if (!p)
   {
     fprintf(stderr,"allocCoroutine(): error allocating memory!\n");
@@ -3722,8 +3750,7 @@ zfun* vm_alloc_coro() //coroutine can be represented by zfun
 }
 zfile * vm_alloc_zfile()
 {
-
-  zfile *p = new zfile;
+  zfile* p = (zfile*)malloc(sizeof(zfile));
   if (!p)
   {
     fprintf(stderr,"alloczfile(): error allocating memory!\n");
@@ -3738,7 +3765,7 @@ zfile * vm_alloc_zfile()
 }
 zdict* vm_alloc_zdict()
 {
-  zdict *p = new zdict;
+  zdict *p = (zdict*)malloc(sizeof(zdict));
   if (!p)
   {
     fprintf(stderr,"allocDict(): error allocating memory!\n");
@@ -3754,7 +3781,7 @@ zdict* vm_alloc_zdict()
 }
 znativefun* vm_alloc_znativefun()
 {
-  znativefun *p = new znativefun;
+  znativefun *p = (znativefun*)malloc(sizeof(znativefun));
   if (!p)
   {
     fprintf(stderr,"allocNativeFun(): error allocating memory!\n");

@@ -16,19 +16,19 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-  typedef zlist*(*fn1)();//allocList
-  typedef zdict*(*fn2)();//allocZDict
-  typedef zstr*(*fn3)(size_t);//allocString
-  typedef void*(*fn4)();//unused
-  typedef zfile*(*fn5)();//allocFileObject
-  typedef zclass*(*fn6)();//allocKlass
-  typedef zclass_object*(*fn7)(zclass*);//allocKlassObject
-  typedef znativefun*(*fn8)();//allocNativeFunObj
-  typedef zmodule*(*fn9)();//allocModule
-  typedef zbytearr*(*fn10)();//allocBytearray
-  typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//callobject
-  typedef void(*fn12)(void*);//markImportant
-  typedef void(*fn13)(void*);//unmarkImpotant
+  typedef zlist*(*fn1)();//alloc_zlist
+  typedef zdict*(*fn2)();//alloc_zdict
+  typedef zstr*(*fn3)(size_t);//alloc_zstr
+  typedef uint8_t*(*fn4)(size_t);//unused
+  typedef zfile*(*fn5)();//alloc_zfile
+  typedef zclass*(*fn6)();//alloc_zclass
+  typedef zclass_object*(*fn7)(zclass*);//alloc_zclassobj
+  typedef znativefun*(*fn8)();//alloc_znativefun
+  typedef zmodule*(*fn9)();//alloc_zmodule
+  typedef zbytearr*(*fn10)();//alloc_zbytearr
+  typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//call_object
+  typedef void(*fn12)(void*);//mark_important
+  typedef void(*fn13)(void*);//unmark_impotant
   typedef struct apiFuncions
   {
     fn1 a1;//api function 1
