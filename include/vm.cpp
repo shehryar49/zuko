@@ -2828,17 +2828,18 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
                 i+=1;
             }
             }
+
             p4 = f(&(STACK.arr[STACK.size - N]), N);
             if (p4.type == Z_ERROBJ)
             {
-            s1 = "Native Function:  " + *(string *)p4.ptr;
-            spitErr((zclass*)p4.ptr, s1);
-            NEXT_INST;
+                s1 = "Native Function:  " + *(string *)p4.ptr;
+                spitErr((zclass*)p4.ptr, s1);
+                NEXT_INST;
             }
             if (fullform(p4.type) == "Unknown" && p4.type != Z_NIL)
             {
-            spitErr(ValueError, "Error invalid response from module!");
-            NEXT_INST;
+                spitErr(ValueError, "Error invalid response from module!");
+                NEXT_INST;
             }
             zlist_erase_range(&STACK,STACK.size-N,STACK.size-1);
             zlist_push(&STACK,p4);

@@ -2113,53 +2113,53 @@ vector<uint8_t> Compiler::compile(Node* ast)
 }
 void Compiler::optimize_jmps(vector<uint8_t>& bytecode)
 {
-for(auto e: andJMPS)
-{
-    int offset;
-    memcpy(&offset,&bytecode[e+1],4);
-    size_t k = e+5+offset;
-    int newoffset;
-    while(k < bytes_done && bytecode[k] == JMPIFFALSENOPOP)
+    for(auto e: andJMPS)
     {
-    memcpy(&newoffset,&bytecode[k+1],4);
-    offset+=newoffset+5;
-    k = k+5+newoffset;
+        int offset;
+        memcpy(&offset,&bytecode[e+1],4);
+        size_t k = e+5+offset;
+        int newoffset;
+        while(k < bytes_done && bytecode[k] == JMPIFFALSENOPOP)
+        {
+        memcpy(&newoffset,&bytecode[k+1],4);
+        offset+=newoffset+5;
+        k = k+5+newoffset;
+        }
+        memcpy(&bytecode[e+1],&offset,4);
     }
-    memcpy(&bytecode[e+1],&offset,4);
-}
-//optimize short circuit jumps for or
-for(auto e: orJMPS)
-{
-    int offset;
-    memcpy(&offset,&bytecode[e+1],4);
-    size_t k = e+5+offset;
-    int newoffset;
-    while(k < bytes_done && bytecode[k] == NOPOPJMPIF)
+    //optimize short circuit jumps for or
+    for(auto e: orJMPS)
     {
-    memcpy(&newoffset,&bytecode[k+1],4);
-    offset+=newoffset+5;
-    k = k+5+newoffset;
+        int offset;
+        memcpy(&offset,&bytecode[e+1],4);
+        size_t k = e+5+offset;
+        int newoffset;
+        while(k < bytes_done && bytecode[k] == NOPOPJMPIF)
+        {
+        memcpy(&newoffset,&bytecode[k+1],4);
+        offset+=newoffset+5;
+        k = k+5+newoffset;
+        }
+        memcpy(&bytecode[e+1],&offset,4);
     }
-    memcpy(&bytecode[e+1],&offset,4);
-}
 }
 void Compiler::reduceStackTo(int size)//for REPL
 {
-while((int)STACK_SIZE > size)
-{
-    int lastidx = (int)STACK_SIZE-1;
-    int firstidx = (int)size;
-    for(auto it=globals.begin();it!=globals.end();)
+    while((int)STACK_SIZE > size)
     {
-    if((*it).second>=firstidx  && (*it).second <= lastidx)
-    {
-        it = globals.erase(it);
-        STACK_SIZE-=1;
+        int lastidx = (int)STACK_SIZE-1;
+        int firstidx = (int)size;
+        for(auto it=globals.begin();it!=globals.end();)
+        {
+            if((*it).second>=firstidx  && (*it).second <= lastidx)
+            {
+                it = globals.erase(it);
+                STACK_SIZE-=1;
+            }
+            else
+                ++it;
+        }
     }
-    else
-        ++it;
-    }
-}
 }
 zclass* Compiler::make_error_class(string name,zclass* error)
 {
