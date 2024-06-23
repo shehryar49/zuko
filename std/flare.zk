@@ -17,22 +17,13 @@ namespace flare
     class FlareError extends Error
     {}
 
-    function get(var url,var data = nil,var content_type = nil)
+    function get(var url)
     {
         var curl = libcurl.curl()
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
-        if(data != nil)
-            curl.setopt(libcurl.OPT_POSTFIELDS,data)
-        if(content_type != nil)
-        {
-            var headers = libcurl.slist()
-            headers.append("Content-Type: "+content_type)
-            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
-        }
-        curl.setopt(libcurl.OPT_CUSTOMREQUEST,"GET")
-        
+    
         var res = curl.perform()
         if(res != libcurl.CURLE_OK)
             throw FlareError(libcurl.strerror(res))
@@ -49,7 +40,8 @@ namespace flare
             headers.append("Content-Type: "+content_type)
             curl.setopt(libcurl.OPT_HTTPHEADER,headers)
         }
-
+        if(typeof(data) == "String")
+            data = bytes(data)
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
@@ -72,6 +64,8 @@ namespace flare
             headers.append("Content-Type: "+content_type)
             curl.setopt(libcurl.OPT_HTTPHEADER,headers)
         }
+        if(typeof(data) == "String")
+            data = bytes(data)
 
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
@@ -86,20 +80,13 @@ namespace flare
         content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
         return response(curl.data,http_code,content_type)
     }
-    function delete(var url,var data,var content_type = nil)
+    function delete(var url)
     {
         var curl = libcurl.curl()
-        if(content_type != nil)
-        {
-            var headers = libcurl.slist()
-            headers.append("Content-Type: "+content_type)
-            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
-        }
 
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
-        curl.setopt(libcurl.OPT_POSTFIELDS,(data))
         curl.setopt(libcurl.OPT_CUSTOMREQUEST,"DELETE")
 
         var res = curl.perform()
