@@ -57,7 +57,7 @@ add_library(bignum SHARED modules/bignum/bignumWrapper.cpp modules/bignum/bignum
 set_target_properties(bignum PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 target_link_libraries(bignum zapi)
 # cgi
-add_library(cgi SHARED modules/cgi/cgi.cpp modules/cgi/cgi.h)
+add_library(cgi SHARED modules/cgi/cgi.cpp modules/cgi/cgi.h modules/cgi/multipart.cpp modules/cgi/cgi-utils.cpp)
 set_target_properties(cgi PROPERTIES LIBRARY_OUTPUT_DIRECTORY modules/)
 target_link_libraries(cgi zapi)
 # socket
