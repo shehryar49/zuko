@@ -34,11 +34,7 @@ zobject mime_addpart(zobject* args,int n)
    
     //add methods to object
     zclass_object* part = vm_alloc_zclassobj(mimepart_class);
-    zclassobj_set(part,"data",zobj_from_method("mimepart.data",&mimepart_data,mimepart_class));
-    zclassobj_set(part,("name"),zobj_from_method("mimepart.name",&mimepart_name,mimepart_class));
-    zclassobj_set(part,("filename"),zobj_from_method("mimepart.filename",&mimepart_filename,mimepart_class));
-    zclassobj_set(part,("type"),zobj_from_method("mimepart.type",&mimepart_content_type,mimepart_class));
-    zclassobj_set(part,("__del__"),zobj_from_method("mimepart.__del__",&mimepart__del__,mimepart_class));
+
     zclassobj_set(part,(".handle"),zobj_from_ptr((void*)mimepart));
 
     return zobj_from_classobj(part);
@@ -48,7 +44,10 @@ zobject mime__del__(zobject* args,int n)
     if(n!=1)
         return z_err(ArgumentError,"1 argument needed!");
     zclass_object* k = (zclass_object*)args[0].ptr;
-    curl_mime* obj = (curl_mime*)AS_PTR(zclassobj_get(k,".handle"));
+    zobject tmp = zclassobj_get(k,".handle");
+    if(tmp.type == Z_NIL)
+        return tmp;
+    curl_mime* obj = (curl_mime*)AS_PTR(tmp);
     curl_mime_free(obj);
     return zobj_nil();
 }

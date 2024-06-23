@@ -6,10 +6,9 @@ and requires libcurl libraries to be linked when compiling.
 Written by Shahryar Ahmad
 */
 #include "curl_slist.h"
-#include "module.h"
 #include "zapi.h"
 #ifdef _WIN32
-  #define CURL_STATICLIB
+  #define CURL_STATICLIB // don't want to distribute dlls
   #pragma comment(lib,"crypt32.lib")
   #pragma comment(lib,"Normaliz.lib")
   #pragma comment(lib,"Ws2_32.lib")
@@ -50,6 +49,11 @@ zobject init()
     //
     mimepart_class = vm_alloc_zclass();
     mimepart_class->name = "libcurl.mimepart";
+    zclass_setmember(mimepart_class,"data",zobj_from_method("mimepart.data",&mimepart_data,mimepart_class));
+    zclass_setmember(mimepart_class,("name"),zobj_from_method("mimepart.name",&mimepart_name,mimepart_class));
+    zclass_setmember(mimepart_class,("filename"),zobj_from_method("mimepart.filename",&mimepart_filename,mimepart_class));
+    zclass_setmember(mimepart_class,("type"),zobj_from_method("mimepart.type",&mimepart_content_type,mimepart_class));
+    zclass_setmember(mimepart_class,("__del__"),zobj_from_method("mimepart.__del__",&mimepart__del__,mimepart_class));
     //
     mime_class = vm_alloc_zclass();
     mime_class->name = "libcurl.mime";

@@ -156,7 +156,6 @@ void multipart_parser::part()
     }
     content_length = k - content_begin;
 }
-
 void multipart_parser::space()
 {
     while(k < len && data[k] == ' ')
