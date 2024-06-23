@@ -6,416 +6,157 @@
 #include <unordered_map>
 #include <algorithm>
 #include "cgi.h"
-#include "klassobject.h"
 #include "zapi.h"
-#include "zobject.h"
+#include "multipart.h"
+#include "cgi-utils.h"
+
 #ifdef _WIN32
   #include<io.h>
   #include <fcntl.h>
 #endif
 using namespace std;
 
-zclass* CgiFile;
+zclass* part_class;
 
-vector<string> split(string s,const string& x)
-{
-	size_t  k = 0;
-	vector<string> list;
-	while( (k = s.find(x) ) != std::string::npos)
-	{
-		list.push_back(s.substr(0,k));
-		s = s.substr(k+x.length());
-	}
-	list.push_back(s);
-	return list;
-}
-int hexdigitToDecimal(char ch)
-{
-  if(ch >= 'A' && ch <='F')
-    return ch - 'A' + 10;
-  else if(ch >= 'a' && ch <='f')
-    return ch - 'a' + 10;
-  else if(ch >= '0' && ch <= '9')
-    return ch - '0';
-  return 69;
-}
-string url_decode(const string& s)
-{
-    string res = "";
-    int k = 0;
-    size_t len = s.length();
-    while(k<len)
-    {
-        if(s[k]=='%' && k+2 < len)
-        {
-            k+=2;
-            res += (char)( hexdigitToDecimal(s[k+1])*16 + hexdigitToDecimal(s[k+2]) );
-        }
-        else if(s[k]=='+')
-            res+=" ";
-        else
-          res+=s[k];
-        k+=1;
-    }
-    return res;
-}
-string substr(int x,int y,string& str)//crash safe substring
-{
-  string res;
-  if(x<0 || x>=str.length() || y<0 || y>=str.length())
-    return res;//return empty string
-  for(int i=x;i<=y;i++)
-    res+=str[i];
-  return res;
-}
-vector<string> splitIgnQuotes(string& s,char x)
-{
-  string read;
-  vector<string> parts;
-  bool inquotes = false;
-  for(auto e: s)
-  {
-    if(e == '"')
-    {
-     inquotes = !inquotes;
-     read+='"';
-    }
-    else if(e == x)
-    {
-      parts.push_back(read);
-      read="";
-    }
-    else
-      read+=e;
-  }
-  parts.push_back(read);
-  return parts;
-}
-
-zdict* parse_multipart(char* data,size_t len,const string& boundary,bool& hadError)
-{
-
-  hadError = true;
-  size_t k = 0;
-  string b;
-  while (k < len && data[k]!='\r')
-    b+=data[k++];
-  
-  if(b.substr(2)!=boundary)
-    return nullptr;
-  k+=2;//skip newline character
-  
-  char ch;
-  std::unordered_map<string,string> headers;
-  string headername;
-  string read;
-  string aux ;
-  b = "\r\n"+(string)"--"+boundary;
-  zdict* d = vm_alloc_zdict();
-  while(k<len)
-  {
-    headername = "";
-    read = "";
-	//read a header
-    bool inquotes=false;
-    while(k<len && data[k]!='\r')
-    {
-      ch = data[k];
-      if(ch == ' ' && !inquotes)
-        ;//ignore
-      else if(ch == ':' && !inquotes)
-      {
-        if(headername != "")
-          return nullptr;
-        headername = read;
-        read = "";
-      }
-      else if(ch == ';')
-      {
-        if(headername=="")
-          return nullptr;
-        read+=ch;
-      }
-      else if(isalpha(ch) && !inquotes)
-        read+=tolower(ch);
-      else if(ch == '"')
-      {
-        read+=ch;
-        inquotes = !inquotes;
-      }
-      else
-        read+=ch;
-      ++k;
-    }
-    if(inquotes)
-      return nullptr;
-    headers.emplace(headername,read);
-    k+=2;//skip CRLF
-    string content;
-    if(headername == "")//empty line,start reading content
-    {
-      while(k<len)
-      {
-        if(b[0] == data[k] && k+b.length()-1 < len)
-        {
-            //match boundary
-            k+=1;
-            int p = k-1;
-            bool match = true;
-            for(int l=1;l<b.length();l++,k++)
-            {
-                if(data[k] != b[l])
-                {
-                    match = false;
-                    break;
-                }
-            }
-            if(!match)
-            {
-                k = p;
-                content+=data[k];
-                k++;
-                continue;
-            }
-            if(k+1<len && data[k]=='-' && data[k+1]=='-')
-              k+=2;
-            if(k+1<len && (data[k]!='\r' || data[k+1]!='\n'))
-              return nullptr;
-            k+=2;//skip CRLF
-            break;//boundary was found end content
-        }
-        else
-          content+=data[k];
-        k+=1;
-      }
-      if(headers.find("content-disposition") == headers.end())
-        return nullptr;
-      aux = headers["content-disposition"];
-      if(substr(0,9,aux)!="form-data;")
-        return nullptr;
-      vector<string> parts = splitIgnQuotes(aux,';');
-      string name;
-      string filename;
-      for(auto part: parts)
-      {
-        if(substr(0,4,part)=="name=" && name=="")
-        {
-           aux = part.substr(5);
-           if(aux.length()<3 || aux[0]!='"' || aux.back()!='"')
-             return nullptr;
-           aux.pop_back();
-           name = aux.substr(1);
-        }
-        else if(part == "form-data")
-        ;
-        else if(substr(0,8,part)=="filename=" && filename=="")
-        {
-           aux = part.substr(9);
-           if(aux.length()<3 || aux[0]!='"' || aux.back()!='"')
-             return nullptr;
-           aux.pop_back();
-           filename = aux.substr(1);
-           
-        }
-        else
-          return nullptr;
-      }
-      if(filename =="")
-        zdict_emplace(d,zobj_from_str(name.c_str()),zobj_from_str(content.c_str()));
-      else
-      {
-        //file content uploaded
-        zclass_object* ki = vm_alloc_zclassobj(CgiFile);
-        zclassobj_set(ki,"filename",zobj_from_str(filename.c_str()));
-        if(headers.find("content-type")!=headers.end())
-        {
-          aux = headers["content-type"];
-          zclassobj_set(ki,"type",zobj_from_str(aux.c_str()));
-        }
-        auto btArr = vm_alloc_zbytearr();
-        zbytearr_resize(btArr,content.length());
-        memcpy(btArr->arr,&content[0],content.length());
-        zobject rr;
-        rr.type = Z_BYTEARR;
-        rr.ptr = (void*)btArr;
-        zclassobj_set(ki,"content",rr);
-        zdict_emplace(d,zobj_from_str(name.c_str()),zobj_from_classobj(ki));
-      }
-        
-      headers.clear();
-    }
-  }
-  hadError = false;
-  return d;
-}
 zdict* GET()
 {
-       char* q = getenv("QUERY_STRING");
-       if(!q)
-         return nullptr;
-       string query = q;
-       zdict* m = vm_alloc_zdict();
-       if(query == "")
-         return m;
-       vector<string> pairs = split(q,"&");
-       for(auto pair: pairs)
-       {
-           vector<string> eq = split(pair,"=");
-           if(eq.size()!=2)
-             return nullptr;
-           eq[0] = url_decode(eq[0]);
-           eq[1] = url_decode(eq[1]);
-           zdict_emplace(m,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
-       }
-       return m;
-}
-bool caseInsensitiveCmp(string a,string b)
-{
-  if(a.length() != b.length())
-    return false;
-  for(size_t i = 0;i<a.length();i++)
-  {
-    if(tolower(a[i])!=tolower(b[i]))
-      return false;
-  }
-  return true;
-}
-void consumeSpace(char* data,int len,int k=0)
-{
-  while(k<len && data[k]==' ')
-    k++;
-  
-}
-void consumeSpace(const string& data,int& k)
-{
-  while(k<data.length() && data[k]==' ')
-    k++;
-  
-}
-zdict* POST(bool& err)
-{
-
-       err = true;
-       char* q = getenv("CONTENT_LENGTH");
-       char* t = getenv("CONTENT_TYPE");
-       if(!q || !t)
-         return nullptr;
-       string type = t;
-       size_t len = atoll(q);
-       char* s = new char[len+1];
-       fread(s,sizeof(char),len,stdin);
-       s[len] = 0;
-      
-       if(type=="application/x-www-form-urlencoded")
-       {
-         string data = s;
-         zdict* m = vm_alloc_zdict();
-         if(data.length() == 0)
-         {
-           err = false;
-           return m;
-         }
-         vector<string> pairs = split(data,"&");
-         for(auto pair: pairs)
-         {
-             vector<string> eq = split(pair,"=");
-             if(eq.size()!=2)
-               return nullptr;
-             eq[0] = url_decode(eq[0]);
-             eq[1] = url_decode(eq[1]);
-             zdict_emplace(m,zobj_from_str(eq[0].c_str()),zobj_from_str(eq[1].c_str()));
-         }
-         err = false;
-         return m;
-       }
-       else if(caseInsensitiveCmp(substr(0,18,type),"multipart/form-data")) // multipart form
-       {
-        int k=19;
-        consumeSpace(type,k);
-        if(k>=type.length() || type[k]!=';')
-          return nullptr;
-        k+=1;
-        consumeSpace(type,k);
-        if(k >= type.length())
-          return nullptr;
-        string boundary;
-        if(caseInsensitiveCmp(substr(k,k+8,type),"boundary="))
-        {
-          boundary = type.substr(k+9);
-          if(boundary.length() < 1)
+    char* q = getenv("QUERY_STRING");
+    if(!q)
+        return nullptr;
+    zdict* m = vm_alloc_zdict();
+    if(*q == 0)
+        return m;
+    vector<string> pairs = split(q,"&");
+    for(auto pair: pairs)
+    {
+        vector<string> eq = split(pair,"=");
+        if(eq.size()!=2)
             return nullptr;
-        }
-        else
-          return nullptr;
-        return parse_multipart(s,len,boundary,err);
-       }
-       else
-       {
-         return nullptr;
-       }
-
+        eq[0] = url_decode(eq[0]);
+        eq[1] = url_decode(eq[1]);
+        zobject key = zobj_from_str(eq[0].c_str());
+        zobject val = zobj_from_str(eq[1].c_str());
+        zdict_emplace(m,key,val);
+    }
+    return m;
 }
-zobject FormData(zobject* args,int n)
+zdict* POST()
+{
+    char* q = getenv("CONTENT_LENGTH");
+    char* t = getenv("CONTENT_TYPE");
+    if(!q || !t)
+        return nullptr;
+    string type = t;
+    size_t len = atoll(q);
+    char* s = new char[len+1];
+    fread(s,sizeof(char),len,stdin);
+    s[len] = 0;
+    
+    if(type == "application/x-www-form-urlencoded")
+    {
+        zdict* m = vm_alloc_zdict();
+        if(len == 0)
+            return m;
+        vector<string> pairs = split(s,"&");
+        for(auto pair: pairs)
+        {
+            vector<string> eq = split(pair,"=");
+            if(eq.size()!=2)
+                return nullptr;
+            eq[0] = url_decode(eq[0]);
+            eq[1] = url_decode(eq[1]);
+            zobject key = zobj_from_str(eq[0].c_str());
+            zobject val = zobj_from_str(eq[1].c_str());
+            zdict_emplace(m,key,val);
+        }
+        return m;
+    }
+    else if(strncmp(type.c_str(),"multipart/form-data",19) == 0) // multipart form
+    {
+        vector<string> parts = split(type,"; ");
+        if(parts.size() != 2 || parts[0] != "multipart/form-data")
+          return nullptr;
+        vector<string> boundary_parts = split(parts[1],"=");
+        if(boundary_parts.size()!=2 || boundary_parts[0]!="boundary")
+          return nullptr;
+        std::string boundary = boundary_parts[1];
+        strip_spaces(boundary);
+        boundary = "--" + boundary; //IMPORTANT!
+        multipart_parser parser(s,len,boundary);
+        try
+        {
+          return parser.parse();
+        }
+        catch(const parse_error& err)
+        {
+          return nullptr;
+        }
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+zobject formdata(zobject* args,int32_t n)
 {
     if(n!=0)
         return z_err(ArgumentError,"0 arguments needed!");
+
     char* method = getenv("REQUEST_METHOD");
     if(!method)
         return z_err(Error,"Environment variable REQUEST_METHOD not found!");
+    
     if(string(method)=="GET")
     {
-       zdict* d = vm_alloc_zdict();
-       d = GET();
-       if(!d)
-          return z_err(Error,"Error parsing request(bad or unsupported format)");
-       return zobj_from_dict(d);
-       
+        zdict* d = GET();
+        if(!d)
+            return z_err(Error,"Error parsing request(bad or unsupported format)");
+        return zobj_from_dict(d);   
     }
     else if(string(method)=="POST")
     {
-       bool hadErr=false;
-       zdict* d = POST(hadErr);
-       if(!d || hadErr)
-          return z_err(Error,"Error parsing request(bad or unsupported format)");
-       return zobj_from_dict(d);
+        zdict* d = POST();
+        if(!d)
+            return z_err(Error,"Error parsing request(bad or unsupported format)");
+        return zobj_from_dict(d);
     }
     else
     {
-      string errmsg = (string)"Unknown method " + method;
-      return z_err(ValueError,errmsg.c_str());
+        string errmsg = (string)"Unknown method " + method;
+        return z_err(ValueError,errmsg.c_str());
     }
 }
-zobject nil;
 zobject init()
 {
     #ifdef _WIN32
     _setmode(_fileno(stdin), _O_BINARY);//we dont want CRLF replaced by LF when
     //reading from stdin
     #endif
-    nil.type = 'n';
-    zmodule* d = vm_alloc_zmodule();
-    CgiFile = vm_alloc_zclass();
-    zclass_addmember(CgiFile,"filename",nil);
-    zclass_addmember(CgiFile,"content",nil);
-    zclass_addmember(CgiFile,"contentType",nil);
-    CgiFile->name = "cgi.File";
 
-    zmodule_add_member(d,"FormData",zobj_from_method("cgi.FormData",&FormData,CgiFile));
-    zmodule_add_member(d,"cookies",zobj_from_function("cgi.cookies",&cookies));
-    
-    //Function FormData is not a member of CgiFile class but we want the class  not to be
-    //garbage collected when FormData function object is reachable 
-    zmodule_add_member(d,"File",zobj_from_class(CgiFile));
-    return zobj_from_module(d);
+    zmodule* cgi_module = vm_alloc_zmodule();
+
+    part_class = vm_alloc_zclass();
+    part_class->name = "cgi.part";
+    zclass_addmember(part_class,"filename",zobj_nil());
+    zclass_addmember(part_class,"type",zobj_nil());
+    zclass_addmember(part_class,"bytes",zobj_nil());
+
+    zmodule_add_member(cgi_module,"formdata",zobj_from_method("cgi.formdata",&formdata,part_class));
+    zmodule_add_member(cgi_module,"cookies",zobj_from_function("cgi.cookies",&cookies));
+    //Function formdata is not a member of part class but we want the class  not to be
+    //garbage collected when formdata function object is reachable 
+
+    zmodule_add_member(cgi_module,"part",zobj_from_class(part_class));
+
+    return zobj_from_module(cgi_module);
 }
-
 zobject cookies(zobject* args,int n)
 {
   if(n!=0)
     return z_err(ArgumentError,"0 arguments needed!");
   char* cookie = getenv("HTTP_COOKIE");
   if(!cookie)
-    return z_err(ValueError,"No cookies!");
+    return z_err(Error,"Environment variable HTTP_COOKIE not set. Make sure to run this program in cgi-bin");
   string data = cookie;
   vector<string> parts = split(data,"; ");
   zdict* dict = vm_alloc_zdict();
@@ -428,6 +169,8 @@ zobject cookies(zobject* args,int n)
   }
   return zobj_from_dict(dict);
 }
-extern "C" void unload()
+
+void unload()
 {
+  //Nothing here
 }
