@@ -597,7 +597,7 @@ void VM::collectGarbage()
         }      
         else if (m.type == Z_NATIVE_FUNC)
         {
-            delete (znativefun *)e;
+            free(e);
             allocated -= sizeof(znativefun);
         }
         else if(m.type == Z_BYTEARR)
@@ -1445,13 +1445,13 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             void* module = dlopen(s2.c_str(),RTLD_LAZY);
             if(!module)
             {
-            s1 = "/opt/zuko/modules/" + s1 + ".so";
-            module = dlopen(s1.c_str(), RTLD_LAZY);
-            if (!module)
-            {
-                spitErr(ImportError, (std::string)(dlerror()));
-                NEXT_INST;
-            }
+                s1 = "/opt/zuko/modules/" + s1 + ".so";
+                module = dlopen(s1.c_str(), RTLD_LAZY);
+                if (!module)
+                {
+                    spitErr(ImportError, (std::string)(dlerror()));
+                    NEXT_INST;
+                }
             }
             initFun f = (initFun)dlsym(module, "init");
             apiFun a = (apiFun)dlsym(module, "api_setup");
