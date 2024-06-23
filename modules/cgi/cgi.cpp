@@ -150,7 +150,7 @@ zobject init()
 
     return zobj_from_module(cgi_module);
 }
-zobject cookies(zobject* args,int n)
+zobject cookies(zobject* args,int32_t n)
 {
   if(n!=0)
     return z_err(ArgumentError,"0 arguments needed!");
