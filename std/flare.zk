@@ -1,17 +1,31 @@
+#-
+Written by Shahryar Ahmad
+23 Jun 2024
+-#
 import libcurl
 
 namespace flare
 {
     class response
     {
+        #-
+        Class to represent http response
+        -#
         var content = nil
         var http_code = nil
         var content_type = nil
-        function __construct__(var a,var b,var c)
+        function __construct__(var content,var http_code,var content_type)
         {
-            self.content = a
-            self.http_code = b 
-            self.content_type = c
+            #-
+            desc: Constructor
+            param content: a bytearray
+            param http_code: a non negative integer
+            param content_type: a string indicating mime type e.g "text/html"
+            returns: nil
+            -#
+            self.content = content
+            self.http_code = http_code
+            self.content_type = content_type
         }
     }
     class FlareError extends Error
@@ -19,6 +33,11 @@ namespace flare
 
     function get(var url)
     {
+        #-
+        desc: Performs a http GET request
+        param url: a valid url having string type
+        returns: a response object
+        -#
         var curl = libcurl.curl()
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
@@ -33,6 +52,13 @@ namespace flare
     }
     function post(var url,var data,var content_type = nil)
     {
+        #-
+        desc: Performs a http POST request
+        param url: a valid url having string type
+        param data: data to post (a bytearray or a string)
+        param content_type = nil: content type of posted data (nil by default)
+        returns: a response object
+        -#
         var curl = libcurl.curl()
         if(content_type != nil)
         {
@@ -57,6 +83,13 @@ namespace flare
     }
     function put(var url,var data,var content_type = nil)
     {
+        #-
+        desc: Performs a http PUT request
+        param url: a valid url having string type
+        param data: data to PUT (a bytearray or a string)
+        param content_type = nil: content type of data being sent(nil by default)
+        returns: a response object
+        -#
         var curl = libcurl.curl()
         if(content_type != nil)
         {
@@ -82,6 +115,11 @@ namespace flare
     }
     function delete(var url)
     {
+        #-
+        desc: Performs a http DELETE request
+        param url: a valid url having string type
+        returns: a response object
+        -#
         var curl = libcurl.curl()
 
         curl.setopt(libcurl.OPT_URL,url)
