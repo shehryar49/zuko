@@ -13,7 +13,7 @@ else
   exit
 fi
 
-echo "[+] Copying files (might require password)"
+echo "\n[+] Copying files (might require password)\n"
 # sudo section
 sudo mkdir /opt/zuko
 sudo mkdir /opt/zuko/modules
@@ -47,7 +47,7 @@ sudo cp libzapi.a /opt/zuko/lib
 #
 
 sudo chmod 777 /opt/zuko/fiza/packages.txt
-sudo chmod +x /opt/zuko/fiza
+sudo chmod +x /opt/zuko/fiza.zk
 sudo ln -s /opt/zuko/zuko /usr/local/bin/zuko
 sudo ln -s /opt/zuko/fiza.zk /usr/local/bin/fiza
 echo "[+] Running tests"
