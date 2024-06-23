@@ -27,7 +27,7 @@ extern "C"
   EXPORT zobject bignum__noteq(zobject*,int);
   EXPORT zobject bignum__strval(zobject*,int);
   EXPORT zobject bignum__increment(zobject*,int);
-  
+  EXPORT zobject bignum__print(zobject*,int);
   EXPORT zobject bignum__destroy(zobject*,int);
   
   zclass* bignumKlass;
@@ -70,6 +70,8 @@ extern "C"
     zclass_add_method(bignumKlass,"__noteq__",&bignum__noteq);
     zclass_add_method(bignumKlass,"strval",&bignum__strval);
     zclass_add_method(bignumKlass,"increment",&bignum__increment);
+    zclass_add_method(bignumKlass,"__print__",&bignum__print);
+    
     zclass_add_method(bignumKlass,"__del__",&bignum__destroy);
    
     //add class to module
@@ -284,9 +286,21 @@ extern "C"
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
       return z_err(TypeError,"Error bignum object needed!");
     zclass_object* self = (zclass_object*)args[0].ptr;
-    bignum a = *(bignum*)AS_PTR(zclassobj_get(self,".ptr"));
+    bignum& a = *(bignum*)AS_PTR(zclassobj_get(self,".ptr"));
     return zobj_from_str(a.str().c_str());
   }
+  zobject bignum__print(zobject* args,int n)
+  {
+    if(n!=1)
+      return z_err(ArgumentError,"1 argument needed");
+    if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=bignumKlass)
+      return z_err(TypeError,"Error bignum object needed!");
+    zclass_object* self = (zclass_object*)args[0].ptr;
+    bignum* a = (bignum*)AS_PTR(zclassobj_get(self,".ptr"));
+    printf("%s",a->str().c_str());
+    return zobj_nil();
+  }
+  
   zobject bignum__increment(zobject* args,int32_t n)
   {
      if(n!=1)

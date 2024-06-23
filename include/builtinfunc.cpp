@@ -195,7 +195,8 @@ zobject print(zobject* args,int32_t argc)
 
           if(StrMap_get(&(ki->members),"__print__",&r))
           {
-            vm_call_object(&r,&r,1,&ret);
+            zobject args[] = {zobj_from_classobj(ki)};
+            vm_call_object(&r, args, 1,&ret);
           }
           else
             printf("%s",zobjectToStr(args[k]).c_str());
@@ -302,7 +303,10 @@ zobject println(zobject* args,int32_t argc)
           zclass_object* ki = (zclass_object*)args[k].ptr;
           zobject r,ret;
           if(StrMap_get(&(ki->members),"__print__",&r))
-            vm_call_object(&r,&r,1,&ret);
+          {
+            zobject args[] = {zobj_from_classobj(ki)};
+            vm_call_object(&r, args, 1,&ret);
+          }
           else
             printf("%s",zobjectToStr(args[k]).c_str());
         }

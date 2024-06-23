@@ -439,7 +439,7 @@ string zobjectToStr(const zobject& a)
 				else if(a.type=='v')
 				  return "<Class "+(string)(((zclass*)a.ptr) -> name)+">";
 		    else if(a.type=='o')
-				  return "<"+(string)((zclass_object*)a.ptr) -> _klass->name+" Object "+to_string((long long int)a.ptr)+" >";
+				  return "<"+(string)((zclass_object*)a.ptr) -> _klass->name+" object 0x"+to_string((long long int)a.ptr)+">";
         else if(a.type=='q')
         {
             char buff[100];
