@@ -1422,8 +1422,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
     CASE_CP IMPORT:
     {
         orgk = k - program;
-        k += 1;
-        memcpy(&i1, k, sizeof(int32_t));
+        memcpy(&i1, ++k, sizeof(int32_t));
         k += 3;
         s1 = strings[i1].val;
         typedef zobject (*initFun)();
