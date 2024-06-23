@@ -9,9 +9,9 @@
 
 import libcurl
 
-var openedFile = nil
+
 var size = 0
-var ZUKO_VERSION = "v0.3.2"
+var ZUKO_VERSION = "v0.3.3"
 function clearScreen()
 {
   if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
@@ -19,7 +19,7 @@ function clearScreen()
   else
     system("clear")
 }
-function WriteMemory(var bytes)
+function WriteMemory(var bytes,var openedFile)
 {
   clearScreen()
   size+=len(bytes)
