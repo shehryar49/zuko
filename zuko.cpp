@@ -1,6 +1,6 @@
 #include <signal.h>
 #include "include/zuko.h"
-
+#include "include/dis.h"
 
 #define ZUKO_VER 0.3
 #define ZUKO_VER_PATCH 3
@@ -75,6 +75,8 @@ int main(int argc, const char* argv[])
         deleteAST(ast);
     }
     vm.load(bytecode,src); // vm uses the src for printing errors and stuff
+    //dis(bytecode);
+    //return 0;
     // It's showtime
     vm.interpret();
     // Hasta La Vista Baby    

@@ -20,16 +20,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #include "compiler.h"
+#include "ast.h"
 #include "builtinfunc.h"
 #include "convo.h"
+#include "opcode.h"
 #include "programinfo.h"
 #include "utility.h"
 #include "vm.h"
 #include "zobject.h"
+#include <cstdint>
 #include <cstdio>
 #include <string>
+#include <vector>
 using namespace std;
 
+#define INSTRUCTION(x) program.push_back(x);bytes_done++;
 
 extern unordered_map<string,BuiltinFunc> funcs;
 extern bool REPL_MODE;
@@ -842,34 +847,33 @@ return names;
 }
 int32_t Compiler::resolve_name(string name,bool& isGlobal,bool blowUp,bool* isFromSelf)
 {
-
-for(int32_t i=locals.size()-1;i>=0;i-=1)
-{
-
-    if(locals[i].find(name)!=locals[i].end())
-    return locals[i][name];
-}
-
-if(isFromSelf)
-{
-    if(inclass && infunc && (std::find(classMemb.begin(),classMemb.end(),name)!=classMemb.end() || std::find(classMemb.begin(),classMemb.end(),"@"+name)!=classMemb.end() ))
+    for(int32_t i=locals.size()-1;i>=0;i-=1)
     {
-    *isFromSelf = true;
-    return -2;
+
+        if(locals[i].find(name)!=locals[i].end())
+        return locals[i][name];
     }
-}
-for(int32_t i=prefixes.size()-1;i>=0;i--)
+
+    if(isFromSelf)
     {
-    string prefix = prefixes[i];
-    if(globals.find(prefix+name) != globals.end())
-    {
-        isGlobal = true;
-        return globals[prefix+name];
+        if(inclass && infunc && (std::find(classMemb.begin(),classMemb.end(),name)!=classMemb.end() || std::find(classMemb.begin(),classMemb.end(),"@"+name)!=classMemb.end() ))
+        {
+        *isFromSelf = true;
+        return -2;
+        }
     }
-    }
-if(blowUp)
-    compileError("NameError","Error name "+name+" is not defined!");
-return -1;
+    for(int32_t i=prefixes.size()-1;i>=0;i--)
+        {
+        string prefix = prefixes[i];
+        if(globals.find(prefix+name) != globals.end())
+        {
+            isGlobal = true;
+            return globals[prefix+name];
+        }
+        }
+    if(blowUp)
+        compileError("NameError","Error name "+name+" is not defined!");
+    return -1;
 }
 
 vector<uint8_t> Compiler::compile(Node* ast)
@@ -1100,212 +1104,351 @@ vector<uint8_t> Compiler::compile(Node* ast)
             breakIdx = breakIdxCopy;
             contIdx  = contIdxCopy;
         }
-        else if (ast->type == NodeType::FOR || (dfor = ast->type == NodeType::DFOR))
+        /*else if (ast->type == NodeType::FOR || (dfor = ast->type == NodeType::DFOR))
         {  
-        size_t lnCopy = line_num;
-        bool decl = ast->childs[1]->type == NodeType::decl;//whether to declare loop
-        //control variable or not
-        size_t L = bytes_done;
-        const string& loop_var_name = ast->childs[2]->val;
-        string I = ast->childs[5]->val;//increment/decrement value
-        vector<uint8_t> initValue = expr_bytecode(ast->childs[3]);//start value
+            size_t lnCopy = line_num;
+            bool decl = ast->childs[1]->type == NodeType::decl;//whether to declare loop
+            //control variable or not
+            size_t L = bytes_done;
+            const string& loop_var_name = ast->childs[2]->val;
+            string I = ast->childs[5]->val;//increment/decrement value
+            vector<uint8_t> initValue = expr_bytecode(ast->childs[3]);//start value
 
-        program.insert(program.end(),initValue.begin(),initValue.end());//load start
-        //value
-        bool isGlobal = false;
-        int32_t lcvIdx ;
-        bool isSelf = false;
-        if(!decl)
-        {
-            //assign start value to variable which is being used as lcv
-
-            foo = resolve_name(loop_var_name,isGlobal,true,&isSelf);
-            lcvIdx = foo;
-            if(isSelf)
+            program.insert(program.end(),initValue.begin(),initValue.end());//load start
+            //value
+            bool isGlobal = false;
+            int32_t lcvIdx ;
+            bool isSelf = false;
+            if(!decl)
             {
-            add_lntable_entry(bytes_done);
-            program.push_back(ASSIGNSELFMEMB);
-            foo = add_to_vm_strings(loop_var_name);
-            L+=5;
-            lcvIdx = foo;
+                //assign start value to variable which is being used as lcv
+
+                foo = resolve_name(loop_var_name,isGlobal,true,&isSelf);
+                lcvIdx = foo;
+                if(isSelf)
+                {
+                add_lntable_entry(bytes_done);
+                program.push_back(ASSIGNSELFMEMB);
+                foo = add_to_vm_strings(loop_var_name);
+                L+=5;
+                lcvIdx = foo;
+                }
+                else if(!isGlobal)
+                {
+                program.push_back(ASSIGN);
+                L+=5;
+                }
+                else
+                program.push_back(ASSIGN_GLOBAL);
+                addBytes(program,foo);
+                bytes_done+=5;
             }
-            else if(!isGlobal)
+
+
+            int32_t cont = (int32_t)bytes_done;
+            bytes_done+=5;
+
+            vector<uint8_t> finalValue = expr_bytecode(ast->childs[4]);
+            //
+            int32_t before = STACK_SIZE;
+            if(decl)
             {
-            program.push_back(ASSIGN);
-            L+=5;
+                scope += 1;
+                before = STACK_SIZE+1;
+                SymbolTable m;
+                scope+=1;
+                locals.push_back(m);
+                lcvIdx = STACK_SIZE;
+                locals.back().emplace(loop_var_name,STACK_SIZE);
+                STACK_SIZE+=1;
+                locals.push_back(m);
             }
             else
-            program.push_back(ASSIGN_GLOBAL);
-            addBytes(program,foo);
-            bytes_done+=5;
-        }
+            {
+                scope += 1;
+                SymbolTable m;
+                locals.push_back(m);
+            }
 
+            bytes_done+=2+JUMPOFFSET_SIZE;//for jump before block
+            vector<int32_t> breakIdxCopy = breakIdx;
+            vector<int32_t> contIdxCopy = contIdx;
+            int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
+            //the locals of this loop begin
+            localsBegin = locals.size() - 1;
+            vector<uint8_t> block = compile(ast->childs[6]);
+            //backtrack
+            localsBegin = localsBeginCopy;
+            STACK_SIZE = before;
 
-        int32_t cont = (int32_t)bytes_done;
-        bytes_done+=5;
-
-        vector<uint8_t> finalValue = expr_bytecode(ast->childs[4]);
-        //
-        int32_t before = STACK_SIZE;
-        if(decl)
-        {
-            scope += 1;
-            before = STACK_SIZE+1;
-            SymbolTable m;
-            scope+=1;
-            locals.push_back(m);
-            lcvIdx = STACK_SIZE;
-            locals.back().emplace(loop_var_name,STACK_SIZE);
-            STACK_SIZE+=1;
-            locals.push_back(m);
-        }
-        else
-        {
-            scope += 1;
-            SymbolTable m;
-            locals.push_back(m);
-        }
-
-        bytes_done+=2+JUMPOFFSET_SIZE;//for jump before block
-        vector<int32_t> breakIdxCopy = breakIdx;
-        vector<int32_t> contIdxCopy = contIdx;
-        int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
-        //the locals of this loop begin
-        localsBegin = locals.size() - 1;
-        vector<uint8_t> block = compile(ast->childs[6]);
-        //backtrack
-        localsBegin = localsBeginCopy;
-        STACK_SIZE = before;
-
-        if(decl)
-            scope -= 2;
-        else
-            scope-=1;
-        int32_t whileLocals = locals.back().size();
-        locals.pop_back();
-        if(decl)
+            if(decl)
+                scope -= 2;
+            else
+                scope-=1;
+            int32_t whileLocals = locals.back().size();
             locals.pop_back();
-        int32_t where;
-        if(isSelf)
-        {
-            program.push_back(SELFMEMB);
-        //  foo = 
-        }
-        else if(!isGlobal)
-        {
-            program.push_back(LOAD_LOCAL);
-        }
-        else
-            program.push_back(LOAD_GLOBAL);
-        foo = lcvIdx;
-        addBytes(program,foo);//load loop control variable
-        program.insert(program.end(),finalValue.begin(),finalValue.end());
-        if(dfor)
-            program.push_back(GROREQ);
-        else
-            program.push_back(SMOREQ);
-
-        ////
-        vector<uint8_t> inc;
-        line_num = lnCopy;
-
-
-        if(dfor || (I!="1" || ast->childs[5]->type!=NodeType::NUM) || isSelf)
-        {
-            inc = expr_bytecode(ast->childs[5]);
-            where = block.size() + 1 + JUMPOFFSET_SIZE+inc.size()+11;
-            //11 bytes for some increment code
-            
-        }
-        else
-        {
-            where = block.size() + 1 + JUMPOFFSET_SIZE+5;
-
-        }
-        if(whileLocals!=0)
-            where+=4;//4 for NPOP_STACK
-        ////
-        //Check condition
-        program.push_back(JMPIFFALSE);
-        foo = where;
-        addBytes(program,foo);
-        //
-
-        if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
-        {
-            if(!isGlobal)
-                block.push_back(INPLACE_INC);
-            else
-                block.push_back(INC_GLOBAL);
-            foo = lcvIdx;
-            addBytes(block,foo);
-            bytes_done+=5;
-        }
-        else
-        {
+            if(decl)
+                locals.pop_back();
+            int32_t where;
             if(isSelf)
-            block.push_back(SELFMEMB);
+            {
+                program.push_back(SELFMEMB);
+            //  foo = 
+            }
             else if(!isGlobal)
             {
-            block.push_back(LOAD_LOCAL);
+                program.push_back(LOAD_LOCAL);
             }
             else
-            block.push_back(LOAD_GLOBAL);
+                program.push_back(LOAD_GLOBAL);
             foo = lcvIdx;
-            addBytes(block,foo);
-            block.insert(block.end(),inc.begin(),inc.end());
+            addBytes(program,foo);//load loop control variable
+            program.insert(program.end(),finalValue.begin(),finalValue.end());
             if(dfor)
-                block.push_back(SUB);
+                program.push_back(GROREQ);
             else
-                block.push_back(ADD);
-            if(isSelf)
-                block.push_back(ASSIGNSELFMEMB);
-            else if(!isGlobal )
-                block.push_back(ASSIGN);
+                program.push_back(SMOREQ);
+
+            ////
+            vector<uint8_t> inc;
+            line_num = lnCopy;
+
+
+            if(dfor || (I!="1" || ast->childs[5]->type!=NodeType::NUM) || isSelf)
+            {
+                inc = expr_bytecode(ast->childs[5]);
+                where = block.size() + 1 + JUMPOFFSET_SIZE+inc.size()+11;
+                //11 bytes for some increment code
+                
+            }
             else
-                block.push_back(ASSIGN_GLOBAL);
-            addBytes(block,foo);
-            bytes_done+=11;
-        }
-        program.insert(program.end(), block.begin(), block.end());
-        if(whileLocals!=0)
-        {
-            program.push_back(GOTONPSTACK);
-            foo = whileLocals;
+            {
+                where = block.size() + 1 + JUMPOFFSET_SIZE+5;
+
+            }
+            if(whileLocals!=0)
+                where+=4;//4 for NPOP_STACK
+            ////
+            //Check condition
+            program.push_back(JMPIFFALSE);
+            foo = where;
             addBytes(program,foo);
-            bytes_done += 4;
-        }
-        else
-            program.push_back(GOTO);
-        foo = L+initValue.size();
-        if(isGlobal)
-            foo+=5;
-        addBytes(program,foo);
-        if(decl)
+            //
+
+            if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
+            {
+                if(!isGlobal)
+                    block.push_back(INPLACE_INC);
+                else
+                    block.push_back(INC_GLOBAL);
+                foo = lcvIdx;
+                addBytes(block,foo);
+                bytes_done+=5;
+            }
+            else
+            {
+                if(isSelf)
+                block.push_back(SELFMEMB);
+                else if(!isGlobal)
+                {
+                block.push_back(LOAD_LOCAL);
+                }
+                else
+                block.push_back(LOAD_GLOBAL);
+                foo = lcvIdx;
+                addBytes(block,foo);
+                block.insert(block.end(),inc.begin(),inc.end());
+                if(dfor)
+                    block.push_back(SUB);
+                else
+                    block.push_back(ADD);
+                if(isSelf)
+                    block.push_back(ASSIGNSELFMEMB);
+                else if(!isGlobal )
+                    block.push_back(ASSIGN);
+                else
+                    block.push_back(ASSIGN_GLOBAL);
+                addBytes(block,foo);
+                bytes_done+=11;
+            }
+            program.insert(program.end(), block.begin(), block.end());
+            if(whileLocals!=0)
+            {
+                program.push_back(GOTONPSTACK);
+                foo = whileLocals;
+                addBytes(program,foo);
+                bytes_done += 4;
+            }
+            else
+                program.push_back(GOTO);
+            foo = L+initValue.size();
+            if(isGlobal)
+                foo+=5;
+            addBytes(program,foo);
+            if(decl)
+            {
+                program.push_back(POP_STACK);
+                bytes_done+=1;
+                STACK_SIZE-=1;
+            }
+            bytes_done += 1 + JUMPOFFSET_SIZE;
+            //backpatching
+            int32_t a = (int)bytes_done - 1;
+            
+            for(auto e: breakIdx)
+            {
+                backpatches.push_back(Pair(e,a));
+            }
+            for(auto e: contIdx)
+            {
+                backpatches.push_back(Pair(e,cont));
+            }
+            //backtrack
+            breakIdx = breakIdxCopy;
+            contIdx  = contIdxCopy;
+        }*/
+        else if((ast->type == NodeType::FOR) || (dfor = (ast->type == NodeType::DFOR)))
         {
-            program.push_back(POP_STACK);
+            bool decl_variable = (ast->childs[1]->type == NodeType::decl);
+            size_t linenum_copy = line_num;
+            const string& loop_var_name = ast->childs[2]->val;
+            int32_t lcv_idx;
+            int32_t end_idx;
+            int32_t step_idx;
+            bool lcv_is_global = false;
+            int32_t stack_before = STACK_SIZE;
+            // bytecode to initialize loop variable
+            if(decl_variable)
+            {
+                vector<uint8_t> init_expr = expr_bytecode(ast->childs[3]);
+                program.insert(program.end(),init_expr.begin(),init_expr.end()); //will load initial value onto stack
+                lcv_idx = STACK_SIZE;
+                STACK_SIZE++; //this initial value becomes a local variable
+            } 
+            else
+            {
+                bool is_self = false;
+                int tmp = resolve_name(loop_var_name,lcv_is_global,true,&is_self);
+                if(is_self)
+                    compileError("SyntaxError","for loop control variable can't be from 'self'");
+                lcv_idx = tmp;
+                //assign initial value
+                vector<uint8_t> init_val = expr_bytecode(ast->childs[3]);
+                program.insert(program.end(),init_val.begin(),init_val.end());
+                if(lcv_is_global)
+                    program.push_back(ASSIGN_GLOBAL);
+                else
+                    program.push_back(ASSIGN);
+                addBytes(program,lcv_idx);
+                bytes_done+=5;
+            }
+            //load end value
+            vector<uint8_t> end_value = expr_bytecode(ast->childs[4]);
+            program.insert(program.end(),end_value.begin(),end_value.end());
+            end_idx = STACK_SIZE++;
+            //load step size
+            vector<uint8_t> step_value = expr_bytecode(ast->childs[5]); // not step sister you dirty mind
+            program.insert(program.end(),step_value.begin(),step_value.end()); 
+            step_idx = STACK_SIZE++;
+            
+            // bytecode to skip loop body if condition is not met
+            if(lcv_is_global)
+                program.push_back(LOAD_GLOBAL);
+            else
+                program.push_back(LOAD_LOCAL);
+            addBytes(program, lcv_idx);
+            program.push_back(LOAD_LOCAL);
+            addBytes(program, end_idx);
+            bytes_done += 10;
+            if(dfor)
+                program.push_back(GROREQ);
+            else
+                program.push_back(SMOREQ);
             bytes_done+=1;
-            STACK_SIZE-=1;
-        }
-        bytes_done += 1 + JUMPOFFSET_SIZE;
-        //backpatching
-        int32_t a = (int)bytes_done - 1;
-        
-        for(auto e: breakIdx)
-        {
-            backpatches.push_back(Pair(e,a));
-        }
-        for(auto e: contIdx)
-        {
-            backpatches.push_back(Pair(e,cont));
-        }
-        //backtrack
-        breakIdx = breakIdxCopy;
-        contIdx  = contIdxCopy;
+            program.push_back(JMPIFFALSE);
+            bytes_done+=1;
+            int32_t skip_loop = bytes_done;
+            addBytes(program,0); // apply backpatch here
+            bytes_done += 4;
+
+            // add loop body
+            scope+=1;
+            SymbolTable m;
+            if(decl_variable)
+                m.emplace(loop_var_name,lcv_idx);
+            localsBegin = locals.size();
+            locals.push_back(m);
+            size_t stacksize_before_body = STACK_SIZE;
+            size_t loop_start = bytes_done;
+            bool infor_copy = infor;
+            vector<int32_t> breakIdxCopy = breakIdx;
+            vector<int32_t> contIdxCopy = contIdx;
+            breakIdx.clear();
+            contIdx.clear();
+            infor = true;
+            vector<uint8_t> loop_body = compile(ast->childs[6]);
+            infor = infor_copy;
+            program.insert(program.end(),loop_body.begin(),loop_body.end());
+            scope-=1;
+            locals.pop_back();
+            int body_locals = STACK_SIZE - stacksize_before_body;
+            STACK_SIZE = stacksize_before_body;
+            /*if(body_locals == 1)
+            {
+                program.push_back(POP_STACK);
+                bytes_done++;
+            }
+            else if(body_locals > 1)
+            {
+                program.push_back(NPOP_STACK);
+                addBytes(program,body_locals);
+                bytes_done+=5;
+            }*/
+            int32_t cont_dest = (int32_t)bytes_done;
+            // finally add LOOP instruction
+            line_num = linenum_copy;
+            add_lntable_entry(bytes_done);
+            if(dfor)
+                program.push_back(DLOOP);
+            else
+                program.push_back(LOOP);
+            if(lcv_is_global)
+                program.push_back(1);
+            else
+                program.push_back(0);
+            bytes_done+=1;
+            addBytes(program, lcv_idx); //can be global or local
+            if(lcv_is_global)
+            {
+                addBytes(program, end_idx); // is a local ( see above we reserved stack space for it)
+                bytes_done+=4;
+            }
+            addBytes(program, (int32_t)loop_start);
+            bytes_done += 9;//10;//18;
+            
+            //cleanup the locals we created
+            int32_t break_dest = (int32_t)bytes_done;
+            program.push_back(NPOP_STACK);
+            if(decl_variable)
+                addBytes(program,3);
+            else
+                addBytes(program,2);
+            bytes_done += 5;
+            for(auto e: breakIdx)
+            {
+                backpatches.push_back(Pair(e,break_dest));
+            }
+            for(auto e: contIdx)
+            {
+                backpatches.push_back(Pair(e,cont_dest));
+            }
+            backpatches.push_back(Pair(skip_loop,(int32_t)loop_body.size()+(lcv_is_global ? 14: 10)));
+            breakIdx = breakIdxCopy;
+            contIdx = contIdxCopy;
+            STACK_SIZE = stack_before;
         }
         else if (ast->type == NodeType::FOREACH)
         {
-            
             const string& loop_var_name = ast->childs[1]->val;
             vector<uint8_t> startIdx = expr_bytecode(ast->childs[3]);
             program.insert(program.end(),startIdx.begin(),startIdx.end());
@@ -2012,6 +2155,8 @@ vector<uint8_t> Compiler::compile(Node* ast)
             foo = 0;
             for(size_t i=localsBegin;i<locals.size();i++)
                 foo+=locals[i].size();
+            if(infor)
+                foo-=1; //don't pop loop control variable
             addBytes(program,foo);
             foo = 0;
             addBytes(program,foo);
@@ -2024,15 +2169,28 @@ vector<uint8_t> Compiler::compile(Node* ast)
         }
         else if (ast->type == NodeType::CONTINUE)
         {
-            program.push_back(GOTONPSTACK);
-            contIdx.push_back(bytes_done+5);
-            foo = 0;
-            for(size_t i=localsBegin;i<locals.size();i++)
-                foo+=locals[i].size();
-            addBytes(program,foo);
-            foo = 0;
-            addBytes(program,foo);
-            bytes_done += 9;
+            if(infor)
+            {
+                program.push_back(GOTO);
+                bytes_done+=1;
+                contIdx.push_back(bytes_done);
+                addBytes(program,0);
+                bytes_done+=4;
+            }
+            else
+            {
+                program.push_back(GOTONPSTACK);
+                contIdx.push_back(bytes_done+5);
+                foo = 0;
+                for(size_t i=localsBegin;i<locals.size();i++)
+                    foo+=locals[i].size();
+                if(infor)
+                    foo -= 1;
+                addBytes(program,foo);
+                foo = 0;
+                addBytes(program,foo);
+                bytes_done += 9;
+            }
         }
         else if (ast->type == NodeType::call)
         {

@@ -152,6 +152,7 @@ public:
   friend void vm_unmark_important(void*);
   //the REPL mainloop function
   friend void REPL();
+  friend void dis(vector<uint8_t>&);
   VM();
   
   void load(std::vector<uint8_t>& bytecode,ZukoSource& p);

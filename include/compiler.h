@@ -78,6 +78,7 @@ private:
   bool inGen = false;
   bool inclass = false;
   bool infunc = false;
+  bool infor = false; //used by break and continue statements
   bool compileAllFuncs = false;
   bool returnStmtAtFnScope = false;
 

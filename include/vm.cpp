@@ -749,10 +749,10 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         &&INDEX,
         &&ASSIGNINDEX,
         &&IMPORT,
-        NULL, //unused for now
+        &&LOOP,
         &&CALLFORVAL,
         &&INC_GLOBAL,
-        NULL, //unused for now
+        &&DLOOP, //unused for now
         &&LOAD_GLOBAL,
         &&MEMB,
         &&JMPIFFALSENOPOP,
@@ -1491,6 +1491,88 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         moduleHandles.push_back(module);
         zlist_push(&STACK,p1);
         k++; NEXT_INST;
+    }
+    CASE_CP LOOP:
+    {
+        orgk = k - program;
+        k+=1;
+        uint8_t is_global = *(k++);
+        int32_t lcv_idx;
+        int32_t end_idx;
+        int32_t where;
+
+        memcpy(&lcv_idx,k,4);
+        k+=4;
+        if(is_global)
+        {
+            memcpy(&end_idx,k,4);
+            k+=4;
+        }
+        memcpy(&where,k,4);
+        k+=4;
+        if(is_global)
+        {
+            end_idx += frames.back();
+            STACK.size = end_idx + 2;
+            if(STACK.arr[lcv_idx].type != Z_INT && STACK.arr[lcv_idx].type!=Z_INT64)
+            {
+                spitErr(TypeError,"Type "+fullform(STACK.arr[lcv_idx].type)+" unsupported for operator '+'");
+                NEXT_INST;
+            }
+            STACK.arr[lcv_idx].i += STACK.arr[end_idx+1].i;
+            if(STACK.arr[lcv_idx].i <= STACK.arr[end_idx].i)
+                k = program + where;
+        }
+        else
+        {
+            lcv_idx+=frames.back();
+            STACK.size = lcv_idx+3;
+            if(STACK.arr[lcv_idx].type != Z_INT && STACK.arr[lcv_idx].type!=Z_INT64)
+            {
+                spitErr(TypeError,"Type "+fullform(STACK.arr[lcv_idx].type)+" unsupported for operator '+'");
+                NEXT_INST;
+            }
+            STACK.arr[lcv_idx].i += STACK.arr[lcv_idx+2].i;
+            if(STACK.arr[lcv_idx].i <= STACK.arr[lcv_idx+1].i)
+                k = program + where;
+        }
+        NEXT_INST;
+    }
+    CASE_CP DLOOP:
+    {
+        orgk = k - program;
+        k+=1;
+        uint8_t is_global = *(k++);
+        int32_t lcv_idx;
+        int32_t end_idx;
+        int32_t where;
+
+        memcpy(&lcv_idx,k,4);
+        k+=4;
+        if(is_global)
+        {
+            memcpy(&end_idx,k,4);
+            k+=4;
+        }
+        memcpy(&where,k,4);
+        k+=4;
+        if(is_global)
+        {
+            end_idx += frames.back();
+            STACK.size = end_idx + 2;
+            STACK.arr[lcv_idx].i -= STACK.arr[end_idx+1].i;
+            if(STACK.arr[lcv_idx].i >= STACK.arr[end_idx].i)
+                k = program + where;
+        }
+        else
+        {
+            lcv_idx+=frames.back();
+            STACK.size = lcv_idx+3;
+            STACK.arr[lcv_idx].i -= STACK.arr[lcv_idx+2].i;
+            if(STACK.arr[lcv_idx].i >= STACK.arr[lcv_idx+1].i)
+                k = program + where;
+        }
+        NEXT_INST;
     }
     CASE_CP OP_RETURN:
     {
