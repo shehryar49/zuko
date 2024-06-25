@@ -3,8 +3,8 @@ for(var i=1 to 10000)
     println(i)
     if(i == 1)
     {
-      i+=1
-      continue # skips the increment
+      #i+=1
+      continue # increments and moves to next iteration skips the increment
     }
 }
 println()

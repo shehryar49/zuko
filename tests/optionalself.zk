@@ -44,6 +44,7 @@ namespace std
     function run()
     {
       println(x," => ",y)
+      var x = self.x
       for(x=x to y step 1)
       {
         println(x) 
