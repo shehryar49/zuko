@@ -19,7 +19,7 @@ function lcmPeriod(var p)
 {
     #p is sorted
     var l = len(p)
-    var max = algo::Max(p).period
+    var max = algo::max(p).period
     var i = max
     while(true)
     {

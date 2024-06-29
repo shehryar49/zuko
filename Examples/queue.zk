@@ -1,8 +1,8 @@
-#Queue Implementation in Plutonium
+#Queue Implementation in Zuko
 #Written by Shahryar Ahmad
 #29 October 2022
 #The following code is free to use/modify and comes without any guarantee or warantee
-import std/ll.plt
+import std/ll
 namespace queue
 {
     class Queue

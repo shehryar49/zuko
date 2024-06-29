@@ -1,20 +1,20 @@
-import libcurl as lc
-import std/algo.plt
-var curl = lc.Curl()
-curl.setopt(lc.OPT_URL,"https://www.google.com")
-curl.setopt(lc.OPT_FOLLOWLOCATION,1)
-curl.setopt(lc.OPT_WRITEFUNCTION,lc.WriteMemory) #use default WriteMemory function
+import libcurl
+
+var curl = libcurl.curl()
+curl.setopt(libcurl.OPT_URL,"https://www.google.com")
+curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory) #use default WriteMemory function
 #it comes with the module
 var res = curl.perform()
-if(res != lc.CURLE_OK) #error occurred
+if(res != libcurl.CURLE_OK) #error occurred
 {
-    println(lc.strerror(res))
+    println(libcurl.strerror(res))
     exit()
 }
 
 #request was successful
 #curl.data stores response data as bytearray
-#decode them as ascii bytes, only do this when response is text
-#even if the text is utf8 it will be atleast printed correctly
-var str = algo::decodeASCII(curl.data)
-println(str)
+var text = str(curl.data)
+println(text)
+# or
+# fwrite(curl.data,stdout)
