@@ -133,6 +133,15 @@ void dis(std::vector<uint8_t>& bytecode)
         k+=3;
         printf("%d\n",i);
       }
+      else if(inst==RETURN_INT32)
+      {
+        printf("%zu  RETURN_INT32 ",k);
+        k+=1;
+        int32_t i;
+        memcpy(&i, program+k, 4);
+        k+=3;
+        printf("%d\n",i);
+      }
       else if(inst==BUILD_CLASS)
       {
         int orgk = k;
@@ -240,6 +249,50 @@ void dis(std::vector<uint8_t>& bytecode)
         else
           printf("%d %d %d\n",is_global,var,where);
       }
+      else if(inst == SETUP_LOOP)
+      {
+        printf("%zu SETUP_LOOP ",k);
+        bool is_global = program[++k];
+        k++;
+        int32_t var;
+        memcpy(&var,program+k,4);
+        k+=4;
+        int32_t end;
+        if(is_global)
+        {
+          memcpy(&end,program+k,4);
+          k+=4;
+        }
+        int32_t where;
+        memcpy(&where,program+k,4);
+        k+=3;
+        if(is_global)
+          printf("%d %d %d %d\n",is_global,var,end,where);
+        else
+          printf("%d %d %d\n",is_global,var,where);
+      }
+      else if(inst == SETUP_DLOOP)
+      {
+        printf("%zu SETUP_DLOOP ",k);
+        bool is_global = program[++k];
+        k++;
+        int32_t var;
+        memcpy(&var,program+k,4);
+        k+=4;
+        int32_t end;
+        if(is_global)
+        {
+          memcpy(&end,program+k,4);
+          k+=4;
+        }
+        int32_t where;
+        memcpy(&where,program+k,4);
+        k+=3;
+        if(is_global)
+          printf("%d %d %d %d\n",is_global,var,end,where);
+        else
+          printf("%d %d %d\n",is_global,var,where);
+      }      
       else if(inst==INPLACE_INC)
       {
         printf("%zu  INPLACE_INC ",k);
@@ -673,6 +726,69 @@ int orgk = k;
           k+=1;
           continue;
       }
+      else if(inst==CALL_DIRECT)
+      {
+          int orgk = k;
+          k+=1;
+          FOO.bytes[0] = program[k];
+          k+=1;
+          FOO.bytes[1] = program[k];
+                        k+=1;
+          FOO.bytes[2] = program[k];
+                        k+=1;
+          FOO.bytes[3] = program[k];
+          int where = FOO.x;
+          printf("%d  CALL_DIRECT  %d\n",orgk,where);
+          k+=1;
+          continue;
+      }
+      else if(inst == INDEX_FAST)
+      {
+        printf("%zu INDEX_FAST",k);
+        int is_global1 = program[++k];
+        int is_global2 = program[++k];
+        k+=1;
+        int idx1,idx2;
+        memcpy(&idx1,program+k,4);
+        k+=4;
+        memcpy(&idx2,program+k,4);
+        k+=3;
+        printf(" %d %d %d %d\n",is_global1,is_global2,idx1,idx2);
+      }
+      else if(inst == LOADVAR_ADDINT32)
+      {
+        printf("%zu LOADVAR_ADDINT32",k);
+        int is_global = program[++k];
+        k+=1;
+        int idx1,idx2;
+        memcpy(&idx1,program+k,4);
+        k+=4;
+        memcpy(&idx2,program+k,4);
+        k+=3;
+        printf(" %d %d %d\n",is_global,idx1,idx2);
+      }
+      else if(inst == LOADVAR_SUBINT32)
+      {
+        printf("%zu LOADVAR_SUBINT32",k);
+        int is_global = program[++k];
+        k+=1;
+        int idx1,idx2;
+        memcpy(&idx1,program+k,4);
+        k+=4;
+        memcpy(&idx2,program+k,4);
+        k+=3;
+        printf(" %d %d %d\n",is_global,idx1,idx2);
+      }
+      else if(inst==CMP_JMPIFFALSE)
+      {
+          printf("%zu CMP_JMPIFFALSE",k);
+          uint8_t op = program[++k];
+          k+=1;
+          int32_t where;
+          memcpy(&where,program+k,4);
+          k+=3;
+          printf(" %d %d\n",op,where);
+      }
       else if(inst==LOAD_FUNC)
       {
             int orgk = k;
@@ -699,22 +815,6 @@ int orgk = k;
         k += 4;
         int args = program[k];
         printf("%d LOAD_CO %d %d %d\n",orgk,p,idx,args);
-      }
-      else if(inst==JMPIF)
-      {
-          int orgk = k;
-                        k+=1;
-          FOO.bytes[0] = program[k];
-                        k+=1;
-          FOO.bytes[1] = program[k];
-                        k+=1;
-          FOO.bytes[2] = program[k];
-                        k+=1;
-          FOO.bytes[3] = program[k];
-          int where = FOO.x;
-          printf("%d  JMPIF  %d\n",orgk,where);
-          k+=1;
-          continue;
       }
       else if(inst==JMPIFFALSE)
       {

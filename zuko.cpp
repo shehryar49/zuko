@@ -1,6 +1,5 @@
 #include <signal.h>
 #include "include/zuko.h"
-#include "include/dis.h"
 
 #define ZUKO_VER 0.3
 #define ZUKO_VER_PATCH 3

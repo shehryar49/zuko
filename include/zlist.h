@@ -21,7 +21,11 @@ void zlist_erase(zlist* p,size_t idx);
 void zlist_erase_range(zlist* p,size_t i,size_t j);
 void zlist_resize(zlist* p,size_t newSize);
 bool zlist_pop(zlist* p,zobject* val);
-void zlist_fastpop(zlist* p,zobject* val);
+
+inline void zlist_fastpop(zlist* p,zobject* val)
+{
+  *val = p->arr[--p->size];
+}
 void zlist_assign(zlist* p,zlist* val);
 void zlist_insert(zlist* p,size_t idx,zobject val);
 void zlist_insert_list(zlist* p,size_t idx,zlist* sublist);

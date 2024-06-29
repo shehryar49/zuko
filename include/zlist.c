@@ -2,12 +2,7 @@
 
 void zlist_init(zlist* p)
 {
-    p->arr = (zobject*)malloc(sizeof(zobject)*4);
-    p->arr[0].type = 'n';
-    p->arr[1].type = 'n';
-    p->arr[2].type = 'n';
-    p->arr[3].type = 'n';
-    
+    p->arr = (zobject*)malloc(sizeof(zobject)*4);  
     p->capacity = 4;
     p->size = 0;
 }
@@ -85,10 +80,7 @@ bool zlist_pop(zlist* p,zobject* val)
     *val = p->arr[p->size];
     return true;
 }
-void zlist_fastpop(zlist* p,zobject* val)
-{
-  *val = p->arr[--p->size];
-}
+
 void zlist_assign(zlist* p,zlist* val)
 {
     if(val->size > 0)

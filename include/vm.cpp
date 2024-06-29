@@ -1,18 +1,35 @@
-#include "coroutineobj.h"
-#include "klassobject.h"
-#include "nativefun.h"
-#include "programinfo.h"
-#include "zbytearray.h"
-#include "zuko.h"
 #include "vm.h"
+#include "funobject.h"
+#include "opcode.h"
+#include "overflow.h"
+#include "strmap.h"
 #include "zobject.h"
+#include "zuko.h"
+#include <climits>
 #include <cstdint>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-using namespace std;
+#define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
+//not defining this macro will always result in the simple switch based interpret loop
 
+#ifdef THREADED_INTERPRETER
+  #ifdef __GNUC__
+    #define NEXT_INST goto *targets[*k];
+    #define CASE_CP
+    #define ISTHREADED //threaded interpreter can be and will be implemented
+  #else
+    #define NEXT_INST continue
+    #define CASE_CP case
+  #endif
+#else
+  #define NEXT_INST continue
+  #define CASE_CP case
+#endif
+
+
+using namespace std;
 
 inline void PromoteType(zobject &a, char t)
 {
@@ -100,8 +117,6 @@ string fullform(char t)
     return "Unknown";
 }
 
-extern bool REPL_MODE;
-void REPL();
 //Error classes
 zclass* Error;
 zclass* TypeError;
@@ -276,201 +291,201 @@ return false;
 }
 void VM::markV2(const zobject &obj)
 {
-aux.size = 0;
-std::unordered_map<void *, MemInfo>::iterator it;
-if (isHeapObj(obj) && (it = memory.find(obj.ptr)) != memory.end() && !(it->second.isMarked))
-{
-    // mark object alive and push it
-    it->second.isMarked = true;
-    zlist_push(&aux,obj);
-}
-// if an object is on aux then
-//  - it is a heap object
-//  - it was unmarked but marked before pushing
-//  - known to VM's memory pool i.e not from outside (any native module or something)
+    aux.size = 0;
+    std::unordered_map<void *, MemInfo>::iterator it;
+    if (isHeapObj(obj) && (it = memory.find(obj.ptr)) != memory.end() && !(it->second.isMarked))
+    {
+        // mark object alive and push it
+        it->second.isMarked = true;
+        zlist_push(&aux,obj);
+    }
+    // if an object is on aux then
+    //  - it is a heap object
+    //  - it was unmarked but marked before pushing
+    //  - known to VM's memory pool i.e not from outside (any native module or something)
 
-// After following above constraints,aux will not have any duplicates or already marked objects
-zobject curr;
-while (aux.size != 0)
-{
-    zlist_fastpop(&aux,&curr);
-    // for each curr object we get ,it was already marked alive before pushing onto aux
-    // so we only process objects referenced by it and not curr itself
-    if (curr.type == Z_DICT)
+    // After following above constraints,aux will not have any duplicates or already marked objects
+    zobject curr;
+    while (aux.size != 0)
     {
-    zdict &d = *(zdict *)curr.ptr;
-    for (size_t i=0;i<d.capacity;i++)
-    {
-        if(d.table[i].stat != OCCUPIED)
-            continue;
-        // if e.first or e.second is a heap object and known to our memory pool
-        // add it to aux
-        if (isHeapObj(d.table[i].key) && (it = memory.find(d.table[i].key.ptr)) != memory.end() && !(it->second.isMarked))
+        zlist_fastpop(&aux,&curr);
+        // for each curr object we get ,it was already marked alive before pushing onto aux
+        // so we only process objects referenced by it and not curr itself
+        if (curr.type == Z_DICT)
         {
-            it->second.isMarked = true;
-            zlist_push(&aux,d.table[i].key);
-        }
-        if (isHeapObj(d.table[i].val) && (it = memory.find(d.table[i].val.ptr)) != memory.end() && !(it->second.isMarked))
+        zdict &d = *(zdict *)curr.ptr;
+        for (size_t i=0;i<d.capacity;i++)
         {
-            it->second.isMarked = true;
-            zlist_push(&aux,d.table[i].val);
-        }
-    }
-    }
-    else if (curr.type == Z_LIST)
-    {
-        zlist &d = *(zlist *)curr.ptr;
-        for (size_t i = 0;i<d.size;i++)
-        {
-            zobject e = d.arr[i];
-            if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-            it->second.isMarked = true;
-            zlist_push(&aux,e);
-            }
-        }
-    }
-    else if (curr.type == 'z') // coroutine object
-    {
-        Coroutine *g = (Coroutine *)curr.ptr;
-        for (size_t i = 0;i<g->locals.size;i++)
-        {
-            zobject e = g->locals.arr[i];
-            if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-            it->second.isMarked = true;
-            zlist_push(&aux,e);
-            }
-        }
-        zfun* gf = g->fun;
-        it = memory.find((void *)gf);
-        if (it != memory.end() && !(it->second.isMarked))
-        {
-            zobject tmp;
-            tmp.type = Z_FUNC;
-            tmp.ptr = (void *)gf;
-            it->second.isMarked = true;
-            zlist_push(&aux,tmp);
-        }
-    }
-    else if (curr.type == Z_MODULE)
-    {
-        zmodule* k = (zmodule*)curr.ptr;
-        for (size_t idx=0; idx<  k->members.capacity;idx++)
-        {
-            if(k->members.table[idx].stat!= SM_OCCUPIED)
-              continue;
-            auto& e = k->members.table[idx];
-            if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-            it->second.isMarked = true;
-            zlist_push(&aux,e.val);
-            }
-        }
-    }
-    else if (curr.type == Z_CLASS)
-    {
-        zclass* k = (zclass* )curr.ptr;
-        for (size_t idx = 0; idx < k->members.capacity;idx++)
-        {
-            if(k->members.table[idx].stat != SM_OCCUPIED)
-              continue;
-            SM_Slot& e = k->members.table[idx];
-            if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-                it->second.isMarked = true;
-                zlist_push(&aux,e.val);
-            }
-            if( (it = memory.find((void*)e.key)) != memory.end() )
-                it->second.isMarked = true;
-            
-        }
-        for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
-        {
-            if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
-              continue;
-            SM_Slot& e = k->privateMembers.table[idx];
-            if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-            it->second.isMarked = true;
-            zlist_push(&aux,e.val);
-            }
-            if( (it = memory.find((void*)e.key)) != memory.end() )
-            it->second.isMarked = true;
-        }
-    }
-    else if (curr.type == Z_NATIVE_FUNC)
-    {
-        znativefun *fn = (znativefun*)curr.ptr;
-        it = memory.find((void *)fn->_klass);
-        if (it != memory.end() && !(it->second.isMarked))
-        {
-            zobject tmp;
-            tmp.type = Z_CLASS;
-            tmp.ptr = (void *)fn->_klass;
-            it->second.isMarked = true;
-            zlist_push(&aux,tmp);
-        }
-    }
-    else if (curr.type == Z_OBJ)
-    {
-        zclass_object*k = (zclass_object *)curr.ptr;
-        zclass* kk = k->_klass;
-        it = memory.find((void *)kk);
-        if (it != memory.end() && !(it->second.isMarked))
-        {
-            zobject tmp;
-            tmp.type = Z_CLASS;
-            tmp.ptr = (void *)kk;
-            it->second.isMarked = true;
-            zlist_push(&aux,tmp);
-        }
-        for (size_t idx = 0; idx < k->members.capacity;idx++)
-        {
-            if(k->members.table[idx].stat != SM_OCCUPIED)
-              continue;
-            SM_Slot& e = k->members.table[idx];
-            if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
-            {
-                it->second.isMarked = true;
-                zlist_push(&aux,e.val);
-            }
-        }
-        for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
-        {
-            if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+            if(d.table[i].stat != OCCUPIED)
                 continue;
-            SM_Slot& e = k->privateMembers.table[idx];
-            if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+            // if e.first or e.second is a heap object and known to our memory pool
+            // add it to aux
+            if (isHeapObj(d.table[i].key) && (it = memory.find(d.table[i].key.ptr)) != memory.end() && !(it->second.isMarked))
             {
                 it->second.isMarked = true;
-                zlist_push(&aux,e.val);
+                zlist_push(&aux,d.table[i].key);
             }
-        }
-    }
-    else if (curr.type == Z_FUNC || curr.type == 'g')
-    {
-        zclass* k = ((zfun *)curr.ptr)->_klass;
-        it = memory.find((void *)k);
-        if (it != memory.end() && !(it->second.isMarked))
-        {
-            zobject tmp;
-            tmp.type = Z_CLASS;
-            tmp.ptr = (void *)k;
-            it->second.isMarked = true;
-            zlist_push(&aux,tmp);
-        }
-        for (size_t i = 0;i< ((zfun *)curr.ptr)->opt.size;i++ )
-        {
-            zobject e = ((zfun*)curr.ptr)->opt.arr[i];
-            if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
+            if (isHeapObj(d.table[i].val) && (it = memory.find(d.table[i].val.ptr)) != memory.end() && !(it->second.isMarked))
             {
-            it->second.isMarked = true;
-            zlist_push(&aux,e);
+                it->second.isMarked = true;
+                zlist_push(&aux,d.table[i].val);
             }
         }
-    }
-} // end while loop
+        }
+        else if (curr.type == Z_LIST)
+        {
+            zlist &d = *(zlist *)curr.ptr;
+            for (size_t i = 0;i<d.size;i++)
+            {
+                zobject e = d.arr[i];
+                if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                it->second.isMarked = true;
+                zlist_push(&aux,e);
+                }
+            }
+        }
+        else if (curr.type == 'z') // coroutine object
+        {
+            Coroutine *g = (Coroutine *)curr.ptr;
+            for (size_t i = 0;i<g->locals.size;i++)
+            {
+                zobject e = g->locals.arr[i];
+                if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                it->second.isMarked = true;
+                zlist_push(&aux,e);
+                }
+            }
+            zfun* gf = g->fun;
+            it = memory.find((void *)gf);
+            if (it != memory.end() && !(it->second.isMarked))
+            {
+                zobject tmp;
+                tmp.type = Z_FUNC;
+                tmp.ptr = (void *)gf;
+                it->second.isMarked = true;
+                zlist_push(&aux,tmp);
+            }
+        }
+        else if (curr.type == Z_MODULE)
+        {
+            zmodule* k = (zmodule*)curr.ptr;
+            for (size_t idx=0; idx<  k->members.capacity;idx++)
+            {
+                if(k->members.table[idx].stat!= SM_OCCUPIED)
+                    continue;
+                auto& e = k->members.table[idx];
+                if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                    it->second.isMarked = true;
+                    zlist_push(&aux,e.val);
+                }
+            }
+        }
+        else if (curr.type == Z_CLASS)
+        {
+            zclass* k = (zclass* )curr.ptr;
+            for (size_t idx = 0; idx < k->members.capacity;idx++)
+            {
+                if(k->members.table[idx].stat != SM_OCCUPIED)
+                    continue;
+                SM_Slot& e = k->members.table[idx];
+                if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                    it->second.isMarked = true;
+                    zlist_push(&aux,e.val);
+                }
+                if( (it = memory.find((void*)e.key)) != memory.end() )
+                    it->second.isMarked = true;
+                
+            }
+            for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
+            {
+                if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+                    continue;
+                SM_Slot& e = k->privateMembers.table[idx];
+                if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                    it->second.isMarked = true;
+                    zlist_push(&aux,e.val);
+                }
+                if( (it = memory.find((void*)e.key)) != memory.end() )
+                it->second.isMarked = true;
+            }
+        }
+        else if (curr.type == Z_NATIVE_FUNC)
+        {
+            znativefun *fn = (znativefun*)curr.ptr;
+            it = memory.find((void *)fn->_klass);
+            if (it != memory.end() && !(it->second.isMarked))
+            {
+                zobject tmp;
+                tmp.type = Z_CLASS;
+                tmp.ptr = (void *)fn->_klass;
+                it->second.isMarked = true;
+                zlist_push(&aux,tmp);
+            }
+        }
+        else if (curr.type == Z_OBJ)
+        {
+            zclass_object*k = (zclass_object *)curr.ptr;
+            zclass* kk = k->_klass;
+            it = memory.find((void *)kk);
+            if (it != memory.end() && !(it->second.isMarked))
+            {
+                zobject tmp;
+                tmp.type = Z_CLASS;
+                tmp.ptr = (void *)kk;
+                it->second.isMarked = true;
+                zlist_push(&aux,tmp);
+            }
+            for (size_t idx = 0; idx < k->members.capacity;idx++)
+            {
+                if(k->members.table[idx].stat != SM_OCCUPIED)
+                    continue;
+                SM_Slot& e = k->members.table[idx];
+                if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                    it->second.isMarked = true;
+                    zlist_push(&aux,e.val);
+                }
+            }
+            for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
+            {
+                if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
+                    continue;
+                SM_Slot& e = k->privateMembers.table[idx];
+                if (isHeapObj(e.val) && (it = memory.find(e.val.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                    it->second.isMarked = true;
+                    zlist_push(&aux,e.val);
+                }
+            }
+        }
+        else if (curr.type == Z_FUNC || curr.type == 'g')
+        {
+            zclass* k = ((zfun *)curr.ptr)->_klass;
+            it = memory.find((void *)k);
+            if (it != memory.end() && !(it->second.isMarked))
+            {
+                zobject tmp;
+                tmp.type = Z_CLASS;
+                tmp.ptr = (void *)k;
+                it->second.isMarked = true;
+                zlist_push(&aux,tmp);
+            }
+            for (size_t i = 0;i< ((zfun *)curr.ptr)->opt.size;i++ )
+            {
+                zobject e = ((zfun*)curr.ptr)->opt.arr[i];
+                if (isHeapObj(e) && (it = memory.find(e.ptr)) != memory.end() && !(it->second.isMarked))
+                {
+                it->second.isMarked = true;
+                zlist_push(&aux,e);
+                }
+            }
+        }
+    } // end while loop
 }
 void VM::mark()
 {
@@ -722,7 +737,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         &&CALL,
         &&XOR,
         &&ASSIGN,
-        &&JMPIF,
+        &&CMP_JMPIFFALSE,
         &&EQ,
         &&NOTEQ,
         &&SMALLERTHAN,
@@ -781,8 +796,17 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         &&SELFMEMB,
         &&ASSIGNSELFMEMB,
         &&LOAD_FALSE,
-        &&LOAD_BYTE
+        &&LOAD_BYTE,
+        &&SETUP_LOOP,
+        &&SETUP_DLOOP,
+        &&RETURN_INT32,
+        &&LOADVAR_SUBINT32,
+        &&CALL_DIRECT,
+        &&INDEX_FAST,
+        &&LOADVAR_ADDINT32
         };
+        //size_t counts[sizeof(targets)/sizeof(void*)];
+        //memset(counts,0,sizeof(targets));
         #endif
     #endif
     zobject p1;
@@ -972,9 +996,13 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
     CASE_CP ASSIGNINDEX:
     {
         orgk = k - program;
-        zlist_fastpop(&STACK,&p1);
-        zlist_fastpop(&STACK,&p2);
-        zlist_fastpop(&STACK,&p3);
+        p1 = STACK.arr[--STACK.size];
+        p2 = STACK.arr[--STACK.size];
+        p3 = STACK.arr[--STACK.size];
+
+        //zlist_fastpop(&STACK,&p1);
+        //zlist_fastpop(&STACK,&p2);
+        //zlist_fastpop(&STACK,&p3);
         if (p3.type == Z_LIST)
         {
             pl_ptr1 = (zlist *)p3.ptr;
@@ -1030,7 +1058,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(TypeError, "Error indexed assignment unsupported for type " + fullform(p3.type));
             NEXT_INST;
         }
-        k++; NEXT_INST;
+        k++; 
+        NEXT_INST;
     }
     CASE_CP CALL:
     {
@@ -1068,7 +1097,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(E->_klass, AS_STD_STR(msg));
             NEXT_INST;
         }
-        zlist_erase_range(&STACK,STACK.size - i2,STACK.size - 1);
+        STACK.size -= i2;
         zlist_push(&STACK,p1);
         k++; NEXT_INST;
     }
@@ -1507,35 +1536,29 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         {
             memcpy(&end_idx,k,4);
             k+=4;
-        }
-        memcpy(&where,k,4);
-        k+=4;
-        if(is_global)
-        {
             end_idx += frames.back();
-            STACK.size = end_idx + 2;
-            if(STACK.arr[lcv_idx].type != Z_INT && STACK.arr[lcv_idx].type!=Z_INT64)
-            {
-                spitErr(TypeError,"Type "+fullform(STACK.arr[lcv_idx].type)+" unsupported for operator '+'");
-                NEXT_INST;
-            }
-            STACK.arr[lcv_idx].i += STACK.arr[end_idx+1].i;
-            if(STACK.arr[lcv_idx].i <= STACK.arr[end_idx].i)
-                k = program + where;
         }
         else
         {
             lcv_idx+=frames.back();
-            STACK.size = lcv_idx+3;
-            if(STACK.arr[lcv_idx].type != Z_INT && STACK.arr[lcv_idx].type!=Z_INT64)
-            {
-                spitErr(TypeError,"Type "+fullform(STACK.arr[lcv_idx].type)+" unsupported for operator '+'");
-                NEXT_INST;
-            }
-            STACK.arr[lcv_idx].i += STACK.arr[lcv_idx+2].i;
-            if(STACK.arr[lcv_idx].i <= STACK.arr[lcv_idx+1].i)
-                k = program + where;
+            end_idx=lcv_idx+1;
         }
+        memcpy(&where,k,4);
+        k+=4;
+        STACK.size = end_idx + 2;
+        if(STACK.arr[lcv_idx].type != Z_INT64)
+        {
+            spitErr(TypeError,"Type of loop control variable changed to "+fullform(STACK.arr[lcv_idx].type));
+            NEXT_INST;
+        }
+        if(STACK.arr[lcv_idx].l  > LLONG_MAX - STACK.arr[end_idx+1].l)
+        {
+            spitErr(OverflowError,"Numeric overflow when adding step");
+            NEXT_INST;
+        }
+        STACK.arr[lcv_idx].l += STACK.arr[end_idx+1].l;
+        if(STACK.arr[lcv_idx].l <= STACK.arr[end_idx].l)
+            k = program + where;
         NEXT_INST;
     }
     CASE_CP DLOOP:
@@ -1553,25 +1576,117 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         {
             memcpy(&end_idx,k,4);
             k+=4;
-        }
-        memcpy(&where,k,4);
-        k+=4;
-        if(is_global)
-        {
             end_idx += frames.back();
-            STACK.size = end_idx + 2;
-            STACK.arr[lcv_idx].i -= STACK.arr[end_idx+1].i;
-            if(STACK.arr[lcv_idx].i >= STACK.arr[end_idx].i)
-                k = program + where;
         }
         else
         {
             lcv_idx+=frames.back();
-            STACK.size = lcv_idx+3;
-            STACK.arr[lcv_idx].i -= STACK.arr[lcv_idx+2].i;
-            if(STACK.arr[lcv_idx].i >= STACK.arr[lcv_idx+1].i)
-                k = program + where;
+            end_idx=lcv_idx+1;
         }
+        memcpy(&where,k,4);
+        k+=4;
+        STACK.size = end_idx + 2;
+        if(STACK.arr[lcv_idx].type != Z_INT64)
+        {
+            spitErr(TypeError,"Type of loop control variable changed to "+fullform(STACK.arr[lcv_idx].type));
+            NEXT_INST;
+        }
+        if(STACK.arr[lcv_idx].l  < LLONG_MIN + STACK.arr[end_idx+1].l )
+        {
+            spitErr(OverflowError,"Numeric overflow when subtracting step");
+            NEXT_INST;
+        }
+        STACK.arr[lcv_idx].l -= STACK.arr[end_idx+1].l;
+        if(STACK.arr[lcv_idx].l >= STACK.arr[end_idx].l)
+            k = program + where;
+        NEXT_INST;
+    }
+    CASE_CP SETUP_LOOP:
+    {
+        orgk = k - program;
+        k+=1;
+        uint8_t is_global = *(k++);
+        int32_t lcv_idx;
+        int32_t end_idx;
+        int32_t where;
+
+        memcpy(&lcv_idx,k,4);
+        k+=4;
+        if(is_global)
+        {
+            memcpy(&end_idx,k,4);
+            k+=4;
+        }
+        memcpy(&where,k,4);
+        k+=4;
+        if(!is_global)
+        {
+            lcv_idx += frames.back();
+            end_idx = lcv_idx+1;
+        }
+        else
+        {
+            end_idx += frames.back();
+        }    
+
+        if(STACK.arr[lcv_idx].type == Z_INT)
+            PromoteType(STACK.arr[lcv_idx],Z_INT64);
+        if(STACK.arr[end_idx].type == Z_INT)
+            PromoteType(STACK.arr[end_idx], Z_INT64);
+        if(STACK.arr[end_idx+1].type == Z_INT)
+            PromoteType(STACK.arr[end_idx+1], Z_INT64);
+        if(STACK.arr[lcv_idx].type != Z_INT64 || STACK.arr[end_idx].type!=Z_INT64 || STACK.arr[end_idx+1].type!=Z_INT64)
+        {
+            spitErr(TypeError,"for requires start, end and step all to be integers!");
+            NEXT_INST;
+        }
+        if(STACK.arr[lcv_idx].l > STACK.arr[end_idx].l)
+            k = program + where;
+        
+        NEXT_INST;
+    }
+    CASE_CP SETUP_DLOOP:
+    {
+        orgk = k - program;
+        k+=1;
+        uint8_t is_global = *(k++);
+        int32_t lcv_idx;
+        int32_t end_idx;
+        int32_t where;
+
+        memcpy(&lcv_idx,k,4);
+        k+=4;
+        if(is_global)
+        {
+            memcpy(&end_idx,k,4);
+            k+=4;
+        }
+        memcpy(&where,k,4);
+        k+=4;
+        if(!is_global)
+        {
+            lcv_idx += frames.back();
+            end_idx = lcv_idx+1;
+        }
+        else
+        {
+            end_idx += frames.back();
+        }    
+
+        if(STACK.arr[lcv_idx].type == Z_INT)
+            PromoteType(STACK.arr[lcv_idx],Z_INT64);
+        if(STACK.arr[end_idx].type == Z_INT)
+            PromoteType(STACK.arr[end_idx], Z_INT64);
+        if(STACK.arr[end_idx+1].type == Z_INT)
+            PromoteType(STACK.arr[end_idx+1], Z_INT64);
+        if(STACK.arr[lcv_idx].type != Z_INT64 || STACK.arr[end_idx].type!=Z_INT64 || STACK.arr[end_idx+1].type!=Z_INT64)
+        {
+            spitErr(TypeError,"for requires start, end and step all to be integers!");
+            NEXT_INST;
+        }
+        if(STACK.arr[lcv_idx].l < STACK.arr[end_idx].l)
+            k = program + where;
+        
         NEXT_INST;
     }
     CASE_CP OP_RETURN:
@@ -1582,6 +1697,23 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         p1 = STACK.arr[STACK.size - 1];
         STACK.size = frames.back()+1;
         STACK.arr[frames.back()] = p1;
+        frames.pop_back();
+        if(!k)
+            return;//return from interpret function
+        NEXT_INST;
+    }
+    CASE_CP RETURN_INT32:
+    {
+        k+=1;
+        memcpy(&p1.i,k,4);
+        k+=4;
+        k = callstack.back();
+        callstack.pop_back();
+        executing.pop_back();
+        STACK.size = frames.back();
+        p1.type = Z_INT;
+//        STACK.arr[STACK.size++] = p1;
+        zlist_push(&STACK,p1);
         frames.pop_back();
         if(!k)
             return;//return from interpret function
@@ -1718,7 +1850,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(TypeError, "Error operator << unsupported for type " + fullform(p1.type));
             NEXT_INST;
         }
-        zlist_push(&STACK,p3);
+        //zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP RSHIFT:
@@ -1932,7 +2065,39 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(TypeError, "Error operator '+' unsupported for " + fullform(p1.type) + " and " + fullform(p2.type));
             NEXT_INST;
         }
-        if (c1 == Z_LIST)
+        if (c1 == Z_INT)
+        {
+            p3.type = Z_INT;
+            if (!addition_overflows(p1.i, p1.i))
+            {
+                p3.i = p1.i + p2.i;
+                STACK.arr[STACK.size++] = p3;
+                k++; NEXT_INST;
+            }
+            if (addition_overflows((int64_t)p1.i, (int64_t)p2.i))
+            {
+                spitErr(OverflowError, "Integer Overflow occurred");
+                NEXT_INST;
+            }
+            p3.type = Z_INT64;
+            p3.l = (int64_t)(p1.i) + (int64_t)(p2.i);
+            STACK.arr[STACK.size++] = p3;
+        }
+        else if (c1 == Z_INT64)
+        {
+            /*if (addition_overflows(p1.l, p2.l))
+            {
+                orgk = k - program;
+                spitErr(OverflowError, "Error overflow during solving expression.");
+                NEXT_INST;
+            }*/
+            p3.type = Z_INT64;
+            p3.l = p1.l + p2.l;
+            STACK.arr[STACK.size++] = p3;
+            k++; 
+            NEXT_INST;
+        }
+        else if (c1 == Z_LIST)
         {
             p3.type = Z_LIST;
             zlist* a = (zlist*)p1.ptr;
@@ -1957,48 +2122,17 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             STACK.arr[STACK.size++] = p3;
             DoThreshholdBusiness();
         }
-        else if (c1 == Z_INT)
-        {
-            p3.type = Z_INT;
-            if (!addition_overflows(p1.i, p1.i))
-            {
-            p3.i = p1.i + p2.i;
-            STACK.arr[STACK.size++] = p3;
-            k++; NEXT_INST;
-            }
-            if (addition_overflows((int64_t)p1.i, (int64_t)p2.i))
-            {
-            spitErr(OverflowError, "Integer Overflow occurred");
-            NEXT_INST;
-            }
-            p3.type = Z_INT64;
-            p3.l = (int64_t)(p1.i) + (int64_t)(p2.i);
-            STACK.arr[STACK.size++] = p3;
-        }
         else if (c1 == Z_FLOAT)
         {
             if (addition_overflows(p1.f, p2.f))
             {
-            orgk = k - program;
-            spitErr(OverflowError, "Floating point overflow during addition");
-            NEXT_INST;
+                orgk = k - program;
+                spitErr(OverflowError, "Floating point overflow during addition");
+                NEXT_INST;
             }
             p3.type = Z_FLOAT;
             p3.f = p1.f + p2.f;
             STACK.arr[STACK.size++] = p3;
-        }
-        else if (c1 == Z_INT64)
-        {
-            if (addition_overflows(p1.l, p2.l))
-            {
-            orgk = k - program;
-            spitErr(OverflowError, "Error overflow during solving expression.");
-            NEXT_INST;
-            }
-            p3.type = Z_INT64;
-            p3.l = p1.l + p2.l;
-            STACK.arr[STACK.size++] = p3;
-            k++; NEXT_INST;
         }
         else
         {
@@ -2043,7 +2177,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (p1.type == Z_FLOAT)
             p3.i = (bool)(p1.f < p2.f);
         
-        zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP GREATERTHAN:
@@ -2060,11 +2194,11 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (isNumeric(p1.type) && isNumeric(p2.type))
         {
             if (p1.type == Z_FLOAT || p2.type == Z_FLOAT)
-            c1 = Z_FLOAT;
+                c1 = Z_FLOAT;
             else if (p1.type == Z_INT64 || p2.type == Z_INT64)
-            c1 = Z_INT64;
+                c1 = Z_INT64;
             else if (p1.type == Z_INT || p2.type == Z_INT)
-            c1 = Z_INT;
+                c1 = Z_INT;
             PromoteType(p1, c1);
             PromoteType(p2, c1);
         }
@@ -2082,7 +2216,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (p1.type == Z_FLOAT)
             p3.i = (bool)(p1.f > p2.f);
         
-        zlist_push(&STACK,p3);
+
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP SMOREQ:
@@ -2122,7 +2257,6 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (p1.type == Z_FLOAT)
             p3.i = (bool)(p1.f <= p2.f);
         
-        //zlist_push(&STACK,p3);
         STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
@@ -2162,7 +2296,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (p1.type == Z_FLOAT)
             p3.i = (bool)(p1.f >= p2.f);
         
-        zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP EQ:
@@ -2181,7 +2315,6 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         }
         p3.type = Z_BOOL;
         p3.i = (bool)(zobject_equals(p1,p2));
-        //IMPORTANT1  zlist_push(&STACK,p3);
         STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
@@ -2201,7 +2334,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             NEXT_INST;
         }
         p1.i = (bool)!(p1.i);
-        zlist_push(&STACK,p1);
+        STACK.arr[STACK.size++] = p1;
         k++; NEXT_INST;
     }
     CASE_CP NEG:
@@ -2249,19 +2382,83 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         {
             p1.f = -p1.f;
         }
-        zlist_push(&STACK,p1);
+        STACK.arr[STACK.size++] = p1;
         k++; NEXT_INST;
     }
     CASE_CP INDEX:
     {
-        zlist_fastpop(&STACK,&p1);
-        zlist_fastpop(&STACK,&p2);
+  //      zlist_fastpop(&STACK,&p1);
+//        zlist_fastpop(&STACK,&p2);
+        p1 = STACK.arr[--STACK.size];
+        p2 = STACK.arr[--STACK.size];
         if (p2.type == Z_LIST)
         {
             if (p1.type != Z_INT && p1.type != Z_INT64)
             {
+                orgk = k - program;
+                spitErr(TypeError, "Error index should be integer!");
+                NEXT_INST;
+            }
+            PromoteType(p1, Z_INT64);
+            pl_ptr1 = (zlist *)p2.ptr;
+            if (p1.l < 0 || p1.l >= pl_ptr1->size)
+            {
+                orgk = k - program;
+                spitErr(IndexError, "Index out of range!");
+                NEXT_INST;
+            }
+            //zlist_push(&STACK,(pl_ptr1)->arr[p1.l]);
+            STACK.arr[STACK.size++] = pl_ptr1->arr[p1.l];
+            k++; 
+            NEXT_INST;
+        }
+        else if (p2.type == Z_BYTEARR)
+        {
+            if (p1.type != Z_INT && p1.type != Z_INT64)
+            {
+                orgk = k - program;
+                spitErr(TypeError, "Error index should be integer!");
+                NEXT_INST;
+            }
+            PromoteType(p1, Z_INT64);
+            if (p1.l < 0)
+            {
             orgk = k - program;
-            spitErr(TypeError, "Error index should be integer!");
+            spitErr(ValueError, "Error index cannot be negative!");
+            NEXT_INST;
+            }
+            bt_ptr1 = (zbytearr*)p2.ptr;
+            if ((size_t)p1.l >= bt_ptr1->size)
+            {
+            orgk = k - program;
+            spitErr(ValueError, "Error index is out of range!");
+            NEXT_INST;
+            }
+            p3.type = 'm';
+            p3.i = bt_ptr1->arr[p1.l];
+            //zlist_push(&STACK,p3);
+            STACK.arr[STACK.size++] = p3;
+            k++; NEXT_INST;
+        }
+        else if (p2.type == Z_DICT)
+        {
+            zdict* d = (zdict *)p2.ptr;
+            zobject res;
+            if (!zdict_get(d,p1,&res))
+            {
+                orgk = k - program;
+                spitErr(KeyError, "Error key " + zobjectToStr(p1) + " not found in the dictionary!");
+                NEXT_INST;
+            }
+            //zlist_push(&STACK,res);
+            STACK.arr[STACK.size++] = res;
+        }
+        else if (p2.type == Z_STR )
+        {
+            if (p1.type != Z_INT && p1.type != Z_INT64)
+            {
+            orgk = k - program;
+            spitErr(TypeError, "Error index for string should be an integer!");
             NEXT_INST;
             }
             PromoteType(p1, Z_INT64);
@@ -2271,16 +2468,72 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(ValueError, "Error index cannot be negative!");
             NEXT_INST;
             }
-
-            pl_ptr1 = (zlist *)p2.ptr;
-            if ((size_t)p1.l >= pl_ptr1->size)
+            char* s;
+            size_t length;
+            s = ((zstr*)p2.ptr) -> val;
+            length = ((zstr*)p2.ptr) -> len;
+            if ((size_t)p1.l >= length)
             {
             orgk = k - program;
             spitErr(ValueError, "Error index is out of range!");
-            NEXT_INST;
             }
-            zlist_push(&STACK,(*pl_ptr1).arr[p1.l]);
-            k++; NEXT_INST;
+            char c = s[p1.l];
+            zstr* p = vm_alloc_zstr(1);
+            p->val[0] = c;
+            //zlist_push(&STACK,zobj_from_str_ptr(p));
+            STACK.arr[STACK.size++] = zobj_from_str_ptr(p);
+            DoThreshholdBusiness();
+        }
+        else if (p2.type == Z_OBJ)
+        {
+            orgk = k - program;
+            invokeOperator("__index__", p2, 2, "[]", &p1);
+            NEXT_INST;
+        }
+        else
+        {
+            orgk = k - program;
+            spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(p2.type));
+            NEXT_INST;
+        }
+        k++;
+        NEXT_INST;
+    }
+    CASE_CP INDEX_FAST:
+    {
+        bool a = *(++k);
+        bool b = *(++k);
+        k+=1;
+        memcpy(&i1,k,4);
+        k+=4;
+        memcpy(&i2,k,4);
+        k+=4;
+        //printf("a = %d, b = %d, i1 = %d, i2 = %d\n",a,b,i1,i2);
+        i1 = a ? i1 : frames.back()+i1;
+        i2 = b ? i2 : frames.back()+i2;
+
+        p2 = STACK.arr[i1];
+        p1 = STACK.arr[i2];
+
+        if (p2.type == Z_LIST)
+        {
+            if (p1.type != Z_INT && p1.type != Z_INT64)
+            {
+                orgk = k - program;
+                spitErr(TypeError, "Error index should be integer!");
+                NEXT_INST;
+            }
+            PromoteType(p1, Z_INT64);
+            pl_ptr1 = (zlist *)p2.ptr;
+            if (p1.l < 0 || p1.l >= pl_ptr1->size)
+            {
+                orgk = k - program;
+                spitErr(IndexError, "Index out of range!");
+                NEXT_INST;
+            }
+            zlist_push(&STACK,(pl_ptr1)->arr[p1.l]);
+            //STACK.arr[STACK.size++] = pl_ptr1->arr[p1.l];
+            NEXT_INST;
         }
         else if (p2.type == Z_BYTEARR)
         {
@@ -2307,7 +2560,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             p3.type = 'm';
             p3.i = bt_ptr1->arr[p1.l];
             zlist_push(&STACK,p3);
-            k++; NEXT_INST;
+            //STACK.arr[STACK.size++] = p3;
+            NEXT_INST;
         }
         else if (p2.type == Z_DICT)
         {
@@ -2315,11 +2569,12 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             zobject res;
             if (!zdict_get(d,p1,&res))
             {
-            orgk = k - program;
-            spitErr(KeyError, "Error key " + zobjectToStr(p1) + " not found in the dictionary!");
-            NEXT_INST;
+                orgk = k - program;
+                spitErr(KeyError, "Error key " + zobjectToStr(p1) + " not found in the dictionary!");
+                NEXT_INST;
             }
             zlist_push(&STACK,res);
+            //STACK.arr[STACK.size++] = res;
         }
         else if (p2.type == Z_STR )
         {
@@ -2349,6 +2604,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             zstr* p = vm_alloc_zstr(1);
             p->val[0] = c;
             zlist_push(&STACK,zobj_from_str_ptr(p));
+            //STACK.arr[STACK.size++] = zobj_from_str_ptr(p);
             DoThreshholdBusiness();
         }
         else if (p2.type == Z_OBJ)
@@ -2363,7 +2619,136 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             spitErr(TypeError, "Error operator '[]' unsupported for type " + fullform(p2.type));
             NEXT_INST;
         }
-        k++;
+        NEXT_INST;
+    }
+    CASE_CP LOADVAR_ADDINT32:
+    {
+        orgk = k - program;
+        bool a = *(++k);
+        memcpy(&i1,k+1,4);
+        k+=5;
+        memcpy(&i2,k,4);
+        k+=4;
+        i1 = a ? i1 : frames.back()+i1;
+        p1 = STACK.arr[i1];
+        if (p1.type == Z_OBJ)
+        {
+            invokeOperator("__add__", p1, 2, "+", &p2);
+            NEXT_INST;
+        }
+        if(p1.type == Z_INT)
+        {
+            p3.type = Z_INT;
+            if (!addition_overflows(p1.i, i2))
+            {
+                p3.i = p1.i + i2;
+                zlist_push(&STACK,p3);
+                NEXT_INST;
+            }
+            if (addition_overflows((int64_t)p1.i, (int64_t)i2))
+            {
+                spitErr(OverflowError, "Integer Overflow occurred");
+                NEXT_INST;
+            }
+            p3.type = Z_INT64;
+            p3.l = (int64_t)(p1.i) + (int64_t)(i2);
+            zlist_push(&STACK,p3);
+        }
+        else if(p1.type == Z_INT64)
+        {
+            if (addition_overflows(p1.l, (int64_t)i2))
+            {
+                orgk = k - program;
+                spitErr(OverflowError, "Error overflow during solving expression.");
+                NEXT_INST;
+            }
+            p3.type = Z_INT64;
+            p3.l = p1.l + i2;
+            zlist_push(&STACK,p3);
+            NEXT_INST;
+        }
+        else if(p1.type == Z_FLOAT)
+        {
+            if (addition_overflows(p1.f, (double)i2))
+            {
+                orgk = k - program;
+                spitErr(OverflowError, "Floating point overflow during addition");
+                NEXT_INST;
+            }
+            p3.type = Z_FLOAT;
+            p3.f = p1.f + i2;
+            zlist_push(&STACK,p3);
+        }
+        else
+        {
+            spitErr(TypeError, "Error operator '+' unsupported for " + fullform(p1.type) + " and int32");
+            NEXT_INST;
+        }
+        NEXT_INST;
+    }
+    CASE_CP LOADVAR_SUBINT32:
+    {
+        orgk = k - program;
+        bool a = *(++k);
+        memcpy(&i1,k+1,4);
+        k+=5;
+        memcpy(&i2,k,4);
+        k+=4;
+        i1 = a ? i1 : frames.back()+i1;
+        p1 = STACK.arr[i1];
+        if (p1.type == Z_OBJ)
+        {
+            invokeOperator("__sub__", p1, 2, "-", &p2);
+            NEXT_INST;
+        }
+        if(p1.type == Z_INT)
+        {
+            p3.type = Z_INT;
+            if (!subtraction_overflows(p1.i, i2))
+            {
+                p3.i = p1.i - i2;
+                zlist_push(&STACK,p3);
+                NEXT_INST;
+            }
+            if (subtraction_overflows((int64_t)p1.i, (int64_t)i2))
+            {
+                spitErr(OverflowError, "Integer Overflow occurred");
+                NEXT_INST;
+            }
+            p3.type = Z_INT64;
+            p3.l = (int64_t)(p1.i) - (int64_t)(i2);
+            zlist_push(&STACK,p3);
+        }
+        else if(p1.type == Z_INT64)
+        {
+            if (subtraction_overflows(p1.l, (int64_t)i2))
+            {
+                orgk = k - program;
+                spitErr(OverflowError, "Error overflow during solving expression.");
+                NEXT_INST;
+            }
+            p3.type = Z_INT64;
+            p3.l = p1.l - i2;
+            zlist_push(&STACK,p3);
+            NEXT_INST;
+        }
+        else if(p1.type == Z_FLOAT)
+        {
+            if (subtraction_overflows(p1.f, (double)i2))
+            {
+                orgk = k - program;
+                spitErr(OverflowError, "Floating point overflow during subtraction");
+                NEXT_INST;
+            }
+            p3.type = Z_FLOAT;
+            p3.f = p1.f - i2;
+            zlist_push(&STACK,p3);
+        }
+        else
+        {
+            spitErr(TypeError, "Error operator '-' unsupported for " + fullform(p1.type) + " and int32");
+            NEXT_INST;
+        }
         NEXT_INST;
     }
     CASE_CP NOTEQ:
@@ -2381,7 +2766,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         else if (p1.type == Z_INT64 && p2.type == Z_INT)
             PromoteType(p2, Z_INT64);
         p3.i = (bool)!(zobject_equals(p1,p2));
-        zlist_push(&STACK,p3);
+        //zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP IS:
@@ -2396,7 +2782,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         }
         p3.type = Z_BOOL;
         p3.i = (bool)(p1.ptr == p2.ptr);
-        zlist_push(&STACK,p3);
+        //zlist_push(&STACK,p3);
+        STACK.arr[STACK.size++] = p3;
         k++; NEXT_INST;
     }
     CASE_CP MUL:
@@ -2445,7 +2832,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             }
             p1.type = Z_LIST;
             p1.ptr = (void*)res;
-            zlist_push(&STACK,p1);
+            //zlist_push(&STACK,p1);
+            STACK.arr[STACK.size++] = p1;
             DoThreshholdBusiness();
             ++k;
             NEXT_INST;
@@ -2468,7 +2856,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             }
             p1.type = Z_STR;
             p1.ptr = (void*)res;
-            zlist_push(&STACK,p1);
+            //zlist_push(&STACK,p1);
+            STACK.arr[STACK.size++] = p1;
             DoThreshholdBusiness();
             ++k;
             NEXT_INST;
@@ -2485,19 +2874,21 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             c.type = Z_INT;
             if (!multiplication_overflows(p1.i, p2.i))
             {
-            c.i = p1.i * p2.i;
-            zlist_push(&STACK,c);
-            k++; NEXT_INST;
+                c.i = p1.i * p2.i;
+                //zlist_push(&STACK,c);
+                STACK.arr[STACK.size++] = c;
+                k++; NEXT_INST;
             }
             orgk = k - program;
             if (multiplication_overflows((int64_t)p1.i, (int64_t)p2.i))
             {
-            spitErr(OverflowError, "Overflow occurred");
-            NEXT_INST;
+                spitErr(OverflowError, "Overflow occurred");
+                NEXT_INST;
             }
             c.type = Z_INT64;
             c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
-            zlist_push(&STACK,c);
+            //zlist_push(&STACK,c);
+            STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_FLOAT)
         {
@@ -2509,19 +2900,21 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             }
             c.type = Z_FLOAT;
             c.f = p1.f * p2.f;
-            zlist_push(&STACK,c);
+            //zlist_push(&STACK,c);
+            STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_INT64)
         {
             if (multiplication_overflows(p1.l, p2.l))
             {
-            orgk = k - program;
-            spitErr(OverflowError, "Error overflow during solving expression.");
-            NEXT_INST;
+                orgk = k - program;
+                spitErr(OverflowError, "Error overflow during solving expression.");
+                NEXT_INST;
             }
             c.type = Z_INT64;
             c.l = p1.l * p2.l;
-            zlist_push(&STACK,c);
+            //zlist_push(&STACK,c);
+            STACK.arr[STACK.size++] = c;
         }
         k++; NEXT_INST;
     }
@@ -2541,10 +2934,11 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             
             if (!StrMap_get(&(m->members),mname,&p3))
             {
-            spitErr(NameError, "Error module object has no member named '" + (string)mname + "' ");
-            NEXT_INST;
+                spitErr(NameError, "Error module object has no member named '" + (string)mname + "' ");
+                NEXT_INST;
             }
-            zlist_push(&STACK,p3);
+            //zlist_push(&STACK,p3);
+            STACK.arr[STACK.size++] = p3;
             ++k;
             NEXT_INST;
         }
@@ -2562,7 +2956,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
                     spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->_klass->name + "'s object!");
                     NEXT_INST;
                 }
-                zlist_push(&STACK,tmp);
+                //zlist_push(&STACK,tmp);
+                STACK.arr[STACK.size++] = tmp;
                 k += 1;
                 NEXT_INST;
                 }
@@ -2573,7 +2968,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
                 }
             }
             
-            zlist_push(&STACK,tmp);
+            //zlist_push(&STACK,tmp);
+            STACK.arr[STACK.size++] = tmp;
         }
         else if(a.type == Z_CLASS)
         {
@@ -2594,7 +2990,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
                     spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->name + "!");
                     NEXT_INST;
                 }
-                zlist_push(&STACK,tmp);
+                //zlist_push(&STACK,tmp);
+                STACK.arr[STACK.size++] = tmp;
                 k += 1;
                 NEXT_INST;
                 }
@@ -2604,7 +3001,8 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
                 NEXT_INST;
                 }
             }
-            zlist_push(&STACK,tmp);
+            //zlist_push(&STACK,tmp);
+            STACK.arr[STACK.size++] = tmp;
         }
         else
         {
@@ -2861,22 +3259,21 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         orgk = k - program;
         zobject fn;
         zlist_fastpop(&STACK,&fn);
-        k += 1;
-        int32_t N = *k;
+        int32_t N = *(++k);
         if (fn.type == Z_FUNC)
         {
             zfun *obj = (zfun *)fn.ptr;
             if ((size_t)N + obj->opt.size < obj->args || (size_t)N > obj->args)
             {
-            spitErr(ArgumentError, "Error function " + (string)obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
-            NEXT_INST;
+                spitErr(ArgumentError, "Error function " + (string)obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
+                NEXT_INST;
             }
             callstack.push_back(k + 1);
             frames.push_back(STACK.size - N);
             if (callstack.size() >= 1000)
             {
-            spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
-            NEXT_INST;
+                spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
+                NEXT_INST;
             }
             for (size_t i = obj->opt.size - (obj->args - N); i < obj->opt.size; i++)
                 zlist_push(&STACK,obj->opt.arr[i]);
@@ -3053,6 +3450,23 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
             NEXT_INST;
         }
         k++; NEXT_INST;
+    }
+    CASE_CP CALL_DIRECT:
+    {
+        memcpy(&i1,++k, 4);
+        k+=4;
+        p1 = STACK.arr[i1];
+        zfun* fn = (zfun*)p1.ptr;
+        callstack.push_back(k);
+        frames.push_back(STACK.size - fn->args);
+        if (callstack.size() >= 1000)
+        {
+            spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
+            NEXT_INST;
+        }
+        executing.push_back(fn);
+        k = program + fn->i;
+        NEXT_INST;
     }
     CASE_CP MOD:
     {
@@ -3363,16 +3777,41 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         k = program + where;
         k++; NEXT_INST;
     }
-    CASE_CP JMPIF:
+    CASE_CP CMP_JMPIFFALSE:
     {
-        k += 1;
+        orgk = k - program;
+        uint8_t op = *(++k);
+        k+=1;
         memcpy(&i1, k, sizeof(int32_t));
-        k += 3;
-        int32_t where = k - program + i1 + 1;
+        k += 4;
+        int32_t where = k - program + i1 ;
+        zlist_fastpop(&STACK,&p2);
         zlist_fastpop(&STACK,&p1);
-        if (p1.i && p1.type == Z_BOOL)
-            k = program + where - 1;
-        k++; 
+        if (p1.type == Z_INT && p2.type == Z_INT64)
+            PromoteType(p1, Z_INT64);
+        else if (p1.type == Z_INT64 && p2.type == Z_INT)
+            PromoteType(p2, Z_INT64);
+        if (p1.type == Z_OBJ && p2.type != Z_NIL)
+        {
+            zclass_object* obj = (zclass_object*)p1.ptr;
+            StrMap_get(&(obj->members),"__eq__",&p3);
+            if(p3.type == Z_FUNC || p3.type == Z_NATIVE_FUNC)
+            {
+                zobject args[] = {p1,p2};
+                vm_call_object(&p3, args, 2,&p4);
+                if(p4.type != Z_BOOL)
+                {
+                    spitErr(TypeError, "__eq__ method must return a boolean!");
+                    NEXT_INST;
+                }
+                if(p4.i == 0)
+                    k = program+where;
+                NEXT_INST;
+            }
+        }
+        bool truth = zobject_equals(p1,p2);
+        if(!truth)
+            k = program+where;
         NEXT_INST;
     }
     CASE_CP THROW:
@@ -3568,7 +4007,10 @@ if (STACK.size != 0 && panic)
     fprintf(stderr,"An InternalError occurred.Error Code: 15\n");
     exit(1);
 }
-
+/*printf("--Counts--\n");
+for(size_t i=0;i<sizeof(targets)/sizeof(void*);i++)
+    if(counts[i]!=0)
+        printf("%zu: %zu\n",i,counts[i]);*/
 } // end function interpret
 VM::~VM()
 {

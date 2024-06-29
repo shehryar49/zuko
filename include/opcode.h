@@ -33,7 +33,7 @@ enum OPCODE
     CALL=8,//CALL <name>
     XOR=9,//XOR
     ASSIGN = 10,//ASSIGN <name>
-    JMPIF = 11,//JMPIf <where>
+    CMP_JMPIFFALSE = 11,//JMPIf <where>
     EQ=12,//EQ
     NOTEQ=13,//NOTEQ
     SMALLERTHAN=14,
@@ -92,81 +92,15 @@ enum OPCODE
     SELFMEMB=67,
     ASSIGNSELFMEMB=68,
     LOAD_FALSE=69,
-    LOAD_BYTE=70
+    LOAD_BYTE=70,
+    SETUP_LOOP=71,
+    SETUP_DLOOP=72,
+    RETURN_INT32=73,
+    LOADVAR_SUBINT32=74,
+    CALL_DIRECT=75,
+    INDEX_FAST=76,
+    LOADVAR_ADDINT32=77, // i+1 , j+1 etc etc this is a very common pattern in zuko programs
+
 };
-#ifdef PLUTONIUM_PROFILE
-const char* opNames[] = 
-{
-   "LOAD",
-   "CALLMETHOD",
-   "ADD",
-   "MUL",
-   "DIV",
-   "SUB",
-   "JMP",
-   "CALL",
-   "XOR",
-   "ASSIGN",
-   "JMPIF",
-   "EQ",
-   "NOTEQ",
-   "SMALLERTHAN",
-   "GREATERTHAN",
-   "CALLUDF",
-   "INPLACE_INC", 
-   "LOAD_STR",
-   "JMPIFFALSE",
-   "NPOP_STACK",
-   "MOD",
-   "LOAD_NIL",
-   "LOAD_INT32 ",
-   "RETURN",
-   "JMPNPOPSTACK",
-   "GOTONPSTACK",
-   "GOTO",
-   "POP_STACK",
-   "LOAD_CONST",
-   "CO_STOP", 
-   "SMOREQ",
-   "GROREQ",
-   "NEG",
-   "NOT",
-   "INDEX",
-   "ASSIGNINDEX",
-   "IMPORT",
-   "BREAK",
-   "CALLFORVAL",
-   "INC_GLOBAL",
-   "CONT",
-   "LOAD_GLOBAL",
-   "MEMB",
-   "JMPIFFALSENOPOP",
-   "ASSIGNMEMB",
-   "BUILD_CLASS",
-   "ASSIGN_GLOBAL",
-   "LOAD_FUNC",
-   "OP_EXIT",
-   "LSHIFT",
-   "RSHIFT",
-   "BITWISE_AND",
-   "BITWISE_OR",
-   "COMPLEMENT",
-   "BUILD_DERIVED_CLASS",
-   "LOAD_TRUE",
-   "IS",
-   "ONERR_GOTO",
-   "POP_EXCEP_TARG",
-   "THROW",
-   "LOAD_CO",
-   "YIELD",
-   "YIELD_AND_EXPECTVAL",
-   "SELFMEMB",
-   "GC",
-   "NOPOPJMPIF",
-   "SELFMEMB",
-   "ASSIGNSELFMEMB",
-   "LOAD_BYTE",
-   "LOAD_FALSE"
-};
-#endif
+
 #endif

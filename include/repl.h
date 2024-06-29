@@ -1,7 +1,6 @@
 #ifndef ZUKO_REPL_H_
 #define ZUKO_REPL_H_
-#include "zuko.h"
-#include "zlist.h"
+
 
 
 // REPL STATE

@@ -28,21 +28,6 @@ SOFTWARE.*/
 #include "builtinfunc.h"
 #include "programinfo.h"
 
-#ifdef THREADED_INTERPRETER
-  #ifdef __GNUC__
-    #define NEXT_INST goto *targets[*k];
-    #define CASE_CP
-    #define ISTHREADED //threaded interpreter can be and will be implemented
-  #else
-    #define NEXT_INST continue
-    #define CASE_CP case
-  #endif
-#else
-  #define NEXT_INST continue
-  #define CASE_CP case
-#endif
-
-
 
 #define AS_STD_STR(x) (std::string)(((zstr*)x.ptr)->val)
 
@@ -145,7 +130,6 @@ public:
   size_t allocated = 0;
   std::unordered_map<void*, MemInfo> memory;
   friend class Compiler;
-  friend zobject SET_GC_PARAMS(zobject*,int32_t);
   //These functions are outside the class, so they can be called by C code
   friend bool vm_call_object(zobject*,zobject*,int,zobject*);
   friend void vm_mark_important(void*);

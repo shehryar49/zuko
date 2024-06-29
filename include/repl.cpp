@@ -1,6 +1,4 @@
-#include "repl.h"
-#include "compiler.h"
-#include "programinfo.h"
+#include "zuko.h"
 
 bool REPL_MODE = false;
 static ZukoSource src;

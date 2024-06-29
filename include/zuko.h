@@ -1,8 +1,7 @@
 #ifndef ZUKO_H_
 #define ZUKO_H_
 //This header should only be included by the zuko interpreter
-#define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
-//not defining this macro will always result in the simple switch based interpret loop
+
 
 #include <vector>
 #include <stdio.h>
@@ -53,7 +52,7 @@
 #include "utility.h"
 #include "programinfo.h"
 #include "repl.h"
-
+#include "dis.h"
 
 
 #endif

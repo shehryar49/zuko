@@ -21,12 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef COMPILER_H_
 #define COMPILER_H_
+#include "ast.h"
 #include "builtinfunc.h"
 #include "programinfo.h"
 #include "vm.h"
 #include "parser.h"
 #include "opcode.h"
 #include "zfileobj.h"
+#include <unordered_map>
 
 
 #define JUMPOFFSET_SIZE 4
@@ -44,10 +46,9 @@ class Compiler
 {
 private:
   int32_t STACK_SIZE = 0;//simulating STACK's size
-  int32_t scope = 0;
+  //int32_t scope = 0;
   int32_t localsBegin;
   int32_t foo = 0;
-  int32_t fnScope;
   int32_t* num_of_constants;
   size_t line_num = 1;
   size_t bytes_done = 0;
@@ -57,6 +58,8 @@ private:
 
   std::unordered_map<string,bool> symRef;
   std::unordered_map<size_t,ByteSrc>* LineNumberTable;
+  std::unordered_map<std::string,std::pair<Node*,int32_t>> compiled_functions; //compiled functions (not methods)
+  //this allows code generation for direct function call
   SymbolTable globals;
   
   std::vector<SymbolTable> locals;
@@ -81,7 +84,7 @@ private:
   bool infor = false; //used by break and continue statements
   bool compileAllFuncs = false;
   bool returnStmtAtFnScope = false;
-
+  NodeType last_stmt_type;
   void compileError(std::string type,std::string msg);
   void add_lntable_entry(size_t opcodeIdx);
   void optimize_jmps(vector<uint8_t>& bytecode);
