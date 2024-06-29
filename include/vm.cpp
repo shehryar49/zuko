@@ -2068,7 +2068,7 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         if (c1 == Z_INT)
         {
             p3.type = Z_INT;
-            if (!addition_overflows(p1.i, p1.i))
+            if (!addition_overflows(p1.i, p2.i))
             {
                 p3.i = p1.i + p2.i;
                 STACK.arr[STACK.size++] = p3;
@@ -2085,12 +2085,12 @@ void VM::interpret(size_t offset , bool panic) //by default panic if stack is no
         }
         else if (c1 == Z_INT64)
         {
-            /*if (addition_overflows(p1.l, p2.l))
+            if (addition_overflows(p1.l, p2.l))
             {
                 orgk = k - program;
                 spitErr(OverflowError, "Error overflow during solving expression.");
                 NEXT_INST;
-            }*/
+            }
             p3.type = Z_INT64;
             p3.l = p1.l + p2.l;
             STACK.arr[STACK.size++] = p3;
