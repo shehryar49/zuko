@@ -1,0 +1,28 @@
+import std/algo
+function bubbleSort(var nums)
+{
+    var l = len(nums)
+    for(var i=1 to l-1)
+    {
+        for(var j=0 to l-i-1)
+        {
+            var k = j+1
+            if(nums[j] > nums[k])
+            {
+                var c = nums[j]
+                nums[j] = nums[k]
+                nums[k] = c
+            }
+        }
+    }
+}
+
+var nums = []
+var i = 10000
+while( i>= 1)
+{
+    nums.push(i)
+    i-=1
+}
+bubbleSort(nums)
+println(nums)
