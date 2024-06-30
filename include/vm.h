@@ -38,7 +38,45 @@ struct MemInfo //Data structure used by GC
   size_t size; // only used for Z_RAW
 };
 
-
+inline void PromoteType(zobject &a, char t)
+{
+  if (a.type == Z_INT)
+  {
+    if (t == Z_INT64) // promote to int64_t
+    {
+      a.type = Z_INT64;
+      a.l = (int64_t)a.i;
+    }
+    else if (t == Z_FLOAT)
+    {
+      a.type = Z_FLOAT;
+      a.f = (double)a.i;
+    }
+  }
+  else if (a.type == Z_FLOAT)
+  {
+    if (t == Z_INT64) // promote to int64_t
+    {
+      a.type = Z_INT64;
+      a.l = (int64_t)a.f;
+    }
+    else if (t == Z_INT)
+    {
+      a.type = Z_INT;
+      a.f = (int32_t)a.f;
+    }
+    else if (t == Z_FLOAT)
+      return;
+  }
+  else if (a.type == Z_INT64)
+  {
+    if (t == Z_FLOAT) // only this one is needed
+    {
+      a.type = Z_FLOAT;
+      a.f = (double)a.l;
+    }
+  }
+}
 extern "C"
 {
   zobject zobj_from_str(const char* str);// makes deep copy of str

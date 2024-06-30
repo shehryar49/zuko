@@ -8,7 +8,6 @@ using namespace std;
 std::unordered_map<string,BuiltinFunc> funcs;
 
 string fullform(char);
-void PromoteType(zobject&,char);
 
 zobject nil;
 zobject quickErr(zclass* k,string s)
