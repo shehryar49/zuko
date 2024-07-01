@@ -6,16 +6,16 @@
 
 void signalHandler(int signum)
 {
-  if(signum==SIGABRT || signum==SIGFPE || signum==SIGILL || signum==SIGSEGV)
-  {
-    char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";
-    #ifdef _WIN32
-      size_t written = _write(_fileno(stderr),buff,sizeof(buff));
-    #else
-      size_t written __attribute__((unused)) = write(STDERR_FILENO,buff,sizeof(buff));
-    #endif
-    exit(EXIT_FAILURE);
-  }
+    if(signum==SIGABRT || signum==SIGFPE || signum==SIGILL || signum==SIGSEGV)
+    {
+        char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";
+        #ifdef _WIN32
+            size_t written = _write(_fileno(stderr),buff,sizeof(buff));
+        #else
+            size_t written __attribute__((unused)) = write(STDERR_FILENO,buff,sizeof(buff));
+        #endif
+        exit(EXIT_FAILURE);
+    }
 }
 
 int main(int argc, const char* argv[])
@@ -29,28 +29,25 @@ int main(int argc, const char* argv[])
     signal(SIGSEGV,signalHandler);
     if (argc < 2)
     {
-      REPL_MODE = true; //enable REPL_MODE
-      printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", ZUKO_VER,ZUKO_VER_PATCH,__DATE__,__TIME__,getOS());
-      REPL();
-      return 0;
+        REPL_MODE = true; //enable REPL_MODE
+        printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", ZUKO_VER,ZUKO_VER_PATCH,__DATE__,__TIME__,getOS());
+        REPL();
+        return 0;
     }
     string source_code;
     string filename;
     if(argc>=3 && strncmp(argv[1],"-c",2)==0)
     {
-      filename = "argv";
-      source_code = argv[2];
+        filename = "argv";
+        source_code = argv[2];
     }
     else
     {
-      filename = argv[1];
-      source_code = readfile(filename);
+        filename = argv[1];
+        source_code = readfile(filename);
     }
-    //the  program currently consists of 1 file only
-    //unless this 1 file imports other zuko files
     ZukoSource src;
     src.addFile(filename,source_code); //first file is the root file
-    //parser can add more files to the program
      
     vector<uint8_t> bytecode;
     //the variables in curly brackets below are temporary
@@ -74,8 +71,7 @@ int main(int argc, const char* argv[])
         deleteAST(ast);
     }
     vm.load(bytecode,src); // vm uses the src for printing errors and stuff
-    //dis(bytecode);
-    //return 0;
+
     // It's showtime
     vm.interpret();
     // Hasta La Vista Baby    
