@@ -39,8 +39,8 @@ void stripNewlines(vector<token>& tokens);
 int find_token(token t,int start,const vector<token>& tokens);
 int find_token_consecutive(token t,int start,int end,const vector<token>& tokens);
 
-int match_token(int,TokenType,const vector<token>&);
-int match_token_right(int,TokenType,const vector<token>&);
+int match_token(int,int,TokenType,const vector<token>&);
+int match_token_right(int,int,TokenType,const vector<token>&);
 
 void delete_ast(Node* ast);
 void copy_ast(Node*& dest,Node* src);

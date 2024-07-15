@@ -45,12 +45,11 @@ char* merge_str(const char* str1,const char* str2)
     return result;
 }
 //Function to find match for tokens like '(' '[' '{'
-int match_token(int k,TokenType end,const vector<token>& tokens)
+int match_token(int k,int endidx,TokenType end,const vector<token>& tokens)
 {
     TokenType start = tokens[k].type;
     int ignore = 0;
-    int l = tokens.size();
-    while(k<l)
+    while(k<=endidx)
     {
         if(tokens[k].type  == start)
             ignore+=1;
@@ -80,6 +79,7 @@ int match_token_right(int k,TokenType end,const vector<token>& tokens)
                 return k;
         }
         k-=1;
+
     }
     return -1;
 }
@@ -529,7 +529,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
             }
             else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
             {
-                int R = match_token(k,TokenType::END_LIST_TOKEN,tokens);
+                int R = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,tokens);
                 if(R>(L) || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<token> sublist = {tokens.begin()+k,tokens.begin()+R+1};
@@ -538,7 +538,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
             }
             else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
             {
-                int R = match_token(k,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                int R = match_token(k,tokens.size(),TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(R>L || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
@@ -547,7 +547,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
             }
             else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
             {
-                int R = match_token(k,TokenType::RParen_TOKEN,tokens);
+                int R = match_token(k,tokens.size(),TokenType::RParen_TOKEN,tokens);
                 if(R>L || R==-1)
                     parseError("SyntaxError","Invalid Syntax");
                 vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
@@ -577,7 +577,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = match_token(k,TokenType::BEGIN_LIST_TOKEN,tokens);
+            int i = match_token(k,tokens.size(),TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
@@ -635,7 +635,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
                 {
-                    int R = match_token(k,TokenType::END_LIST_TOKEN,tokens);
+                    int R = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,tokens);
                     vector<token> sublist ={tokens.begin()+k,tokens.begin()+R+1};
                     if(tofill=="key")
                     {
@@ -650,7 +650,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
                 {
-                    int R = match_token(k,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    int R = match_token(k,tokens.size(),TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                     if(R==(int)tokens.size()-1)
                         parseError("SyntaxError","Invalid Syntax");
 
@@ -668,7 +668,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
                 {
-                    int R = match_token(k,TokenType::RParen_TOKEN,tokens);
+                    int R = match_token(k,tokens.size(),TokenType::RParen_TOKEN,tokens);
                     if(R>((int)tokens.size()-2) || R==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
@@ -703,7 +703,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     ////////////////////
     if(tokens[0].type== TokenType::ID_TOKEN && tokens[1].type== TokenType::LParen_TOKEN)
     {
-        int i = match_token(1,TokenType::RParen_TOKEN,tokens);
+        int i = match_token(1,tokens.size(),TokenType::RParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         if(i==(int)tokens.size()-1)
@@ -741,7 +741,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
                 {
-                    int i = match_token(k,TokenType::END_LIST_TOKEN,Args);
+                    int i = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<token> LIST =  {Args.begin()+k,Args.begin()+i+1};
@@ -750,7 +750,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(Args[k].type== TokenType::LParen_TOKEN)
                 {
-                    int i = match_token(k,TokenType::RParen_TOKEN,Args);
+                    int i = match_token(k,Args.size(),TokenType::RParen_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<token> P =  {Args.begin()+k,Args.begin()+i+1};
@@ -759,7 +759,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 }
                 else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
                 {
-                    int i = match_token(k,TokenType::R_CURLY_BRACKET_TOKEN,Args);
+                    int i = match_token(k,Args.size(),TokenType::R_CURLY_BRACKET_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<token> P =  {Args.begin()+k,Args.begin()+i+1};
@@ -780,7 +780,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     //////////////
     if(tokens[0].type== TokenType::LParen_TOKEN)
     {
-        int i = match_token(0,TokenType::RParen_TOKEN,tokens);
+        int i = match_token(0,tokens.size(),TokenType::RParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
         if(i==(int)tokens.size()-1)
@@ -893,7 +893,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     {
         if(tokens_size>=3)
         {
-            if(tokens[begin+1].type== TokenType::LParen_TOKEN && tokens[end].type== TokenType::RParen_TOKEN && match_token(begin+1,TokenType::RParen_TOKEN,tokens)==(int)end)
+            if(tokens[begin+1].type== TokenType::LParen_TOKEN && tokens[end].type== TokenType::RParen_TOKEN && match_token(begin+1,end,TokenType::RParen_TOKEN,tokens)==(int)end)
             {
                 bool wrapInPrint = false;
                 if(REPL_MODE && atGlobalLevel() && strcmp(tokens[begin].content,"print")!=0 && strcmp(tokens[begin].content,"println")!=0 && strcmp(tokens[begin].content,"printf")!=0)
@@ -931,7 +931,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                         }
                         else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
                         {
-                            int i = match_token(k,TokenType::END_LIST_TOKEN,Args);
+                            int i = match_token(k,Args.size(),TokenType::END_LIST_TOKEN,Args);
                             if(i==-1)
                                 parseError("SyntaxError","Invalid Syntax");
                             vector<token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -940,7 +940,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                         }
                         else if(Args[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
                         {
-                            int i = match_token(k,TokenType::R_CURLY_BRACKET_TOKEN,Args);
+                            int i = match_token(k,Args.size(),TokenType::R_CURLY_BRACKET_TOKEN,Args);
                             if(i==-1)
                                 parseError("SyntaxError","Invalid Syntax");
                             vector<token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -949,7 +949,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                         }
                         else if(Args[k].type== TokenType::LParen_TOKEN)
                         {
-                            int i = match_token(k,TokenType::RParen_TOKEN,Args);
+                            int i = match_token(k,Args.size(),TokenType::RParen_TOKEN,Args);
                             if(i==-1)
                                 parseError("SyntaxError","Invalid Syntax");
                             vector<token> P = {Args.begin()+k,Args.begin()+i+1};
@@ -1572,11 +1572,11 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     int idx = (int)k -1;
                     int rp = 0;
                     if(a)
-                        rp = match_token(idx,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                        rp = match_token(idx,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                     else if(b)
-                        rp = match_token(idx,TokenType::RParen_TOKEN,tokens);
+                        rp = match_token(idx,end,TokenType::RParen_TOKEN,tokens);
                     else if(c)
-                        rp = match_token(idx,TokenType::END_LIST_TOKEN,tokens);
+                        rp = match_token(idx,end,TokenType::END_LIST_TOKEN,tokens);
                     if(rp == -1)
                         parseError("SyntaxError","'"+(string)tokens[line_end].content+"' at the end of line is unmatched.");
                     
@@ -1632,7 +1632,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 int if_end;
                 if(if_begin!=-1)
                 {
-                    if_end = match_token(if_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    if_end = match_token(if_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                     if(if_end == -1)
                     {
                       line_num = tokens[if_begin].ln;
@@ -1668,7 +1668,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         line_num = tokens[elif_begin].ln;
                         parseError("SyntaxError","Error expected '(' after else if");
                     }
-                    int l = match_token(p,TokenType::RParen_TOKEN,tokens);
+                    int l = match_token(p,end,TokenType::RParen_TOKEN,tokens);
                     elifConditions.push_back(std::pair<int,int>(p+1,l-1));
                     elif_begin = find_token_consecutive(bgscope_token,l+1,end,tokens);
                     if(elif_begin==-1)
@@ -1682,7 +1682,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
 
                     }
                     else
-                        elif_end = match_token(elif_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
+                        elif_end = match_token(elif_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
                     
                     elifBlocks.push_back(std::pair<int,int>(elif_begin+1,elif_end-1));
                     elif_begin = find_token_consecutive(elif_token,elif_end+1,end,tokens);
@@ -1712,7 +1712,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
 
                     }
                     else
-                        else_end = match_token(else_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
+                        else_end = match_token(else_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
                     else_begin += 1;
                     else_end -= 1;
                 }
@@ -1856,7 +1856,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         parseError("SyntaxError","Expected code block after function definition!");
                 }
                 else
-                    func_end = match_token(func_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    func_end = match_token(func_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(func_end==-1)
                     parseError("SyntaxError","Error missing '}' to end function definition.");
                 if(func_begin==-1)
@@ -1909,7 +1909,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     parseError("SyntaxError","Error expected brackets {} after class definition!");
                 }
                 else
-                    class_end = match_token(class_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    class_end = match_token(class_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(!atGlobalLevel())
                     parseError("SyntaxError","Class declartions must be at global scope or in a namespace!");
                 class_begin += 1;
@@ -1952,7 +1952,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     parseError("SyntaxError","Error expected {} after namespace keyword");
                 }
                 else
-                    nm_end = match_token(nm_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    nm_end = match_token(nm_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 if(!atGlobalLevel())
                     parseError("SyntaxError","Namespace declaration must be at global scope or within another namespace!");
                 //vector<token> block = {tokens.begin()+j+1,tokens.begin()+i};
@@ -1993,7 +1993,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         parseError("SyntaxError","Error expected a code block or line after "+ast->val);
                 }
                 else
-                    loop_end = match_token(loop_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    loop_end = match_token(loop_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 
                 loop_begin += 1;
                 loop_end -= 1;
@@ -2026,16 +2026,10 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         parseError("SyntaxError","Error expected a code block or line after try!");
                 }
                 else
-                    try_end = match_token(try_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    try_end = match_token(try_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
 
                 try_begin += 1;
                 try_end -= 1;
-                /*if(block.size()==1 && block[0].type==KEYWORD_TOKEN && (strcmp(block[0].content,"endfor")==0 || strcmp(block[0].content,"endwhile")==0 || strcmp(block[0].content,"endnm")==0 || strcmp(block[0].content,"endclass")==0 || strcmp(block[0].content,"endfunc")==0 || strcmp(tokens[0].content,"endtry")==0 || strcmp(tokens[0].content,"endcatch")==0 || strcmp(block[0].content,"endelse")==0 || strcmp(block[0].content,"endelif")==0 ||  strcmp(block[0].content,"endif") == 0))
-                {
-                    parseError("SyntaxError","Error use brackets {} after "+ast->val);
-                }
-                stripNewlines(block);*/
-
 
                 token CATCH_TOK;
                 CATCH_TOK.type = TokenType::KEYWORD_TOKEN;
@@ -2069,7 +2063,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                             parseError("SyntaxError","Error expected code block or line after catch");
                     }
                     else
-                        catch_end = match_token(catch_begin,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                        catch_end = match_token(catch_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
                 }
                 else
                 {
