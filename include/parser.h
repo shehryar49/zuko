@@ -21,10 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef PARSER_H_
 #define PARSER_H_
+#include "refgraph.h"
 #include "utility.h"
 #include "token.h"
 #include "ast.h"
-#include "programinfo.h"
+#include "zuko-src.h"
 #include "lexer.h"
 #include <algorithm>
 #include <queue>
@@ -33,31 +34,31 @@ SOFTWARE.*/
 
 
 Node* NewNode(NodeType type,string val="");
-void stripNewlines(vector<Token>& tokens);
+void stripNewlines(vector<token>& tokens);
 
-int findToken(Token t,int start,const vector<Token>& tokens);
-int findTokenConsecutive(Token t,int start,const vector<Token>& tokens);
+int find_token(token t,int start,const vector<token>& tokens);
+int find_token_consecutive(token t,int start,int end,const vector<token>& tokens);
 
-int matchToken(int,TokenType,const vector<Token>&);
-int matchTokenRight(int,TokenType,const vector<Token>&);
+int match_token(int,TokenType,const vector<token>&);
+int match_token_right(int,TokenType,const vector<token>&);
 
-void deleteAST(Node* ast);
-void CopyAst(Node*& dest,Node* src);
+void delete_ast(Node* ast);
+void copy_ast(Node*& dest,Node* src);
 
 // Function to print AST in tablular form
-void printAST(Node* n,int spaces = 0);
+void print_ast(Node* n,int spaces = 0);
 
 
-
+char* clone_str(const char* str);
 class Parser
 {
 private:
-  vector<Token> known_constants;
-  vector<string> prefixes = {""};//for namespaces 
-  std::unordered_map<string,vector<string>>* refGraph;
+  vector<token> known_constants;
+  vector<const char*> prefixes = {""};//for namespaces 
+  refgraph* refGraph;
   string currSym;
-  vector<string>* files;
-  vector<string>* sources;
+  str_vector* files;
+  str_vector* sources;
   string filename;
   size_t line_num = 1;
   int* num_of_constants;
@@ -85,10 +86,10 @@ private:
   }
   void parseError(string type,string msg);
   bool addSymRef(string name);
-  Node* parseExpr(const vector<Token>& tokens);
-  Node* parseStmt(vector<Token> tokens);
+  Node* parseExpr(const vector<token>& tokens);
+  Node* parseStmt(const vector<token>& tokens,size_t,size_t);
 public:
-  void set_source(ZukoSource& p,size_t root_idx = 0); // for error printing and stuff
-  Node* parse(const vector<Token>& tokens);
+  void set_source(zuko_src* p,size_t root_idx = 0); // for error printing and stuff
+  Node* parse(const vector<token>& tokens,int begin,int end);
 };
 #endif

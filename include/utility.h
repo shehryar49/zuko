@@ -29,7 +29,7 @@ SOFTWARE.*/
 #include "zobject.h"
 #include "zbytearray.h"
 #include "zdict.h"
-#include "programinfo.h"
+
 
 int len(std::string s);
 std::string substr(int x,int y,const std::string& s);
@@ -50,7 +50,6 @@ string REPL_READLINE(const char* msg);
   #define REPL_READLINE readline
 #endif
 std::string& readfile(std::string filename);
-void WriteByteCode(const char* fname,std::vector<uint8_t>& bytecode,std::unordered_map<size_t,ByteSrc>& LineNumberTable,std::vector<std::string>& files);
 const char* getOS();
 std::string replace(int startpos,int endpos,std::string x,std::string s);
 std::string replace_all(std::string x,std::string y,std::string s);//replaces all x strings in s with string y

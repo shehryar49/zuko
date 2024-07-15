@@ -7,5 +7,6 @@
 extern bool REPL_MODE;
 //Implementation
 //EXPERIMENTAL!
+void REPL_init();
 void REPL();
 #endif

@@ -26,7 +26,8 @@ SOFTWARE.*/
 #include <vector>
 #include "apifunctions.h" 
 #include "builtinfunc.h"
-#include "programinfo.h"
+#include "byte_src.h"
+#include "zuko-src.h"
 
 
 #define AS_STD_STR(x) (std::string)(((zstr*)x.ptr)->val)
@@ -142,9 +143,9 @@ private:
   std::vector<zfun*> executing = {NULL}; // pointer to zuko function object we are executing, NULL means control is not in a function
   size_t GC_THRESHHOLD;
   size_t GC_MIN_COLLECT;
-  std::unordered_map<size_t, ByteSrc> *LineNumberTable;
-  std::vector<std::string> *files;
-  std::vector<std::string> *sources;
+  lntable* line_num_table;
+  str_vector* files;
+  str_vector* sources;
   zlist aux; // auxiliary space for markV2
   zlist STACK;
   std::vector<void*> important;//important memory not to free even when not reachable
@@ -174,10 +175,10 @@ public:
   friend void vm_unmark_important(void*);
   //the REPL mainloop function
   friend void REPL();
-  friend void dis(vector<uint8_t>&);
+  friend void dis(std::vector<uint8_t>&);
   VM();
   
-  void load(std::vector<uint8_t>& bytecode,ZukoSource& p);
+  void load(std::vector<uint8_t>& bytecode,zuko_src* p);
   void interpret(size_t offset = 0, bool panic = true); //by default panic if stack is not empty when finished
   //in REPL mode panic is set to false
   ~VM();

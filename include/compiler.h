@@ -23,7 +23,8 @@ SOFTWARE.*/
 #define COMPILER_H_
 #include "ast.h"
 #include "builtinfunc.h"
-#include "programinfo.h"
+#include "lntable.h"
+#include "zuko-src.h"
 #include "vm.h"
 #include "parser.h"
 #include "opcode.h"
@@ -57,15 +58,15 @@ private:
   std::string className;
 
   std::unordered_map<string,bool> symRef;
-  std::unordered_map<size_t,ByteSrc>* LineNumberTable;
+  lntable* line_num_table;
   std::unordered_map<std::string,std::pair<Node*,int32_t>> compiled_functions; //compiled functions (not methods)
   //this allows code generation for direct function call
   SymbolTable globals;
   
   std::vector<SymbolTable> locals;
   std::vector<std::string> prefixes = {""};
-  std::vector<std::string>* files;
-  std::vector<string>* sources;
+  str_vector* files;
+  str_vector* sources;
   //For optimizing short circuit jumps after code generation
   std::vector<size_t> andJMPS;
   std::vector<size_t> orJMPS;  
@@ -106,7 +107,7 @@ public:
   //set_source function is used instead of constructor
   //this way the Compiler class becomes reusable
   //by initializing it again
-  void set_source(ZukoSource& p,size_t root_idx = 0);
+  void set_source(zuko_src* p,size_t root_idx = 0);
   void add_builtin(const std::string& name,BuiltinFunc fn);  
   void reduceStackTo(int size);//for REPL
 

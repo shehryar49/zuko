@@ -1,120 +1,134 @@
 #include "lexer.h"
 #include "parser.h"
-#include "programinfo.h"
 #include "token.h"
-#include "utility.h"
 #include <cctype>
+#include <cstdio>
 #include <float.h>
-#include <string>
 #include <time.h>
 #include <limits.h>
+#include "dyn-str.h"
+
 extern bool REPL_MODE;
 void REPL();
 
-const char* Lexer::keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
-bool Lexer::isKeyword(string s)
+const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
+bool isKeyword(const char* s)
 {
   for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
   {
-    if(s==(string)keywords[k])
+    if(strcmp(s,keywords[k]) == 0)
       return true;
   }
   return false;
 }
-void Lexer::lexErr(string type,string msg)
+char* char_to_str(char ch)
 {
-    hadErr = true;
-    errmsg = msg;
-    if(!printErr)
+    char tmp[2] = {ch,0};
+    return clone_str(tmp);
+}
+char* make_substr(const char* s,size_t strlen,size_t idx,size_t len)
+{
+    char* d = (char*)malloc(sizeof(char)*(strlen+1));
+    memcpy(d,s+idx,len);
+    d[len] = 0;
+    return d;
+}
+void lexErr(lexer* ctx,const char* type,const char* msg)
+{
+    ctx->hadErr = true;
+    ctx->errmsg = msg;
+    if(!ctx->printErr)
       return;
-    fprintf(stderr,"\nFile %s\n",filename.c_str());
-    fprintf(stderr,"%s at line %zu\n",type.c_str(),line_num);
+    fprintf(stderr,"\nFile %s\n",ctx->filename);
+    fprintf(stderr,"%s at line %zu\n",type,ctx->line_num);
     size_t l = 1;
     string line = "";
     size_t k = 0;
-    while(l<=line_num)
+    while(ctx->source_code[k]!=0 && l<=ctx->line_num)
     {
-        if(source_code[k]=='\n')
+        if(ctx->source_code[k]=='\n')
             l+=1;
-        else if(l==line_num)
-            line+=source_code[k];
+        else if(l==ctx->line_num)
+            line+=ctx->source_code[k];
         k+=1;
-        if(k>=source_code.length())
-          break;      
     }
     fprintf(stderr,"%s\n",lstrip(line).c_str());
-    fprintf(stderr,"%s\n",msg.c_str());
+    fprintf(stderr,"%s\n",msg);
     if(REPL_MODE)
       REPL();
 }
-Token Lexer::resolveMacro(const string& name)
+token resolveMacro(const char* name)
 {
-    Token macro;
+    token macro;
     macro.type = NUM_TOKEN;
-    if(name == "SEEK_CUR")
-        macro.content = to_string(SEEK_CUR);
-    else if(name == "SEEK_SET")
-        macro.content = to_string(SEEK_SET);
-    else if(name == "SEEK_END")
-        macro.content = to_string(SEEK_END);
-    else if(name == "pi")
+    if(strcmp(name , "SEEK_CUR") == 0)
+        macro.content = clone_str(to_string(SEEK_CUR).c_str());
+    else if(strcmp(name , "SEEK_SET") == 0)
+        macro.content = clone_str(to_string(SEEK_SET).c_str());
+    else if(strcmp(name , "SEEK_END") == 0)
+        macro.content = clone_str(to_string(SEEK_END).c_str());
+    else if(strcmp(name , "pi") == 0)
     {
         macro.type = FLOAT_TOKEN;
-        macro.content = "3.14159";
+        macro.content = clone_str("3.14159");
     }
-    else if(name == "e")
+    else if(strcmp(name , "e") == 0)
     {
         macro.type = FLOAT_TOKEN;
-        macro.content = "2.718";
+        macro.content = clone_str("2.718");
     }
-    else if(name == "clocks_per_sec")
+    else if(strcmp(name , "clocks_per_sec") == 0)
     {
         macro.type = FLOAT_TOKEN;
-        macro.content=to_string(CLOCKS_PER_SEC);
+        macro.content = clone_str(to_string(CLOCKS_PER_SEC).c_str());
     }
-    else if(name == "FLT_MIN")
+    else if(strcmp(name , "FLT_MIN") == 0)
     {
         macro.type=FLOAT_TOKEN;
-        macro.content = to_string(-DBL_MAX);
+        macro.content = clone_str(to_string(-DBL_MAX).c_str());
     }
-    else if(name == "FLT_MAX")
+    else if(strcmp(name , "FLT_MAX") == 0)
     {
         macro.type=FLOAT_TOKEN;
-        macro.content = to_string(DBL_MAX);
+        macro.content = clone_str(to_string(DBL_MAX).c_str());
     }
-    else if(name == "INT_MIN")
-        macro.content = to_string(INT_MIN);
-    else if(name == "INT_MAX")
-        macro.content = to_string(INT_MAX);
-    else if(name == "INT64_MIN")
-        macro.content = to_string(LLONG_MIN);
-    else if(name == "INT64_MAX")        
-        macro.content = to_string(LLONG_MAX);
-    else if(name == "os")
+    else if(strcmp(name , "INT_MIN") == 0)
+        macro.content = clone_str(to_string(INT_MIN).c_str());
+    else if(strcmp(name , "INT_MAX") == 0)
+        macro.content = clone_str(to_string(INT_MAX).c_str());
+    else if(strcmp(name , "INT64_MIN") == 0)
+        macro.content = clone_str(to_string(LLONG_MIN).c_str());
+    else if(strcmp(name , "INT64_MAX") == 0)        
+        macro.content = clone_str(to_string(LLONG_MAX).c_str());
+    else if(strcmp(name , "os") == 0)
     {
         macro.type = STRING_TOKEN;
-        macro.content = getOS();
+        macro.content = clone_str(getOS());
     }
-    else if(name == "version")
+    else if(strcmp(name , "version") == 0)
     {
         macro.type = STRING_TOKEN;
-        macro.content = "0.3.3";
+        macro.content = clone_str("0.3.3");
     }
     else 
-        macro.type = EOP_TOKEN;//to indicate macro not found
+        macro.type = END_TOKEN;//to indicate macro not found
     return macro;
 
 }
-void Lexer::str(size_t& k,vector<Token>& tokenlist)
+void str(lexer* ctx,vector<token>& tokenlist)
 {
-    size_t j = k+1;
-    string t;
+    size_t j = ctx->k+1;
     bool match = false;
     bool escaped = false;
-    int LN = line_num;
-    while(j<srcLen)
+    size_t LN = ctx->line_num;
+    dyn_str t;
+    dyn_str_init(&t);
+    const char* src = ctx->source_code;
+    size_t src_length = ctx->srcLen;
+
+    while(j < src_length)
     {
-        if(source_code[j]=='"')
+        if(src[j]=='"')
         {
             if(!escaped)
             {
@@ -122,70 +136,70 @@ void Lexer::str(size_t& k,vector<Token>& tokenlist)
                 break;
             }
             escaped = false;
-            t+=source_code[j];
+            dyn_str_push(&t, src[j]);
         }
-        else if(source_code[j]=='\n')
+        else if(src[j]=='\n')
         {
-            t+=source_code[j];
-            line_num+=1;
+            dyn_str_push(&t, src[j]);
+            ctx->line_num+=1;
         }
-        else if(source_code[j]=='\\' && !escaped)
+        else if(src[j]=='\\' && !escaped)
             escaped = true;
-        else if(source_code[j] == '\\' && escaped)
+        else if(src[j] == '\\' && escaped)
         {
-            t += '\\';
+            dyn_str_push(&t, '\\');
             escaped = false;
         }
-        else if(source_code[j] == 'a' && escaped)
+        else if(src[j] == 'a' && escaped)
         {
-            t += '\a';
+            dyn_str_push(&t, '\a');
             escaped = false;
         }
-        else if(source_code[j] == 'r' && escaped)
+        else if(src[j] == 'r' && escaped)
         {
-            t += '\r';
+            dyn_str_push(&t, '\r');
             escaped = false;
         }
-        else if(source_code[j] == 'n' && escaped)
+        else if(src[j] == 'n' && escaped)
         {
-            t += '\n';
+            dyn_str_push(&t, '\n');
             escaped = false;
         }
-        else if(source_code[j] == 't' && escaped)
+        else if(src[j] == 't' && escaped)
         {
-            t += '\t';
+            dyn_str_push(&t, '\t');
             escaped = false;
         }
-        else if(source_code[j] == 'b' && escaped)
+        else if(src[j] == 'b' && escaped)
         {
-            t += '\b';
+            dyn_str_push(&t, '\b');
             escaped = false;
         }
-        else if(source_code[j] == 'v' && escaped)
+        else if(src[j] == 'v' && escaped)
         {
-            t += '\v';
+            dyn_str_push(&t, '\v');
             escaped = false;
         }
-        else if(source_code[j] == 'x' && escaped)
+        else if(src[j] == 'x' && escaped)
         {
-            if(j + 2 >= srcLen)
+            if(j + 2 >= src_length)
             {
-                lexErr("SyntaxError","Expected 2 hex digits after '\\x'");
+                lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
                 return;
             }
-            if(!isalpha(source_code[j+1]) && !isdigit(source_code[j+1]))
+            if(!isalpha(src[j+1]) && !isdigit(src[j+1]))
             {
-                lexErr("SyntaxError","Expected 2 hex digits after '\\x'");
+                lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
                 return;
             }
-            if(!isalpha(source_code[j+2]) && !isdigit(source_code[j+2]))
+            if(!isalpha(src[j+2]) && !isdigit(src[j+2]))
             {
-                lexErr("SyntaxError","Expected 2 hex digits after '\\x'");
+                lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
                 return;
             }
-            string tmp = source_code.substr(j+1,2);
+            char tmp[] = {src[j+1],src[j+2],0};
             unsigned char ch = tobyte(tmp);
-            t+=ch;
+            dyn_str_push(&t, ch);
             j += 2;
             escaped = false;
         }
@@ -194,179 +208,192 @@ void Lexer::str(size_t& k,vector<Token>& tokenlist)
         {
             if(escaped) // unknown escape sequence
             {
-                lexErr("SyntaxError","Unknown escape character in string!");
+                lexErr(ctx,"SyntaxError","Unknown escape character in string!");
                 return;
             }
-            t+=source_code[j];
+            dyn_str_push(&t, src[j]);
         }
         j+=1;
     }
     if(!match)
     {
-        line_num = LN;
-        lexErr("SyntaxError","Error expected a '\"' at the end!");
+        ctx->line_num = LN;
+        lexErr(ctx,"SyntaxError","Error expected a '\"' at the end!");
         return;
     }
     if(escaped)
     {
-        lexErr("SyntaxError","String has non terminated escape sequence!");
+        lexErr(ctx,"SyntaxError","String has non terminated escape sequence!");
         return;
     }
-
-    tokenlist.push_back((Token(STRING_TOKEN,t,line_num)));
-    k = j;
+    tokenlist.push_back((make_token(STRING_TOKEN,t.arr,ctx->line_num)));
+    ctx->k = j;
 }
-void Lexer::macro(size_t& k,vector<Token>& tokenlist)
+void macro(lexer* ctx,vector<token>& tokenlist)
 {
-    if(k==srcLen-1)
+    const char* src = ctx->source_code;
+    size_t src_length = ctx->srcLen;
+    if(ctx->k==src_length-1)
     {
-        lexErr("SyntaxError","Invalid macro name");
+        lexErr(ctx,"SyntaxError","Invalid macro name");
         return;
     }
-    size_t j = k+1;
-    string t = "";
-    while(j<srcLen)
+    size_t j = ctx->k+1;
+    if(!isalpha(src[j]) && src[j]!='_')
     {
-
-        if(!isalpha(source_code[j]) && !isdigit(source_code[j]) && source_code[j]!='_')
+        ctx->k = src_length - 1;
+        lexErr(ctx,"SyntaxError","Invalid macro name");
+        return;
+    }
+    size_t begin = j;
+    size_t end = begin;
+    while(j<src_length)
+    {
+        if(!isalpha(src[j]) && !isdigit(src[j]) && src[j]!='_')
             break;
-        if(j==k+1 && isdigit(source_code[j]))
-        {
-            k = srcLen - 1;
-            lexErr("SyntaxError","Invalid macro name");
-            return;
-        }
-        t+=source_code[j];
+        end = j;
         j+=1;
     }
-    Token tok;
-    if(t == "file")
+    char* t = make_substr(src,src_length,begin,end-begin+1);
+    token tok;
+    if(strcmp(t , "file") == 0)
     {
         tok.type = TokenType::STRING_TOKEN;
-        tok.content = filename;
+        tok.content = clone_str(ctx->filename);
     }
-    else if(t == "lineno")
+    else if(strcmp(t , "lineno") == 0)
     {
         tok.type = TokenType::NUM_TOKEN;
-        tok.content = to_string(line_num);
+        tok.content = clone_str(to_string(ctx->line_num).c_str());
     }
     else
     {
         tok = resolveMacro(t);
-        if(tok.type == EOP_TOKEN)
+        if(tok.type == END_TOKEN)
         {
-            k = srcLen - 1;
-            lexErr("NameError","Unknown macro "+t);
+            ctx->k = src_length - 1;
+            snprintf(ctx->buffer,200,"Unknown macro @%s",t);
+            free(t);
+            lexErr(ctx,"NameError",ctx->buffer);
             return;
         }
     }
+    free(t);
     tokenlist.push_back(tok);
-    k = j;
+    ctx->k = j;
 }
-void Lexer::comment(size_t& k,vector<Token>& tokenlist)
+void comment(lexer* ctx,vector<token>& tokenlist)
 {
     bool multiline = false;
     bool foundEnd = false;
-    if(k+1 < srcLen && source_code[k+1]=='-')
+    const char* src = ctx->source_code;
+    size_t src_length = ctx->srcLen;
+
+    if(ctx->k+1 < src_length && src[ctx->k+1]=='-')
         multiline = true;
-    size_t j=k+1;
-    size_t orgLn = line_num;
-    for(;j<srcLen;j+=1)
+    size_t j=ctx->k+1;
+    size_t orgLn = ctx->line_num;
+    for(;j<src_length;j+=1)
     {
-        if(!multiline && source_code[j]=='\n')
+        if(!multiline && src[j]=='\n')
         {
             break;
         }
-        else if(multiline && source_code[j] == '-')
+        else if(multiline && src[j] == '-')
         {
-            if(j+1 < srcLen && source_code[j+1]=='#')
+            if(j+1 < src_length && src[j+1]=='#')
             {
                 foundEnd = true;
                 j+=2;
                 break;
             }
         }
-        else if(source_code[j] == '\n')
-            line_num++;
+        else if(src[j] == '\n')
+            ctx->line_num++;
     }
     if(multiline && !foundEnd)
     {
-        k = srcLen - 1;
-        line_num = orgLn;
-        lexErr("SyntaxError","Unable to find the end of multiline comment!");
+        ctx->k = src_length - 1;
+        ctx->line_num = orgLn;
+        lexErr(ctx,"SyntaxError","Unable to find the end of multiline comment!");
         return;
     }
-    k = j-1;
+    ctx->k = j-1;
 }
-void Lexer::numeric(size_t& k,vector<Token>& tokenlist)
+void numeric(lexer* ctx,vector<token>& tokenlist)
 {
-    //hex literal
-    char c = source_code[k];
-    if(c=='0' && k!=srcLen-1 && source_code[k+1]=='x')
-    {
 
-        k+=1;
-        size_t j = k+1;
-        string b;
-        Token i;
-        while(j<srcLen)
+    const char* src = ctx->source_code;
+    size_t src_length = ctx->srcLen;
+    char c = src[ctx->k];
+    //hex literal
+    if(c=='0' && ctx->k!=src_length-1 && src[ctx->k+1]=='x')
+    {
+        ctx->k+=1;
+        size_t j = ctx->k+1;
+        dyn_str b;
+        dyn_str_init(&b);
+        token i;
+        while(j<src_length)
         {
-            c = source_code[j];
+            c = src[j];
             if(c>='0' && c<='9')
-                b+=c;
+                dyn_str_push(&b,c);
             else if(c>='a' && c<='z')
-                b+=c;
+                dyn_str_push(&b,c);
             else
                 break;
             j+=1;
 
         }
-        if(b.length() == 1 || b.length() == 2) //byte
+        if(b.length == 1 || b.length == 2) //byte
         {
-            if(b.length() == 1)
-                b = "0" + b;
+            if(b.length == 1)
+                dyn_str_prepend_cstr(&b,"0");
             i.type = BYTE_TOKEN;
-            i.ln = line_num;
-            i.content = b;
+            i.ln = ctx->line_num;
+            i.content = b.arr;
             tokenlist.push_back(i);
         }
-        else if(b.length() >= 3 && b.length()<=8)//int32
+        else if(b.length >= 3 && b.length<=8)//int32
         {
             i.type = NUM_TOKEN;
-            i.ln = line_num;
-            i.content = to_string(hexToInt32(b));
+            i.ln = ctx->line_num;
+            i.content = clone_str(to_string(hexToInt32(b.arr)).c_str());
+            free(b.arr);
             tokenlist.push_back(i);
         }
-        else if(b.length()>8 &&  b.length() <= 16)//int64
+        else if(b.length>8 &&  b.length <= 16)//int64
         {
             i.type = NUM_TOKEN;
-            i.ln = line_num;
-            i.content = to_string(hexToInt64(b));
+            i.ln = ctx->line_num;
+            i.content = clone_str(to_string(hexToInt64(b.arr)).c_str());
+            free(b.arr);
             tokenlist.push_back(i);
         }
         else
         {
-            lexErr("SyntaxError","Invalid Syntax");
+            lexErr(ctx,"SyntaxError","Invalid Syntax");
             return;
         }
-        k = j-1;
+        ctx->k = j-1;
         return;
     }
-    size_t j = k+1;
-    string t;
-    t+=c;
+    size_t j = ctx->k+1;
+    dyn_str t;
+    dyn_str_init(&t);
+    dyn_str_push(&t,c);
     bool decimal = false;
     bool exp = false;
-
     bool expSign = false;
-    while(j<srcLen)
+    while(j<src_length)
     {
-        if(!isdigit(source_code[j]) && source_code[j]!='.' && source_code[j]!='e' && source_code[j]!='-' && source_code[j]!='+')
+        if(!isdigit(src[j]) && src[j]!='.' && src[j]!='e' && src[j]!='-' && src[j]!='+')
         {
             j = j-1;
             break;
         }
-        if(source_code[j]=='.')
+        if(src[j]=='.')
         {
             if(decimal || exp)
             {
@@ -375,7 +402,7 @@ void Lexer::numeric(size_t& k,vector<Token>& tokenlist)
             }
             decimal = true;
         }
-        else if(source_code[j]=='e')
+        else if(src[j]=='e')
         {
             if(exp)
             {
@@ -384,7 +411,7 @@ void Lexer::numeric(size_t& k,vector<Token>& tokenlist)
             }
             exp = true;
         }
-        else if(source_code[j]=='+' || source_code[j]=='-')
+        else if(src[j]=='+' || src[j]=='-')
         {
             if(expSign || !exp)
             {
@@ -393,228 +420,292 @@ void Lexer::numeric(size_t& k,vector<Token>& tokenlist)
             }
             expSign = true;
         }
-        t+=source_code[j];
+        dyn_str_push(&t, src[j]);
         j+=1;
     }
-    if(t[t.size()-1]=='e')
+
+    if(t.arr[t.length-1] =='e') //t.arr has length of atleast 1 so we are safe
     {
-        t = t.substr(0,t.length()-1);
+        t.arr[t.length-1] = 0;
         j-=1;
     }
-    Token i;
-    i.content = t;
+    token i;
+    i.content = t.arr;
     if(!decimal && !exp)
         i.type = NUM_TOKEN;
     else
         i.type = FLOAT_TOKEN;
-    i.ln = line_num;
+    i.ln = ctx->line_num;
     tokenlist.push_back(i);
-    k = j;
+    ctx->k = j;
 }
-void Lexer::id(size_t& k,vector<Token>& tokenlist)
+void id(lexer* ctx,vector<token>& tokenlist)
 {
-    size_t j = k+1;
-    string t;
-    t+=source_code[k];
-    while(j<srcLen)
+    const char* src = ctx->source_code;
+    size_t src_length = ctx->srcLen;
+    size_t j = ctx->k+1;
+    dyn_str t;
+    dyn_str_init(&t);
+    dyn_str_push(&t,src[ctx->k]);
+    while(j<src_length)
     {
-        if((j!=srcLen-1 && source_code[j]==':' && source_code[j+1]==':'))
+        if((j!=src_length-1 && src[j]==':' && src[j+1]==':'))
         {
-            t+="::";
+            dyn_str_push(&t, ':');
+            dyn_str_push(&t, ':');   
             j+=2;
         }
-        else if(!isalpha(source_code[j]) && !isdigit(source_code[j]) && source_code[j]!='_')
+        else if(!isalpha(src[j]) && !isdigit(src[j]) && src[j]!='_')
         {
             j = j-1;
             break;
         }
         else
         {
-            t+=source_code[j];
+            dyn_str_push(&t, src[j]);
             j+=1;
         }
     }
 
-    Token i;
-    if(isKeyword(t))
+    token i;
+    if(isKeyword(t.arr))
     {
-        if(t=="if" && k!=0 && tokenlist.size()!=0)
+        if(strcmp(t.arr,"if") == 0 && ctx->k!=0 && tokenlist.size()!=0)
         {
-            if(tokenlist[tokenlist.size()-1].type == KEYWORD_TOKEN && tokenlist[tokenlist.size()-1].content=="else")
+            if(tokenlist[tokenlist.size()-1].type == KEYWORD_TOKEN && strcmp(tokenlist.back().content,"else") == 0)
             {
-                tokenlist[tokenlist.size()-1].content+=" if";
-                k = j;
+                tokenlist[tokenlist.size()-1].content = clone_str("else if"); // memory leak
+                ctx->k = j;
                 return;
             }
         }
         i.type = KEYWORD_TOKEN;
-        i.content = t;
-        i.ln = line_num;
+        i.content = clone_str(t.arr);
+        i.ln = ctx->line_num;
     }
-    else if(t=="or" || t=="and" || t=="is")
+    else if(strcmp(t.arr,"or") == 0 || strcmp(t.arr,"and") == 0 || strcmp(t.arr,"is") == 0)
     {
-        i.content = t;
+        i.content = t.arr;
         i.type = TokenType::OP_TOKEN;
-        i.ln = line_num;
+        i.ln = ctx->line_num;
     }
-    else if(t=="true" || t=="false")
+    else if(strcmp(t.arr,"true") == 0 || strcmp(t.arr,"false") == 0)
     {
-        i.content = t;
+        i.content = clone_str(t.arr);
         i.type = BOOL_TOKEN;
-        i.ln = line_num;
+        i.ln = ctx->line_num;
     }
     else
     {
         i.type = ID_TOKEN;
-        i.content = t;
-        i.ln = line_num;
+        i.content = clone_str(t.arr);
+        i.ln = ctx->line_num;
     }
     tokenlist.push_back(i);
-    k = j;
+    ctx->k = j;
 }
-vector<Token> Lexer::generateTokens(const ZukoSource& src,bool printErr,size_t root_idx )
+vector<token> lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr,size_t root_idx )
 {
-    if(root_idx >= src.files.size())
+    if(root_idx >= src->files.size)
     {
-        hadErr = true;
-        errmsg = "root_idx out of range!";
+        ctx->hadErr = true;
+        ctx->errmsg = "root_idx out of range!";
         return {};
     }
-    filename = src.files[root_idx];
-    source_code = src.sources[root_idx];
+    ctx->filename = src->files.arr[root_idx];
+    ctx->source_code = src->sources.arr[root_idx];
 
-    srcLen = source_code.length();
-    this->printErr = printErr;
-    line_num = 1;
-    size_t k = 0;
+    ctx->srcLen = strlen(ctx->source_code);
+    ctx->printErr = printErr;
+    ctx->line_num = 1;
+    ctx->k = 0;
     char c;
     string tmp;
-    vector<Token> tokenlist;
-    while(!hadErr && k<srcLen)
+    vector<token> tokenlist;
+    while(!ctx->hadErr && ctx->k<ctx->srcLen)
     {
-        c = source_code[k];
+        c = ctx->source_code[ctx->k];
         if(c=='"')
-            str(k, tokenlist);
+            str(ctx, tokenlist);
         else if(c=='@')
         {
-            macro(k, tokenlist);
+            macro(ctx, tokenlist);
             continue;
         }
         else if(c=='#')
-            comment(k, tokenlist);
+            comment(ctx, tokenlist);
         else if(isdigit(c))
-            numeric(k,tokenlist);
+            numeric(ctx,tokenlist);
         else if(c=='>' || c=='<')
         {
-            if(k+1 < srcLen && source_code[k+1]=='=')
+            if(ctx->k+1 < ctx->srcLen && ctx->source_code[ctx->k+1]=='=')
             {
-                tmp = c;
-                tmp += '=';
-                tokenlist.push_back(Token(OP_TOKEN,tmp,line_num));
-                k = k+1;
+                if(c == '<')
+                    tokenlist.push_back(make_token(OP_TOKEN,"<=",ctx->line_num));
+                else
+                    tokenlist.push_back(make_token(OP_TOKEN,">=",ctx->line_num));
+                ctx->k++;
             }
-            else if(c=='<' && k+1<srcLen &&  source_code[k+1]=='<')
+            else if(c=='<' && ctx->k+1<ctx->srcLen &&  ctx->source_code[ctx->k+1]=='<')
             {
-                tokenlist.push_back(Token(OP_TOKEN,"<<",line_num));
-                k+=1;
+                tokenlist.push_back(make_token(OP_TOKEN,"<<",ctx->line_num));
+                ctx->k+=1;
             }
-            else if(c=='>' && k+1 < srcLen && source_code[k+1]=='>')
+            else if(c=='>' && ctx->k+1 < ctx->srcLen && ctx->source_code[ctx->k+1]=='>')
             {
-                tokenlist.push_back(Token(OP_TOKEN,">>",line_num));
-                k+=1;
+                tokenlist.push_back(make_token(OP_TOKEN,">>",ctx->line_num));
+                ctx->k+=1;
             }
             else
-                tokenlist.push_back(Token(OP_TOKEN,c,line_num));
+                tokenlist.push_back(make_token(OP_TOKEN,((c == '>' ? ">" : "<")),ctx->line_num));
         }
         else if(c=='.')
-            tokenlist.push_back(Token(OP_TOKEN,'.',line_num));        
+            tokenlist.push_back(make_token(OP_TOKEN,("."),ctx->line_num));        
         else if(c=='+' || c=='-')
         {
-            if(k!=srcLen-1 && source_code[k+1]=='=')
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1]=='=')
             {
                 tmp = c;
                 tmp +="=";
-                tokenlist.push_back(Token(OP_TOKEN,tmp,line_num));
-                k+=2;
+                if(c == '+')
+                    tokenlist.push_back(make_token(OP_TOKEN,"+=",ctx->line_num));
+                else
+                    tokenlist.push_back(make_token(OP_TOKEN,"-=",ctx->line_num));
+                ctx->k+=2;
                 continue;
             }
-            tokenlist.push_back(Token(OP_TOKEN,c,line_num));
+            tokenlist.push_back(make_token(OP_TOKEN,((c == '+') ? "+" : "-"),ctx->line_num));
         }
-        else if(c=='/' || c=='*' || c=='%' || c=='^' || c=='&' || c=='|' || c=='~')
+        else if(c=='/')
         {
-            if(k!=srcLen-1 && source_code[k+1] == '=')
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
             {
-                tmp = c;
-                tmp+="=";
-                tokenlist.push_back(Token(OP_TOKEN,tmp,line_num));
-                k+=2;
+                tokenlist.push_back(make_token(OP_TOKEN,"/=",ctx->line_num));
+                ctx->k+=2;
                 continue;
             }
-            tokenlist.push_back(Token(OP_TOKEN,c,line_num));
+            tokenlist.push_back(make_token(OP_TOKEN,"/",ctx->line_num));
+        }
+        else if(c=='*')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"*=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            char* char_to_str(char ch);
+            tokenlist.push_back(make_token(OP_TOKEN,"*",ctx->line_num));
+        }
+        else if(c=='%')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"%=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            char* char_to_str(char ch);
+            tokenlist.push_back(make_token(OP_TOKEN,"%",ctx->line_num));
+        }
+        else if(c=='^')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"^=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            char* char_to_str(char ch);
+            tokenlist.push_back(make_token(OP_TOKEN,"^",ctx->line_num));
+        }
+        else if(c=='&')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"&=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            char* char_to_str(char ch);
+            tokenlist.push_back(make_token(OP_TOKEN,"&",ctx->line_num));
+        }
+        else if(c=='|')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"|=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            char* char_to_str(char ch);
+            tokenlist.push_back(make_token(OP_TOKEN,"|",ctx->line_num));
+        }
+        else if(c=='~')
+        {
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
+            {
+                tokenlist.push_back(make_token(OP_TOKEN,"~=",ctx->line_num));
+                ctx->k+=2;
+                continue;
+            }
+            tokenlist.push_back(make_token(OP_TOKEN,"~",ctx->line_num));
         }
         else if(c=='!')
         {
-            if(k!=srcLen-1 && source_code[k+1] == '=')
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1] == '=')
             {
-                k+=1;
-                tokenlist.push_back(Token(OP_TOKEN,"!=",line_num));
+                ctx->k+=1;
+                tokenlist.push_back(make_token(OP_TOKEN,"!=",ctx->line_num));
             }
             else
-                tokenlist.push_back(Token(OP_TOKEN,"!",line_num));
+                tokenlist.push_back(make_token(OP_TOKEN,"!",ctx->line_num));
         }
         else if(c=='=')
         {
-            if(k!=srcLen-1 && source_code[k+1]=='=')
+            if(ctx->k!=ctx->srcLen-1 && ctx->source_code[ctx->k+1]=='=')
             {
-                tokenlist.push_back(Token(OP_TOKEN,"==",line_num));
-                k+=1;
+                tokenlist.push_back(make_token(OP_TOKEN,("=="),ctx->line_num));
+                ctx->k+=1;
             }
             else
-                tokenlist.push_back(Token(OP_TOKEN,"=",line_num));  
+                tokenlist.push_back(make_token(OP_TOKEN,("="),ctx->line_num));  
         }
         else if(c=='(')
-            tokenlist.push_back(Token(LParen_TOKEN,c,line_num));
+            tokenlist.push_back(make_token(LParen_TOKEN,"(",ctx->line_num));
         else if(c==')')
-            tokenlist.push_back(Token(RParen_TOKEN,c,line_num));
+            tokenlist.push_back(make_token(RParen_TOKEN,")",ctx->line_num));
         else if(c=='[')
-            tokenlist.push_back(Token(BEGIN_LIST_TOKEN,"[",line_num));
+            tokenlist.push_back(make_token(BEGIN_LIST_TOKEN,"[",ctx->line_num));
         else if(c==']')
-            tokenlist.push_back(Token(END_LIST_TOKEN,"]",line_num));
+            tokenlist.push_back(make_token(END_LIST_TOKEN,"]",ctx->line_num));
         else if(c=='{')
-            tokenlist.push_back(Token(L_CURLY_BRACKET_TOKEN,"{",line_num));
+            tokenlist.push_back(make_token(L_CURLY_BRACKET_TOKEN,"{",ctx->line_num));
         else if(c=='}')
-            tokenlist.push_back(Token(R_CURLY_BRACKET_TOKEN,"}",line_num));
+            tokenlist.push_back(make_token(R_CURLY_BRACKET_TOKEN,"}",ctx->line_num));
         else if(isalpha(c) || c=='_')
-            id(k,tokenlist);
+            id(ctx,tokenlist);
         else if(c==',')
-            tokenlist.push_back(Token(COMMA_TOKEN,",",line_num));
+            tokenlist.push_back(make_token(COMMA_TOKEN,",",ctx->line_num));
         else if(c==':')
-            tokenlist.push_back(Token(COLON_TOKEN,":",line_num));
+            tokenlist.push_back(make_token(COLON_TOKEN,":",ctx->line_num));
         else if(c=='\n' )
         {
-            tokenlist.push_back(Token(NEWLINE_TOKEN,"\n",line_num));
-            line_num++;
+            tokenlist.push_back(make_token(NEWLINE_TOKEN,"\n",ctx->line_num));
+            ctx->line_num++;
         }
         else if(c=='\t' || c==' ' || c=='\r')
            ; //do nothing
         else
         {
             //error;
-            lexErr("SyntaxError",(string)"Illegal character '"+c+"'");
+            snprintf(ctx->buffer,200, "Illegal character %c (ascii %d)",c,c);
+            lexErr(ctx,"SyntaxError",ctx->buffer);
             return {};
         }
-        k+=1;
+        ctx->k+=1;
     }
-    if(hadErr)
+    if(ctx->hadErr)
       return {}; // empty tokenlist indicates error
-    stripNewlines(tokenlist);//removes newlines start and end of token list
-    if (tokenlist.size() == 0)
-      return {Token(EOP_TOKEN,"",0),Token(NEWLINE_TOKEN,"\n",0)}; // empty program
-    
-    //the following is just the way, parser expects it to be 
-    tokenlist.push_back(Token(NEWLINE_TOKEN,"\n",0));
-    tokenlist.push_back(Token(EOP_TOKEN,"EOP",0));
-    tokenlist.push_back(Token(NEWLINE_TOKEN,"\n",0));
-
     return tokenlist;
 }

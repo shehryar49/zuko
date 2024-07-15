@@ -50,7 +50,7 @@
 #include "vm.h"
 #include "lexer.h"
 #include "utility.h"
-#include "programinfo.h"
+#include "zuko-src.h"
 #include "repl.h"
 #include "dis.h"
 

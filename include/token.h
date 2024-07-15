@@ -21,10 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef TOKEN_H_
 #define TOKEN_H_
-#include <string>
 
-using namespace std;
-enum TokenType
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+#include <stdlib.h>
+
+typedef enum TokenType
 {
   ID_TOKEN,
   STRING_TOKEN,
@@ -43,42 +47,19 @@ enum TokenType
   NEWLINE_TOKEN,
   BYTE_TOKEN,
   BOOL_TOKEN,
-  EOP_TOKEN//end of program
-};
-struct Token
+  END_TOKEN
+}TokenType;
+typedef struct token
 {
-  string content;
-  enum TokenType  type;
+  const char* content;
+  enum TokenType type;
   size_t ln;
-  Token()
-  {}
-  Token(const Token& obj)
-  {
-    content = obj.content;
-    type = obj.type;
-    ln = obj.ln;
-  }
-  Token(TokenType type,const string& content,size_t line)
-  {
-    this->type = type;
-    this->content = content;
-    this->ln = line;
-  }
-  Token(TokenType type,char ch,size_t line)
-  {
-    this->type = type;
-    this->content += ch;
-    this->ln = line;
-  }
-  
-  Token& operator=(const Token& obj)
-  {
-    if(&obj == this)
-      return *this;
-    content = obj.content;
-    type = obj.type;
-    ln = obj.ln;
-    return *this;
-  }
-};
+}token;
+
+token make_token(TokenType type,const char* content,size_t line);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

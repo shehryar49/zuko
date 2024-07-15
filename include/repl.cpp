@@ -1,27 +1,35 @@
+#include "parser.h"
+#include "zuko-src.h"
 #include "zuko.h"
+#include <readline/readline.h>
 
 bool REPL_MODE = false;
-static ZukoSource src;
+static zuko_src src;
 static int32_t k = 0;
 static size_t stackSize = 0;//total globals added by VM initially
 static Compiler compiler;
 static Parser parser;
 
+void REPL_init()
+{
+  REPL_MODE = true;
+  zuko_src_init(&src);
+}
 //Implementation
 //EXPERIMENTAL!
 void REPL()
 {
   static string filename;
-  k = src.files.size()+1;
+  k = src.files.size+1;
   filename = "<stdin-"+to_string(k)+">";
-  src.files.push_back(filename);
-  src.sources.push_back("");
+  zuko_src_add_file(&src,clone_str(filename.c_str()),clone_str(""));
+
   
   compiler.reduceStackTo(stackSize);
-  Lexer lex;
+  lexer lex;
   string line;
   size_t offset = compiler.bytecode.size();
-  vector<Token> tokens;
+  vector<token> tokens;
   Node* ast;
   bool continued = false;
   string prompt = ">>> ";
@@ -70,9 +78,11 @@ void REPL()
     }
     else if(line=="")
       continue;
+    string tmp = src.sources.arr[k-1];
+    tmp += ((tmp=="") ? "" : "\n") +line;
+    src.sources.arr[k-1] = clone_str(tmp.c_str());
 
-    src.sources[k-1] += ((src.sources[k-1]=="") ? "" : "\n") +line;
-    tokens = lex.generateTokens(src,true,k-1);
+    tokens = lexer_generateTokens(&lex,&src,true,k-1);
     int i1=0;
     for(auto tok: tokens)
     {
@@ -87,8 +97,8 @@ void REPL()
       continue;
     }
     continued = false;
-    parser.set_source(src,k-1);
-    ast = parser.parse(tokens);
+    parser.set_source(&src,k-1);
+    ast = parser.parse(tokens,0,tokens.size()-1);
 
     zobject* constants = new zobject[src.num_of_constants];
     //copy previous constants
@@ -97,13 +107,13 @@ void REPL()
     if(vm.constants)
       delete[] vm.constants;
     vm.constants = constants;
-    compiler.set_source(src,k-1);
+    compiler.set_source(&src,k-1);
     vector<uint8_t>& bytecode = compiler.compileProgram(ast,0,NULL,Compiler::OPT_COMPILE_DEADCODE); //ask the compiler to add previous bytecode before
     
     stackSize = compiler.globals.size();
-    deleteAST(ast);
+    delete_ast(ast);
     
-    vm.load(bytecode,src);
+    vm.load(bytecode,&src);
     vm.interpret(offset,false);//
     if(vm.STACK.size > stackSize)
         zlist_erase_range(&vm.STACK,stackSize,vm.STACK.size - 1);
@@ -114,9 +124,9 @@ void REPL()
     }
     bytecode.pop_back();//pop OP_EXIT
     offset=bytecode.size();
-    k = src.files.size()+1;
+    k = src.files.size+1;
     filename = "<stdin-"+to_string(k)+">";
-    src.files.push_back(filename);
-    src.sources.push_back("");
+    zuko_src_add_file(&src,clone_str(filename.c_str()),clone_str(""));
+
   }
 }

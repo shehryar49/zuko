@@ -1,5 +1,7 @@
 #include <signal.h>
 #include "include/zuko.h"
+#include "token.h"
+#include "zuko-src.h"
 
 #define ZUKO_VER 0.3
 #define ZUKO_VER_PATCH 3
@@ -29,48 +31,48 @@ int main(int argc, const char* argv[])
     signal(SIGSEGV,signalHandler);
     if (argc < 2)
     {
-        REPL_MODE = true; //enable REPL_MODE
         printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n", ZUKO_VER,ZUKO_VER_PATCH,__DATE__,__TIME__,getOS());
+        REPL_init();
         REPL();
         return 0;
     }
-    string source_code;
-    string filename;
+    char* source_code;
+    char* filename;
     if(argc>=3 && strncmp(argv[1],"-c",2)==0)
     {
-        filename = "argv";
-        source_code = argv[2];
+        filename = clone_str("argv");
+        source_code = clone_str(argv[2]);
     }
     else
     {
-        filename = argv[1];
-        source_code = readfile(filename);
+        filename = clone_str(argv[1]);
+        source_code = clone_str(readfile(filename).c_str());
     }
-    ZukoSource src;
-    src.addFile(filename,source_code); //first file is the root file
+    zuko_src src;
+    zuko_src_init(&src);
+    zuko_src_add_file(&src, filename,source_code);
+
      
     vector<uint8_t> bytecode;
     //the variables in curly brackets below are temporary
     //they are not needed during program execution
     {
-        Lexer lex;
-        vector<Token> tokens = lex.generateTokens(src);
+        lexer lex;
+        vector<token> tokens = lexer_generateTokens(&lex,&src);
         if(lex.hadErr)//had an error which was printed
           return 0;
-        
         Parser parser;
-        parser.set_source(src);
-        Node* ast = parser.parse(tokens); //parse the tokens of root file
+        parser.set_source(&src);
+        Node* ast = parser.parse(tokens,0,tokens.size()-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
         //printAST(ast);
-        
         Compiler compiler;
-        compiler.set_source(src);//init compiler with ZukoSource
+        compiler.set_source(&src);//init compiler with ZukoSource
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
-        deleteAST(ast);
+        delete_ast(ast);
     }
-    vm.load(bytecode,src); // vm uses the src for printing errors and stuff
+    vm.load(bytecode,&src); // vm uses the src for printing errors and stuff
 
     // It's showtime
     vm.interpret();

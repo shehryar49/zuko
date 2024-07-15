@@ -22,12 +22,15 @@ SOFTWARE.*/
 #include "compiler.h"
 #include "ast.h"
 #include "builtinfunc.h"
+#include "byte_src.h"
 #include "convo.h"
+#include "lntable.h"
 #include "opcode.h"
-#include "programinfo.h"
+#include "refgraph.h"
 #include "utility.h"
 #include "vm.h"
 #include "zobject.h"
+#include "zuko-src.h"
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -58,7 +61,7 @@ void REPL();
 void initFunctions();
 void initMethods();
 
-void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<string>>& graph)//gives the names of symbols that are referenced and not deadcode
+void extractSymRef(unordered_map<string,bool>& ref,refgraph* graph)//gives the names of symbols that are referenced and not deadcode
 {
   std::queue<string> q;
   q.push(".main");
@@ -71,9 +74,12 @@ void extractSymRef(unordered_map<string,bool>& ref,unordered_map<string,vector<s
     curr = q.front();
   //  printf("%s\n",curr.c_str());
     q.pop();
-    const vector<string>& adj = graph[curr];
-    for(auto e: adj)
+    str_vector* adj = refgraph_getref(graph,curr.c_str());
+    if(!adj)
+        puts("adj is NULL");
+    for(size_t i = 0;i<adj->size;i++)
     {
+        const char* e = adj->arr[i];
   //    printf("  neighbour: %s\n",e.c_str());
       if(ref.find(e) == ref.end()) //node not already visited or processed
       {
@@ -90,26 +96,26 @@ inline void addBytes(vector<uint8_t>& vec,int32_t x)
   vec.resize(vec.size()+sizeof(int32_t));
   memcpy(&vec[sz],&x,sizeof(int32_t));
 }
-void Compiler::set_source(ZukoSource& p,size_t root_idx)
+void Compiler::set_source(zuko_src* p,size_t root_idx)
 {
-    if(root_idx >= p.files.size())
+    if(root_idx >= p->files.size)
     {
         fprintf(stderr,"Compiler: set_source() failed. REASON: root_idx out of range!");
         exit(1);
     }
     symRef.clear();
-    extractSymRef(symRef,p.refGraph);
-    num_of_constants = (int32_t*)&(p.num_of_constants);
-    files = &p.files;
-    sources = &p.sources;
+    extractSymRef(symRef,&p->ref_graph);
+    num_of_constants = (int32_t*)&(p->num_of_constants);
+    files = &p->files;
+    sources = &p->sources;
     fileTOP = root_idx; // we start from the root file obviously
-    LineNumberTable = &p.LineNumberTable;
-    filename = p.files[root_idx];
-    if(p.num_of_constants > 0 && !REPL_MODE)
+    line_num_table = &p->line_num_table;
+    filename = p->files.arr[root_idx];
+    if(p->num_of_constants > 0 && !REPL_MODE)
     {
         if(vm.constants)
             delete[] vm.constants;
-        vm.constants = new zobject[p.num_of_constants];
+        vm.constants = new zobject[p->num_of_constants];
         vm.total_constants = 0;
     }
     //init builtins
@@ -138,23 +144,18 @@ void Compiler::compileError(string type,string msg)
 {
     fprintf(stderr,"\nFile %s\n",filename.c_str());
     fprintf(stderr,"%s at line %zu\n",type.c_str(),line_num);
-    auto it = std::find(files->begin(),files->end(),filename);
-    size_t i = it-files->begin();
-    string& source_code = (*sources)[i];
+    int idx = str_vector_search(files,filename.c_str());
+    const char* source_code = sources->arr[idx];
     size_t l = 1;
     string line = "";
     size_t k = 0;
-    while(l<=line_num)
+    while(source_code[k]!=0 && l<=line_num)
     {
         if(source_code[k]=='\n')
             l+=1;
         else if(l==line_num)
             line+=source_code[k];
         k+=1;
-        if(k>=source_code.length())
-        {
-            break;
-        }
     }
     fprintf(stderr,"%s\n",lstrip(line).c_str());
     fprintf(stderr,"%s\n",msg.c_str());
@@ -193,8 +194,8 @@ int32_t Compiler::add_to_vm_strings(const string& n)
 }
 void Compiler::add_lntable_entry(size_t opcodeIdx)
 {
-ByteSrc tmp = {fileTOP,line_num};
-LineNumberTable->emplace(opcodeIdx,tmp);
+    byte_src tmp = {fileTOP,line_num};
+    lntable_emplace(line_num_table,opcodeIdx,tmp);
 }
 int32_t Compiler::add_builtin_to_vm(const string& name)
 {
@@ -896,48 +897,48 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
 }
 vector<string> Compiler::scan_class(Node* ast)
 {
-vector<string> names;
-while(ast->val!="endclass")
-{
-    if(ast->type==NodeType::declare)
+    vector<string> names;
+    while(ast->type!=NodeType::EOP)
     {
-    string n = ast->val;
-    if(n[0]=='@')
-        n = n.substr(1);
-    if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
-    {
-        line_num = atoi(ast->childs[0]->val.c_str());
-        compileError("NameError","Error redeclaration of "+n+".");
-    }
-    names.push_back(ast->val);
-    }
-    else if(ast->type == NodeType::FUNC)
-    {
+        if(ast->type==NodeType::declare)
+        {
+        string n = ast->val;
+        if(n[0]=='@')
+            n = n.substr(1);
+        if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
+        {
+            line_num = atoi(ast->childs[0]->val.c_str());
+            compileError("NameError","Error redeclaration of "+n+".");
+        }
+        names.push_back(ast->val);
+        }
+        else if(ast->type == NodeType::FUNC)
+        {
 
-    string n = ast->childs[1]->val;
-    if(n[0]=='@')
-        n = n.substr(1);
-    if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
-    {
+        string n = ast->childs[1]->val;
+        if(n[0]=='@')
+            n = n.substr(1);
+        if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
+        {
+            line_num = atoi(ast->childs[0]->val.c_str());
+            compileError("NameError","Error redeclaration of "+n+".");
+        }
+        names.push_back(ast->childs[1]->val);
+        }
+        else if(ast->type == NodeType::CORO) //generator function or coroutine
+        {
+            line_num = atoi(ast->childs[0]->val.c_str());
+            compileError("NameError","Error coroutine inside class not allowed.");
+        }
+        
+        else if(ast->type==NodeType::CLASS)
+        {
         line_num = atoi(ast->childs[0]->val.c_str());
-        compileError("NameError","Error redeclaration of "+n+".");
+        compileError("SyntaxError","Error nested classes not supported");     
+        }
+        ast = ast->childs.back();
     }
-    names.push_back(ast->childs[1]->val);
-    }
-    else if(ast->type == NodeType::CORO) //generator function or coroutine
-    {
-        line_num = atoi(ast->childs[0]->val.c_str());
-        compileError("NameError","Error coroutine inside class not allowed.");
-    }
-    
-    else if(ast->type==NodeType::CLASS)
-    {
-    line_num = atoi(ast->childs[0]->val.c_str());
-    compileError("SyntaxError","Error nested classes not supported");     
-    }
-    ast = ast->childs.back();
-}
-return names;
+    return names;
 }
 int32_t Compiler::resolve_name(string name,bool& isGlobal,bool blowUp,bool* isFromSelf)
 {
@@ -975,7 +976,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
     
     bool isGen = false;
     bool dfor = false;
-    while (ast->type != NodeType::EOP && ast->val!="endclass" && ast->val!="endfor" && ast->val!="endnm" && ast->val!="endtry" && ast->val!="endcatch" && ast->val != "endif" && ast->val != "endfunc" && ast->val != "endelif" && ast->val != "endwhile" && ast->val != "endelse")
+    while (ast->type != NodeType::EOP)
     {
         if(ast->childs.size() >= 1)
         {
@@ -1196,209 +1197,6 @@ vector<uint8_t> Compiler::compile(Node* ast)
             breakIdx = breakIdxCopy;
             contIdx  = contIdxCopy;
         }
-        /*else if (ast->type == NodeType::FOR || (dfor = ast->type == NodeType::DFOR))
-        {  
-            size_t lnCopy = line_num;
-            bool decl = ast->childs[1]->type == NodeType::decl;//whether to declare loop
-            //control variable or not
-            size_t L = bytes_done;
-            const string& loop_var_name = ast->childs[2]->val;
-            string I = ast->childs[5]->val;//increment/decrement value
-            vector<uint8_t> initValue = expr_bytecode(ast->childs[3]);//start value
-
-            program.insert(program.end(),initValue.begin(),initValue.end());//load start
-            //value
-            bool isGlobal = false;
-            int32_t lcvIdx ;
-            bool isSelf = false;
-            if(!decl)
-            {
-                //assign start value to variable which is being used as lcv
-
-                foo = resolve_name(loop_var_name,isGlobal,true,&isSelf);
-                lcvIdx = foo;
-                if(isSelf)
-                {
-                add_lntable_entry(bytes_done);
-                program.push_back(ASSIGNSELFMEMB);
-                foo = add_to_vm_strings(loop_var_name);
-                L+=5;
-                lcvIdx = foo;
-                }
-                else if(!isGlobal)
-                {
-                program.push_back(ASSIGN);
-                L+=5;
-                }
-                else
-                program.push_back(ASSIGN_GLOBAL);
-                addBytes(program,foo);
-                bytes_done+=5;
-            }
-
-
-            int32_t cont = (int32_t)bytes_done;
-            bytes_done+=5;
-
-            vector<uint8_t> finalValue = expr_bytecode(ast->childs[4]);
-            //
-            int32_t before = STACK_SIZE;
-            if(decl)
-            {
-                
-                before = STACK_SIZE+1;
-                SymbolTable m;
-                
-                locals.push_back(m);
-                lcvIdx = STACK_SIZE;
-                locals.back().emplace(loop_var_name,STACK_SIZE);
-                STACK_SIZE+=1;
-                locals.push_back(m);
-            }
-            else
-            {
-                
-                SymbolTable m;
-                locals.push_back(m);
-            }
-
-            bytes_done+=2+JUMPOFFSET_SIZE;//for jump before block
-            vector<int32_t> breakIdxCopy = breakIdx;
-            vector<int32_t> contIdxCopy = contIdx;
-            int32_t localsBeginCopy = localsBegin; //idx of vector locals, from where
-            //the locals of this loop begin
-            localsBegin = locals.size() - 1;
-            vector<uint8_t> block = compile(ast->childs[6]);
-            //backtrack
-            localsBegin = localsBeginCopy;
-            STACK_SIZE = before;
-
-            if(decl)
-                scope -= 2;
-            else
-                
-            int32_t whileLocals = locals.back().size();
-            locals.pop_back();
-            if(decl)
-                locals.pop_back();
-            int32_t where;
-            if(isSelf)
-            {
-                program.push_back(SELFMEMB);
-            //  foo = 
-            }
-            else if(!isGlobal)
-            {
-                program.push_back(LOAD_LOCAL);
-            }
-            else
-                program.push_back(LOAD_GLOBAL);
-            foo = lcvIdx;
-            addBytes(program,foo);//load loop control variable
-            program.insert(program.end(),finalValue.begin(),finalValue.end());
-            if(dfor)
-                program.push_back(GROREQ);
-            else
-                program.push_back(SMOREQ);
-
-            ////
-            vector<uint8_t> inc;
-            line_num = lnCopy;
-
-
-            if(dfor || (I!="1" || ast->childs[5]->type!=NodeType::NUM) || isSelf)
-            {
-                inc = expr_bytecode(ast->childs[5]);
-                where = block.size() + 1 + JUMPOFFSET_SIZE+inc.size()+11;
-                //11 bytes for some increment code
-                
-            }
-            else
-            {
-                where = block.size() + 1 + JUMPOFFSET_SIZE+5;
-
-            }
-            if(whileLocals!=0)
-                where+=4;//4 for NPOP_STACK
-            ////
-            //Check condition
-            program.push_back(JMPIFFALSE);
-            foo = where;
-            addBytes(program,foo);
-            //
-
-            if(I=="1" && ast->childs[5]->type == NodeType::NUM && !dfor && !isSelf)
-            {
-                if(!isGlobal)
-                    block.push_back(INPLACE_INC);
-                else
-                    block.push_back(INC_GLOBAL);
-                foo = lcvIdx;
-                addBytes(block,foo);
-                bytes_done+=5;
-            }
-            else
-            {
-                if(isSelf)
-                block.push_back(SELFMEMB);
-                else if(!isGlobal)
-                {
-                block.push_back(LOAD_LOCAL);
-                }
-                else
-                block.push_back(LOAD_GLOBAL);
-                foo = lcvIdx;
-                addBytes(block,foo);
-                block.insert(block.end(),inc.begin(),inc.end());
-                if(dfor)
-                    block.push_back(SUB);
-                else
-                    block.push_back(ADD);
-                if(isSelf)
-                    block.push_back(ASSIGNSELFMEMB);
-                else if(!isGlobal )
-                    block.push_back(ASSIGN);
-                else
-                    block.push_back(ASSIGN_GLOBAL);
-                addBytes(block,foo);
-                bytes_done+=11;
-            }
-            program.insert(program.end(), block.begin(), block.end());
-            if(whileLocals!=0)
-            {
-                program.push_back(GOTONPSTACK);
-                foo = whileLocals;
-                addBytes(program,foo);
-                bytes_done += 4;
-            }
-            else
-                program.push_back(GOTO);
-            foo = L+initValue.size();
-            if(isGlobal)
-                foo+=5;
-            addBytes(program,foo);
-            if(decl)
-            {
-                program.push_back(POP_STACK);
-                bytes_done+=1;
-                STACK_SIZE-=1;
-            }
-            bytes_done += 1 + JUMPOFFSET_SIZE;
-            //backpatching
-            int32_t a = (int)bytes_done - 1;
-            
-            for(auto e: breakIdx)
-            {
-                backpatches.push_back(Pair(e,a));
-            }
-            for(auto e: contIdx)
-            {
-                backpatches.push_back(Pair(e,cont));
-            }
-            //backtrack
-            breakIdx = breakIdxCopy;
-            contIdx  = contIdxCopy;
-        }*/
         else if((ast->type == NodeType::FOR) || (dfor = (ast->type == NodeType::DFOR)))
         {
             bool decl_variable = (ast->childs[1]->type == NodeType::decl);
@@ -2144,7 +1942,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             }
             else
             {
-                // printf("not compiling function %s because it is not fnReferenced\n",name.c_str());
+                //printf("not compiling function %s because it is not fnReferenced\n",name.c_str());
             }
             isGen = false;
         }
@@ -2353,7 +2151,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         string C = filename;
         filename = ast->childs[1]->val;
         short K = fileTOP;
-        fileTOP = std::find(files->begin(),files->end(),filename) - files->begin();
+        fileTOP = str_vector_search(files,filename.c_str());
         bool a = infunc;
         bool b = inclass;
         infunc = false;

@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "byte_src.h"
 #include "funobject.h"
 #include "opcode.h"
 #include "overflow.h"
@@ -103,15 +104,15 @@ VM::VM()
   zlist_init(&aux);
   zlist_init(&STACK);
 }
-void VM::load(vector<uint8_t>& bytecode,ZukoSource& p)
+void VM::load(vector<uint8_t>& bytecode,zuko_src* p)
 {
     program = &bytecode[0];
     program_size = bytecode.size();
     GC_THRESHHOLD = 4196;//chosen at random
     GC_MIN_COLLECT = 4196;
-    LineNumberTable = &p.LineNumberTable;
-    files = &p.files;
-    sources = &p.sources;
+    line_num_table = &p->line_num_table;
+    files = &p->files;
+    sources = &p->sources;
     nil.type = Z_NIL;
 
     api.a1 = &vm_alloc_zlist;
@@ -186,28 +187,31 @@ size_t VM::spitErr(zclass* e, string msg) // used to show a runtime error
         return k -program;
     }
     //Error catching is not enabled
-    size_t line_num = (*LineNumberTable)[orgk].ln;
-    string &filename = (*files)[(*LineNumberTable)[orgk].fileIndex];
+    size_t line_num = 0;
+    byte_src src;
+    const char* filename = "";
+    const char* source_code = "";
+    if(lntable_get(line_num_table,orgk,&src))
+    {
+        line_num = src.ln;
+        filename = files->arr[src.file_index];
+        source_code = sources->arr[src.file_index];
+    }
     string type = e->name;
-    fprintf(stderr,"\nFile %s\n", filename.c_str());
+    fprintf(stderr,"\nFile %s\n", filename);
     fprintf(stderr,"%s at line %zu\n", type.c_str(), line_num);
-    auto it = std::find(files->begin(), files->end(), filename);
-    size_t i = it - files->begin();
 
-    string source_code = (*sources)[i];
     size_t l = 1;
     string line = "";
     size_t k = 0;
 
-    while (l <= line_num)
+    while (source_code[k] !=0 && l <= line_num)
     {
         if (source_code[k] == '\n')
-        l += 1;
+            l += 1;
         else if (l == line_num)
-        line += source_code[k];
+            line += source_code[k];
         k += 1;
-        if (k >= source_code.length())
-        break;
     }
     fprintf(stderr,"%s\n", lstrip(line).c_str());
     fprintf(stderr,"%s\n", msg.c_str());
@@ -217,16 +221,17 @@ size_t VM::spitErr(zclass* e, string msg) // used to show a runtime error
         fprintf(stderr,"<stack trace>\n");
         while (callstack.size() != 0) // print stack trace
         {
-        size_t L = callstack.back() - program;
-        
-        L -= 1;
-        while (L>0 && LineNumberTable->find(L) == LineNumberTable->end())
-        {
-            L -= 1; // L is now the index of CALLUDF opcode now
-        }
-        // which is ofcourse present in the LineNumberTable
-        fprintf(stderr,"  --by %s line %zu\n", (*files)[(*LineNumberTable)[L].fileIndex].c_str(), (*LineNumberTable)[L].ln);
-        callstack.pop_back();
+            size_t L = callstack.back() - program;
+            L -= 1;
+            while (L>0 && !(lntable_get(line_num_table,L,&src)))
+            {
+                L -= 1; // L is now the index of CALLUDF opcode now
+            }
+            // which is ofcourse present in the LineNumberTable
+            const char* file = files->arr[src.file_index];
+            size_t ln = src.ln;
+            fprintf(stderr,"  --by %s line %zu\n", file,ln);
+            callstack.pop_back();
         }
     }
 
