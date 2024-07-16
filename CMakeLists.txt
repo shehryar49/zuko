@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 project(zuko)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_executable(zuko zuko.cpp include/vm.cpp include/parser.cpp include/lexer.cpp include/builtinfunc.cpp include/utility.cpp include/overflow.cpp include/convo.cpp  include/compiler.cpp include/repl.cpp include/zobject.c include/zdict.c include/zlist.c include/strmap.c include/zbytearray.c include/module.c include/klass.c include/klassobject.c include/dis.cpp include/refgraph.c include/zuko-src.c include/lntable.c include/str-vec.c include/token.c include/dyn-str.c)
-include_directories(include/) # even modules use this (include/ZObject.h)
+add_executable(zuko zuko.cpp src/vm.cpp src/parser.cpp src/lexer.cpp src/builtinfunc.cpp src/utility.cpp src/overflow.cpp src/convo.cpp  src/compiler.cpp src/repl.cpp src/zobject.c src/zdict.c src/zlist.c src/strmap.c src/zbytearray.c src/module.c src/klass.c src/klassobject.c src/dis.cpp src/refgraph.c src/zuko-src.c src/lntable.c src/str-vec.c src/token.c src/dyn-str.c)
+include_directories(include/) # even modules use this (include/zobject.h)
 if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})
   target_link_libraries(zuko -lreadline) # GNU readline
@@ -27,7 +27,7 @@ include_directories(include/)
 
 # static library (extension api) for linking to modules
 
-add_library(zapi STATIC include/zobject.c include/zdict.c include/zlist.c include/zapi.c include/strmap.c include/zbytearray.c include/module.c include/klass.c include/klassobject.c)
+add_library(zapi STATIC src/zobject.c src/zdict.c src/zlist.c src/zapi.c src/strmap.c src/zbytearray.c src/module.c src/klass.c src/klassobject.c)
 set_property(TARGET zapi PROPERTY POSITION_INDEPENDENT_CODE ON)
 link_directories(${CMAKE_SOURCE_DIR})
 # Add modules
