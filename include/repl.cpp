@@ -98,7 +98,7 @@ void REPL()
     }
     continued = false;
     parser.set_source(&src,k-1);
-    ast = parser.parse(tokens,0,tokens.size()-1);
+    ast = parser.parse_block(tokens,0,tokens.size()-1);
 
     zobject* constants = new zobject[src.num_of_constants];
     //copy previous constants

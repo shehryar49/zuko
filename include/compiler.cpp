@@ -1120,7 +1120,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
         }
         else if (ast->type == NodeType::memb)
         {
-            Node* bitch = NewNode(NodeType::memb,".");
+            Node* bitch = new_node(NodeType::memb,".");
             bitch->childs.push_back(ast->childs[1]);
             bitch->childs.push_back(ast->childs[2]);
             vector<uint8_t> stmt = expr_bytecode(bitch);

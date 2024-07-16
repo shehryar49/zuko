@@ -63,10 +63,10 @@ int main(int argc, const char* argv[])
           return 0;
         Parser parser;
         parser.set_source(&src);
-        Node* ast = parser.parse(tokens,0,tokens.size()-1); //parse the tokens of root file
+        Node* ast = parser.parse_block(tokens,0,tokens.size()-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
-        //printAST(ast);
+        //print_ast(ast);
         Compiler compiler;
         compiler.set_source(&src);//init compiler with ZukoSource
         bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program

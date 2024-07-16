@@ -12,7 +12,7 @@ extern bool REPL_MODE;
 void REPL();
 
 
-Node* NewNode(NodeType type,string val)
+Node* new_node(NodeType type,string val)
 {
   Node* p = new(nothrow) Node;
   if(!p)
@@ -63,12 +63,12 @@ int match_token(int k,int endidx,TokenType end,const vector<token>& tokens)
     }
     return -1;
 }
-int match_token_right(int k,TokenType end,const vector<token>& tokens)
+int match_token_right(int k,int begin,TokenType end,const vector<token>& tokens)
 {
     TokenType start = tokens[k].type;
     
     int ignore = 0;
-    while(k>=0)
+    while(k>=begin)
     {
         if(tokens[k].type == start)
             ignore+=1;
@@ -270,6 +270,8 @@ void Parser::set_source(zuko_src* p,size_t root_idx)
     str_vector v;
     str_vector_init(&v);
     refgraph_emplace(refGraph,clone_str(".main"),v);
+    str_vector_init(&prefixes);
+    str_vector_push(&prefixes,"");
 }
 void Parser::parseError(string type,string msg)
 {
@@ -314,67 +316,68 @@ bool Parser::addSymRef(string name)
         str_vector_push(neighbours,clone_str(name.c_str()));
     return true;
 }
-Node* Parser::parseExpr(const vector<token>& tokens)
-{
-
-    if(tokens.size()==0)
-        parseError("SyntaxError","Invalid Syntax");
-
+Node* Parser::parseExpr(const vector<token>& tokens,int begin,int end)
+{   
+    if(begin > end)
+        parseError("ESyntaxError","Invalid Syntax");
+    size_t tokens_size = end - begin + 1;
+   // printf("in parse expr, tokens_size = %zu\n",tokens_size);
+    //for(size_t i=begin;i<=end;i++)
+    //    printf(tokens[i].content);
+    //puts("");
     Node* ast = nullptr;
-
-    if(tokens.size()==1)
+    if(tokens_size==1)
     {
 
-        if(tokens[0].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[0].content,"nil")==0 )
+        if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"nil")==0 )
         {
-            ast = NewNode(NodeType::NIL,tokens[0].content);
+            ast = new_node(NodeType::NIL,tokens[begin].content);
             return ast;
         }
-        else if(tokens[0].type== TokenType::BOOL_TOKEN )
+        else if(tokens[begin].type== TokenType::BOOL_TOKEN )
         {
-            ast = NewNode(NodeType::BOOL,tokens[0].content);
+            ast = new_node(NodeType::BOOL,tokens[begin].content);
             return ast;
         }
-        else if(tokens[0].type == TokenType::ID_TOKEN)
+        else if(tokens[begin].type == TokenType::ID_TOKEN)
         {
-            auto it = prefixes.rbegin();
             bool done = false;
-            while(it != prefixes.rend())
+            for(size_t i = 1;i <= prefixes.size; i++)
             {
-                aux = merge_str((*it),tokens[0].content);
+                size_t idx = prefixes.size - i;
+                aux = merge_str(prefixes.arr[idx],tokens[begin].content);
                 if((done = addSymRef(aux)))
                     break;
-                it++;
             }
-            ast = NewNode(NodeType::ID,tokens[0].content);
+            ast = new_node(NodeType::ID,tokens[begin].content);
             return ast;
         }
-        else if(tokens[0].type == TokenType::NUM_TOKEN && isnum(tokens[0].content))
+        else if(tokens[begin].type == TokenType::NUM_TOKEN && isnum(tokens[begin].content))
         {
-            ast = NewNode(NodeType::NUM,tokens[0].content);//int32
+            ast = new_node(NodeType::NUM,tokens[begin].content);//int32
             return ast;
         }
-        else if(tokens[0].type == TokenType::BYTE_TOKEN)
+        else if(tokens[begin].type == TokenType::BYTE_TOKEN)
         {
-            ast = NewNode(NodeType::BYTE,tokens[0].content);
+            ast = new_node(NodeType::BYTE,tokens[begin].content);
             return ast;
         }
-        else if(tokens[0].type == STRING_TOKEN)
+        else if(tokens[begin].type == STRING_TOKEN)
         {
-            ast = NewNode(NodeType::STR,tokens[0].content);
+            ast = new_node(NodeType::STR,tokens[begin].content);
             return ast;
         }
-        else if(tokens[0].type== TokenType::FLOAT_TOKEN || tokens[0].type== TokenType::NUM_TOKEN)
+        else if(tokens[begin].type== TokenType::FLOAT_TOKEN || tokens[begin].type== TokenType::NUM_TOKEN)
         {
-            if(find_token(tokens[0],0,(int)known_constants.size()-1,known_constants)==-1)
+            if(find_token(tokens[begin],0,(int)known_constants.size()-1,known_constants)==-1)
             {
-                known_constants.push_back(tokens[0]);
+                known_constants.push_back(tokens[begin]);
                 *num_of_constants = *num_of_constants + 1;
             }
-            if(tokens[0].type == FLOAT_TOKEN)
-                ast = NewNode(NodeType::FLOAT,tokens[0].content);
-            else if(tokens[0].type == NUM_TOKEN)//int64
-                ast = NewNode(NodeType::NUM,tokens[0].content);
+            if(tokens[begin].type == FLOAT_TOKEN)
+                ast = new_node(NodeType::FLOAT,tokens[begin].content);
+            else if(tokens[begin].type == NUM_TOKEN)//int64
+                ast = new_node(NodeType::NUM,tokens[begin].content);
             return ast;
         }
         parseError("SyntaxError","Invalid Syntax");
@@ -393,47 +396,44 @@ Node* Parser::parseExpr(const vector<token>& tokens)
             {NodeType::div,NodeType::mul,NodeType::mod}
             };
     static int l = prec.size();
-    int k = tokens.size()-1;
+    int k = tokens_size-1;
     
     for(int i=0;i<l;++i)
     {
         vector<string>& op_set = prec[i];
-        k = tokens.size()-1;
+        k = end;;
         std::vector<string>::iterator m = op_set.end();
-        while(k>=0)
+        size_t size_max = -1;
+        while(k >=begin)
         {
 
         if(tokens[k].type== TokenType::RParen_TOKEN)
         {
-            int i = match_token_right(k,TokenType::LParen_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::LParen_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k = i;
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = match_token_right(k,TokenType::BEGIN_LIST_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
         {
-            int i = match_token_right(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
-        else if(tokens[k].type== TokenType::OP_TOKEN && ((m = std::find(op_set.begin(),op_set.end(),tokens[k].content))!=op_set.end()) && k!=0)
+        else if(tokens[k].type== TokenType::OP_TOKEN && ((m = std::find(op_set.begin(),op_set.end(),tokens[k].content))!=op_set.end()) && k!=begin)
         {
-            vector<token> lhs = {tokens.begin(),tokens.begin()+k};
-            vector<token> rhs = {tokens.begin()+k+1,tokens.end()};
-            if(lhs.size()==0 || rhs.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
             int l = m - op_set.begin();
-            Node* ast = NewNode(opNodeTypes[i][l]);
-            ast->childs.push_back(parseExpr(lhs));
-            ast->childs.push_back(parseExpr(rhs));
+            Node* ast = new_node(opNodeTypes[i][l]);
+            ast->childs.push_back(parseExpr(tokens,begin,k-1));
+            ast->childs.push_back(parseExpr(tokens,k+1,end));
             return ast;
         }
         k-=1;
@@ -441,21 +441,18 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     }
     //////
 
-        /////////////////
+    /////////////////
     //Unary Operators
-        ////////////////
-    if(tokens[0].type== TokenType::OP_TOKEN)
+    ////////////////
+    if(tokens[begin].type== TokenType::OP_TOKEN)
     {
 
-        if(strcmp(tokens[0].content,"-") == 0)
+        if(strcmp(tokens[begin].content,"-") == 0)
         {
-            Node* ast = NewNode(NodeType::neg);
-            vector<token> e = {tokens.begin()+1,tokens.end()};
-            if(e.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
+            Node* ast = new_node(NodeType::neg);
             size_t sz = known_constants.size();
-            Node* E = parseExpr(e);
-            if(known_constants.size()==sz+1 && e.size()==1 && (known_constants[sz].type==FLOAT_TOKEN || known_constants[sz].type==NUM_TOKEN))
+            Node* E = parseExpr(tokens,begin+1,end);
+            if(known_constants.size()==sz+1 && begin+1==end && (known_constants[sz].type==FLOAT_TOKEN || known_constants[sz].type==NUM_TOKEN))
             {
                 known_constants[sz].content = clone_str(((string)"-"+(string)known_constants[sz].content).c_str());
                 if(known_constants[sz].type == FLOAT_TOKEN)
@@ -473,227 +470,219 @@ Node* Parser::parseExpr(const vector<token>& tokens)
             ast->childs.push_back(E);
             return ast;
         }
-        else if(strcmp(tokens[0].content,"+") == 0)
+        else if(strcmp(tokens[begin].content,"+") == 0)
         {
-            vector<token> e = {tokens.begin()+1,tokens.end()};
-            if(e.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-            return (parseExpr(e));
+            return (parseExpr(tokens,begin+1,end));
         }
-        else if(strcmp(tokens[0].content,"~") == 0)
+        else if(strcmp(tokens[begin].content,"~") == 0)
         {
-            Node* ast = NewNode(NodeType::complement);
-            vector<token> e = {tokens.begin()+1,tokens.end()};
-            if(e.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-            ast->childs.push_back(parseExpr(e));
+            Node* ast = new_node(NodeType::complement);
+            ast->childs.push_back(parseExpr(tokens,begin+1,end));
             return ast;
         }
-        else if(strcmp(tokens[0].content,"!") == 0)
+        else if(strcmp(tokens[begin].content,"!") == 0)
         {
-            Node* ast = NewNode(NodeType::NOT);
-            vector<token> e = {tokens.begin()+1,tokens.end()};
-            ast->childs.push_back(parseExpr(e));
+            Node* ast = new_node(NodeType::NOT);
+            ast->childs.push_back(parseExpr(tokens,begin+1,end));
             return ast;
         }
     }
-    if(tokens[tokens.size()-1].type==END_LIST_TOKEN)// evaluate indexes or lists
+    if(tokens[end].type==END_LIST_TOKEN)// evaluate indexes or lists
     {
-        int i = match_token_right((int)tokens.size()-1,TokenType::BEGIN_LIST_TOKEN,tokens);
+        //puts("evaluating indexes");
+        int i = match_token_right(end,begin,TokenType::BEGIN_LIST_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
-        if(i!=0)
+        if(i != begin)
         {
-            vector<token> toindex = {tokens.begin(),tokens.begin()+i};
-            vector<token> index = {tokens.begin()+i+1,tokens.end()-1};
-            Node* ast = NewNode(NodeType::index);
-            ast->childs.push_back(parseExpr(toindex));
-            ast->childs.push_back(parseExpr(index));
+            /*puts("here");
+            for(int k=begin;k<=i-1;k++)
+                printf("%s",tokens[k].content);
+            puts("");*/
+            Node* ast = new_node(NodeType::index);
+            ast->childs.push_back(parseExpr(tokens,begin,i-1));
+            ast->childs.push_back(parseExpr(tokens,i+1,end-1));
             return ast;
         }
         else
         {
-            ast = NewNode(NodeType::list);
-            if(tokens.size()==2)//empty list
+            ast = new_node(NodeType::list);
+            if(tokens_size==2)//empty list
                 return ast;
             vector<token> t;
-            int L = tokens.size()-2;//number of tokens excluding square brackets
-            for(int k = 1;k<=L;k+=1)//process list elements
+            int L = end-1;//number of tokens excluding square brackets
+            for(int k = begin+1;k<=L;k+=1)//process list elements
             {
-            if(tokens[k].type== TokenType::COMMA_TOKEN)
-            {
-                if(t.size()==0)
-                    parseError("SyntaxError","Error expected an element before ',' ");
-                ast->childs.push_back(parseExpr(t));
-                t.clear();
-            }
-            else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
-            {
-                int R = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,tokens);
-                if(R>(L) || R==-1)
-                    parseError("SyntaxError","Invalid Syntax");
-                vector<token> sublist = {tokens.begin()+k,tokens.begin()+R+1};
-                t.insert(t.end(),sublist.begin(),sublist.end());
-                k = R;
-            }
-            else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
-            {
-                int R = match_token(k,tokens.size(),TokenType::R_CURLY_BRACKET_TOKEN,tokens);
-                if(R>L || R==-1)
-                    parseError("SyntaxError","Invalid Syntax");
-                vector<token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
-                t.insert(t.end(),subdict.begin(),subdict.end());
-                k = R;
-            }
-            else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
-            {
-                int R = match_token(k,tokens.size(),TokenType::RParen_TOKEN,tokens);
-                if(R>L || R==-1)
-                    parseError("SyntaxError","Invalid Syntax");
-                vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
-                t.insert(t.end(),subfn.begin(),subfn.end());
-                k = R;
-            }
-            else
-                t.push_back(tokens[k]);
+                if(tokens[k].type== TokenType::COMMA_TOKEN)
+                {
+                    if(t.size()==0)
+                        parseError("SyntaxError","Error expected an element before ',' ");
+                    ast->childs.push_back(parseExpr(t,0,t.size()-1));
+                    t.clear();
+                }
+                else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
+                {
+                    int R = match_token(k,end,TokenType::END_LIST_TOKEN,tokens);
+                    if(R>(L) || R==-1)
+                        parseError("SyntaxError","Invalid Syntax");
+                    vector<token> sublist = {tokens.begin()+k,tokens.begin()+R+1};
+                    t.insert(t.end(),sublist.begin(),sublist.end());
+                    k = R;
+                }
+                else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
+                {
+                    int R = match_token(k,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                    if(R>L || R==-1)
+                        parseError("SyntaxError","Invalid Syntax");
+                    vector<token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
+                    t.insert(t.end(),subdict.begin(),subdict.end());
+                    k = R;
+                }
+                else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
+                {
+                    int R = match_token(k,end,TokenType::RParen_TOKEN,tokens);
+                    if(R>L || R==-1)
+                        parseError("SyntaxError","Invalid Syntax");
+                    vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
+                    t.insert(t.end(),subfn.begin(),subfn.end());
+                    k = R;
+                }
+                else
+                    t.push_back(tokens[k]);
             }
             if(t.size()==0)
                 parseError("SyntaxError","Error expected an element after ',' ");
-            ast->childs.push_back(parseExpr(t));
+            ast->childs.push_back(parseExpr(t,0,t.size()-1));
             t.clear();
             return ast;
         }
     }
     /////////////////
-    k = tokens.size()-1;
-    while(k>=0)
+    k = end;
+    while(k>=begin)
     {
         if(tokens[k].type==TokenType::RParen_TOKEN)
         {
-            int i = match_token_right(k,TokenType::LParen_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::LParen_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k = i;
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = match_token(k,tokens.size(),TokenType::BEGIN_LIST_TOKEN,tokens);
+            int i = match_token(k,end,TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
         {
-            int i = match_token_right(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k = i;
         }
         else if(tokens[k].type== TokenType::OP_TOKEN && (strcmp(tokens[k].content,".")==0))
         {
-            vector<token> lhs = {tokens.begin(),tokens.begin()+k};
-            vector<token> rhs = {tokens.begin()+k+1,tokens.end()};
-            if(lhs.size()==0 || rhs.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-            Node* ast = NewNode(NodeType::memb);
-            ast->childs.push_back(parseExpr(lhs));
-            ast->childs.push_back(parseExpr(rhs));
+            Node* ast = new_node(NodeType::memb);
+            ast->childs.push_back(parseExpr(tokens,begin,k-1));
+            ast->childs.push_back(parseExpr(tokens,k+1,end));
             return ast;
         }
         k-=1;
     }
     ////////////////
     ////////////////////
-    if(tokens.size()>=2)
+    if(tokens_size>=2)
     {
-        if(tokens[0].type== TokenType::L_CURLY_BRACKET_TOKEN && tokens.back().type==TokenType::R_CURLY_BRACKET_TOKEN)
+        if(tokens[begin].type== TokenType::L_CURLY_BRACKET_TOKEN && tokens[end].type==TokenType::R_CURLY_BRACKET_TOKEN)
         {
-                ast = NewNode(NodeType::dict);
-                if(tokens.size()==2)
+                ast = new_node(NodeType::dict);
+                if(tokens_size==2)
                     return ast;
                 vector<token> Key;
                 vector<token> Value;
                 string tofill = "key";
-                int L = tokens.size()-2;
+                int L = tokens_size-2;
                 for(int k = 1;k<=L;k+=1)
                 {
-                if(tokens[k].type== TokenType::COMMA_TOKEN)
-                {
-                    if(Value.size()==0)
-                        parseError("SyntaxError","Invalid Syntax");
-                    ast->childs.push_back(parseExpr(Value));
-                    Value.clear();
-                    tofill = "key";
-                }
-                else if(tokens[k].type== TokenType::COLON_TOKEN)
-                {
-                    if(Key.size()==0)
-                        parseError("SyntaxError","Invalid Syntax");
-                    ast->childs.push_back(parseExpr(Key));
-                    Key.clear();
-                    tofill = "value";
-                }
-                else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
-                {
-                    int R = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,tokens);
-                    vector<token> sublist ={tokens.begin()+k,tokens.begin()+R+1};
-                    if(tofill=="key")
+                    if(tokens[k].type== TokenType::COMMA_TOKEN)
                     {
-                        Key.insert(Key.end(),sublist.begin(),sublist.end());
-                        k = R;
+                        if(Value.size()==0)
+                            parseError("SyntaxError","Invalid Syntax");
+                        ast->childs.push_back(parseExpr(Value,0,Value.size()-1));
+                        Value.clear();
+                        tofill = "key";
                     }
-                    else
+                    else if(tokens[k].type== TokenType::COLON_TOKEN)
                     {
-                        Value.insert(Value.end(),sublist.begin(),sublist.end());
-                        k = R;
+                        if(Key.size()==0)
+                            parseError("SyntaxError","Invalid Syntax");
+                        ast->childs.push_back(parseExpr(Key,0,Key.size()-1));
+                        Key.clear();
+                        tofill = "value";
                     }
-                }
-                else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
-                {
-                    int R = match_token(k,tokens.size(),TokenType::R_CURLY_BRACKET_TOKEN,tokens);
-                    if(R==(int)tokens.size()-1)
-                        parseError("SyntaxError","Invalid Syntax");
+                    else if(tokens[k].type== TokenType::BEGIN_LIST_TOKEN)
+                    {
+                        int R = match_token(k,tokens_size,TokenType::END_LIST_TOKEN,tokens);
+                        vector<token> sublist ={tokens.begin()+k,tokens.begin()+R+1};
+                        if(tofill=="key")
+                        {
+                            Key.insert(Key.end(),sublist.begin(),sublist.end());
+                            k = R;
+                        }
+                        else
+                        {
+                            Value.insert(Value.end(),sublist.begin(),sublist.end());
+                            k = R;
+                        }
+                    }
+                    else if(tokens[k].type== TokenType::L_CURLY_BRACKET_TOKEN)
+                    {
+                        int R = match_token(k,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
+                        if(R==(int)tokens_size-1)
+                            parseError("SyntaxError","Invalid Syntax");
 
-                    vector<token> subdict ={tokens.begin()+k,tokens.begin()+R+1};
-                    if(tofill=="key")
+                        vector<token> subdict ={tokens.begin()+k,tokens.begin()+R+1};
+                        if(tofill=="key")
+                        {
+                            Key.insert(Key.end(),subdict.begin(),subdict.end());
+                            k = R;
+                        }
+                        else
+                        {
+                            Value.insert(Value.end(),subdict.begin(),subdict.end());
+                            k = R;
+                        }
+                    }
+                    else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
                     {
-                        Key.insert(Key.end(),subdict.begin(),subdict.end());
-                        k = R;
+                        int R = match_token(k,end,TokenType::RParen_TOKEN,tokens);
+                        if(R>((int)tokens_size-2) || R==-1)
+                            parseError("SyntaxError","Invalid Syntax");
+                        vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
+                        if(tofill=="key")
+                        {
+                            Key.insert(Key.end(),subfn.begin(),subfn.end());
+                            k = R;
+                        }
+                        else
+                        {
+                            Value.insert(Value.end(),subfn.begin(),subfn.end());
+                            k = R;
+                        }
                     }
                     else
                     {
-                        Value.insert(Value.end(),subdict.begin(),subdict.end());
-                        k = R;
+                        if(tofill=="key")
+                            Key.push_back(tokens[k]);
+                        else
+                            Value.push_back(tokens[k]);
                     }
-                }
-                else if(tokens[k].type==TokenType::ID_TOKEN && tokens[k+1].type==TokenType::LParen_TOKEN)
-                {
-                    int R = match_token(k,tokens.size(),TokenType::RParen_TOKEN,tokens);
-                    if(R>((int)tokens.size()-2) || R==-1)
-                        parseError("SyntaxError","Invalid Syntax");
-                    vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
-                    if(tofill=="key")
-                    {
-                        Key.insert(Key.end(),subfn.begin(),subfn.end());
-                        k = R;
-                    }
-                    else
-                    {
-                        Value.insert(Value.end(),subfn.begin(),subfn.end());
-                        k = R;
-                    }
-                }
-                else
-                {
-                    if(tofill=="key")
-                        Key.push_back(tokens[k]);
-                    else
-                        Value.push_back(tokens[k]);
-                }
                 }
                 if(Value.size()==0)
                     parseError("SyntaxError","Invalid Syntax");
-                ast->childs.push_back(parseExpr(Value));
+                ast->childs.push_back(parseExpr(Value,0,Value.size()-1));
                 Value.clear();
                 return ast;
             
@@ -701,30 +690,29 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     }
     ////////////////////
     ////////////////////
-    if(tokens[0].type== TokenType::ID_TOKEN && tokens[1].type== TokenType::LParen_TOKEN)
+    if(tokens[begin].type== TokenType::ID_TOKEN && tokens[begin+1].type== TokenType::LParen_TOKEN)
     {
-        int i = match_token(1,tokens.size(),TokenType::RParen_TOKEN,tokens);
+        int i = match_token(begin+1,end,TokenType::RParen_TOKEN,tokens);
         if(i==-1)
             parseError("SyntaxError","Invalid Syntax");
-        if(i==(int)tokens.size()-1)
+        if(i==end)
         {
-            Node* ast = NewNode(NodeType::call);
-            Node* args = NewNode(NodeType::args);
+            Node* ast = new_node(NodeType::call);
+            Node* args = new_node(NodeType::args);
 
-            Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+            Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(NewNode(NodeType::ID,tokens[0].content));
-            auto it = prefixes.rbegin();
+            ast->childs.push_back(new_node(NodeType::ID,tokens[begin].content));
             bool done = false;
-            while(it != prefixes.rend())
+            for(size_t i = 1;i <= prefixes.size; i++)
             {
-                aux = merge_str((*it),tokens[0].content);
+                size_t idx = prefixes.size - i;
+                aux = merge_str(prefixes.arr[idx],tokens[begin].content);
                 if((done = addSymRef(aux)))
                     break;
-                it++;
             }
             vector<token> T;
-            vector<token> Args = {tokens.begin()+2,tokens.end()-1};
+            vector<token> Args = {tokens.begin()+begin+2,tokens.begin()+end};
             if(Args.size()==0)
             {
                 ast->childs.push_back(args);
@@ -736,12 +724,12 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                 {
                     if(T.size()==0)
                         parseError("SyntaxError","Invalid Syntax");
-                    args->childs.push_back(parseExpr(T));
+                    args->childs.push_back(parseExpr(T,0,T.size()-1));
                     T.clear();
                 }
                 else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
                 {
-                    int i = match_token(k,tokens.size(),TokenType::END_LIST_TOKEN,Args);
+                    int i = match_token(k,tokens_size,TokenType::END_LIST_TOKEN,Args);
                     if(i==-1)
                         parseError("SyntaxError","Invalid Syntax");
                     vector<token> LIST =  {Args.begin()+k,Args.begin()+i+1};
@@ -770,7 +758,7 @@ Node* Parser::parseExpr(const vector<token>& tokens)
                     T.push_back(Args[k]);
             }
             if(T.size()!=0)
-                args->childs.push_back(parseExpr(T));
+                args->childs.push_back(parseExpr(T,0,T.size()-1));
             T.clear();
             ast->childs.push_back(args);
             return ast;
@@ -778,21 +766,21 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     }
     ///////////////////
     //////////////
-    if(tokens[0].type== TokenType::LParen_TOKEN)
+    if(tokens[begin].type== TokenType::LParen_TOKEN)
     {
-        int i = match_token(0,tokens.size(),TokenType::RParen_TOKEN,tokens);
-        if(i==-1)
+        int i = match_token(begin,end,TokenType::RParen_TOKEN,tokens);
+        if(i==-1 || tokens_size == 2)
             parseError("SyntaxError","Invalid Syntax");
-        if(i==(int)tokens.size()-1)
+        if(i==(int)end)
         {
-            vector<token> e = {tokens.begin()+1,tokens.end()-1};
-            return parseExpr(e);
+            return parseExpr(tokens,begin+1,end-1);
         }
     }
     string expr;
     bool multiline=false;
-    for(auto e: tokens)
+    for(int i=begin;i<=end;i++)
     {
+        token e = tokens[i];
         if(e.type==NEWLINE_TOKEN)
         {
             multiline=true;
@@ -810,14 +798,14 @@ Node* Parser::parseExpr(const vector<token>& tokens)
     return ast;
 }
 
-Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
+Node* Parser::parseStmt(const vector<token>& tokens,int begin,int end)
 {
     size_t tokens_size = end-begin+1;
     if(tokens_size==0)
         parseError("SyntaxError","Invalid Syntax");
 
     if(tokens_size==1 && tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"gc") == 0)
-        return NewNode(NodeType::gc);
+        return new_node(NodeType::gc);
 
     bool isPrivate = false;
     if(tokens[begin].type==TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"private") == 0)
@@ -854,12 +842,12 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
         if(tokens[begin+1].type!= TokenType::ID_TOKEN || (tokens[begin+2].type!= TokenType::OP_TOKEN &&  strcmp(tokens[begin+2].content,"=")!=0))
             parseError("SyntaxError","invalid declare statement!");
     
-        Node* ast = NewNode(NodeType::declare);
-        Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+        Node* ast = new_node(NodeType::declare);
+        Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
         ast->childs.push_back(n);
         if(((string)tokens[1].content).find("::")!=string::npos)
             parseError("SyntaxError","Invalid Syntax");
-        const char* fnprefix = prefixes.back();
+        const char* fnprefix = prefixes.arr[prefixes.size-1];
         const char* tmp = tokens[begin+1].content;
         if(atGlobalLevel())
             tmp = merge_str(fnprefix,tokens[begin+1].content);
@@ -871,22 +859,22 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
         {
             foundYield = true;
             expr = {expr.begin()+1,expr.end()};
-            ast->childs.push_back(NewNode(NodeType::YIELD));
+            ast->childs.push_back(new_node(NodeType::YIELD));
             if(expr.size()==0)
                 parseError("SyntaxError","Error expected expression after return keyword");
-            Node* n = NewNode(NodeType::line ,to_string(tokens[begin].ln));
+            Node* n = new_node(NodeType::line ,to_string(tokens[begin].ln));
             ast->childs.back()->childs.push_back(n);
-            ast->childs.back()->childs.push_back(parseExpr(expr));
+            ast->childs.back()->childs.push_back(parseExpr(expr,0,expr.size()-1));
             return ast;
         }
-        ast->childs.push_back(parseExpr(expr));
+        ast->childs.push_back(parseExpr(expr,0,expr.size()-1));
         return ast;
     }
 
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && (strcmp(tokens[begin].content,"break")==0 || strcmp(tokens[begin].content,"continue") == 0) && begin==end)
     {
-        Node* ast = NewNode((strcmp(tokens[begin].content , "break") == 0) ? NodeType::BREAK : NodeType::CONTINUE);
-        ast->childs.push_back(NewNode(NodeType::line,to_string(tokens[begin].ln)));
+        Node* ast = new_node((strcmp(tokens[begin].content , "break") == 0) ? NodeType::BREAK : NodeType::CONTINUE);
+        ast->childs.push_back(new_node(NodeType::line,to_string(tokens[begin].ln)));
         return ast;
     }
     if(tokens[begin].type== TokenType::ID_TOKEN)
@@ -898,20 +886,19 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                 bool wrapInPrint = false;
                 if(REPL_MODE && atGlobalLevel() && strcmp(tokens[begin].content,"print")!=0 && strcmp(tokens[begin].content,"println")!=0 && strcmp(tokens[begin].content,"printf")!=0)
                     wrapInPrint = true;
-                Node* ast = NewNode(NodeType::call);
-                Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+                Node* ast = new_node(NodeType::call);
+                Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                ast->childs.push_back(NewNode(NodeType::ID,tokens[begin].content));
-                auto it = prefixes.rbegin();
+                ast->childs.push_back(new_node(NodeType::ID,tokens[begin].content));
                 bool done = false;
-                while(it != prefixes.rend())
+                for(size_t i = 1;i <= prefixes.size; i++)
                 {
-                    aux = merge_str((*it),tokens[begin].content);
+                    size_t idx = prefixes.size - i;
+                    aux = merge_str(prefixes.arr[idx],tokens[begin].content);
                     if((done = addSymRef(aux)))
-                        break;
-                    it++;
+                    break;
                 }
-                Node* args = NewNode(NodeType::args);
+                Node* args = new_node(NodeType::args);
                 if(tokens_size==3)
                 {
                     ast->childs.push_back(args);  
@@ -926,7 +913,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                         {
                             if(T.size()==0)
                                 parseError("SyntaxError","Invalid Syntax");
-                            args->childs.push_back(parseExpr(T));
+                            args->childs.push_back(parseExpr(T,0,T.size()-1));
                             T.clear();
                         }
                         else if(Args[k].type== TokenType::BEGIN_LIST_TOKEN)
@@ -961,17 +948,17 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                 }
                     if(T.size()==0)
                         parseError("SyntaxError","Invalid Syntax");
-                    args->childs.push_back(parseExpr(T));
+                    args->childs.push_back(parseExpr(T,0,T.size()-1));
                     T.clear();
                     ast->childs.push_back(args);
                 }
                 if(wrapInPrint)
                 {
-                    Node* p = NewNode(NodeType::call);
-                    Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+                    Node* p = new_node(NodeType::call);
+                    Node* n = new_node(NodeType::line,to_string(tokens[0].ln));
                     p->childs.push_back(n);
-                    p->childs.push_back(NewNode(NodeType::ID,"println"));
-                    Node* args = NewNode(NodeType::args);
+                    p->childs.push_back(new_node(NodeType::ID,"println"));
+                    Node* args = new_node(NodeType::args);
                     args->childs.push_back(ast);
                     p->childs.push_back(args);
                     return p;
@@ -1002,23 +989,22 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             parseError("SyntaxError","Invalid Syntax");
         Node* ast;
         if(!extendedClass)
-            ast = NewNode(NodeType::CLASS);
+            ast = new_node(NodeType::CLASS);
         else
-            ast = NewNode(NodeType::EXTCLASS);
-        Node* n = NewNode(NodeType::line,to_string(line_num));
+            ast = new_node(NodeType::EXTCLASS);
+        Node* n = new_node(NodeType::line,to_string(line_num));
         ast->childs.push_back(n);
         //Do not allow class names having '::'
         if(((string)tokens[1].content).find("::")!=string::npos)
             parseError("SyntaxError","Invalid Syntax");
-        const char* fnprefix = prefixes.back();
+        const char* fnprefix = prefixes.arr[prefixes.size-1];
         const char* tmp = tokens[begin+1].content;
         if(atGlobalLevel())
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        ast->childs.push_back(NewNode(NodeType::ID,tmp));
+        ast->childs.push_back(new_node(NodeType::ID,tmp));
         if(extendedClass)
         {
-            vector<token> expr = {tokens.begin()+begin+3,tokens.begin()+end+1};
-            ast->childs.push_back(parseExpr(expr));
+            ast->childs.push_back(parseExpr(tokens,begin+3,end));
         }
         return ast;
     }
@@ -1026,11 +1012,10 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     {
         if(tokens_size>= 4 && tokens[begin+1].type== TokenType::LParen_TOKEN  && tokens[end].type== TokenType::RParen_TOKEN)
         {
-            vector<token> expr = {tokens.begin()+begin+2,tokens.begin()+end};
-            Node* ast = NewNode((strcmp(tokens[begin].content , "while") == 0) ? NodeType::WHILE : NodeType::DOWHILE);
-            Node* n = NewNode(NodeType::line ,to_string(tokens[begin].ln));
+            Node* ast = new_node((strcmp(tokens[begin].content , "while") == 0) ? NodeType::WHILE : NodeType::DOWHILE);
+            Node* n = new_node(NodeType::line ,to_string(tokens[begin].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(parseExpr(expr));
+            ast->childs.push_back(parseExpr(tokens,begin+2,end-1));
             return ast;
         }   
     }
@@ -1094,19 +1079,19 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             vector<token> initExpr = {init.begin()+2,init.end()};
             Node* ast;
             if(dtoLoop)
-                ast = NewNode(NodeType::DFOR);
+                ast = new_node(NodeType::DFOR);
             else
-                ast = NewNode(NodeType::FOR);
-            Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+                ast = new_node(NodeType::FOR);
+            Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
             ast->childs.push_back(n);
             if(decl)
-                ast->childs.push_back(NewNode(NodeType::decl));
+                ast->childs.push_back(new_node(NodeType::decl));
             else
-                ast->childs.push_back(NewNode(NodeType::nodecl));
-            ast->childs.push_back(NewNode(NodeType::ID,init[0].content));
-            ast->childs.push_back(parseExpr(initExpr));
-            ast->childs.push_back(parseExpr(endpoint));
-            ast->childs.push_back(parseExpr(inc));
+                ast->childs.push_back(new_node(NodeType::nodecl));
+            ast->childs.push_back(new_node(NodeType::ID,init[0].content));
+            ast->childs.push_back(parseExpr(initExpr,0,initExpr.size()-1));
+            ast->childs.push_back(parseExpr(endpoint,0,endpoint.size()-1));
+            ast->childs.push_back(parseExpr(inc,0,inc.size()-1));
             return ast;
         }
         else
@@ -1127,18 +1112,15 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             parseError("SyntaxError","Invalid Syntax");
         if(tokens[begin].type!=TokenType::KEYWORD_TOKEN || strcmp(tokens[begin].content,"var")!=0 || tokens[begin+1].type!=TokenType::ID_TOKEN || tokens[begin+2].type!=TokenType::COLON_TOKEN)
             parseError("SyntaxError","Invalid Syntax");
-        vector<token> expr = {tokens.begin()+begin+3,tokens.begin()+end+1};
       
-
-        Node* exprAST = parseExpr(expr);
-        Node* ast = NewNode(NodeType::FOREACH);
-        Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
-        ast->childs = {n,NewNode(NodeType::ID,tokens[begin+1].content),exprAST};
+        Node* exprAST = parseExpr(tokens,begin+3,end);
+        Node* ast = new_node(NodeType::FOREACH);
+        Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
+        ast->childs = {n,new_node(NodeType::ID,tokens[begin+1].content),exprAST};
         token Q;
         Q.type = TokenType::NUM_TOKEN;
         Q.content = "-1";
-        vector<token> E = {Q};
-        ast->childs.push_back(parseExpr(E));
+        ast->childs.push_back(parseExpr({Q},0,0));
         return ast;
     }
     if(tokens[begin].type==TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"namespace") == 0)
@@ -1147,14 +1129,14 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             parseError("SyntaxError","Invalid Syntax");
         if(tokens[begin+1].type!=ID_TOKEN)
             parseError("SyntaxError","Invalid Syntax");
-        Node* ast = NewNode(NodeType::NAMESPACE);
-        Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+        Node* ast = new_node(NodeType::NAMESPACE);
+        Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
         ast->childs.push_back(n);
         string fnprefix;
         if(((string)tokens[1].content).find("::")!=string::npos)
             parseError("SyntaxError","Invalid Syntax");
 
-        ast->childs.push_back(NewNode(NodeType::ID,tokens[begin+1].content));
+        ast->childs.push_back(new_node(NodeType::ID,tokens[begin+1].content));
         return ast;
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"if") == 0)
@@ -1163,12 +1145,11 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
         {
             if(tokens[begin+1].type== TokenType::LParen_TOKEN  && tokens[end].type== TokenType::RParen_TOKEN)
             {
-                vector<token> expr = {tokens.begin()+begin+2,tokens.begin()+end};
-                Node* ast = NewNode(NodeType::IF);
-                Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+                Node* ast = new_node(NodeType::IF);
+                Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                Node* conditions = NewNode(NodeType::conditions);
-                conditions->childs.push_back(parseExpr(expr));
+                Node* conditions = new_node(NodeType::conditions);
+                conditions->childs.push_back(parseExpr(tokens,begin+2,end-1));
                 ast->childs.push_back(conditions);
                 return ast;
             }
@@ -1176,24 +1157,24 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"import") == 0)
     {
-        Node* ast = NewNode(NodeType::import);
+        Node* ast = new_node(NodeType::import);
         vector<token> t;
         if(tokens_size==2)
         {
             if(tokens[begin+1].type==ID_TOKEN)
             {
                 t.push_back(tokens[begin+1]);
-                Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+                Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                ast->childs.push_back(parseExpr(t));
+                ast->childs.push_back(parseExpr(t,0,t.size()-1));
                 return ast;
             }
             if(tokens[begin+1].type== TokenType::STRING_TOKEN)
             {
                 t.push_back(tokens[begin+1]);
-                Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+                Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                ast->childs.push_back(NewNode(NodeType::STR,tokens[begin+1].content));
+                ast->childs.push_back(new_node(NodeType::STR,tokens[begin+1].content));
                 return ast;
             }
             else
@@ -1210,10 +1191,10 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             }
             ast->type = NodeType::importas;
             t.push_back(tokens[begin+1]);
-            Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+            Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(parseExpr(t));
-            ast->childs.push_back(NewNode(NodeType::ID,tokens[begin+3].content));
+            ast->childs.push_back(parseExpr(t,0,t.size()-1));
+            ast->childs.push_back(new_node(NodeType::ID,tokens[begin+3].content));
             return ast;
         }
         else if(tokens_size==4)
@@ -1226,9 +1207,9 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             #else
             tmp = merge_str(merge_str("/opt/zuko/std/",tokens[begin+3].content),".zk");
             #endif
-            Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+            Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(NewNode(NodeType::STR,tmp));
+            ast->childs.push_back(new_node(NodeType::STR,tmp));
             return ast;
         }
         else
@@ -1238,25 +1219,24 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"return") == 0)
     {
-        Node* ast = NewNode(NodeType::RETURN_NODE);
+        Node* ast = new_node(NodeType::RETURN_NODE);
         vector<token> t = {tokens.begin()+begin+1,tokens.begin()+end+1};
         if(t.size()==0)
             parseError("SyntaxError","Error expected expression after return keyword");
-        Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+        Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
         ast->childs.push_back(n);
-        ast->childs.push_back(parseExpr(t));
+        ast->childs.push_back(parseExpr(t,0,t.size()-1));
         return ast;
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"yield") == 0)
     {
         foundYield = true;
-        Node* ast = NewNode(NodeType::YIELD);
-        vector<token> t = {tokens.begin()+begin+1,tokens.begin()+end+1};
-        if(t.size()==0)
+        Node* ast = new_node(NodeType::YIELD);
+        if(begin+1 > end)
             parseError("SyntaxError","Error expected expression after yield keyword");
-        Node* n = NewNode(NodeType::line,to_string(tokens[0].ln));
+        Node* n = new_node(NodeType::line,to_string(tokens[0].ln));
         ast->childs.push_back(n);
-        ast->childs.push_back(parseExpr(t));
+        ast->childs.push_back(parseExpr(tokens,begin+1,end));
         return ast;
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0)
@@ -1268,17 +1248,17 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
             parseError("SyntaxError","Invalid Syntax");
         if(((string)tokens[begin+1].content).find("::")!=string::npos)
             parseError("SyntaxError","Invalid Syntax");
-        const char* fnprefix = prefixes.back();
+        const char* fnprefix = prefixes.arr[prefixes.size-1];
         const char* tmp = tokens[begin+1].content;
         if(atGlobalLevel())
             tmp = merge_str(fnprefix,tokens[begin+1].content);
         if(isPrivate)
             tmp = merge_str("@" , tokens[begin+1].content);
-        Node* ast = NewNode(NodeType::FUNC);
-        Node* n = NewNode(NodeType::line,to_string(tokens[begin].ln));
+        Node* ast = new_node(NodeType::FUNC);
+        Node* n = new_node(NodeType::line,to_string(tokens[begin].ln));
         ast->childs.push_back(n);
-        ast->childs.push_back(NewNode(NodeType::ID,tmp));
-        ast->childs.push_back(NewNode(NodeType::args));
+        ast->childs.push_back(new_node(NodeType::ID,tmp));
+        ast->childs.push_back(new_node(NodeType::args));
         if(tokens_size==4)
             return ast;
         vector<token> args = {tokens.begin()+begin+3,tokens.begin()+end};
@@ -1295,7 +1275,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                     parseError("SyntaxError","Invalid Syntax");
                 if(args[k+1].type!= TokenType::ID_TOKEN)
                     parseError("SyntaxError","Invalid Syntax");
-                ast->childs[2]->childs.push_back(NewNode(NodeType::ID,args[k+1].content));
+                ast->childs[2]->childs.push_back(new_node(NodeType::ID,args[k+1].content));
                 k+=1;
                 if(k<args.size()-1)// or k+1 < args.size() or in simple English(there are more parameters)
                 {
@@ -1334,7 +1314,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                             parseError("SyntaxError","Invalid Syntax");
                         found_default = true;
                         vector<token> default_expr = {args.begin()+k,args.begin()+j};
-                        ast->childs[2]->childs.back()->childs.push_back(parseExpr(default_expr));
+                        ast->childs[2]->childs.back()->childs.push_back(parseExpr(default_expr,0,default_expr.size()-1));
                         k = j+1;
                         continue;
                     }
@@ -1366,43 +1346,43 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
         }
         if(strcmp(tokens[k].content,"=")==0)
         {
-            Node* ast = NewNode(NodeType::assign,tokens[k].content);
-            vector<token> left = {tokens.begin()+begin,tokens.begin()+k};
-            if(left.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-            Node* n = NewNode(NodeType::line,to_string(tokens[k].ln));
+            Node* ast = new_node(NodeType::assign,tokens[k].content);
+            //vector<token> left = {tokens.begin()+begin,tokens.begin()+k};
+            //if(left.size()==0)
+            //    parseError("SyntaxError","Invalid Syntax");
+            Node* n = new_node(NodeType::line,to_string(tokens[k].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(parseExpr(left));
+            ast->childs.push_back(parseExpr(tokens,begin,k-1));
             vector<token> right = {tokens.begin()+k+1,tokens.begin()+end+1};
             if(right.size()==0)
                 parseError("SyntaxError","Invalid Syntax");
             if(right[0].type==KEYWORD_TOKEN && strcmp(right[0].content,"yield")==0)
             {
                 right = {right.begin()+1,right.end()};
-                ast->childs.push_back(NewNode(NodeType::YIELD));
+                ast->childs.push_back(new_node(NodeType::YIELD));
                 if(right.size()==0)
                     parseError("SyntaxError","Error expected expression after return keyword");
-                Node* n = NewNode(NodeType::line,to_string(tokens[k+1].ln));
+                Node* n = new_node(NodeType::line,to_string(tokens[k+1].ln));
                 ast->childs.back()->childs.push_back(n);
 
-                ast->childs.back()->childs.push_back(parseExpr(right));
+                ast->childs.back()->childs.push_back(parseExpr(right,0,right.size()-1));
                 foundYield = true;
                 return ast;
             }
-            ast->childs.push_back(parseExpr(right));
+            ast->childs.push_back(parseExpr(right,0,right.size()-1));
             return ast;
         }
         else if(strcmp(tokens[k].content,"+=")==0 || strcmp(tokens[k].content,"-=")==0 || strcmp(tokens[k].content,"/=")==0 || strcmp(tokens[k].content,"*=")==0 || strcmp(tokens[k].content,"^=")==0 || strcmp(tokens[k].content,"%=")==0 || strcmp(tokens[k].content,"|=")==0 || strcmp(tokens[k].content,"&=")==0 || strcmp(tokens[k].content,"<<=")==0 || strcmp(tokens[k].content,">>=")==0)
         {
-            Node* ast = NewNode(NodeType::assign);
+            Node* ast = new_node(NodeType::assign);
             vector<token> left = {tokens.begin()+begin,tokens.begin()+k};
             //line_num  = tokens[k].ln;
             if(left.size()==0 )
                 parseError("SyntaxError","Invalid Syntax");
 
-            Node* n = NewNode(NodeType::line,to_string(tokens[k].ln));
+            Node* n = new_node(NodeType::line,to_string(tokens[k].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(parseExpr(left));
+            ast->childs.push_back(parseExpr(tokens,begin,k-1));
             token o;
             o.type = OP_TOKEN;
             char* char_to_str(char);
@@ -1413,7 +1393,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
                 parseError("SyntaxError","Invalid Syntax");
             
             right.insert(right.begin(),left.begin(),left.end());
-            ast->childs.push_back(parseExpr(right));
+            ast->childs.push_back(parseExpr(right,0,right.size()-1));
             return ast;
         }
         k+=1;
@@ -1422,8 +1402,8 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     
     if(tokens[begin].type==TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"try") == 0)
     {
-        Node* line = NewNode(NodeType::line,to_string(tokens[begin].ln));
-        Node* ast = NewNode(NodeType::TRYCATCH);
+        Node* line = new_node(NodeType::line,to_string(tokens[begin].ln));
+        Node* ast = new_node(NodeType::TRYCATCH);
         ast->childs.push_back(line);
         return ast;
     }
@@ -1431,11 +1411,10 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     {
         if(tokens_size < 2)
             parseError("SyntaxError","Invalid Syntax");
-        vector<token> expr = {tokens.begin()+begin+1,tokens.begin()+end+1};
-        Node* line = NewNode(NodeType::line ,to_string(tokens[begin].ln));
-        Node* ast = NewNode(NodeType::THROW);
+        Node* line = new_node(NodeType::line ,to_string(tokens[begin].ln));
+        Node* ast = new_node(NodeType::THROW);
         ast->childs.push_back(line);
-        ast->childs.push_back(parseExpr(expr));
+        ast->childs.push_back(parseExpr(tokens,begin+1,end));
         return ast;
     }
     //Handle statements of the form
@@ -1446,37 +1425,33 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
     {
         if(tokens[k].type==TokenType::RParen_TOKEN)
         {
-            int i = match_token_right(k,TokenType::LParen_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::LParen_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k = i;
         }
         else if(tokens[k].type== TokenType::END_LIST_TOKEN)
         {
-            int i = match_token_right(k,TokenType::BEGIN_LIST_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::BEGIN_LIST_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::R_CURLY_BRACKET_TOKEN)
         {
-            int i = match_token_right(k,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
+            int i = match_token_right(k,begin,TokenType::L_CURLY_BRACKET_TOKEN,tokens);
             if(i==-1)
                 parseError("SyntaxError","Invalid Syntax");
             k=i;
         }
         else if(tokens[k].type== TokenType::OP_TOKEN && strcmp(tokens[k].content,".")==0)
         {
-
-            vector<token> lhs = {tokens.begin()+begin,tokens.begin()+k};
-            vector<token> rhs = {tokens.begin()+k+1,tokens.begin()+end+1};
-            if(lhs.size()==0 || rhs.size()==0)
-                parseError("SyntaxError","Invalid Syntax");
-            Node* ast = NewNode(NodeType::memb);
-            Node* line = NewNode(NodeType::line,to_string(tokens[0].ln));
+            Node* ast = new_node(NodeType::memb);
+            Node* line = new_node(NodeType::line,to_string(tokens[0].ln));
             ast->childs.push_back(line);
-            ast->childs.push_back(parseExpr(lhs));
-            ast->childs.push_back(parseExpr(rhs));
+           
+            ast->childs.push_back(parseExpr(tokens,begin,k-1));
+            ast->childs.push_back(parseExpr(tokens,k+1,end));
             //rhs must be a function call as stated above
 
             if(ast->childs.back()->type!=NodeType::call)
@@ -1496,7 +1471,7 @@ Node* Parser::parseStmt(const vector<token>& tokens,size_t begin,size_t end)
         dummyStmt.push_back(make_token(LParen_TOKEN,clone_str("("),0));
         dummyStmt.insert(dummyStmt.end(),tokens.begin(),tokens.end());
         dummyStmt.push_back(make_token(RParen_TOKEN,clone_str(")"),0));
-        return parseExpr(dummyStmt);
+        return parseExpr(dummyStmt,0,dummyStmt.size()-1);
     }
     parseError("SyntaxError","Unknown statement");
     return nullptr;//to avoid compiler warning otherwise the parseError function exits after printing error message
@@ -1509,7 +1484,7 @@ token bgscope_token;
 token endscope_token;
 token lp_token;
 
-Node* Parser::parse(const vector<token>& tokens,int begin,int end)
+Node* Parser::parse_block(const vector<token>& tokens,int begin,int end)
 {
     Node* ast = nullptr;
     else_token = make_token(KEYWORD_TOKEN, "else", 0);
@@ -1523,7 +1498,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
 
     size_t tokens_size = end - begin + 1;
     if(tokens_size == 0 || begin > end)
-        return NewNode(NodeType::EOP,"");
+        return new_node(NodeType::EOP,"");
 
     Node* final = nullptr; // the final ast to return
     Node* e = nullptr;//e points to the lowest rightmost node of final
@@ -1619,9 +1594,15 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
             }*/
 
             if(use_multiline)
+            {
+                line_num = multiline[0].ln;
                 ast = parseStmt(multiline, line_begin,line_end);
+            }
             else
+            {
+                line_num = tokens[line_begin].ln;
                 ast = parseStmt(tokens,line_begin,line_end);
+            }
 
             if(ast->type==NodeType::IF)
             {
@@ -1721,14 +1702,14 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     ast->type = NodeType::IFELIFELSE;
                     for(int a=0;a<(int)elifConditions.size();a++)
                     {
-                        vector<token> cond = {tokens.begin()+elifConditions[a].first,tokens.begin()+elifConditions[a].second+1};  
-                        line_num = cond[0].ln;
-                        ast->childs[1]->childs.push_back(parseExpr(cond));
+//                        vector<token> cond = {tokens.begin()+elifConditions[a].first,tokens.begin()+elifConditions[a].second+1};  
+                        line_num = tokens[elifConditions[a].first].ln;
+                        ast->childs[1]->childs.push_back(parseExpr(tokens,elifConditions[a].first,elifConditions[a].second));
                     }
 
                     bool ctxCopy = inif;
                     inif = true;
-                    ast->childs.push_back(parse(tokens,if_begin,if_end));
+                    ast->childs.push_back(parse_block(tokens,if_begin,if_end));
                     inif = ctxCopy;
 
                     for(int a=0;a<(int)elifBlocks.size();a++)
@@ -1737,24 +1718,14 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         int elif_end = elifBlocks[a].second;
                         bool ctxCopy = inelif;
                         inelif = true;
-                        Node* n = parse(tokens,elif_begin,elif_end);
+                        Node* n = parse_block(tokens,elif_begin,elif_end);
                         inelif = ctxCopy;
                         ast->childs.push_back(n);
                     }
                     ctxCopy = inelse;
                     inelse = true;
-                    ast->childs.push_back(parse(tokens,else_begin,else_end));
+                    ast->childs.push_back(parse_block(tokens,else_begin,else_end));
                     inelse = ctxCopy;
-                    if(!final)
-                    {
-                        final = ast;
-                        e = ast;
-                    }
-                    else
-                    {
-                        e->childs.push_back(ast);
-                        e = e->childs.back();
-                    }
                     begin = else_end+2;
                     k = else_end+1;
                 }
@@ -1763,13 +1734,15 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     ast->type = NodeType::IFELIF;
                     for(int a=0;a<(int)elifConditions.size();a++)
                     {
-                        vector<token> cond = {tokens.begin()+elifConditions[a].first,tokens.begin()+elifConditions[a].second+1};
-                        line_num = cond[0].ln;
-                        ast->childs[1]->childs.push_back(parseExpr(cond));
+                        //vector<token> cond = {tokens.begin()+elifConditions[a].first,tokens.begin()+elifConditions[a].second+1};
+                        size_t cond_begin = elifConditions[a].first;
+                        size_t cond_end = elifConditions[a].second;
+                        line_num = tokens[cond_begin].ln;
+                        ast->childs[1]->childs.push_back(parseExpr(tokens,cond_begin,cond_end));
                     }
                     bool ctxCopy = inif;
                     inif = true;
-                    ast->childs.push_back(parse(tokens,if_begin,if_end));
+                    ast->childs.push_back(parse_block(tokens,if_begin,if_end));
                     inif = ctxCopy;
 
                     for(int a=0;a<(int)elifBlocks.size();a++)
@@ -1778,19 +1751,9 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                         int elifblock_end = elifBlocks[a].second;
                         bool ctxCopy = inelif;
                         inelif = true;
-                        Node* n = parse(tokens,elifblock_begin,elifblock_end);
+                        Node* n = parse_block(tokens,elifblock_begin,elifblock_end);
                         inelif = ctxCopy;
                         ast->childs.push_back(n);
-                    }
-                    if(!final)
-                    {
-                        final = ast;
-                        e = ast;
-                    }
-                    else
-                    {
-                        e->childs.push_back(ast);
-                        e = e->childs.back();
                     }
                     begin=elif_end+2;
                     k = elif_end+1;
@@ -1801,23 +1764,14 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     bool ctxCopy = inif;
                     inif = true;
 
-                    ast->childs.push_back(parse(tokens,if_begin,if_end));
+                    ast->childs.push_back(parse_block(tokens,if_begin,if_end));
                     inif = ctxCopy;
                     ctxCopy = inelse;
                     inelse = true;
 
-                    ast->childs.push_back(parse(tokens,else_begin,else_end));
+                    ast->childs.push_back(parse_block(tokens,else_begin,else_end));
                     inelse = ctxCopy;
-                    if(!final)
-                    {
-                        final = ast;
-                        e = ast;
-                    }
-                    else
-                    {
-                        e->childs.push_back(ast);
-                        e = e->childs.back();
-                    }
+                    
                     begin=else_end+2;
                     k = else_end+1;
                 }
@@ -1826,18 +1780,9 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     ast->type = NodeType::IF;
                     bool ctxCopy = inif;
                     inif = true;
-                    ast->childs.push_back(parse(tokens,if_begin,if_end));
+                    ast->childs.push_back(parse_block(tokens,if_begin,if_end));
                     inif = ctxCopy;
-                    if(!final)
-                    {
-                        final = ast;
-                        e = ast;
-                    }
-                    else
-                    {
-                        e->childs.push_back(ast);
-                        e = e->childs.back();
-                    }
+                    
                     begin=if_end+2;
                     k = if_end+1;
                 }
@@ -1879,7 +1824,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 }
                 infunc = true;
                 
-                ast->childs.push_back(parse(tokens,func_begin,func_end));
+                ast->childs.push_back(parse_block(tokens,func_begin,func_end));
                 infunc = false;
                 if(!inclass)
                     currSym = aux;
@@ -1887,16 +1832,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 if(foundYield)
                     ast->type = NodeType::CORO;
 
-                if(!final)
-                {
-                    final = ast;
-                    e = ast;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
+
                 begin=func_end+2;
                 k = func_end+1;
             }
@@ -1922,23 +1858,14 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 str_vector_init(&v);
                 refgraph_emplace(refGraph,clone_str(ast->childs[1]->val.c_str()),v);
                 if(ast->val=="class")
-                    ast->childs.push_back(parse(tokens,class_begin,class_end));
+                    ast->childs.push_back(parse_block(tokens,class_begin,class_end));
                 else
-                    ast->childs.insert(ast->childs.begin()+2,parse(tokens,class_begin,class_end));
+                    ast->childs.insert(ast->childs.begin()+2,parse_block(tokens,class_begin,class_end));
                 //backtrack
                 //important: change if planning to support nested classes
                 inclass = false;
                 currSym = aux;
-                if(!final)
-                {
-                    final = ast;
-                    e = ast;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
+                
                 begin=class_end+2;
                 k = class_end+1;
             }
@@ -1960,24 +1887,19 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 nm_end -= 1;
 
                 const char* prefix = "";
-                for(auto e: prefixes)
+                for(size_t i = 0;i<prefixes.size;i++)
+                {
+                    const char* e = prefixes.arr[i];
                     prefix = merge_str(prefix,e);
+                }
                 prefix = merge_str(prefix,ast->childs[1]->val.c_str());
                 prefix = merge_str(prefix,"::");
-                prefixes.push_back(prefix);//prefix each identifier in namespace block
+                str_vector_push(&prefixes,prefix);
                 //with "namespaceName::"
-                ast->childs.push_back(parse(tokens,nm_begin,nm_end));
-                prefixes.pop_back();
-                if(!final)
-                {
-                    final = ast;
-                    e = ast;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
+                ast->childs.push_back(parse_block(tokens,nm_begin,nm_end));
+                char* tmp;
+                str_vector_pop(&prefixes,&tmp);
+            
                 begin = nm_end+2;
                 k = nm_end+1;
             }
@@ -1989,8 +1911,8 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 {
                     loop_begin = find_token_consecutive(newline_token,begin+line_size,end,tokens);
                     loop_end = find_token(newline_token,loop_begin+1,end,tokens);
-                    if(loop_end==-1 || (loop_begin<(int)tokens.size()-1 && tokens[loop_begin+1].type==END_TOKEN))
-                        parseError("SyntaxError","Error expected a code block or line after "+ast->val);
+                    if(loop_end==-1)
+                        loop_end = end;
                 }
                 else
                     loop_end = match_token(loop_begin,end,TokenType::R_CURLY_BRACKET_TOKEN,tokens);
@@ -1999,18 +1921,9 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 loop_end -= 1;
                 bool b = inloop;
                 inloop = true;
-                ast->childs.push_back(parse(tokens,loop_begin,loop_end));//inwhile = true
+                ast->childs.push_back(parse_block(tokens,loop_begin,loop_end));//inwhile = true
                 inloop = b;
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
+                
                 begin=loop_end+2;
                 k = loop_end+1;
             }
@@ -2059,7 +1972,7 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                     {
                         catch_begin = find_token_consecutive(newline_token,e+1,end,tokens);
                         catch_end = find_token(newline_token,catch_begin+1,end,tokens);
-                        if(catch_end==-1 || (catch_end<(int)tokens.size()-1 && tokens[catch_end+1].type==END_TOKEN))
+                        if(catch_end==-1)
                             parseError("SyntaxError","Error expected code block or line after catch");
                     }
                     else
@@ -2071,25 +1984,16 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
                 }
                 catch_begin += 1;
                 catch_end -= 1;
-                ast->childs.push_back(NewNode(NodeType::ID,catchId));
+                ast->childs.push_back(new_node(NodeType::ID,catchId));
                 bool ctxCopy = intry;
                 intry = true;
-                ast->childs.push_back(parse(tokens,try_begin,try_end));
+                ast->childs.push_back(parse_block(tokens,try_begin,try_end));
                 intry = ctxCopy;
                 ctxCopy = incatch;
                 incatch = true;
-                ast->childs.push_back(parse(tokens,catch_begin,catch_end));
+                ast->childs.push_back(parse_block(tokens,catch_begin,catch_end));
                 incatch = ctxCopy;
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
+                
                 begin=catch_end+2;
                 k = catch_end+1;
             }
@@ -2097,142 +2001,100 @@ Node* Parser::parse(const vector<token>& tokens,int begin,int end)
             {
                 if(!inloop)
                     parseError("SyntaxError","Error use of break or continue not allowed outside loop!");
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
                 begin = k+1;
             }
             else if(ast->type==NodeType::RETURN_NODE)
             {
                 if(!infunc)
-                {
                     parseError("SyntaxError","Error use of return statement outside functon!");
-                }
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
                 begin = k+1;
             }
             else if(ast->type==NodeType::import)
             {
-            string str = ast->childs[1]->val;
-            if(ast->childs[1]->type!=NodeType::ID)
-            {
-                Node* A;
-                if( str_vector_search(files,str.c_str()) != -1)
+                string str = ast->childs[1]->val;
+                if(ast->childs[1]->type!=NodeType::ID)
                 {
-                    A = NewNode(NodeType::file);
-                    A->childs.push_back(NewNode(NodeType::line,to_string(line_num)));
-                    A->childs.push_back(NewNode(NodeType::STR,str));
-                    A->childs.push_back(NewNode(NodeType::EOP));
-                }
-                else
-                {
-                    FILE* file = fopen(str.c_str(),"r");
-                    if(!file)
-                        parseError("ImportError",strerror(errno));
-                    str_vector_push(files,clone_str(str.c_str()));
-                    string F = filename;
-                    size_t K = line_num;
-                    filename = str;
-                    line_num = 1;
-                    string src;
-                    char ch;
-                    while((ch = fgetc(file))!=EOF)
+                    Node* A;
+                    if( str_vector_search(files,str.c_str()) != -1)
                     {
-                        src+=ch;
+                        A = new_node(NodeType::file);
+                        A->childs.push_back(new_node(NodeType::line,to_string(line_num)));
+                        A->childs.push_back(new_node(NodeType::STR,str));
+                        A->childs.push_back(new_node(NodeType::EOP));
                     }
-                    fclose(file);
-                    str_vector_push(sources,clone_str(src.c_str()));
-                    lexer lex;
-                    zuko_src tmp;
-                    zuko_src_init(&tmp);
-                    zuko_src_add_file(&tmp, clone_str(filename.c_str()),clone_str(src.c_str()));
-                    //tmp.addFile(filename,src);
-                    vector<token> tokens = lexer_generateTokens(&lex,&tmp);
-                    bool empty_file = false;
-                    if(tokens.size() == 1 && tokens[0].type==END_TOKEN)
-                      empty_file = true;
-                    if(lex.hadErr)
+                    else
                     {
+                        FILE* file = fopen(str.c_str(),"r");
+                        if(!file)
+                            parseError("ImportError",strerror(errno));
+                        str_vector_push(files,clone_str(str.c_str()));
+                        string F = filename;
+                        size_t K = line_num;
+                        filename = str;
+                        line_num = 1;
+                        string src;
+                        char ch;
+                        while((ch = fgetc(file))!=EOF)
+                        {
+                            src+=ch;
+                        }
+                        fclose(file);
+                        str_vector_push(sources,clone_str(src.c_str()));
+                        lexer lex;
+                        zuko_src tmp;
+                        zuko_src_init(&tmp);
+                        zuko_src_add_file(&tmp, clone_str(filename.c_str()),clone_str(src.c_str()));
+                        //tmp.addFile(filename,src);
+                        vector<token> tokens = lexer_generateTokens(&lex,&tmp);
+                        bool empty_file = false;
+                        if(tokens.size() == 1 && tokens[0].type==END_TOKEN)
+                            empty_file = true;
+                        if(lex.hadErr)
+                        {
+                            filename = F;
+                            line_num = K;
+                            //error was already printed
+                            exit(1);
+                        }
+                        A = new_node(NodeType::file);
+                        A->childs.push_back(new_node(NodeType::line,to_string(K)));
+                        A->childs.push_back(new_node(NodeType::STR,str));
+                        Node* subast;
+                        if(empty_file)
+                            subast = new_node(NodeType::EOP,"EOP");
+                        else
+                            subast = parse_block(tokens,0,tokens.size()-1);
+                        A->childs.push_back(subast);
                         filename = F;
                         line_num = K;
-                        //error was already printed
-                        exit(1);
-                    }
-                    A = NewNode(NodeType::file);
-                    A->childs.push_back(NewNode(NodeType::line,to_string(K)));
-                    A->childs.push_back(NewNode(NodeType::STR,str));
-                    Node* subast;
-                    if(empty_file)
-                        subast = NewNode(NodeType::EOP,"EOP");
-                    else
-                        subast = parse(tokens,0,tokens.size()-1);
-                    A->childs.push_back(subast);
-                    filename = F;
-                    line_num = K;
 
-                }
-                if(!final)
-                {
-                    final = A;
-                    e = A;
+                    }
+                    begin = k+1;
+                    delete_ast(ast);
+                    ast = A;
                 }
                 else
                 {
-                    e->childs.push_back(A);
-                    e = A;
+                    begin = k+1;
                 }
+            }
+            else
                 begin = k+1;
-                delete_ast(ast);
+
+            if(!final)
+            {
+                final = ast;
+                e = final;
             }
             else
             {
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
-                begin = k+1;
-            }
-            }
-            else
-            {
-                if(!final)
-                {
-                    final = ast;
-                    e = final;
-                }
-                else
-                {
-                    e->childs.push_back(ast);
-                    e = e->childs.back();
-                }
-                begin = k+1;
+                e->childs.push_back(ast);
+                e = e->childs.back();
             }
         }
         k+=1;
     }
-    e->childs.push_back(NewNode(NodeType::EOP));
+    e->childs.push_back(new_node(NodeType::EOP));
     return final;
 }
 

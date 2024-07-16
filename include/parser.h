@@ -27,13 +27,14 @@ SOFTWARE.*/
 #include "ast.h"
 #include "zuko-src.h"
 #include "lexer.h"
+#include "str-vec.h"
 #include <algorithm>
 #include <queue>
 
 
 
 
-Node* NewNode(NodeType type,string val="");
+Node* new_node(NodeType type,string val="");
 void stripNewlines(vector<token>& tokens);
 
 int find_token(token t,int start,const vector<token>& tokens);
@@ -54,7 +55,7 @@ class Parser
 {
 private:
   vector<token> known_constants;
-  vector<const char*> prefixes = {""};//for namespaces 
+  str_vector prefixes;//for namespaces 
   refgraph* refGraph;
   string currSym;
   str_vector* files;
@@ -86,10 +87,10 @@ private:
   }
   void parseError(string type,string msg);
   bool addSymRef(string name);
-  Node* parseExpr(const vector<token>& tokens);
-  Node* parseStmt(const vector<token>& tokens,size_t,size_t);
+  Node* parseExpr(const vector<token>& tokens,int,int);
+  Node* parseStmt(const vector<token>& tokens,int,int);
 public:
   void set_source(zuko_src* p,size_t root_idx = 0); // for error printing and stuff
-  Node* parse(const vector<token>& tokens,int begin,int end);
+  Node* parse_block(const vector<token>& tokens,int begin,int end);
 };
 #endif

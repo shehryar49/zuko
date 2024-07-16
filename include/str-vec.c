@@ -6,14 +6,14 @@ void str_vector_init (str_vector* p)
     p->capacity = 4;
     p->size = 0;
 }
-void str_vector_push(str_vector* p,char* val)
+void str_vector_push(str_vector* p,const char* val)
 {
     if(p -> size >= p->capacity)
     {
       p->arr = (char**)realloc(p->arr,sizeof(char*)*p->capacity<<1);
       p->capacity <<= 1; //p->capacity*=2;
     }
-    p->arr[p->size++] = val;
+    p->arr[p->size++] = (char*)val;
  
 }
 void str_vector_erase(str_vector* p,size_t idx)
@@ -95,7 +95,7 @@ void str_vector_assign(str_vector* p,str_vector* val)
         return;
     }
 }
-void str_vector_insert(str_vector* p,size_t idx,char* val)
+void str_vector_insert(str_vector* p,size_t idx,const char* val)
 {
   if(idx == p->size) //push
   {
@@ -112,7 +112,7 @@ void str_vector_insert(str_vector* p,size_t idx,char* val)
       p->arr[i] = p->arr[i-1];
       i--;
     }  
-    p->arr[idx] = val;
+    p->arr[idx] = (char*)val;
   }
 }
 void str_vector_insert_vector(str_vector* p,size_t idx,str_vector* sublist)
