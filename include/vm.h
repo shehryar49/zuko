@@ -123,7 +123,7 @@ extern zclass* AccessError;
 
 class VM
 {
-private:
+public:
   uint8_t* program = NULL;
   uint32_t program_size;
   uint8_t *k; // instruction pointer
@@ -165,7 +165,7 @@ private:
   void collectGarbage();
   inline void DoThreshholdBusiness();
   bool invokeOperator(const std::string& meth, zobject A, size_t args, const char* op, zobject *rhs = NULL, bool raiseErrOnNF = true); // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
-public:
+
   size_t allocated = 0;
   std::unordered_map<void*, MemInfo> memory;
   friend class Compiler;
@@ -174,7 +174,6 @@ public:
   friend void vm_mark_important(void*);
   friend void vm_unmark_important(void*);
   //the REPL mainloop function
-  friend void REPL();
   friend void dis(std::vector<uint8_t>&);
   VM();
   

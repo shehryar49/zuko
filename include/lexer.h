@@ -22,32 +22,40 @@ SOFTWARE.*/
 #ifndef LEXER_H_
 #define LEXER_H_
 
-#include <vector>
+
 #include "zuko-src.h"
 #include "token.h"
+#include "token-vector.h"
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 typedef struct lexer
 {
   const char* filename;
   const char* source_code;
   size_t srcLen;
-  bool printErr = true;
+  bool printErr;
   size_t line_num;  
-  bool hadErr = false;
-  const char* errmsg = nullptr;
+  bool hadErr;
+  const char* errmsg;
   size_t k;
   char buffer[200];
 }lexer;
 
 bool isKeyword(const char* s);
 token resolveMacro(const char* name);
-void str(lexer* ctx,std::vector<token>&);
-void macro(lexer* ctx,std::vector<token>&);
-void comment(lexer* ctx,std::vector<token>&);
-void numeric(lexer* ctx,std::vector<token>&);
-void id(lexer* ctx,std::vector<token>&);
+void str(lexer* ctx,token_vector*);
+void macro(lexer* ctx,token_vector*);
+void comment(lexer* ctx,token_vector*);
+void numeric(lexer* ctx,token_vector*);
+void id(lexer* ctx,token_vector*);
 
 void lexErr(lexer* ctx,const char* type,const char* msg);
-std::vector<token> lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr = true,size_t root_idx = 0);
+token_vector lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr,size_t root_idx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LEXER_H_

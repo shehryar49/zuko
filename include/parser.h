@@ -37,11 +37,11 @@ SOFTWARE.*/
 Node* new_node(NodeType type,string val="");
 void stripNewlines(vector<token>& tokens);
 
-int find_token(token t,int start,const vector<token>& tokens);
-int find_token_consecutive(token t,int start,int end,const vector<token>& tokens);
+int find_token(token t,int start,token* tokens);
+int find_token_consecutive(token t,int start,int end,token* tokens);
 
-int match_token(int,int,TokenType,const vector<token>&);
-int match_token_right(int,int,TokenType,const vector<token>&);
+int match_token(int,int,TokenType,token*);
+int match_token_right(int,int,TokenType,token*);
 
 void delete_ast(Node* ast);
 void copy_ast(Node*& dest,Node* src);
@@ -54,16 +54,16 @@ char* clone_str(const char* str);
 class Parser
 {
 private:
-  vector<token> known_constants;
+  token_vector known_constants;
   str_vector prefixes;//for namespaces 
   refgraph* refGraph;
-  string currSym;
+  const char* currSym;
   str_vector* files;
   str_vector* sources;
-  string filename;
+  const char* filename;
   size_t line_num = 1;
   int* num_of_constants;
-  std::string aux;
+  const char* aux;
   bool foundYield = false;
   //Context
   bool infunc;
@@ -87,10 +87,10 @@ private:
   }
   void parseError(string type,string msg);
   bool addSymRef(string name);
-  Node* parseExpr(const vector<token>& tokens,int,int);
-  Node* parseStmt(const vector<token>& tokens,int,int);
+  Node* parseExpr(token* tokens,int,int);
+  Node* parseStmt(token* tokens,int,int);
 public:
   void set_source(zuko_src* p,size_t root_idx = 0); // for error printing and stuff
-  Node* parse_block(const vector<token>& tokens,int begin,int end);
+  Node* parse_block(token* tokens,int begin,int end);
 };
 #endif

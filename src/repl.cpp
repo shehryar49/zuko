@@ -82,7 +82,11 @@ void REPL()
     tmp += ((tmp=="") ? "" : "\n") +line;
     src.sources.arr[k-1] = clone_str(tmp.c_str());
 
-    tokens = lexer_generateTokens(&lex,&src,true,k-1);
+    token_vector t = lexer_generateTokens(&lex,&src,true,k-1);
+    tokens.clear();
+    vector<token> tokens;
+    for(size_t i=0;i<t.size;i++)
+        tokens.push_back(t.arr[i]);
     int i1=0;
     for(auto tok: tokens)
     {
@@ -98,7 +102,7 @@ void REPL()
     }
     continued = false;
     parser.set_source(&src,k-1);
-    ast = parser.parse_block(tokens,0,tokens.size()-1);
+    ast = parser.parse_block(&tokens[0],0,tokens.size()-1);
 
     zobject* constants = new zobject[src.num_of_constants];
     //copy previous constants

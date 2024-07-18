@@ -2,7 +2,35 @@ cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 project(zuko)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_executable(zuko zuko.cpp src/vm.cpp src/parser.cpp src/lexer.cpp src/builtinfunc.cpp src/utility.cpp src/overflow.cpp src/convo.cpp  src/compiler.cpp src/repl.cpp src/zobject.c src/zdict.c src/zlist.c src/strmap.c src/zbytearray.c src/module.c src/klass.c src/klassobject.c src/dis.cpp src/refgraph.c src/zuko-src.c src/lntable.c src/str-vec.c src/token.c src/dyn-str.c)
+add_executable( 
+  zuko 
+  zuko.cpp 
+  src/vm.cpp 
+  src/parser.cpp 
+  src/lexer.c
+  src/builtinfunc.cpp 
+  src/utility.cpp 
+  src/overflow.cpp 
+  src/convo.cpp  
+  src/compiler.cpp 
+  src/repl.cpp 
+  src/zobject.c 
+  src/zdict.c 
+  src/zlist.c 
+  src/strmap.c 
+  src/zbytearray.c 
+  src/module.c 
+  src/klass.c 
+  src/klassobject.c  
+  src/dis.cpp 
+  src/refgraph.c  
+  src/zuko-src.c 
+  src/lntable.c 
+  src/str-vec.c 
+  src/token.c 
+  src/dyn-str.c 
+  src/token-vector.c
+)
 include_directories(include/) # even modules use this (include/zobject.h)
 if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})

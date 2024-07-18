@@ -58,12 +58,12 @@ int main(int argc, const char* argv[])
     //they are not needed during program execution
     {
         lexer lex;
-        vector<token> tokens = lexer_generateTokens(&lex,&src);
+        token_vector tokens = lexer_generateTokens(&lex,&src,true,0);
         if(lex.hadErr)//had an error which was printed
           return 0;
         Parser parser;
         parser.set_source(&src);
-        Node* ast = parser.parse_block(tokens,0,tokens.size()-1); //parse the tokens of root file
+        Node* ast = parser.parse_block(tokens.arr,0,tokens.size-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
         //print_ast(ast);
