@@ -14,6 +14,7 @@ void REPL_init()
 {
   REPL_MODE = true;
   zuko_src_init(&src);
+  parser_init(&parser);
 }
 //Implementation
 //EXPERIMENTAL!
@@ -101,8 +102,8 @@ void REPL()
       continue;
     }
     continued = false;
-    parser.set_source(&src,k-1);
-    ast = parser.parse_block(&tokens[0],0,tokens.size()-1);
+    parser_set_source(&parser,&src,k-1);
+    ast = parse_block(&parser,&tokens[0],0,tokens.size()-1);
 
     zobject* constants = new zobject[src.num_of_constants];
     //copy previous constants

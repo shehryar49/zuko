@@ -1,5 +1,6 @@
 #include <signal.h>
 #include "include/zuko.h"
+#include "parser.h"
 #include "token.h"
 #include "zuko-src.h"
 
@@ -62,8 +63,9 @@ int main(int argc, const char* argv[])
         if(lex.hadErr)//had an error which was printed
           return 0;
         Parser parser;
-        parser.set_source(&src);
-        Node* ast = parser.parse_block(tokens.arr,0,tokens.size-1); //parse the tokens of root file
+        parser_init(&parser);
+        parser_set_source(&parser,&src,0);
+        Node* ast = parse_block(&parser,tokens.arr,0,tokens.size-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
         //print_ast(ast);

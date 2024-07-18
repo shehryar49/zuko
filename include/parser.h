@@ -35,7 +35,6 @@ SOFTWARE.*/
 
 
 Node* new_node(NodeType type,string val="");
-void stripNewlines(vector<token>& tokens);
 
 int find_token(token t,int start,token* tokens);
 int find_token_consecutive(token t,int start,int end,token* tokens);
@@ -51,9 +50,8 @@ void print_ast(Node* n,int spaces = 0);
 
 
 char* clone_str(const char* str);
-class Parser
+struct Parser
 {
-private:
   token_vector known_constants;
   str_vector prefixes;//for namespaces 
   refgraph* refGraph;
@@ -75,22 +73,14 @@ private:
   bool intry;
   bool incatch;
   //in class method = inclass && infunc
-  inline bool atGlobalLevel()
-  {
-    return (!infunc && !inclass && !inloop
-     && !inif && !inelif && !inelse && !intry && !incatch);
-  }
-  inline bool isValidCtxForFunc()
-  {
-        return (!infunc  && !inloop
-     && !inif && !inelif && !inelse && !intry && !incatch);
-  }
-  void parseError(string type,string msg);
-  bool addSymRef(string name);
-  Node* parseExpr(token* tokens,int,int);
-  Node* parseStmt(token* tokens,int,int);
-public:
-  void set_source(zuko_src* p,size_t root_idx = 0); // for error printing and stuff
-  Node* parse_block(token* tokens,int begin,int end);
+  //void parseError(string type,string msg);
+  //bool addSymRef(string name);
+  //Node* parseExpr(token* tokens,int,int);
+  //Node* parseStmt(token* tokens,int,int);
+
 };
+
+void parser_init(Parser*);
+void parser_set_source(Parser*,zuko_src* p,size_t root_idx); // for error printing and stuff
+Node* parse_block(Parser*,token* tokens,int begin,int end);
 #endif
