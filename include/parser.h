@@ -32,7 +32,7 @@ SOFTWARE.*/
 
 
 
-Node* new_node(NodeType type,string val="");
+Node* new_node(NodeType type,const char*);
 
 int find_token(token t,int start,token* tokens);
 int find_token_consecutive(token t,int start,int end,token* tokens);

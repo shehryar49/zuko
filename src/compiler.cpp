@@ -37,6 +37,7 @@ SOFTWARE.*/
 #include <vector>
 #include <algorithm>
 #include <queue>
+
 using namespace std;
 
 #define INSTRUCTION(x) program.push_back(x);bytes_done++;
@@ -386,7 +387,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
                 bytes.push_back(LOADVAR_ADDINT32);
                 bytes.push_back((is_global1)? 1 : 0);
                 addBytes(bytes, i);
-                addBytes(bytes, (int32_t)atoi(ast->childs[1]->val.c_str()));
+                addBytes(bytes, (int32_t)atoi(ast->childs[1]->val));
                 bytes_done += 10;
                 return bytes;
             }
@@ -414,7 +415,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
                 bytes.push_back(LOADVAR_SUBINT32);
                 bytes.push_back((is_global1)? 1 : 0);
                 addBytes(bytes, i);
-                addBytes(bytes, (int32_t)atoi(ast->childs[1]->val.c_str()));
+                addBytes(bytes, (int32_t)atoi(ast->childs[1]->val));
                 bytes_done += 10;
                 return bytes;
             }
@@ -909,7 +910,7 @@ vector<string> Compiler::scan_class(Node* ast)
             n = n.substr(1);
         if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
         {
-            line_num = atoi(ast->childs[0]->val.c_str());
+            line_num = atoi(ast->childs[0]->val);
             compileError("NameError","Error redeclaration of "+n+".");
         }
         names.push_back(ast->val);
@@ -922,20 +923,20 @@ vector<string> Compiler::scan_class(Node* ast)
             n = n.substr(1);
         if(std::find(names.begin(),names.end(),n)!=names.end() || std::find(names.begin(),names.end(),"@"+n)!=names.end())
         {
-            line_num = atoi(ast->childs[0]->val.c_str());
+            line_num = atoi(ast->childs[0]->val);
             compileError("NameError","Error redeclaration of "+n+".");
         }
         names.push_back(ast->childs[1]->val);
         }
         else if(ast->type == NodeType::CORO) //generator function or coroutine
         {
-            line_num = atoi(ast->childs[0]->val.c_str());
+            line_num = atoi(ast->childs[0]->val);
             compileError("NameError","Error coroutine inside class not allowed.");
         }
         
         else if(ast->type==NodeType::CLASS)
         {
-        line_num = atoi(ast->childs[0]->val.c_str());
+        line_num = atoi(ast->childs[0]->val);
         compileError("SyntaxError","Error nested classes not supported");     
         }
         ast = ast->childs.back();
@@ -1038,7 +1039,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             {
                 if (ast->childs[2]->childs.size() == 2)
                 {
-                    if (ast->childs[2]->type == NodeType::add && ast->childs[2]->childs[0]->val == ast->childs[1]->val && ast->childs[2]->childs[0]->type==NodeType::ID && ast->childs[2]->childs[1]->type==NodeType::NUM && ast->childs[2]->childs[1]->val == "1")
+                    if (ast->childs[2]->type == NodeType::add && ast->childs[2]->childs[0]->val == ast->childs[1]->val && ast->childs[2]->childs[0]->type==NodeType::ID && ast->childs[2]->childs[1]->type==NodeType::NUM && strcmp(ast->childs[2]->childs[1]->val,"1") == 0)
                     {
                     bool isGlobal = false;
                     bool isSelf = false;
@@ -1824,7 +1825,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             int32_t selfIdx= 0;
             if(infunc)
             {
-                line_num = atoi(ast->childs[0]->val.c_str());
+                line_num = atoi(ast->childs[0]->val);
                 compileError("SyntaxError","Error function within function not allowed!");
             }
             const string& name = ast->childs[1]->val;
@@ -2021,7 +2022,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             if(ast->childs[1]->type == NodeType::NUM && isnum(ast->childs[1]->val))
             {
                 program.push_back(RETURN_INT32);
-                addBytes(program,(int32_t)atoi(ast->childs[1]->val.c_str()));
+                addBytes(program,(int32_t)atoi(ast->childs[1]->val));
                 bytes_done += 5;
             }
             else

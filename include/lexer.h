@@ -30,6 +30,8 @@ SOFTWARE.*/
 extern "C"{
 #endif
 
+char* int64_to_string(int64_t x);
+
 typedef struct lexer
 {
   const char* filename;

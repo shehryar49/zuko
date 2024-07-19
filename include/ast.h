@@ -99,7 +99,7 @@ enum class NodeType
 // No oop nonsense
 struct Node
 {
-  std::string val;
+  const char* val;
   NodeType type;
   vector<Node*> childs;
 };
