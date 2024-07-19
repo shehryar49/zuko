@@ -35,6 +35,8 @@ SOFTWARE.*/
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <queue>
 using namespace std;
 
 #define INSTRUCTION(x) program.push_back(x);bytes_done++;

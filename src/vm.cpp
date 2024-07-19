@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
 //not defining this macro will always result in the simple switch based interpret loop

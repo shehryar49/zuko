@@ -329,6 +329,17 @@ bool addSymRef(Parser* ctx,string name)
         str_vector_push(neighbours,clone_str(name.c_str()));
     return true;
 }
+inline int find_op(const char* prec[5][7],int i,const char* op)
+{
+    int j = 0;
+    while(prec[i][j] != NULL)
+    {
+        if(strcmp(prec[i][j],op) == 0)
+            return j;
+        j+=1;
+    }
+    return -1;
+}
 Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
 {   
     if(begin > end)
@@ -399,23 +410,23 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
 
     /////////
     //Following precdence is in reverse order
-    static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","^"},{"+","-"},{"/","*","%"}};
-    static vector<vector<NodeType>> opNodeTypes = 
-            {
+    //static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","^"},{"+","-"},{"/","*","%"}};
+    static const char* prec[5][7] = {{"and","or","is",NULL},{"<",">","<=",">=","==","!=",NULL},{"<<",">>","&","|","^",NULL},{"+","-",NULL},{"/","*","%",NULL}};
+    static NodeType op_node_types[5][7] = {
             {NodeType::AND,NodeType::OR,NodeType::IS},
             {NodeType::lt,NodeType::gt,NodeType::lte,NodeType::gte,NodeType::equal,NodeType::noteq},
             {NodeType::lshift,NodeType::rshift,NodeType::bitwiseand,NodeType::bitwiseor,NodeType::XOR},
             {NodeType::add,NodeType::sub},
             {NodeType::div,NodeType::mul,NodeType::mod}
-            };
-    static int l = prec.size();
+    };
+    static int l = 5;
     int k = tokens_size-1;
     
     for(int i=0;i<l;++i)
     {
-        vector<string>& op_set = prec[i];
+        //vector<string>& op_set = prec[i];
         k = end;;
-        std::vector<string>::iterator m = op_set.end();
+        int m = 0;
         size_t size_max = -1;
         while(k >=begin)
         {
@@ -441,10 +452,9 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
                 parseError(ctx,"SyntaxError","Invalid Syntax");
             k=i;
         }
-        else if(tokens[k].type== TokenType::OP_TOKEN && ((m = std::find(op_set.begin(),op_set.end(),tokens[k].content))!=op_set.end()) && k!=begin)
+        else if(tokens[k].type== TokenType::OP_TOKEN && ((m = find_op(prec,i,tokens[k].content))!=-1) && k!=begin)
         {
-            int l = m - op_set.begin();
-            Node* ast = new_node(opNodeTypes[i][l]);
+            Node* ast = new_node(op_node_types[i][m]);
             ast->childs.push_back(parseExpr(ctx,tokens,begin,k-1));
             ast->childs.push_back(parseExpr(ctx,tokens,k+1,end));
             return ast;

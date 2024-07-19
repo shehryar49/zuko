@@ -28,8 +28,6 @@ SOFTWARE.*/
 #include "zuko-src.h"
 #include "lexer.h"
 #include "str-vec.h"
-#include <algorithm>
-#include <queue>
 
 
 
