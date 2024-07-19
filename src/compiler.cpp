@@ -282,14 +282,14 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
             bytes_done += 1 + sizeof(int32_t);
             return bytes;
         }
-        else if (ast->type ==  NodeType::BOOL)
+        else if (ast->type ==  NodeType::BOOL_NODE)
         {
             const string& n = ast->val;
             bytes.push_back((n == "true") ? LOAD_TRUE : LOAD_FALSE);
             bytes_done+=1;
             return bytes;
         }
-        else if (ast->type == NodeType::STR)
+        else if (ast->type == NodeType::STR_NODE)
         {
             bytes.push_back(LOAD_STR);
             const string& n = ast->val;
@@ -304,7 +304,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
             bytes_done += 1;
             return bytes;
         }
-        else if (ast->type == NodeType::ID)
+        else if (ast->type == NodeType::ID_NODE)
         {
             const string& name = ast->val;
             bool isGlobal = false;
@@ -334,7 +334,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
             return bytes;
             }
         }
-        else if (ast->type == NodeType::BYTE)
+        else if (ast->type == NodeType::BYTE_NODE)
         {
             bytes.push_back(LOAD_BYTE);
             bytes.push_back(tobyte(ast->val));
@@ -376,7 +376,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
     }
     if (ast->type == NodeType::add)
     {
-        if(ast->childs[0]->type == NodeType::ID && ast->childs[1]->type == NodeType::NUM && isnum(ast->childs[1]->val))
+        if(ast->childs[0]->type == NodeType::ID_NODE && ast->childs[1]->type == NodeType::NUM && isnum(ast->childs[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -404,7 +404,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
     }
     if (ast->type == NodeType::sub)
     {
-        if(ast->childs[0]->type == NodeType::ID && ast->childs[1]->type == NodeType::NUM && isnum(ast->childs[1]->val))
+        if(ast->childs[0]->type == NodeType::ID_NODE && ast->childs[1]->type == NodeType::NUM && isnum(ast->childs[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -431,7 +431,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
     
         return bytes;
     }
-    if (ast->type == NodeType::div)
+    if (ast->type == NodeType::div_node)
     {
         
         vector<uint8_t> a = expr_bytecode(ast->childs[0]);
@@ -455,7 +455,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
         bytes_done += 1;
         return bytes;
     }
-    if (ast->type == NodeType::XOR)
+    if (ast->type == NodeType::XOR_node)
     {
         
         vector<uint8_t> a = expr_bytecode(ast->childs[0]);
@@ -560,7 +560,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
         bytes.insert(bytes.end(), a.begin(), a.end());
         add_lntable_entry(bytes_done);
         bytes.push_back(MEMB);
-        if (ast->childs[1]->type != NodeType::ID)
+        if (ast->childs[1]->type != NodeType::ID_NODE)
             compileError("SyntaxError", "Invalid Syntax");
         const string& name = ast->childs[1]->val;
         foo = add_to_vm_strings(name);
@@ -590,7 +590,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
 
         return bytes;
     }
-    if (ast->type == NodeType::IS)
+    if (ast->type == NodeType::IS_node)
     {
         
         vector<uint8_t> a = expr_bytecode(ast->childs[0]);
@@ -714,7 +714,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
         bytes_done += 1;
         return bytes;
     }
-    if (ast->type == NodeType::NOT)
+    if (ast->type == NodeType::NOT_node)
     {
         
         vector<uint8_t> val = expr_bytecode(ast->childs[0]);
@@ -724,12 +724,12 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
         bytes_done += 1;
         return bytes;
     }
-    if (ast->type == NodeType::index)
+    if (ast->type == NodeType::index_node)
     {
         int32_t idx1;
         int32_t idx2;
 
-        if(ast->childs[0]->type == NodeType::ID && ast->childs[1]->type == NodeType::ID)
+        if(ast->childs[0]->type == NodeType::ID_NODE && ast->childs[1]->type == NodeType::ID_NODE)
         {
             bool self1 = false;
             bool self2 = false;
@@ -882,7 +882,7 @@ vector<uint8_t> Compiler::expr_bytecode(Node* ast)
             return bytes;
         }
     }
-    if (ast->type == NodeType::YIELD)
+    if (ast->type == NodeType::YIELD_node)
     {
     if(inConstructor)
         compileError("SyntaxError","Error class constructor can not be generators!");
@@ -1035,11 +1035,11 @@ vector<uint8_t> Compiler::compile(Node* ast)
             
             string name = ast->childs[1]->val;
             bool doit = true;
-            if (ast->childs[1]->type == NodeType::ID)
+            if (ast->childs[1]->type == NodeType::ID_NODE)
             {
                 if (ast->childs[2]->childs.size() == 2)
                 {
-                    if (ast->childs[2]->type == NodeType::add && ast->childs[2]->childs[0]->val == ast->childs[1]->val && ast->childs[2]->childs[0]->type==NodeType::ID && ast->childs[2]->childs[1]->type==NodeType::NUM && strcmp(ast->childs[2]->childs[1]->val,"1") == 0)
+                    if (ast->childs[2]->type == NodeType::add && ast->childs[2]->childs[0]->val == ast->childs[1]->val && ast->childs[2]->childs[0]->type==NodeType::ID_NODE && ast->childs[2]->childs[1]->type==NodeType::NUM && strcmp(ast->childs[2]->childs[1]->val,"1") == 0)
                     {
                     bool isGlobal = false;
                     bool isSelf = false;
@@ -1090,7 +1090,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                     bytes_done += 5;
                 }
             }
-            else if (ast->childs[1]->type == NodeType::index)
+            else if (ast->childs[1]->type == NodeType::index_node)
             {
                 //reassign index
                 vector<uint8_t> M = expr_bytecode(ast->childs[1]->childs[0]);
@@ -1108,7 +1108,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 //reassign object member
                 vector<uint8_t> lhs = expr_bytecode(ast->childs[1]->childs[0]);
                 program.insert(program.end(),lhs.begin(),lhs.end());
-                if(ast->childs[1]->childs[1]->type!=NodeType::ID)
+                if(ast->childs[1]->childs[1]->type!=NodeType::ID_NODE)
                     compileError("SyntaxError","Invalid Syntax");
                 string mname = ast->childs[1]->childs[1]->val;
                 vector<uint8_t> val = expr_bytecode(ast->childs[2]);
@@ -2037,7 +2037,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
                 bytes_done += 1;
             }
         }
-        else if (ast->type == NodeType::THROW)
+        else if (ast->type == NodeType::THROW_node)
         {   
             vector<uint8_t> val = expr_bytecode(ast->childs[1]);
             program.insert(program.end(), val.begin(), val.end());
@@ -2045,7 +2045,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.push_back(THROW);
             bytes_done += 1;
         }
-        else if (ast->type == NodeType::YIELD)
+        else if (ast->type == NodeType::YIELD_node)
         {
             if(inConstructor)
                 compileError("SyntaxError","Error class constructor can not be generators!");
@@ -2056,7 +2056,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.push_back(YIELD);
             bytes_done += 1;
         }
-        else if (ast->type == NodeType::BREAK)
+        else if (ast->type == NodeType::BREAK_node)
         {
             program.push_back(GOTONPSTACK);
             breakIdx.push_back(bytes_done+5);
@@ -2075,7 +2075,7 @@ vector<uint8_t> Compiler::compile(Node* ast)
             program.push_back(GC);
             bytes_done+=1;
         }
-        else if (ast->type == NodeType::CONTINUE)
+        else if (ast->type == NodeType::CONTINUE_node)
         {
             if(infor)
             {

@@ -360,7 +360,7 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
         }
         else if(tokens[begin].type== TokenType::BOOL_TOKEN )
         {
-            ast = new_node(NodeType::BOOL,tokens[begin].content);
+            ast = new_node(NodeType::BOOL_NODE,tokens[begin].content);
             return ast;
         }
         else if(tokens[begin].type == TokenType::ID_TOKEN)
@@ -373,7 +373,7 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
                 if((done = addSymRef(ctx,ctx->aux)))
                     break;
             }
-            ast = new_node(NodeType::ID,tokens[begin].content);
+            ast = new_node(NodeType::ID_NODE,tokens[begin].content);
             return ast;
         }
         else if(tokens[begin].type == TokenType::NUM_TOKEN && isnum(tokens[begin].content))
@@ -383,12 +383,12 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
         }
         else if(tokens[begin].type == TokenType::BYTE_TOKEN)
         {
-            ast = new_node(NodeType::BYTE,tokens[begin].content);
+            ast = new_node(NodeType::BYTE_NODE,tokens[begin].content);
             return ast;
         }
         else if(tokens[begin].type == STRING_TOKEN)
         {
-            ast = new_node(NodeType::STR,tokens[begin].content);
+            ast = new_node(NodeType::STR_NODE,tokens[begin].content);
             return ast;
         }
         else if(tokens[begin].type== TokenType::FLOAT_TOKEN || tokens[begin].type== TokenType::NUM_TOKEN)
@@ -413,11 +413,11 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
     //static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","^"},{"+","-"},{"/","*","%"}};
     static const char* prec[5][7] = {{"and","or","is",NULL},{"<",">","<=",">=","==","!=",NULL},{"<<",">>","&","|","^",NULL},{"+","-",NULL},{"/","*","%",NULL}};
     static NodeType op_node_types[5][7] = {
-            {NodeType::AND,NodeType::OR,NodeType::IS},
+            {NodeType::AND,NodeType::OR,NodeType::IS_node},
             {NodeType::lt,NodeType::gt,NodeType::lte,NodeType::gte,NodeType::equal,NodeType::noteq},
-            {NodeType::lshift,NodeType::rshift,NodeType::bitwiseand,NodeType::bitwiseor,NodeType::XOR},
+            {NodeType::lshift,NodeType::rshift,NodeType::bitwiseand,NodeType::bitwiseor,NodeType::XOR_node},
             {NodeType::add,NodeType::sub},
-            {NodeType::div,NodeType::mul,NodeType::mod}
+            {NodeType::div_node,NodeType::mul,NodeType::mod}
     };
     static int l = 5;
     int k = tokens_size-1;
@@ -505,7 +505,7 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
         }
         else if(strcmp(tokens[begin].content,"!") == 0)
         {
-            Node* ast = new_node(NodeType::NOT,"");
+            Node* ast = new_node(NodeType::NOT_node,"");
             ast->childs.push_back(parseExpr(ctx,tokens,begin+1,end));
             return ast;
         }
@@ -518,7 +518,7 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
             parseError(ctx,"SyntaxError","Invalid Syntax");
         if(i != begin)
         {
-            Node* ast = new_node(NodeType::index,"");
+            Node* ast = new_node(NodeType::index_node,"");
             ast->childs.push_back(parseExpr(ctx,tokens,begin,i-1));
             ast->childs.push_back(parseExpr(ctx,tokens,i+1,end-1));
             return ast;
@@ -731,7 +731,7 @@ Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
 
             Node* n = new_node(NodeType::line,clone_str(to_string(tokens[begin].ln).c_str()));
             ast->childs.push_back(n);
-            ast->childs.push_back(new_node(NodeType::ID,tokens[begin].content));
+            ast->childs.push_back(new_node(NodeType::ID_NODE,tokens[begin].content));
             bool done = false;
             for(size_t i = 1;i <= ctx->prefixes.size; i++)
             {
@@ -894,7 +894,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         {
             ctx->foundYield = true;
             expr_begin++;
-            ast->childs.push_back(new_node(NodeType::YIELD,""));
+            ast->childs.push_back(new_node(NodeType::YIELD_node,""));
             if(expr_begin > expr_end)
                 parseError(ctx,"SyntaxError","Error expected expression after return keyword");
             Node* n = new_node(NodeType::line ,int64_to_string(tokens[begin].ln));
@@ -908,7 +908,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
 
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && (strcmp(tokens[begin].content,"break")==0 || strcmp(tokens[begin].content,"continue") == 0) && begin==end)
     {
-        Node* ast = new_node((strcmp(tokens[begin].content , "break") == 0) ? NodeType::BREAK : NodeType::CONTINUE,"");
+        Node* ast = new_node((strcmp(tokens[begin].content , "break") == 0) ? NodeType::BREAK_node : NodeType::CONTINUE_node,"");
         ast->childs.push_back(new_node(NodeType::line,int64_to_string(tokens[begin].ln)));
         return ast;
     }
@@ -924,7 +924,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
                 Node* ast = new_node(NodeType::call,"");
                 Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                ast->childs.push_back(new_node(NodeType::ID,tokens[begin].content));
+                ast->childs.push_back(new_node(NodeType::ID_NODE,tokens[begin].content));
                 bool done = false;
                 for(size_t i = 1;i <= ctx->prefixes.size; i++)
                 {
@@ -999,7 +999,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
                     Node* p = new_node(NodeType::call,"");
                     Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
                     p->childs.push_back(n);
-                    p->childs.push_back(new_node(NodeType::ID,"println"));
+                    p->childs.push_back(new_node(NodeType::ID_NODE,"println"));
                     Node* args = new_node(NodeType::args,"");
                     args->childs.push_back(ast);
                     p->childs.push_back(args);
@@ -1043,7 +1043,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         const char* tmp = tokens[begin+1].content;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        ast->childs.push_back(new_node(NodeType::ID,tmp));
+        ast->childs.push_back(new_node(NodeType::ID_NODE,tmp));
         if(extendedClass)
         {
             ast->childs.push_back(parseExpr(ctx,tokens,begin+3,end));
@@ -1134,7 +1134,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
                 ast->childs.push_back(new_node(NodeType::decl,""));
             else
                 ast->childs.push_back(new_node(NodeType::nodecl,""));
-            ast->childs.push_back(new_node(NodeType::ID,tokens[init_begin].content));
+            ast->childs.push_back(new_node(NodeType::ID_NODE,tokens[init_begin].content));
             ast->childs.push_back(parseExpr(ctx,tokens,init_expr_begin,init_expr_end));
             ast->childs.push_back(parseExpr(ctx,tokens,endpoint_begin,endpoint_end));
             if(use_default_inc)
@@ -1164,7 +1164,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         Node* exprAST = parseExpr(ctx,tokens,begin+3,end);
         Node* ast = new_node(NodeType::FOREACH,"");
         Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
-        ast->childs = {n,new_node(NodeType::ID,tokens[begin+1].content),exprAST};
+        ast->childs = {n,new_node(NodeType::ID_NODE,tokens[begin+1].content),exprAST};
         token Q;
         Q.type = TokenType::NUM_TOKEN;
         Q.content = "-1";
@@ -1184,7 +1184,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         if(((string)tokens[1].content).find("::")!=string::npos)
             parseError(ctx,"SyntaxError","Invalid Syntax");
 
-        ast->childs.push_back(new_node(NodeType::ID,tokens[begin+1].content));
+        ast->childs.push_back(new_node(NodeType::ID_NODE,tokens[begin+1].content));
         return ast;
     }
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"if") == 0)
@@ -1219,7 +1219,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
             {
                 Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
                 ast->childs.push_back(n);
-                ast->childs.push_back(new_node(NodeType::STR,tokens[begin+1].content));
+                ast->childs.push_back(new_node(NodeType::STR_NODE,tokens[begin+1].content));
                 return ast;
             }
             else
@@ -1239,7 +1239,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
             Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
             ast->childs.push_back(n);
             ast->childs.push_back(parseExpr(ctx,tokens,begin+1,begin+1));
-            ast->childs.push_back(new_node(NodeType::ID,tokens[begin+3].content));
+            ast->childs.push_back(new_node(NodeType::ID_NODE,tokens[begin+3].content));
             return ast;
         }
         else if(tokens_size==4)
@@ -1254,7 +1254,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
             #endif
             Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
             ast->childs.push_back(n);
-            ast->childs.push_back(new_node(NodeType::STR,tmp));
+            ast->childs.push_back(new_node(NodeType::STR_NODE,tmp));
             return ast;
         }
         else
@@ -1277,7 +1277,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
     if(tokens[begin].type== TokenType::KEYWORD_TOKEN && strcmp(tokens[begin].content,"yield") == 0)
     {
         ctx->foundYield = true;
-        Node* ast = new_node(NodeType::YIELD,"");
+        Node* ast = new_node(NodeType::YIELD_node,"");
         if(begin+1 > end)
             parseError(ctx,"SyntaxError","Error expected expression after yield keyword");
         Node* n = new_node(NodeType::line,int64_to_string(tokens[0].ln));
@@ -1303,7 +1303,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         Node* ast = new_node(NodeType::FUNC,"");
         Node* n = new_node(NodeType::line,int64_to_string(tokens[begin].ln));
         ast->childs.push_back(n);
-        ast->childs.push_back(new_node(NodeType::ID,tmp));
+        ast->childs.push_back(new_node(NodeType::ID_NODE,tmp));
         ast->childs.push_back(new_node(NodeType::args,""));
         if(tokens_size==4)
             return ast;
@@ -1323,7 +1323,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
                     parseError(ctx,"SyntaxError","Invalid Syntax");
                 if(tokens[k+1].type!= TokenType::ID_TOKEN)
                     parseError(ctx,"SyntaxError","Invalid Syntax");
-                ast->childs[2]->childs.push_back(new_node(NodeType::ID,tokens[k+1].content));
+                ast->childs[2]->childs.push_back(new_node(NodeType::ID_NODE,tokens[k+1].content));
                 k+=1;
                 if(k<args_end)// or k+1 < args.size() or in simple English(there are more parameters)
                 {
@@ -1407,7 +1407,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
             if(tokens[rhs_begin].type==KEYWORD_TOKEN && strcmp(tokens[rhs_begin].content,"yield")==0)
             {
                 rhs_begin++;
-                ast->childs.push_back(new_node(NodeType::YIELD,""));
+                ast->childs.push_back(new_node(NodeType::YIELD_node,""));
                 if(rhs_begin > rhs_end)
                     parseError(ctx,"SyntaxError","Error expected expression after return keyword");
                 Node* n = new_node(NodeType::line,int64_to_string(tokens[k+1].ln));
@@ -1459,7 +1459,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         if(tokens_size < 2)
             parseError(ctx,"SyntaxError","Invalid Syntax");
         Node* line = new_node(NodeType::line ,int64_to_string(tokens[begin].ln));
-        Node* ast = new_node(NodeType::THROW,"");
+        Node* ast = new_node(NodeType::THROW_node,"");
         ast->childs.push_back(line);
         ast->childs.push_back(parseExpr(ctx,tokens,begin+1,end));
         return ast;
@@ -2031,7 +2031,7 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
                 }
                 catch_begin += 1;
                 catch_end -= 1;
-                ast->childs.push_back(new_node(NodeType::ID,catchId));
+                ast->childs.push_back(new_node(NodeType::ID_NODE,catchId));
                 bool ctxCopy = ctx->intry;
                 ctx->intry = true;
                 ast->childs.push_back(parse_block(ctx,tokens,try_begin,try_end));
@@ -2044,7 +2044,7 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
                 begin=catch_end+2;
                 k = catch_end+1;
             }
-            else if(ast->type==NodeType::BREAK || ast->type==NodeType::CONTINUE)
+            else if(ast->type==NodeType::BREAK_node || ast->type==NodeType::CONTINUE_node)
             {
                 if(!ctx->inloop)
                     parseError(ctx,"SyntaxError","Error use of break or continue not allowed outside loop!");
@@ -2059,14 +2059,14 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
             else if(ast->type==NodeType::import)
             {
                 const char* str = ast->childs[1]->val;
-                if(ast->childs[1]->type!=NodeType::ID)
+                if(ast->childs[1]->type!=NodeType::ID_NODE)
                 {
                     Node* A;
                     if( str_vector_search(ctx->files,str) != -1)
                     {
                         A = new_node(NodeType::file,"");
                         A->childs.push_back(new_node(NodeType::line,int64_to_string(ctx->line_num)));
-                        A->childs.push_back(new_node(NodeType::STR,str));
+                        A->childs.push_back(new_node(NodeType::STR_NODE,str));
                         A->childs.push_back(new_node(NodeType::EOP,""));
                     }
                     else
@@ -2108,7 +2108,7 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
                         }
                         A = new_node(NodeType::file,"");
                         A->childs.push_back(new_node(NodeType::line,int64_to_string(K)));
-                        A->childs.push_back(new_node(NodeType::STR,str));
+                        A->childs.push_back(new_node(NodeType::STR_NODE,str));
                         Node* subast;
                         if(empty_file)
                             subast = new_node(NodeType::EOP,"EOP");

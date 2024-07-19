@@ -24,7 +24,7 @@ SOFTWARE.*/
 #include <vector>
 #include <string>
 using namespace std;
-enum class NodeType
+enum NodeType
 {
   declare,
   import,
@@ -45,7 +45,7 @@ enum class NodeType
   IFELSE,
   IFELIF,
   IFELIFELSE,
-  THROW,
+  THROW_node,
   TRYCATCH,
   FUNC,
   CORO,
@@ -53,9 +53,9 @@ enum class NodeType
   EXTCLASS,
   RETURN_NODE,//RETURN name collides with some name in libreadline
   EOP, //end of program, also marks the end of tree
-  YIELD,
-  BREAK,
-  CONTINUE,
+  YIELD_node,
+  BREAK_node,
+  CONTINUE_node,
   call,
   args,
   line,
@@ -65,16 +65,16 @@ enum class NodeType
   add,
   sub,
   mul,
-  div,
+  div_node,
   mod,
-  XOR,
+  XOR_node,
   lshift,
   rshift,
   bitwiseand,
   bitwiseor,
   AND,
   OR,
-  IS,
+  IS_node,
   lt,
   gt,
   lte,
@@ -83,17 +83,17 @@ enum class NodeType
   noteq,
   neg,
   complement,
-  NOT,
-  index,
+  NOT_node,
+  index_node,
   dict,
   list,
   NUM,
   FLOAT,
   NIL,
-  STR,
-  BOOL,
-  BYTE,
-  ID,
+  STR_NODE,
+  BOOL_NODE,
+  BYTE_NODE,
+  ID_NODE,
   conditions,
 };
 // No oop nonsense
