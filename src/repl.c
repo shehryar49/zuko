@@ -1,13 +1,13 @@
 #include "parser.h"
 #include "zuko-src.h"
-#include "zuko.h"
+#include <stdint.h>
+#include <stdio.h>
 #include <readline/readline.h>
-
 bool REPL_MODE = false;
 static zuko_src src;
 static int32_t k = 0;
 static size_t stackSize = 0;//total globals added by VM initially
-static Compiler compiler;
+//static Compiler compiler;
 static Parser parser;
 
 void REPL_init()
@@ -20,7 +20,7 @@ void REPL_init()
 //EXPERIMENTAL!
 void REPL()
 {
-  static string filename;
+/*  static string filename;
   k = src.files.size+1;
   filename = "<stdin-"+to_string(k)+">";
   zuko_src_add_file(&src,clone_str(filename.c_str()),clone_str(""));
@@ -29,7 +29,7 @@ void REPL()
   compiler.reduceStackTo(stackSize);
   lexer lex;
   string line;
-  size_t offset = compiler.bytecode.size();
+  size_t offset = compiler.bytecode.size;
   vector<token> tokens;
   Node* ast;
   bool continued = false;
@@ -60,9 +60,9 @@ void REPL()
       exit(0);
     else if(line == ".showstack")
     {
-      for(size_t i=0;i<vm.STACK.size;i++)
+      for(size_t i=0;i<STACK.size;i++)
       {
-        zobject e = vm.STACK.arr[i];
+        zobject e = STACK.arr[i];
         printf("%s\n",zobjectToStr(e).c_str());
       }
       continue;
@@ -72,7 +72,7 @@ void REPL()
       printf("vm.total_constants = %d\n",vm.total_constants);
       for(int i=0;i<vm.total_constants;i++)
       {
-        zobject e = vm.constants[i];
+        zobject e = vm_constants[i];
         printf("%s\n",zobjectToStr(e).c_str());
       }
       continue;
@@ -108,30 +108,30 @@ void REPL()
     zobject* constants = new zobject[src.num_of_constants];
     //copy previous constants
     for(int i=0;i<vm.total_constants;i++)
-      constants[i] = vm.constants[i];
-    if(vm.constants)
-      delete[] vm.constants;
-    vm.constants = constants;
+      constants[i] = vm_constants[i];
+    if(vm_constants)
+      delete[] vm_constants;
+    vm_constants = constants;
     compiler.set_source(&src,k-1);
-    vector<uint8_t>& bytecode = compiler.compileProgram(ast,0,NULL,Compiler::OPT_COMPILE_DEADCODE); //ask the compiler to add previous bytecode before
+    uint8_t* bytecode = compiler.compileProgram(ast,0,NULL,Compiler::OPT_COMPILE_DEADCODE); //ask the compiler to add previous bytecode before
     
-    stackSize = compiler.globals.size();
+    stackSize = compiler.globals.size;
     delete_ast(ast);
     
     vm.load(bytecode,&src);
     vm.interpret(offset,false);//
-    if(vm.STACK.size > stackSize)
-        zlist_erase_range(&vm.STACK,stackSize,vm.STACK.size - 1);
-    else if(vm.STACK.size < stackSize)
+    if(STACK.size > stackSize)
+        zlist_erase_range(&STACK,stackSize,STACK.size - 1);
+    else if(STACK.size < stackSize)
     {
-      compiler.reduceStackTo(vm.STACK.size);
-      stackSize = vm.STACK.size;
+      compiler.reduceStackTo(STACK.size);
+      stackSize = STACK.size;
     }
-    bytecode.pop_back();//pop OP_EXIT
-    offset=bytecode.size();
+//    bytecode.pop_back();//pop OP_EXIT
+  //  offset=bytecode.size();
     k = src.files.size+1;
     filename = "<stdin-"+to_string(k)+">";
     zuko_src_add_file(&src,clone_str(filename.c_str()),clone_str(""));
 
-  }
+  }*/
 }

@@ -26,17 +26,20 @@ SOFTWARE.*/
 #ifndef BUILTIN_FUNC_H_
 #define BUILTIN_FUNC_H_
 #include "zobject.h"
-#include <vector>
-#include <unordered_map>
-#include <string>
+#include "builtin-map.h"
+#include "ptr-vector.h"
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 typedef zobject(*BuiltinFunc)(zobject*,int32_t);
 
 zobject Z_ISALPHA(zobject* args,int32_t argc);
 zobject ASCII(zobject* args,int32_t argc);
 zobject TOCHAR(zobject* args,int32_t argc);
-void printzdict(zdict* l,std::vector<void*> seen = {});
-void printList(zlist* l,std::vector<void*> seen = {});
-void printByteArray(zbytearr* arr);
+void print_zdict(zdict* l,ptr_vector* seen);
+void print_zlist(zlist* l,ptr_vector* seen);
+void print_zbytearray(zbytearr* arr);
 zobject print(zobject* args,int32_t argc);
 zobject PRINTF(zobject* args,int32_t argc);
 zobject FORMAT(zobject* args,int32_t argc);
@@ -122,10 +125,14 @@ zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc);
 
 ////////////////////
 ///////////////
-extern std::unordered_map<std::string,BuiltinFunc> funcs;
+extern bmap funcs;
 void initFunctions();
 void initMethods();
-zobject callmethod(std::string name,zobject* args,int32_t argc);
-bool function_exists(std::string name);
+zobject callmethod(const char* name,zobject* args,int32_t argc);
+bool function_exists(const char* name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

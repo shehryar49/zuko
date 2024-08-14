@@ -3,16 +3,13 @@
 //This header should only be included by the zuko interpreter
 
 
-#include <vector>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <string>
-#include <unordered_map>
 #include <errno.h>
 #include <string.h>
 #include <math.h>
-#include <cstdint>
+#include <stdint.h>
 
 #if defined(__linux__) || defined(__APPLE__)
     #include <dlfcn.h>
@@ -49,7 +46,7 @@
 #include "builtinfunc.h"
 #include "vm.h"
 #include "lexer.h"
-#include "utility.h"
+#include "misc.h"
 #include "zuko-src.h"
 #include "repl.h"
 #include "dis.h"

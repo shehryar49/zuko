@@ -22,7 +22,6 @@ SOFTWARE.*/
 #ifndef PARSER_H_
 #define PARSER_H_
 #include "refgraph.h"
-#include "utility.h"
 #include "token.h"
 #include "ast.h"
 #include "zuko-src.h"
@@ -30,25 +29,27 @@ SOFTWARE.*/
 #include "str-vec.h"
 
 
-
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 Node* new_node(NodeType type,const char*);
 
-int find_token(token t,int start,token* tokens);
+int find_token(token t,int start,int end,token* tokens);
 int find_token_consecutive(token t,int start,int end,token* tokens);
 
 int match_token(int,int,TokenType,token*);
 int match_token_right(int,int,TokenType,token*);
 
 void delete_ast(Node* ast);
-void copy_ast(Node*& dest,Node* src);
+void copy_ast(Node** dest,Node* src);
 
 // Function to print AST in tablular form
-void print_ast(Node* n,int spaces = 0);
+void print_ast(Node* n,int spaces);
 
 
 char* clone_str(const char* str);
-struct Parser
+typedef struct Parser
 {
   token_vector known_constants;
   str_vector prefixes;//for namespaces 
@@ -57,10 +58,10 @@ struct Parser
   str_vector* files;
   str_vector* sources;
   const char* filename;
-  size_t line_num = 1;
+  size_t line_num;
   int* num_of_constants;
   const char* aux;
-  bool foundYield = false;
+  bool foundYield ;
   //Context
   bool infunc;
   bool inclass;
@@ -70,15 +71,13 @@ struct Parser
   bool inelse;
   bool intry;
   bool incatch;
-  //in class method = inclass && infunc
-  //void parseError(string type,string msg);
-  //bool addSymRef(string name);
-  //Node* parseExpr(token* tokens,int,int);
-  //Node* parseStmt(token* tokens,int,int);
-
-};
-
+}Parser;
+char* merge_str(const char*,const char*);
 void parser_init(Parser*);
+void parser_destroy(Parser*);
 void parser_set_source(Parser*,zuko_src* p,size_t root_idx); // for error printing and stuff
 Node* parse_block(Parser*,token* tokens,int begin,int end);
+#ifdef __cplusplus
+}
+#endif
 #endif

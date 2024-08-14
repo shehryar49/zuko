@@ -102,7 +102,7 @@ bool zobject_equals(zobject,zobject);
 
 
 
-inline bool isNumeric(char t)
+static inline bool isNumeric(char t)
 {
   return (t == Z_INT || t == Z_FLOAT || t == Z_INT64);
 }

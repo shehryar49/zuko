@@ -23,7 +23,7 @@ function permute(var str,var k)
   var permutations = []
   while(l<len(str))
   {
-    var sub = permute(substr(0,l-1,str)+substr(l+1,len(str)-1,str),k-1)
+    var sub = permute(substr(0,l,str)+substr(l+1,len(str),str),k-1)
     var j = 0
     while(j<len(sub))
     {

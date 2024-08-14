@@ -1,22 +1,23 @@
-#include "zlist.h"
+#include "sizet_vector.h"
+#include <string.h>
 
-void zlist_init(zlist* p)
+void sizet_vector_init(sizet_vector* p)
 {
-    p->arr = (zobject*)malloc(sizeof(zobject)*4);  
+    p->arr = (size_t*)malloc(sizeof(size_t)*4);  
     p->capacity = 4;
     p->size = 0;
 }
-void zlist_push(zlist* p,zobject val)
+void sizet_vector_push(sizet_vector* p,size_t val)
 {
     if(p -> size >= p->capacity)
     {
-      p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*p->capacity<<1);
+      p->arr = (size_t*)realloc(p->arr,sizeof(size_t)*p->capacity<<1);
       p->capacity <<= 1; //p->capacity*=2;
     }
     p->arr[p->size++] = val;
  
 }
-void zlist_erase(zlist* p,size_t idx)
+void sizet_vector_erase(sizet_vector* p,size_t idx)
 {
     if(idx < p->size)
     {
@@ -32,7 +33,7 @@ void zlist_erase(zlist* p,size_t idx)
       p->size -= 1;
     }
 }
-void zlist_erase_range(zlist* p,size_t i,size_t j)
+void sizet_vector_erase_range(sizet_vector* p,size_t i,size_t j)
 {
   if(i <= j && i < p->size && j<p->size)
   {
@@ -53,7 +54,7 @@ void zlist_erase_range(zlist* p,size_t i,size_t j)
 
   }
 }
-void zlist_resize(zlist* p,size_t newSize)
+void sizet_vector_resize(sizet_vector* p,size_t newSize)
 {
   if(newSize <= p->size)
   {
@@ -68,11 +69,11 @@ void zlist_resize(zlist* p,size_t newSize)
   {
     while(p->capacity < newSize)
       p->capacity <<= 1;
-    p->arr = (zobject*)realloc(p->arr,p->capacity* sizeof(zobject));
+    p->arr = (size_t*)realloc(p->arr,p->capacity* sizeof(size_t));
     p->size = newSize;
   }
 }
-bool zlist_pop(zlist* p,zobject* val)
+bool sizet_vector_pop(sizet_vector* p,size_t* val)
 {
     if(p->size == 0)
       return false;
@@ -81,12 +82,12 @@ bool zlist_pop(zlist* p,zobject* val)
     return true;
 }
 
-void zlist_assign(zlist* p,zlist* val)
+void sizet_vector_assign(sizet_vector* p,sizet_vector* val)
 {
     if(val->size > 0)
     {
-      p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*val->capacity);
-      memcpy(p->arr,val->arr,val->size*sizeof(zobject));
+      p->arr = (size_t*)realloc(p->arr,sizeof(size_t)*val->capacity);
+      memcpy(p->arr,val->arr,val->size*sizeof(size_t));
       p->capacity = val->capacity;
       p->size = val->size;
     }
@@ -96,17 +97,17 @@ void zlist_assign(zlist* p,zlist* val)
         return;
     }
 }
-void zlist_insert(zlist* p,size_t idx,zobject val)
+void sizet_vector_insert(sizet_vector* p,size_t idx,size_t val)
 {
   if(idx == p->size) //push
   {
-    zlist_push(p,val);
+    sizet_vector_push(p,val);
     return;
   }
   if(idx < p->size)
   {
 
-    zlist_push(p,val);
+    sizet_vector_push(p,val);
     size_t i = p->size - 1;
     while(i > idx)
     {
@@ -116,14 +117,14 @@ void zlist_insert(zlist* p,size_t idx,zobject val)
     p->arr[idx] = val;
   }
 }
-void zlist_insert_list(zlist* p,size_t idx,zlist* sublist)
+void sizet_vector_insert_list(sizet_vector* p,size_t idx,sizet_vector* sublist)
 {
   if(sublist -> size == 0)
     return;
   if(idx == p->size)
   {
-    zlist_resize(p,p->size + sublist->size);
-    memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(zobject));
+    sizet_vector_resize(p,p->size + sublist->size);
+    memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(size_t));
     return;
   }
   if(idx < p->size)
@@ -131,18 +132,12 @@ void zlist_insert_list(zlist* p,size_t idx,zlist* sublist)
     // 1 2 3 4 0 0
 
     size_t i = p->size;
-    zlist_resize(p,p->size + sublist->size);
-    memcpy(p->arr + i,p->arr+idx,sizeof(zobject)*sublist->size);
-    memcpy(p->arr+idx,sublist->arr,sizeof(zobject)*sublist->size);
+    sizet_vector_resize(p,p->size + sublist->size);
+    memcpy(p->arr + i,p->arr+idx,sizeof(size_t)*sublist->size);
+    memcpy(p->arr+idx,sublist->arr,sizeof(size_t)*sublist->size);
   }
 }
-void zlist_destroy(zlist* p)
+void sizet_vector_destroy(sizet_vector* p)
 {
     free(p->arr);
 }
-
-void zlist_fastpop(zlist* p,zobject* val)
-{
-  *val = p->arr[--p->size];
-}
-

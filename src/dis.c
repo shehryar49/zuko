@@ -2,13 +2,11 @@
 // It hasn't been updated in a while
 #include "dis.h"
 #include "opcode.h"
-#include "utility.h"
+#include "misc.h"
 #include "vm.h"
-#include <cstdint>
-#include <cstring>
-#include <vector>
+#include <string.h>
 
-using namespace std;
+
 
 union FOO
 {
@@ -26,16 +24,16 @@ union FOO2
   unsigned char bytes[8];
 }FOO2;
 
-void dis(std::vector<uint8_t>& bytecode)
+void dis(uint8_t* bytecode)
 {
 
   size_t k = 26;
   uint8_t* program = &(bytecode[0]);
-  size_t program_size = bytecode.size();
 
-  unsigned char inst;
+
+  unsigned char inst = 0;
   printf("0-25  <init Error Classes>\n");
-  while(k<program_size)
+  while(inst != OP_EXIT)
   {
       inst = program[k];
 
@@ -86,28 +84,6 @@ void dis(std::vector<uint8_t>& bytecode)
             printf("  %d\n",program[k]);
             k+=1;
           }
-          else if(t=='v')
-          {
-              string name = "";
-              while(program[k]!=0)
-              {
-                  name+= (char)program[k];
-                  k+=1;
-              }
-              k+=1;
-            printf("  %s\n",name.c_str());
-          }
-          else if(t=='s')
-          {
-              string name = "";
-              while(program[k]!=0)
-              {
-                  name+= (char)program[k];
-                  k+=1;
-              }
-              k+=1;
-            printf("  %s\n",name.c_str());
-          }
           continue;
       }
       else if(inst==OP_EXIT)
@@ -122,7 +98,7 @@ void dis(std::vector<uint8_t>& bytecode)
         int32_t i;
         memcpy(&i, program+k, 4);
         k+=3;
-        printf("%d(%s)\n",i,zobjectToStr(vm.constants[i]).c_str());
+        printf("%d(%s)\n",i,zobject_to_str(vm_constants[i]));
       }    
       else if(inst==LOAD_STR)
       {
@@ -816,19 +792,19 @@ int orgk = k;
         int args = program[k];
         printf("%d LOAD_CO %d %d %d\n",orgk,p,idx,args);
       }
-      else if(inst==JMPIFFALSE)
+      else if(inst==GOTOIFFALSE)
       {
           int orgk = k;
-                        k+=1;
+          k+=1;
           FOO.bytes[0] = program[k];
-                        k+=1;
+          k+=1;
           FOO.bytes[1] = program[k];
-                        k+=1;
+          k+=1;
           FOO.bytes[2] = program[k];
-                        k+=1;
+          k+=1;
           FOO.bytes[3] = program[k];
           int where = FOO.x;
-          printf("%d  JMPIFFALSE  %d\n",orgk,where);
+          printf("%d  GOTOIFFALSE  %d\n",orgk,where);
           k+=1;
           continue;
       }

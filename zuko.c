@@ -1,9 +1,14 @@
+#include <stdint.h>
 #include <signal.h>
 #include "include/zuko.h"
+#include "compiler.h"
 #include "parser.h"
 #include "token.h"
 #include "zuko-src.h"
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "misc.h"
 #define ZUKO_VER 0.3
 #define ZUKO_VER_PATCH 3
 
@@ -37,7 +42,7 @@ int main(int argc, const char* argv[])
         REPL();
         return 0;
     }
-    char* source_code;
+    char* source_code = NULL;
     char* filename;
     if(argc>=3 && strncmp(argv[1],"-c",2)==0)
     {
@@ -47,14 +52,15 @@ int main(int argc, const char* argv[])
     else
     {
         filename = clone_str(argv[1]);
-        source_code = clone_str(readfile(filename).c_str());
+        source_code = readfile(filename);
     }
     zuko_src src;
     zuko_src_init(&src);
     zuko_src_add_file(&src, filename,source_code);
 
      
-    vector<uint8_t> bytecode;
+    uint8_t* bytecode;
+    size_t bytecode_len;
     //the variables in curly brackets below are temporary
     //they are not needed during program execution
     {
@@ -68,16 +74,29 @@ int main(int argc, const char* argv[])
         Node* ast = parse_block(&parser,tokens.arr,0,tokens.size-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
-        //print_ast(ast);
-        Compiler compiler;
-        compiler.set_source(&src);//init compiler with ZukoSource
-        bytecode = compiler.compileProgram(ast,argc,argv); // compile AST of program
+        //print_ast(ast,0);
+        vm_init();
+        compiler comp;
+        compiler_set_source(&comp,&src,0);//init compiler with ZukoSource
+        bytecode = compile_program(&comp,ast,argc,argv,OPT_POP_GLOBALS); // compile AST of program
+        bytecode_len = comp.bytes_done;
+        //dis(bytecode);
         delete_ast(ast);
+       // for(size_t i=0;i<tokens.size;i++)
+        //{
+          //  if(tokens.arr[i].type == STRING_TOKEN)
+         //       free((void*)tokens.arr[i].content);
+        //}
+        parser_destroy(&parser);
+        compiler_destroy();
     }
-    vm.load(bytecode,&src); // vm uses the src for printing errors and stuff
+
+    vm_load(bytecode,bytecode_len,&src); // vm uses the src for printing errors and stuff
 
     // It's showtime
-    vm.interpret();
+    interpret(0,true);
+    vm_destroy();
+    //zuko_src_destroy(&src);
     // Hasta La Vista Baby    
     return 0;
 }

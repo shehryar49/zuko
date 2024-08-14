@@ -30,7 +30,7 @@ typedef struct lntable
 }lntable;
 
 
-size_t hash_key(size_t a,size_t M);
+
 
 void lntable_init(lntable* h);
 void lntable_set(lntable* h,size_t key,byte_src val);

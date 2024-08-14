@@ -16,7 +16,8 @@ typedef struct dyn_str
 void dyn_str_init(dyn_str* p);
 void dyn_str_push(dyn_str* p,char val);
 bool dyn_str_pop(dyn_str* p,char* ptr);
-void dyn_str_prepend_cstr(dyn_str*,const char*);
+void dyn_str_prepend(dyn_str*,const char*);
+void dyn_str_append(dyn_str*,const char*);
 void dyn_str_destroy(dyn_str* p);
 
 #ifdef __cplusplus

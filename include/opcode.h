@@ -41,7 +41,7 @@ enum OPCODE
     CALLUDF=16,//
     INPLACE_INC=17, //increments a local variable 
     LOAD_STR=18,
-    JMPIFFALSE=19,
+    GOTOIFFALSE=19,
     NPOP_STACK = 20,
     MOD = 21,
     LOAD_NIL = 22,

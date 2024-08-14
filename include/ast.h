@@ -21,10 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef ZUKO_AST_H_
 #define ZUKO_AST_H_
-#include <vector>
-#include <string>
-using namespace std;
-enum NodeType
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+#include "nodeptr_vec.h"
+typedef enum NodeType
 {
   declare,
   import,
@@ -35,7 +37,7 @@ enum NodeType
   DOWHILE,
   FOR,
   DFOR,//down to for loop
-  decl,//used with FOR loop to tell if loop control variable should be
+  decl_node,//used with FOR loop to tell if loop control variable should be
   //declared or not
   //i.e for(var i=0 to 10 step 1)
   nodecl,
@@ -57,10 +59,10 @@ enum NodeType
   BREAK_node,
   CONTINUE_node,
   call,
-  args,
-  line,
+  args_node,
+  line_node,
   gc,
-  file,
+  file_node,
   end,
   add,
   sub,
@@ -94,16 +96,21 @@ enum NodeType
   BOOL_NODE,
   BYTE_NODE,
   ID_NODE,
-  conditions,
-};
+  conditions_node,
+}NodeType;
 // No oop nonsense
-struct Node
+typedef struct Node
 {
   const char* val;
   NodeType type;
-  vector<Node*> childs;
-};
+  nodeptr_vector childs;
+}Node;
+
+
 extern const char* NodeTypeNames[68];
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

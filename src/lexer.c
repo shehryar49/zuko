@@ -9,7 +9,7 @@
 #include <time.h>
 #include <limits.h>
 #include "dyn-str.h"
-
+#include "misc.h"
 extern bool REPL_MODE;
 void REPL();
 
@@ -23,24 +23,7 @@ bool isKeyword(const char* s)
   }
   return false;
 }
-static unsigned char tobyte(const char* s)
-{
-    //s.length() is always 2
 
-    char x = tolower(s[0]);
-    char y = tolower(s[1]);
-    unsigned char b = 0;
-    b = (isdigit(y)) ? y-48 : y-87;
-    b += (isdigit(x)) ? (x-48)<<4 : (x-87)<<4;
-    return b;
-}
-static char* clone_str(const char* str)
-{
-    size_t len = strlen(str);
-    char* n = malloc(sizeof(char)*(len+1));
-    strcpy(n,str); //it is safe so STFU
-    return n;
-}
 char* char_to_str(char ch)
 {
     char tmp[2] = {ch,0};
@@ -125,23 +108,6 @@ static int64_t hex_to_int64(const char* s)
         p<<=4;
     }
     return res;
-}
-static const char* getOS()
-{
-  #ifdef __linux__
-    return "Linux";
-  #elif _WIN64
-    return "Windows 64 bit";
-  #elif _WIN32
-    return "Windows 32 bit";
-  #elif __FreeBSD__
-    return "FreeBSD";
-  #elif __APPLE__ || __MACH__
-    return "Mac OSX";
-  #elif __unix || __unix__
-    return "Unix";
-  #endif
-  return "OS Unknown";
 }
 token resolveMacro(const char* name)
 {
@@ -435,7 +401,7 @@ void numeric(lexer* ctx,token_vector* tokenlist)
         if(b.length == 1 || b.length == 2) //byte
         {
             if(b.length == 1)
-                dyn_str_prepend_cstr(&b,"0");
+                dyn_str_prepend(&b,"0");
             i.type = BYTE_TOKEN;
             i.ln = ctx->line_num;
             i.content = b.arr;
@@ -566,7 +532,7 @@ void id(lexer* ctx,token_vector* tokenlist)
             }
         }
         i.type = KEYWORD_TOKEN;
-        i.content = clone_str(t.arr);
+        i.content = t.arr;
         i.ln = ctx->line_num;
     }
     else if(strcmp(t.arr,"or") == 0 || strcmp(t.arr,"and") == 0 || strcmp(t.arr,"is") == 0)
@@ -577,14 +543,14 @@ void id(lexer* ctx,token_vector* tokenlist)
     }
     else if(strcmp(t.arr,"true") == 0 || strcmp(t.arr,"false") == 0)
     {
-        i.content = clone_str(t.arr);
+        i.content = t.arr;
         i.type = BOOL_TOKEN;
         i.ln = ctx->line_num;
     }
     else
     {
         i.type = ID_TOKEN;
-        i.content = clone_str(t.arr);
+        i.content = t.arr;
         i.ln = ctx->line_num;
     }
     token_vector_push(tokenlist,i);
@@ -602,7 +568,6 @@ token_vector lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr,s
     }
     ctx->filename = src->files.arr[root_idx];
     ctx->source_code = src->sources.arr[root_idx];
-
     ctx->srcLen = strlen(ctx->source_code);
     ctx->printErr = printErr;
     ctx->hadErr = false;

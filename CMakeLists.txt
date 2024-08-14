@@ -4,16 +4,16 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable( 
   zuko 
-  zuko.cpp 
-  src/vm.cpp 
-  src/parser.cpp 
+  zuko.c 
+  src/vm.c 
+  src/parser.c
   src/lexer.c
-  src/builtinfunc.cpp 
-  src/utility.cpp 
-  src/overflow.cpp 
-  src/convo.cpp  
-  src/compiler.cpp 
-  src/repl.cpp 
+  src/builtinfunc.c
+  src/misc.c
+  src/overflow.c
+  src/convo.c  
+  src/compiler.c 
+  src/repl.c 
   src/zobject.c 
   src/zdict.c 
   src/zlist.c 
@@ -22,7 +22,7 @@ add_executable(
   src/module.c 
   src/klass.c 
   src/klassobject.c  
-  src/dis.cpp 
+  src/dis.c 
   src/refgraph.c  
   src/zuko-src.c 
   src/lntable.c 
@@ -30,6 +30,13 @@ add_executable(
   src/token.c 
   src/dyn-str.c 
   src/token-vector.c
+  src/nodeptr_vec.c
+  src/ptr-vector.c
+  src/sizet_vector.c
+  src/symtable.c
+  src/pair-vector.c
+  src/builtin-map.c
+  src/mem_map.c
 )
 include_directories(include/) # even modules use this (include/zobject.h)
 if(UNIX)
@@ -37,11 +44,8 @@ if(UNIX)
   target_link_libraries(zuko -lreadline) # GNU readline
 endif()
 
-if(MSVC)
-  set(CMAKE_CXX_FLAGS_RELEASE "/MT")
-  set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
-endif()
 
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native")
 add_executable(test_all tests/test_all.cpp)
 set_target_properties(test_all PROPERTIES RUNTIME_OUTPUT_DIRECTORY tests/)
 message("BUILD TYPE = ${CMAKE_BUILD_TYPE}")

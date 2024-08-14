@@ -21,37 +21,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef CRASH_OVERFLOW_H_
 #define CRASH_OVERFLOW_H_
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #include <limits.h>
-#include <cfloat>
-#include <cstdint>
+#include <float.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
 
-bool exponen_overflows(int32_t a,int32_t b);
-bool exponen_overflows(int64_t a,int64_t b);
-bool exponen_overflows(double a,double b);
+bool exponen_overflows_i32(int32_t a,int32_t b);
+bool exponen_overflows_i64(int64_t a,int64_t b);
+bool exponen_overflows_double(double a,double b);
 /*
 Addition
 */
 
 
-bool addition_overflows(int32_t a,int32_t x);
-bool addition_overflows(int64_t a,int64_t x);
-bool addition_overflows(double a,double x);
+bool addition_overflows_i32(int32_t a,int32_t x);
+bool addition_overflows_i64(int64_t a,int64_t x);
+bool addition_overflows_double(double a,double x);
 /*
 Subtraction
 */
-bool subtraction_overflows(int32_t a,int32_t x);
-bool subtraction_overflows(int64_t a,int64_t x);
-bool subtraction_overflows(double a,double x);
+bool subtraction_overflows_i32(int32_t a,int32_t x);
+bool subtraction_overflows_i64(int64_t a,int64_t x);
+bool subtraction_overflows_double(double a,double x);
 /*
 Multiplication
 */
-bool multiplication_overflows(int32_t a,int32_t b);
-bool multiplication_overflows(int64_t a,int64_t b);
-bool multiplication_overflows(double a,double b);
-bool division_overflows(int32_t op1, int32_t op2);
-bool division_overflows(int64_t op1,int64_t op2);
+bool multiplication_overflows_i32(int32_t a,int32_t b);
+bool multiplication_overflows_i64(int64_t a,int64_t b);
+bool multiplication_overflows_double(double a,double b);
+bool division_overflows_i32(int32_t op1, int32_t op2);
+bool division_overflows_i64(int64_t op1,int64_t op2);
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

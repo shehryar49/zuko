@@ -31,7 +31,7 @@ bool dyn_str_pop(dyn_str* p,char* c)
     }
     return false;
 }
-void dyn_str_prepend_cstr(dyn_str* p,const char* str)
+void dyn_str_prepend(dyn_str* p,const char* str)
 {
     size_t len = strlen(str);
     if(p->length+1+len >= p->capacity)
@@ -43,6 +43,19 @@ void dyn_str_prepend_cstr(dyn_str* p,const char* str)
     memcpy(p->arr+len, p->arr,p->length);
     memcpy(p->arr,str, len);
     p->arr[p->length + len] = 0;
+}
+void dyn_str_append(dyn_str* p,const char* str)
+{
+    size_t len = strlen(str);
+    if(p->length+len >= p->capacity)
+    {
+        while(p->length+len >= p->capacity)
+            p->capacity *= 2;
+        p->arr = realloc(p->arr,p->capacity);
+    }
+    memcpy(p->arr + p->length ,str,len);
+    p->arr[p->length + len] = 0;
+    p->length += len;
 }
 void dyn_str_destroy(dyn_str* p)
 {

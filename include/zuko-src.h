@@ -24,7 +24,7 @@ typedef struct zuko_src
 void zuko_src_init(zuko_src* src);
 void zuko_src_add_file(zuko_src*,char*,char*);
 void zuko_src_reset(zuko_src*);
-
+void zuko_src_destroy(zuko_src* src);
 #ifdef __cplusplus
 }
 #endif

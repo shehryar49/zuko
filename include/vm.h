@@ -22,68 +22,23 @@ SOFTWARE.*/
 #ifndef VM_H_
 #define VM_H_
 
-#include <cstdint>
-#include <vector>
+#include <stdint.h>
 #include "apifunctions.h" 
 #include "builtinfunc.h"
 #include "byte_src.h"
 #include "zuko-src.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 
-#define AS_STD_STR(x) (std::string)(((zstr*)x.ptr)->val)
-
-struct MemInfo //Data structure used by GC
-{
-  char type;
-  bool isMarked;
-  size_t size; // only used for Z_RAW
-};
-
-inline void PromoteType(zobject &a, char t)
-{
-  if (a.type == Z_INT)
-  {
-    if (t == Z_INT64) // promote to int64_t
-    {
-      a.type = Z_INT64;
-      a.l = (int64_t)a.i;
-    }
-    else if (t == Z_FLOAT)
-    {
-      a.type = Z_FLOAT;
-      a.f = (double)a.i;
-    }
-  }
-  else if (a.type == Z_FLOAT)
-  {
-    if (t == Z_INT64) // promote to int64_t
-    {
-      a.type = Z_INT64;
-      a.l = (int64_t)a.f;
-    }
-    else if (t == Z_INT)
-    {
-      a.type = Z_INT;
-      a.f = (int32_t)a.f;
-    }
-    else if (t == Z_FLOAT)
-      return;
-  }
-  else if (a.type == Z_INT64)
-  {
-    if (t == Z_FLOAT) // only this one is needed
-    {
-      a.type = Z_FLOAT;
-      a.f = (double)a.l;
-    }
-  }
-}
-extern "C"
-{
-  zobject zobj_from_str(const char* str);// makes deep copy of str
-  zobject z_err(zclass* errKlass,const char* des);
-  zlist* vm_alloc_zlist();
-  zbytearr* vm_alloc_zbytearr();
+void PromoteType(zobject* a, char t);
+  
+const char* fullform(char);
+zobject zobj_from_str(const char* str);// makes deep copy of str
+zobject z_err(zclass* errKlass,const char* des);
+zlist* vm_alloc_zlist();
+zbytearr* vm_alloc_zbytearr();
   uint8_t* vm_alloc_raw(size_t);
   zstr* vm_alloc_zstr(size_t);
   zclass* vm_alloc_zclass();
@@ -101,88 +56,35 @@ extern "C"
   void vm_unmark_important(void* mem);
   uint8_t* vm_realloc_raw(void*,size_t);
   uint8_t* vm_alloc_raw(size_t);
+
+  extern zclass* Error;
+  extern zclass* TypeError;
+  extern zclass* ValueError;
+  extern zclass* MathError; 
+  extern zclass* NameError;
+  extern zclass* IndexError;
+  extern zclass* ArgumentError;
+  extern zclass* FileIOError;
+  extern zclass* KeyError;
+  extern zclass* OverflowError;
+  extern zclass* FileOpenError;
+  extern zclass* FileSeekError; 
+  extern zclass* ImportError;
+  extern zclass* ThrowError;
+  extern zclass* MaxRecursionError;
+  extern zclass* AccessError;
+
+  extern zlist STACK;
+  extern zobject* vm_constants;
+  extern int32_t vm_total_constants;
+  void vm_init();
+  void vm_load(uint8_t*,size_t,zuko_src*);
+  void interpret(size_t,bool);
+  void vm_destroy();
+
+#ifdef __cplusplus
 }
-//
-//Error classes (defined in vm.cpp)
-extern zclass* Error;
-extern zclass* TypeError;
-extern zclass* ValueError;
-extern zclass* MathError; 
-extern zclass* NameError;
-extern zclass* IndexError;
-extern zclass* ArgumentError;
-extern zclass* FileIOError;
-extern zclass* KeyError;
-extern zclass* OverflowError;
-extern zclass* FileOpenError;
-extern zclass* FileSeekError; 
-extern zclass* ImportError;
-extern zclass* ThrowError;
-extern zclass* MaxRecursionError;
-extern zclass* AccessError;
+#endif
 
-class VM
-{
-public:
-  uint8_t* program = NULL;
-  uint32_t program_size;
-  uint8_t *k; // instruction pointer
-  std::vector<uint8_t*> callstack;
-  bool viaCO = false;
-  std::vector<size_t> tryStackCleanup;
-  std::vector<int32_t> frames = {0}; // stores starting stack indexes of all stack frames
-  size_t orgk = 0;
-  std::vector<uint8_t*> except_targ;
-  std::vector<size_t> tryLimitCleanup;
-  #ifdef _WIN32
-    std::vector<HINSTANCE> moduleHandles;
-  #else
-    std::vector<void *> moduleHandles;
-  #endif
-
-  std::vector<zfun*> executing = {NULL}; // pointer to zuko function object we are executing, NULL means control is not in a function
-  size_t GC_THRESHHOLD;
-  size_t GC_MIN_COLLECT;
-  lntable* line_num_table;
-  str_vector* files;
-  str_vector* sources;
-  zlist aux; // auxiliary space for markV2
-  zlist STACK;
-  std::vector<void*> important;//important memory not to free even when not reachable
-  std::vector<BuiltinFunc> builtin; // addresses of builtin native functions
-  
-  size_t GC_Cycles = 0;
-  std::vector<zstr> strings; // string constants used in bytecode
-  zobject *constants = NULL;
-  int32_t total_constants = 0; // total constants stored in the array constants
-  apiFuncions api; // to share VM's allocation api with modules
-  // just a struct with a bunch of function pointers
-  zobject nil;
-  size_t spitErr(zclass* e, std::string msg); /* used to show a runtime error
-  e is the error class*/
-  void markV2(const zobject &obj);
-  void mark();
-  void collectGarbage();
-  inline void DoThreshholdBusiness();
-  bool invokeOperator(const std::string& meth, zobject A, size_t args, const char* op, zobject *rhs = NULL, bool raiseErrOnNF = true); // check if the object has the specified operator overloaded and prepares to call it by updating callstack and frames
-
-  size_t allocated = 0;
-  std::unordered_map<void*, MemInfo> memory;
-  friend class Compiler;
-  //These functions are outside the class, so they can be called by C code
-  friend bool vm_call_object(zobject*,zobject*,int,zobject*);
-  friend void vm_mark_important(void*);
-  friend void vm_unmark_important(void*);
-  //the REPL mainloop function
-  friend void dis(std::vector<uint8_t>&);
-  VM();
-  
-  void load(std::vector<uint8_t>& bytecode,zuko_src* p);
-  void interpret(size_t offset = 0, bool panic = true); //by default panic if stack is not empty when finished
-  //in REPL mode panic is set to false
-  ~VM();
-};
-
-extern VM vm;
 
 #endif

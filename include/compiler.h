@@ -24,97 +24,83 @@ SOFTWARE.*/
 #include "ast.h"
 #include "builtinfunc.h"
 #include "lntable.h"
+#include "pair-vector.h"
 #include "zuko-src.h"
 #include "vm.h"
 #include "parser.h"
 #include "opcode.h"
 #include "zfileobj.h"
-#include <unordered_map>
+#include "zbytearray.h"
+#include "sizet_vector.h"
+#include "symtable.h"
+#include "ptr-vector.h"
+#include "pair-vector.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 #define JUMPOFFSET_SIZE 4
-#define SymbolTable std::unordered_map<string,int32_t>
 
 
 
-struct Pair
+typedef struct compiler
 {
-  int32_t x;
-  int32_t y;
-  Pair(int32_t a,int32_t b) : x(a) , y(b) {}
-};
-class Compiler
-{
-private:
-  int32_t STACK_SIZE = 0;//simulating STACK's size
-  //int32_t scope = 0;
+  int32_t STACK_SIZE;//simulating STACK's size
   int32_t localsBegin;
-  int32_t foo = 0;
+  int32_t foo;
   int32_t* num_of_constants;
-  size_t line_num = 1;
-  size_t bytes_done = 0;
+  size_t line_num;
+  size_t bytes_done;
   short fileTOP;
-  std::string filename;
-  std::string className;
-
-  std::unordered_map<string,bool> symRef;
+  const char* filename;
+  const char* className;
+  str_vector symRef;
   lntable* line_num_table;
-  std::unordered_map<std::string,std::pair<Node*,int32_t>> compiled_functions; //compiled functions (not methods)
+  //std::unordered_map<std::string,std::pair<Node*,int32_t>> compiled_functions; //compiled functions (not methods)
   //this allows code generation for direct function call
-  SymbolTable globals;
   
-  std::vector<SymbolTable> locals;
-  std::vector<std::string> prefixes = {""};
+  symtable globals;
+  ptr_vector locals;
+  str_vector prefixes;
   str_vector* files;
   str_vector* sources;
   //For optimizing short circuit jumps after code generation
-  std::vector<size_t> andJMPS;
-  std::vector<size_t> orJMPS;  
-  std::vector<int32_t> breakIdx; // a break statement sets this after adding GOTO to allow
+  sizet_vector andJMPS;
+  sizet_vector orJMPS;  
+  sizet_vector breakIdx; // a break statement sets this after adding GOTO to allow
   // the enclosing loop to backpatch the offset
-  std::vector<int32_t> contIdx; // same as above
-  std::vector<string> classMemb;
-  std::vector<uint8_t> bytecode; // bytecode generated so far
-  std::vector<Pair> backpatches;
+  sizet_vector contIdx;
+  str_vector classMemb;
+  zbytearr bytecode; // bytecode generated so far
+  pair_vector backpatches;
 
   //Context and other options
-  bool inConstructor = false;
-  bool inGen = false;
-  bool inclass = false;
-  bool infunc = false;
-  bool infor = false; //used by break and continue statements
-  bool compileAllFuncs = false;
-  bool returnStmtAtFnScope = false;
+  bool inConstructor;
+  bool inGen;
+  bool inclass;
+  bool infunc;
+  bool infor; //used by break and continue statements
+  bool compileAllFuncs;
+  bool returnStmtAtFnScope;
   NodeType last_stmt_type;
-  void compileError(std::string type,std::string msg);
-  void add_lntable_entry(size_t opcodeIdx);
-  void optimize_jmps(vector<uint8_t>& bytecode);
+}compiler;
 
-  int32_t is_duplicate_constant(zobject x);
-  int32_t add_to_vm_strings(const std::string& n);
-  int32_t add_builtin_to_vm(const std::string& name);
-  int32_t resolve_name(std::string name,bool& isGlobal,bool blowUp=true,bool* isFromSelf=NULL);  
-  
-  vector<uint8_t> expr_bytecode(Node* ast);
-  vector<string> scan_class(Node* ast);
-  vector<uint8_t> compile(Node* ast);
+void compileError(compiler* ctx,const char* type,const char* msg);
+//set_source function is used instead of constructor
+//this way the Compiler class becomes reusable
+//by initializing it again
+void compiler_set_source(compiler* ctx,zuko_src* p,size_t root_idx);
+void compiler_add_builtin(const char* name,BuiltinFunc fn);  
+void compiler_reduceStackTo(compiler* ctx,int size);//for REPL
+//Compile options
+static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
+static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
+uint8_t* compile_program(compiler* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options);//compiles as a complete program adds NPOP_STACK and OP_EXIT
+void compiler_destroy();
 
-  zclass* make_error_class(std::string name,zclass* error);
+#ifdef __cplusplus
+}
+#endif
 
-public:
-  friend void REPL();
-
-  //set_source function is used instead of constructor
-  //this way the Compiler class becomes reusable
-  //by initializing it again
-  void set_source(zuko_src* p,size_t root_idx = 0);
-  void add_builtin(const std::string& name,BuiltinFunc fn);  
-  void reduceStackTo(int size);//for REPL
-
-  //Compile options
-  static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
-  static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
-  vector<uint8_t>& compileProgram(Node* ast,int32_t argc,const char* argv[],int32_t options = OPT_POP_GLOBALS);//compiles as a complete program adds NPOP_STACK and OP_EXIT
-
-};
 #endif
