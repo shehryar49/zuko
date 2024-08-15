@@ -97,7 +97,7 @@ void compiler_reduceStackTo(compiler* ctx,int size);//for REPL
 static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
 static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
 uint8_t* compile_program(compiler* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options);//compiles as a complete program adds NPOP_STACK and OP_EXIT
-void compiler_destroy();
+void compiler_destroy(compiler*);
 
 #ifdef __cplusplus
 }

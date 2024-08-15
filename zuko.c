@@ -88,7 +88,7 @@ int main(int argc, const char* argv[])
          //       free((void*)tokens.arr[i].content);
         //}
         parser_destroy(&parser);
-        compiler_destroy();
+        compiler_destroy(&comp);
     }
 
     vm_load(bytecode,bytecode_len,&src); // vm uses the src for printing errors and stuff

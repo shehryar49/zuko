@@ -43,7 +43,7 @@ if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})
   target_link_libraries(zuko -lreadline) # GNU readline
 endif()
-
+target_link_libraries(zuko -lm)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-march=native")
 add_executable(test_all tests/test_all.cpp)
