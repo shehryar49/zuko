@@ -2354,4 +2354,5 @@ void compiler_destroy(compiler* ctx)
     str_vector_destroy(&ctx->prefixes);
     str_vector_destroy(&ctx->symRef);
     pair_vector_destroy(&ctx->backpatches);
+    bmap_destroy(&funcs);
 }

@@ -4150,7 +4150,12 @@ void vm_destroy()
     collectGarbage();
     zlist_destroy(&STACK);
     zlist_destroy(&aux);
-    //for(size_t i = 0;i < total_strings ; i++)
+    for(size_t i = 0;i < vm_strings.size ; i++)
+    {
+        free(((zstr*)vm_strings.arr[i])->val);
+        free(vm_strings.arr[i]);
+    }
+    free(vm_strings.arr);
     //    free(vm_strings.arr[i]->val);
     if(vm_constants)
         free(vm_constants);
@@ -4162,6 +4167,17 @@ void vm_destroy()
             dlclose(module_handles.arr[i]);
         #endif
     }
+    extern bmap methods;
+    bmap_destroy(&methods);
+    sizet_vector_destroy(&frames);
+    sizet_vector_destroy(&try_limit_cleanup);
+    sizet_vector_destroy(&try_stack_cleanup);
+    ptr_vector_destroy(&callstack);
+    ptr_vector_destroy(&executing);
+    ptr_vector_destroy(&vm_builtin);
+    ptr_vector_destroy(&except_targ);
+    ptr_vector_destroy(&vm_important);
+    mem_map_destroy(&memory);
 }
 
 

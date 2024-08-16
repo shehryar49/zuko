@@ -98,6 +98,7 @@ int main(int argc, const char* argv[])
     interpret(0,true);
     vm_destroy();
     zuko_src_destroy(&src);
+    free(bytecode);
     // Hasta La Vista Baby    
     return 0;
 }
