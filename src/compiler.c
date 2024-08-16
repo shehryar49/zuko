@@ -44,8 +44,19 @@ SOFTWARE.*/
 #include "repl.h"
 
 
-#define INSTRUCTION(x) program.push_back(x);bytes_done++;
 
+static inline void instruction(compiler* ctx,enum OPCODE op)
+{
+    zbytearr_push(&ctx->bytecode,op);
+    ctx->bytes_done++;
+}
+static inline void i32_operand(compiler* ctx,int32_t operand)
+{
+    size_t sz = ctx->bytecode.size;
+    zbytearr_resize(&ctx->bytecode,sz + sizeof(int32_t));
+    memcpy(ctx->bytecode.arr+sz,&operand,sizeof(int32_t));
+    ctx->bytes_done += sizeof(int32_t);
+}
 
 
 void initFunctions();
@@ -67,8 +78,6 @@ void extractSymRef(str_vector* ref,refgraph* graph)//gives the names of symbols 
   {
     curr = q.arr[--q.size];
     str_vector* adj = refgraph_getref(graph,curr);
-    if(!adj)
-        puts("adj is NULL");
     for(size_t i = 0;i<adj->size;i++)
     {
         const char* e = adj->arr[i];
@@ -79,6 +88,7 @@ void extractSymRef(str_vector* ref,refgraph* graph)//gives the names of symbols 
         }
     }
   }
+  str_vector_destroy(&q);
   //printf("--end DFS--\n");
 }
 static inline void addBytes(zbytearr* vec,int32_t x)
@@ -1988,9 +1998,8 @@ size_t compile(compiler* ctx,Node* ast)
             //stmt in it's block
             if(ast->childs.arr[1]->type == NUM && isnum(ast->childs.arr[1]->val))
             {
-                zbytearr_push(&ctx->bytecode,RETURN_INT32);
-                addBytes(&ctx->bytecode,(int32_t)atoi(ast->childs.arr[1]->val));
-                ctx->bytes_done += 5;
+                instruction(ctx,RETURN_INT32);
+                i32_operand(ctx,atoi(ast->childs.arr[1]->val));
             }
             else
             {

@@ -1,4 +1,5 @@
 #include "zbytearray.h"
+#include "zlist.h"
 #include <time.h>
 #ifdef _WIN32
     #include <windows.h>
@@ -4119,6 +4120,8 @@ if (STACK.size != 0 && panic)
     printf("STACK.size = %zu\n",STACK.size);
     exit(1);
 }
+zlist_destroy(&names);
+zlist_destroy(&values);
 /*printf("--Counts--\n");
 for(size_t i=0;i<sizeof(targets)/sizeof(void*);i++)
     if(counts[i]!=0)

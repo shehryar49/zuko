@@ -96,7 +96,7 @@ int main(int argc, const char* argv[])
     // It's showtime
     interpret(0,true);
     vm_destroy();
-    //zuko_src_destroy(&src);
+    zuko_src_destroy(&src);
     // Hasta La Vista Baby    
     return 0;
 }

@@ -372,6 +372,7 @@ zobject println(zobject* args,int32_t argc)
         k+=1;
     }
     puts("");
+    ptr_vector_destroy(&seen);
     zobject ret = nil;
     return ret;
 }
@@ -1650,7 +1651,6 @@ zobject readlines(zobject* args,int32_t argc)
     else
     {
         return z_err(ArgumentError,"Error readlines() takes one argument!");
-        exit(0);
     }
 }
 void clean_stdin(void)
