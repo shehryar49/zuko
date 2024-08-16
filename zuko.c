@@ -89,6 +89,7 @@ int main(int argc, const char* argv[])
         //}
         parser_destroy(&parser);
         compiler_destroy(&comp);
+        token_vector_destroy(&tokens);
     }
 
     vm_load(bytecode,bytecode_len,&src); // vm uses the src for printing errors and stuff

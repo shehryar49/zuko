@@ -720,7 +720,7 @@ void collectGarbage()
         }
         mem_map_erase(&memory,e);
     }
-
+    ptr_vector_destroy(&to_free);
     size_t recycled = pre - allocated;
     if (recycled < 4196) // a gc cycle is expensive so if we are collecting enough bytes we update the threshold
     {

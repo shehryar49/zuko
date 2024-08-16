@@ -2122,6 +2122,7 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
         k+=1;
     }
     add_child(e,new_node(EOP,""));
+    free(multiline.arr);
     return final;
 }
 
