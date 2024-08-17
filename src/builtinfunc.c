@@ -209,7 +209,9 @@ void print_zlist(zlist* l,ptr_vector* seen)
     }
     else
     {
-      printf("%s",zobject_to_str(val));
+        char* s = zobject_to_str(val);
+        printf("%s",s);
+        free(s);
     }
     if(i!=k-1)
       printf(",");
@@ -368,7 +370,11 @@ zobject println(zobject* args,int32_t argc)
             printf("%s",zobject_to_str(args[k]));
         }
         else
-            printf("%s",zobject_to_str(args[k]));
+        {
+            char* s = zobject_to_str(args[k]);
+            printf("%s",s);
+            free(s);
+        }
         k+=1;
     }
     puts("");

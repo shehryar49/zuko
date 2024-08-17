@@ -459,7 +459,7 @@ char* zobject_to_str(zobject a)
     else if(a.type==Z_STR)
     {
         zstr* str = (zstr*)a.ptr;
-        return str->val;
+        return clone_str(str->val);
     }
     else if(a.type=='a')
     {
