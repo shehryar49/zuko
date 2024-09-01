@@ -82,11 +82,6 @@ int main(int argc, const char* argv[])
         bytecode_len = comp.bytes_done;
         //dis(bytecode);
         delete_ast(ast);
-       // for(size_t i=0;i<tokens.size;i++)
-        //{
-          //  if(tokens.arr[i].type == STRING_TOKEN)
-         //       free((void*)tokens.arr[i].content);
-        //}
         parser_destroy(&parser);
         compiler_destroy(&comp);
         token_vector_destroy(&tokens);

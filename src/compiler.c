@@ -1088,6 +1088,7 @@ size_t compile(compiler* ctx,Node* ast)
             nodeptr_vector_push(&(bitch->childs),ast->childs.arr[1]);
             nodeptr_vector_push(&(bitch->childs),ast->childs.arr[2]);
             expr_bytecode(ctx,bitch);
+            nodeptr_vector_destroy(&bitch->childs);
             free(bitch);
             zbytearr_push(&ctx->bytecode,POP_STACK);
             ctx->bytes_done +=1;

@@ -104,9 +104,10 @@ bool mem_map_get(mem_map* h,void* key,mem_info* val)
 mem_info* mem_map_getref(mem_map* h,void* key)
 {
   size_t idx = hash_key((size_t)key,h->capacity);
-  int i = 1;
+  size_t i = 1;
   while(h->table[idx].stat != MM_EMPTY)
   {
+    //printf("in a cycle, i = %zu, stat = %d, empty = %d\n",idx,h->table[idx].stat,MM_EMPTY);
     if(h->table[idx].stat == MM_OCCUPIED && key == h->table[idx].key)
     {
       return &(h->table[idx].val);
@@ -120,7 +121,7 @@ mem_info* mem_map_getref(mem_map* h,void* key)
 bool mem_map_erase(mem_map* h,void* key)
 {
   size_t idx = hash_key((size_t)key,h->capacity);
-  int i = 1;
+  size_t i = 1;
   while(h->table[idx].stat != MM_EMPTY)
   {
     if(h->table[idx].key == key)

@@ -20,10 +20,10 @@ void REPL_init()
 //EXPERIMENTAL!
 void REPL()
 {
-/*  static string filename;
+  /*char filename[256];
   k = src.files.size+1;
-  filename = "<stdin-"+to_string(k)+">";
-  zuko_src_add_file(&src,clone_str(filename.c_str()),clone_str(""));
+  snprintf(filename,256,"<stdin-%d>",k);
+  zuko_src_add_file(&src,clone_str(filename),clone_str(""));
 
   
   compiler.reduceStackTo(stackSize);

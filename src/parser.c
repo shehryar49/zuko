@@ -852,9 +852,18 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
         const char* tmp = tokens[begin+1].content;
         if(atGlobalLevel(ctx))
+        {
             tmp = merge_str(fnprefix,tokens[begin+1].content);
+    //        puts("adding to_free");
+//            ptr_vector_push(&ctx->to_free,(void*)tmp);
+  //          puts("done");
+        }
         if(isPrivate)
+        {
             tmp = merge_str("@",tokens[begin+1].content);
+     //       puts("adding to _free2");
+       //     ptr_vector_push(&ctx->to_free,(void*)tmp); 
+        }
         ast->val = tmp;
         int expr_begin = begin+3;
         int expr_end = end;

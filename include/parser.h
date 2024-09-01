@@ -27,7 +27,7 @@ SOFTWARE.*/
 #include "zuko-src.h"
 #include "lexer.h"
 #include "str-vec.h"
-
+#include "ptr-vector.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -62,6 +62,7 @@ typedef struct Parser
   int* num_of_constants;
   const char* aux;
   bool foundYield ;
+  //ptr_vector to_free;
   //Context
   bool infunc;
   bool inclass;
