@@ -55,6 +55,7 @@ int main(int argc, const char* argv[])
         source_code = readfile(filename);
     }
     zuko_src* src = create_source(filename,source_code);
+    
     uint8_t* bytecode;
     size_t bytecode_len;
     //the variables in curly brackets below are temporary
@@ -64,22 +65,18 @@ int main(int argc, const char* argv[])
         token_vector tokens = lexer_generateTokens(&lex,src,true,0);
         if(lex.hadErr)//had an error which was printed
           return 0;
-        Parser parser;
-        parser_init(&parser);
-        parser_set_source(&parser,src,0);
-        Node* ast = parse_block(&parser,tokens.arr,0,tokens.size-1); //parse the tokens of root file
-
+        parser_ctx* pctx = create_parser_ctx(src);
+        Node* ast = parse_block(pctx,tokens.arr,0,tokens.size-1); //parse the tokens of root file
         //uncomment below line to print AST in tabular form
         //print_ast(ast,0);
         vm_init();
-        compiler comp;
-        compiler_set_source(&comp,src,0);//init compiler with ZukoSource
-        bytecode = compile_program(&comp,ast,argc,argv,OPT_POP_GLOBALS); // compile AST of program
-        bytecode_len = comp.bytes_done;
+        compiler_ctx* cctx = create_compiler_ctx(src);
+        bytecode = compile_program(cctx,ast,argc,argv,OPT_POP_GLOBALS); // compile AST of program
+        bytecode_len = cctx->bytes_done;
         //dis(bytecode);
         delete_ast(ast);
-        parser_destroy(&parser);
-        compiler_destroy(&comp);
+        parser_destroy(pctx);
+        compiler_destroy(cctx);
         token_vector_destroy(&tokens);
     }
 

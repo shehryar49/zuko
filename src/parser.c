@@ -24,7 +24,7 @@ Node* new_node(NodeType type,const char* val)
   Node* p = malloc(sizeof(Node));
   if(!p)
   {
-    printf("Parser: Error allocating memory for AST!\n");
+    printf("parser_ctx: Error allocating memory for AST!\n");
     exit(1);
   }
   p->val = val;
@@ -240,34 +240,29 @@ int find_token_consecutive(token t,int start,int end,token* tokens)
     }
     return -1;
 }
-bool atGlobalLevel(Parser* ctx)
+bool atGlobalLevel(parser_ctx* ctx)
 {
 return (!ctx->infunc && !ctx->inclass && !ctx->inloop
     && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
 }
-bool isValidCtxForFunc(Parser* ctx)
+bool isValidCtxForFunc(parser_ctx* ctx)
 {
     return (!ctx->infunc  && !ctx->inloop
     && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
 }
-void parser_init(Parser* ctx)
+parser_ctx* create_parser_ctx(zuko_src* p)
 {
+    parser_ctx* ctx = malloc(sizeof(parser_ctx));
+    
     str_vector_init(&ctx->prefixes);
     str_vector_push(&ctx->prefixes,"");
     token_vector_init(&ctx->known_constants);
-}
-void parser_set_source(Parser* ctx,zuko_src* p,size_t root_idx)
-{
-    if(root_idx >= p->files.size)
-    {
-        fprintf(stderr,"Parser.init() failed. Invalid root_idx!");
-        return;
-    }
+
     ctx->num_of_constants = &p->num_of_constants;
     ctx->refGraph = &p->ref_graph;
     ctx->files = &p->files;
     ctx->sources = &p->sources;
-    ctx->filename = p->files.arr[root_idx];
+    ctx->filename = p->files.arr[0];
     ctx->currSym = ".main";
     ctx->inclass = false;
     ctx->infunc = false;
@@ -281,8 +276,10 @@ void parser_set_source(Parser* ctx,zuko_src* p,size_t root_idx)
     str_vector v;
     str_vector_init(&v);
     refgraph_emplace(ctx->refGraph,clone_str(".main"),v);
+    return ctx;
 }
-void parseError(Parser* ctx,const char* type,const char* msg)
+
+void parseError(parser_ctx* ctx,const char* type,const char* msg)
 {
     fprintf(stderr,"\nFile %s\n",ctx->filename);
     fprintf(stderr,"%s at line %zu\n",type,ctx->line_num);
@@ -308,7 +305,7 @@ void parseError(Parser* ctx,const char* type,const char* msg)
     exit(1);
 }
 
-bool addSymRef(Parser* ctx,const char* name)
+bool addSymRef(parser_ctx* ctx,const char* name)
 {
     /* adds edge from currSym to name, indicating curr symbol uses name*/
     if(name == ctx->currSym) // no self loops
@@ -341,7 +338,7 @@ static bool isnum(const char* s)
 	return strcmp(tmp,s) == 0;
 }
 
-Node* parseExpr(Parser* ctx,token* tokens,int begin,int end)
+Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
 {   
     if(begin > end)
         parseError(ctx,"SyntaxError","Invalid Syntax");
@@ -799,7 +796,7 @@ void add_child(Node* ast,Node* ptr)
 {
     nodeptr_vector_push(&(ast->childs),ptr);
 }
-Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
+Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
 {
     size_t tokens_size = end-begin+1;
     if(tokens_size==0)
@@ -1520,7 +1517,7 @@ typedef struct pair
     int x;
     int y;
 }pair;
-Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
+Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
 {
     Node* ast = NULL;
     else_token = make_token(KEYWORD_TOKEN, "else", 0);
@@ -2135,7 +2132,7 @@ Node* parse_block(Parser* ctx,token* tokens,int begin,int end)
     return final;
 }
 
-void parser_destroy(Parser* ctx)
+void parser_destroy(parser_ctx* ctx)
 {
     str_vector_destroy(&ctx->prefixes);
     token_vector_destroy(&ctx->known_constants);

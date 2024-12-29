@@ -49,7 +49,7 @@ void print_ast(Node* n,int spaces);
 
 
 char* clone_str(const char* str);
-typedef struct Parser
+typedef struct parser_ctx
 {
   token_vector known_constants;
   str_vector prefixes;//for namespaces 
@@ -72,12 +72,16 @@ typedef struct Parser
   bool inelse;
   bool intry;
   bool incatch;
-}Parser;
+}parser_ctx;
+
 char* merge_str(const char*,const char*);
-void parser_init(Parser*);
-void parser_destroy(Parser*);
-void parser_set_source(Parser*,zuko_src* p,size_t root_idx); // for error printing and stuff
-Node* parse_block(Parser*,token* tokens,int begin,int end);
+
+parser_ctx* create_parser_ctx(zuko_src*);
+void parser_init(parser_ctx*);
+void parser_destroy(parser_ctx*);
+void parser_set_source(parser_ctx*,zuko_src* p,size_t root_idx); // for error printing and stuff
+Node* parse_block(parser_ctx*,token* tokens,int begin,int end);
+
 #ifdef __cplusplus
 }
 #endif

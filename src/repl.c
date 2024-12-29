@@ -8,13 +8,13 @@ static zuko_src src;
 static int32_t k = 0;
 static size_t stackSize = 0;//total globals added by VM initially
 //static Compiler compiler;
-static Parser parser;
+static parser_ctx parser;
 
 void REPL_init()
 {
   REPL_MODE = true;
-  zuko_src_init(&src);
-  parser_init(&parser);
+  //zuko_src_init(&src);
+  //parser_init(&parser);
 }
 //Implementation
 //EXPERIMENTAL!

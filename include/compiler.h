@@ -44,7 +44,7 @@ extern "C"{
 
 
 
-typedef struct compiler
+typedef struct compiler_ctx
 {
   int32_t STACK_SIZE;//simulating STACK's size
   int32_t localsBegin;
@@ -84,20 +84,21 @@ typedef struct compiler
   bool compileAllFuncs;
   bool returnStmtAtFnScope;
   NodeType last_stmt_type;
-}compiler;
+}compiler_ctx;
 
-void compileError(compiler* ctx,const char* type,const char* msg);
+void compileError(compiler_ctx* ctx,const char* type,const char* msg);
 //set_source function is used instead of constructor
 //this way the Compiler class becomes reusable
 //by initializing it again
-void compiler_set_source(compiler* ctx,zuko_src* p,size_t root_idx);
+compiler_ctx* create_compiler_ctx(zuko_src*);
+void compiler_set_source(compiler_ctx* ctx,zuko_src* p,size_t root_idx);
 void compiler_add_builtin(const char* name,BuiltinFunc fn);  
-void compiler_reduceStackTo(compiler* ctx,int size);//for REPL
+void compiler_reduceStackTo(compiler_ctx* ctx,int size);//for REPL
 //Compile options
 static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
 static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
-uint8_t* compile_program(compiler* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options);//compiles as a complete program adds NPOP_STACK and OP_EXIT
-void compiler_destroy(compiler*);
+uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options);//compiles as a complete program adds NPOP_STACK and OP_EXIT
+void compiler_destroy(compiler_ctx*);
 
 #ifdef __cplusplus
 }

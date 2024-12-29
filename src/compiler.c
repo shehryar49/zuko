@@ -45,12 +45,12 @@ SOFTWARE.*/
 
 
 
-static inline void instruction(compiler* ctx,enum OPCODE op)
+static inline void instruction(compiler_ctx* ctx,enum OPCODE op)
 {
     zbytearr_push(&ctx->bytecode,op);
     ctx->bytes_done++;
 }
-static inline void i32_operand(compiler* ctx,int32_t operand)
+static inline void i32_operand(compiler_ctx* ctx,int32_t operand)
 {
     size_t sz = ctx->bytecode.size;
     zbytearr_resize(&ctx->bytecode,sz + sizeof(int32_t));
@@ -97,22 +97,18 @@ static inline void addBytes(zbytearr* vec,int32_t x)
   zbytearr_resize(vec,sz + sizeof(int32_t));
   memcpy(vec->arr+sz,&x,sizeof(int32_t));
 }
-void compiler_set_source(compiler* ctx,zuko_src* p,size_t root_idx)
+compiler_ctx* create_compiler_ctx(zuko_src* p)
 {
-    if(root_idx >= p->files.size)
-    {
-        fprintf(stderr,"Compiler: set_source() failed. REASON: root_idx out of range!");
-        exit(1);
-    }
+    compiler_ctx* ctx = malloc(sizeof(compiler_ctx));
     str_vector_init(&ctx->symRef);
     ctx->symRef.size = 0;
     extractSymRef(&ctx->symRef,&p->ref_graph);
     ctx->num_of_constants = (int32_t*)&(p->num_of_constants);
     ctx->files = &p->files;
     ctx->sources = &p->sources;
-    ctx->fileTOP = root_idx; // we start from the root file obviously
+    ctx->fileTOP = 0; 
     ctx->line_num_table = &p->line_num_table;
-    ctx->filename = p->files.arr[root_idx];
+    ctx->filename = p->files.arr[0];
     if(p->num_of_constants > 0 && !REPL_MODE)
     {
         if(vm_constants)
@@ -152,8 +148,18 @@ void compiler_set_source(compiler* ctx,zuko_src* p,size_t root_idx)
         str_vector_push(&ctx->prefixes,"");
         ctx->bytes_done = 0;
     }
+
 }
-void compileError(compiler* ctx,const char* type,const char* msg)
+void compiler_set_source(compiler_ctx* ctx, zuko_src* p, size_t root_idx)
+{
+    if(root_idx >= p->files.size)
+    {
+        fprintf(stderr,"Compiler: set_source() failed. REASON: root_idx out of range!");
+        exit(1);
+    }
+
+}
+void compileError(compiler_ctx* ctx,const char* type,const char* msg)
 {
     fprintf(stderr,"\nFile %s\n",ctx->filename);
     fprintf(stderr,"%s at line %zu\n",type,ctx->line_num);
@@ -205,7 +211,7 @@ int32_t add_to_vm_strings(const char* n)
     ptr_vector_push(&vm_strings,str);
     return (int32_t)vm_strings.size-1;
 }
-void add_lntable_entry(compiler* ctx,size_t opcodeIdx)
+void add_lntable_entry(compiler_ctx* ctx,size_t opcodeIdx)
 {
     byte_src tmp = {ctx->fileTOP,ctx->line_num};
     lntable_emplace(ctx->line_num_table,opcodeIdx,tmp);
@@ -223,7 +229,7 @@ int32_t add_builtin_to_vm(const char* name)
     ptr_vector_push(&vm_builtin,fnAddr);
     return (int32_t)vm_builtin.size-1;
 }
-int32_t resolve_name(compiler* ctx,const char* name,bool* isGlobal,bool blowUp,bool* isFromSelf)
+int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isGlobal,bool blowUp,bool* isFromSelf)
 {
     *isGlobal = false;
     for(int32_t i=ctx->locals.size-1;i>=0;i-=1)
@@ -266,7 +272,7 @@ int32_t resolve_name(compiler* ctx,const char* name,bool* isGlobal,bool blowUp,b
 }
 
 int32_t foo;
-void expr_bytecode(compiler* ctx,Node* ast)
+void expr_bytecode(compiler_ctx* ctx,Node* ast)
 {
     zobject reg;
     if (ast->childs.size == 0)
@@ -878,7 +884,7 @@ void expr_bytecode(compiler* ctx,Node* ast)
     return;//to prevent compiler warning
 }
 static char error_buffer[100];
-void scan_class(compiler* ctx,Node* ast)
+void scan_class(compiler_ctx* ctx,Node* ast)
 {
     ctx->classMemb.size = 0;
     while(ast->type!=EOP)
@@ -924,7 +930,7 @@ void scan_class(compiler* ctx,Node* ast)
     }
 }
 
-size_t compile(compiler* ctx,Node* ast)
+size_t compile(compiler_ctx* ctx,Node* ast)
 {
     size_t bytes_done_before = ctx->bytes_done; 
     bool isGen = false;
@@ -2150,7 +2156,7 @@ size_t compile(compiler* ctx,Node* ast)
     return ctx->bytes_done - bytes_done_before;
 
 }
-void optimize_jmps(compiler* ctx,zbytearr* bytecode)
+void optimize_jmps(compiler_ctx* ctx,zbytearr* bytecode)
 {
     for(size_t i=0; i < ctx->andJMPS.size; i++)
     {
@@ -2184,7 +2190,7 @@ void optimize_jmps(compiler* ctx,zbytearr* bytecode)
         memcpy(bytecode->arr+e+1,&offset,4);
     }
 }
-void reduceStackTo(compiler* ctx,int size)//for REPL
+void reduceStackTo(compiler_ctx* ctx,int size)//for REPL
 {
     while((int)ctx->STACK_SIZE > size)
     {
@@ -2200,7 +2206,7 @@ void reduceStackTo(compiler* ctx,int size)//for REPL
         }
     }
 }
-zclass* make_error_class(compiler* ctx,const char* name,zclass* error)
+zclass* make_error_class(compiler_ctx* ctx,const char* name,zclass* error)
 {
     zclass* k = vm_alloc_zclass();
     int32_t idx = add_to_vm_strings(name);
@@ -2235,7 +2241,7 @@ zobject make_zfile(FILE* fp)
     f->open = true;
     return zobj_from_file(f);
 }
-uint8_t* compile_program(compiler* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options)//compiles as a complete program adds NPOP_STACK and OP_EXIT
+uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options)//compiles as a complete program adds NPOP_STACK and OP_EXIT
 {
     //If prev vector is empty then this program will be compiled as an independent new one
     //otherwise this program will be an addon to the previous one
@@ -2343,7 +2349,7 @@ uint8_t* compile_program(compiler* ctx,Node* ast,int32_t argc,const char* argv[]
     return ctx->bytecode.arr;
 }
 
-void compiler_destroy(compiler* ctx)
+void compiler_destroy(compiler_ctx* ctx)
 {
     sizet_vector_destroy(&ctx->andJMPS);
     sizet_vector_destroy(&ctx->orJMPS);
