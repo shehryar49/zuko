@@ -278,32 +278,32 @@ zobject PRINTF(zobject* args,int32_t argc)
     {
         if(format->val[k] == '%')
         {
-          if(k+1 < l && format->val[k+1] == '%')
-          {
-            printf("%%");
-            k+=2;
-            continue;
-          }
-          if(j>=argc)
-            return z_err(ArgumentError,"String format requires more arguments!");
-          /*if(args[j].type=='j')
-           printList((zlist*)args[j].ptr);
-          else if(args[j].type=='a')
-           printzdict((zdict*)args[j].ptr);
-          else if(args[j].type==Z_BYTEARR)
-          printByteArray((zbytearr*)args[j].ptr);
-          else
-           printf("%s",zobjectToStr(args[j]).c_str());*/
-          j+=1;
+            if(k+1 < l && format->val[k+1] == '%')
+            {
+                printf("%%");
+                k+=2;
+                continue;
+            }
+            if(j>=argc)
+                return z_err(ArgumentError,"String format requires more arguments!");
+            /*if(args[j].type=='j')
+                printList((zlist*)args[j].ptr);
+            else if(args[j].type=='a')
+            printzdict((zdict*)args[j].ptr);
+            else if(args[j].type==Z_BYTEARR)
+            printByteArray((zbytearr*)args[j].ptr);
+            else
+            printf("%s",zobjectToStr(args[j]).c_str());
+            */j+=1;
+            }
+            else
+            printf("%c",format->val[k]);
+            k+=1;
         }
-        else
-          printf("%c",format->val[k]);
-        k+=1;
+        zobject ret = nil;
+        ret.type = 'n';
+        return ret;
     }
-    zobject ret = nil;
-    ret.type = 'n';
-    return ret;
-}
 zobject FORMAT(zobject* args,int32_t argc)
 {
     if(argc < 1)
@@ -398,15 +398,19 @@ zobject input(zobject* args,int32_t argc)
     }
     //string s;
     char ch;
+    dyn_str s;
+    dyn_str_init(&s);
     while(true)
     {
         ch = fgetc(stdin);
         if(ch=='\n')
           break;
-        //s+=ch;
+        dyn_str_push(&s,ch);
     }
-    zstr* p ;//= vm_alloc_zstr(s.length());
-   // strcpy(p->val,s.c_str());
+
+    zstr* p = vm_alloc_zstr(s.length);
+    strcpy(p->val,s.arr);
+    dyn_str_destroy(&s);
     return zobj_from_str_ptr(p);
 }
 zobject TYPEOF(zobject* args,int32_t argc)

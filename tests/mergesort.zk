@@ -1,4 +1,4 @@
-function merge(var arr,var l,var mid,var h)
+fn merge(var arr,var l,var mid,var h)
 {
     var arr1 = []
     var arr2 = []
@@ -38,7 +38,7 @@ function merge(var arr,var l,var mid,var h)
     }
     
 }
-function mergeSort(var arr,var l,var h)
+fn mergeSort(var arr,var l,var h)
 {
     if(l<h)
     {

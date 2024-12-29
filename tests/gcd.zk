@@ -1,4 +1,4 @@
-function gcd(var a,var b)
+fn gcd(var a,var b)
 {
   if(b==0)
   {

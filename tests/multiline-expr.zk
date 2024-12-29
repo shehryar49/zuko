@@ -29,7 +29,7 @@ var k = [
 ]
 println(k)
 # Test multiline return stmt
-function f()
+fn f()
 {
     return (
         1+1

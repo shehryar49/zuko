@@ -1,4 +1,4 @@
-function generateTokens(var str)
+fn generateTokens(var str)
 {
   var k = 0
   var tokens = []

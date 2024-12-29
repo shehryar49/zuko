@@ -817,7 +817,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
             parseError(ctx,"SyntaxError","Error use of keyword private outside class!");
 
         if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
+        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0);
         else
             parseError(ctx,"SyntaxError","Invalid use of keyword private\n");
     }
@@ -829,7 +829,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         if(!ctx->inclass)
             parseError(ctx,"SyntaxError","Error use of keyword public outside class!");
         if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
+        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0);
         else
             parseError(ctx,"SyntaxError","Invalid use of keyword public");
     }
@@ -1262,7 +1262,7 @@ Node* parseStmt(Parser* ctx,token* tokens,int begin,int end)
         nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin+1,end));
         return ast;
     }
-    if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0)
+    if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0)
     {
         if(tokens_size<4)
             parseError(ctx,"SyntaxError","Invalid Syntax");

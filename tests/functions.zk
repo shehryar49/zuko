@@ -1,8 +1,8 @@
-function g(var x,var y)
+fn g(var x,var y)
 {
     return x | y
 }
-function fun(var x,var y)
+fn fun(var x,var y)
 {
     return x^y + g(x,y)
 }

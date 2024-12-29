@@ -2,20 +2,20 @@ class A
 {
   private var x = nil
   var idk = 69
-  function __construct__(var x)
+  fn __construct__(var x)
     self.x = x
-  function f1()
+  fn f1()
   {
     println("this is A.f1()")
   }
-  function f2()
+  fn f2()
   {
     println("this is A.f2()")
   }
 }
 class B extends A
 {
-  function f2()
+  fn f2()
   {
     println("this is B.f2()")
   }

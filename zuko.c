@@ -54,30 +54,26 @@ int main(int argc, const char* argv[])
         filename = clone_str(argv[1]);
         source_code = readfile(filename);
     }
-    zuko_src src;
-    zuko_src_init(&src);
-    zuko_src_add_file(&src, filename,source_code);
-
-     
+    zuko_src* src = create_source(filename,source_code);
     uint8_t* bytecode;
     size_t bytecode_len;
     //the variables in curly brackets below are temporary
     //they are not needed during program execution
     {
         lexer lex;
-        token_vector tokens = lexer_generateTokens(&lex,&src,true,0);
+        token_vector tokens = lexer_generateTokens(&lex,src,true,0);
         if(lex.hadErr)//had an error which was printed
           return 0;
         Parser parser;
         parser_init(&parser);
-        parser_set_source(&parser,&src,0);
+        parser_set_source(&parser,src,0);
         Node* ast = parse_block(&parser,tokens.arr,0,tokens.size-1); //parse the tokens of root file
 
         //uncomment below line to print AST in tabular form
         //print_ast(ast,0);
         vm_init();
         compiler comp;
-        compiler_set_source(&comp,&src,0);//init compiler with ZukoSource
+        compiler_set_source(&comp,src,0);//init compiler with ZukoSource
         bytecode = compile_program(&comp,ast,argc,argv,OPT_POP_GLOBALS); // compile AST of program
         bytecode_len = comp.bytes_done;
         //dis(bytecode);
@@ -87,12 +83,12 @@ int main(int argc, const char* argv[])
         token_vector_destroy(&tokens);
     }
 
-    vm_load(bytecode,bytecode_len,&src); // vm uses the src for printing errors and stuff
+    vm_load(bytecode,bytecode_len,src); // vm uses the src for printing errors and stuff
 
     // It's showtime
     interpret(0,true);
     vm_destroy();
-    zuko_src_destroy(&src);
+    zuko_src_destroy(src);
     free(bytecode);
     // Hasta La Vista Baby    
     return 0;

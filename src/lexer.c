@@ -13,7 +13,7 @@
 extern bool REPL_MODE;
 void REPL();
 
-const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","function","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
+const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","fn","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
 bool isKeyword(const char* s)
 {
   for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)

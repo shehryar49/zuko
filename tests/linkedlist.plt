@@ -4,7 +4,7 @@ namespace ds
   {
     var val = nil
     var next = nil
-    function __construct__(var val)
+    fn __construct__(var val)
     {
       self.val = val
     }
@@ -13,7 +13,7 @@ namespace ds
   {
     private var head = nil
     private var size = 0
-    function push_back(var node)
+    fn push_back(var node)
     {
       if(self.size==0)
       {
@@ -30,7 +30,7 @@ namespace ds
       }
       self.size+=1
     }
-    function pop_back()
+    fn pop_back()
     {
       var ptr = self.head
       var second = self.head
@@ -41,7 +41,7 @@ namespace ds
       }
       second.next = nil
     }
-    function display()
+    fn display()
     {
       var ptr = self.head
       while(ptr.next != nil)
@@ -51,7 +51,7 @@ namespace ds
       }
       println(ptr.val)
     }
-    function at_pos(var i)
+    fn at_pos(var i)
     {
       if(i>=self.size)
       {

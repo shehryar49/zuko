@@ -5,7 +5,7 @@
 #list.push() is better because it does not allocate a new list instead it just adds a
 #new element
 var calls = 0
-function permute(var str,var k)
+fn permute(var str,var k)
 {
   calls+=1
   if(k==1)

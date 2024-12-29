@@ -1,6 +1,6 @@
 # Test miscalleneous
 
-function f()
+fn f()
 {
    return "hello"
 }
@@ -10,11 +10,11 @@ var sentence = "A quick brown fox jumps over a lazy dog"
 var words = split(sentence," ")
 println(words)
 
-function g()
+fn g()
 {
 	return [10,[1,2]]
 }
-function getIndex()
+fn getIndex()
 {
 	return 1
 }

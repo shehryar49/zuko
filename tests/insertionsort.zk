@@ -1,5 +1,5 @@
 
-function insertionSort(var arr)
+fn insertionSort(var arr)
 {
   var i = 1
   while(i<len(arr))

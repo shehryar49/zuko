@@ -2,6 +2,19 @@
 #include "lntable.h"
 #include "refgraph.h"
 
+zuko_src* create_source(const char* filename, char* text)
+{
+    zuko_src* src = malloc(sizeof(zuko_src));
+    src->num_of_constants = 0;
+    str_vector_init(&src->files);
+    str_vector_init(&src->sources);
+    lntable_init(&src->line_num_table);
+    refgraph_init(&src->ref_graph);
+    // add file
+    str_vector_push(&src->files,strdup(filename));
+    str_vector_push(&src->sources,text);
+    return src;
+}
 void zuko_src_init(zuko_src* src)
 {
     src->num_of_constants = 0;
