@@ -1,5 +1,6 @@
-import std/algo
-function bubbleSort(var nums)
+#import std/algo
+
+fn bubbleSort(var nums)
 {
     var l = len(nums)
     for(var i=1 to l-1)

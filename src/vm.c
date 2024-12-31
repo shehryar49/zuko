@@ -164,6 +164,8 @@ void vm_init()
     ptr_vector_init(&vm_important);
     ptr_vector_init(&vm_builtin);
     ptr_vector_init(&except_targ);
+    ptr_vector_init(&module_handles);
+    
     sizet_vector_init(&frames);
     sizet_vector_init(&try_stack_cleanup);
     sizet_vector_init(&try_limit_cleanup);
