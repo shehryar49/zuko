@@ -32,7 +32,7 @@ extern "C"{
 
 char* int64_to_string(int64_t x);
 
-typedef struct lexer
+typedef struct lexer_ctx
 {
   const char* filename;
   const char* source_code;
@@ -43,18 +43,18 @@ typedef struct lexer
   const char* errmsg;
   size_t k;
   char buffer[200];
-}lexer;
+}lexer_ctx;
 
 bool isKeyword(const char* s);
-token resolveMacro(const char* name);
-void str(lexer* ctx,token_vector*);
-void macro(lexer* ctx,token_vector*);
-void comment(lexer* ctx,token_vector*);
-void numeric(lexer* ctx,token_vector*);
-void id(lexer* ctx,token_vector*);
+token resolveMacro(lexer_ctx* ctx,const char* name,size_t length);
+void str(lexer_ctx* ctx,token_vector*);
+void macro(lexer_ctx* ctx,token_vector*);
+void comment(lexer_ctx* ctx,token_vector*);
+void numeric(lexer_ctx* ctx,token_vector*);
+void id(lexer_ctx* ctx,token_vector*);
 
-void lexErr(lexer* ctx,const char* type,const char* msg);
-token_vector lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr,size_t root_idx);
+void lexErr(lexer_ctx* ctx,const char* type,const char* msg);
+token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx);
 
 #ifdef __cplusplus
 }

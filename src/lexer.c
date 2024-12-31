@@ -10,6 +10,7 @@
 #include <limits.h>
 #include "dyn-str.h"
 #include "misc.h"
+#define ZUKO_VER_STRING "0.3.3"
 extern bool REPL_MODE;
 void REPL();
 
@@ -27,7 +28,7 @@ bool isKeyword(const char* s)
 char* char_to_str(char ch)
 {
     char tmp[2] = {ch,0};
-    return clone_str(tmp);
+    return strdup(tmp);
 }
 char* make_substr(const char* s,size_t strlen,size_t idx,size_t len)
 {
@@ -36,7 +37,7 @@ char* make_substr(const char* s,size_t strlen,size_t idx,size_t len)
     d[len] = 0;
     return d;
 }
-void lexErr(lexer* ctx,const char* type,const char* msg)
+void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
 {
     ctx->hadErr = true;
     ctx->errmsg = msg;
@@ -109,65 +110,41 @@ static int64_t hex_to_int64(const char* s)
     }
     return res;
 }
-token resolveMacro(const char* name)
+token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 {
-    token macro;
-    macro.type = NUM_TOKEN;
-    if(strcmp(name , "SEEK_CUR") == 0)
-        macro.content = int64_to_string(SEEK_CUR);
-    else if(strcmp(name , "SEEK_SET") == 0)
-        macro.content = int64_to_string(SEEK_SET);
-    else if(strcmp(name , "SEEK_END") == 0)
-        macro.content = int64_to_string(SEEK_END);
-    else if(strcmp(name , "pi") == 0)
-    {
-        macro.type = FLOAT_TOKEN;
-        macro.content = clone_str("3.14159");
-    }
-    else if(strcmp(name , "e") == 0)
-    {
-        macro.type = FLOAT_TOKEN;
-        macro.content = clone_str("2.718");
-    }
-    else if(strcmp(name , "clocks_per_sec") == 0)
-    {
-        macro.type = FLOAT_TOKEN;
-        macro.content = int64_to_string(CLOCKS_PER_SEC);
-    }
-    else if(strcmp(name , "FLT_MIN") == 0)
-    {
-        macro.type=FLOAT_TOKEN;
-        macro.content = double_to_string(-DBL_MAX);
-    }
-    else if(strcmp(name , "FLT_MAX") == 0)
-    {
-        macro.type=FLOAT_TOKEN;
-        macro.content = double_to_string(DBL_MAX);
-    }
-    else if(strcmp(name , "INT_MIN") == 0)
-        macro.content = int64_to_string(INT_MIN);
-    else if(strcmp(name , "INT_MAX") == 0)
-        macro.content = int64_to_string(INT_MAX);
-    else if(strcmp(name , "INT64_MIN") == 0)
-        macro.content = int64_to_string(LLONG_MIN);
-    else if(strcmp(name , "INT64_MAX") == 0)        
-        macro.content = int64_to_string(LLONG_MAX);
-    else if(strcmp(name , "os") == 0)
-    {
-        macro.type = STRING_TOKEN;
-        macro.content = clone_str(getOS());
-    }
-    else if(strcmp(name , "version") == 0)
-    {
-        macro.type = STRING_TOKEN;
-        macro.content = clone_str("0.3.3");
-    }
-    else 
-        macro.type = END_TOKEN;//to indicate macro not found
-    return macro;
-
+    size_t lineno = ctx->line_num;
+    if(strncmp(name , "SEEK_CUR",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(SEEK_CUR),lineno);
+    else if(strncmp(name , "SEEK_SET",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(SEEK_SET),lineno);
+    else if(strncmp(name , "SEEK_END",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(SEEK_END),lineno);
+    else if(strncmp(name , "pi",length) == 0)
+        return make_token(FLOAT_TOKEN,strdup("3.14159"),lineno);
+    else if(strncmp(name , "e",length) == 0)
+        return make_token(FLOAT_TOKEN,strdup("2.718"),lineno);
+    else if(strncmp(name , "clocks_per_sec",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(CLOCKS_PER_SEC),lineno);
+    else if(strncmp(name , "INT_MIN",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(INT_MIN),lineno);
+    else if(strncmp(name , "INT_MAX",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(INT_MAX),lineno);
+    else if(strncmp(name , "INT64_MIN",length) == 0)
+        return make_token(NUM_TOKEN,int64_to_string(LLONG_MIN),lineno);
+    else if(strncmp(name , "INT64_MAX",length) == 0)        
+        return make_token(NUM_TOKEN,int64_to_string(LLONG_MAX),lineno);
+    else if(strncmp(name , "os",length) == 0)
+        return make_token(STRING_TOKEN,strdup(getOS()),lineno);
+    else if(strncmp(name , "version",length) == 0)
+        return make_token(STRING_TOKEN,strdup(ZUKO_VER_STRING),lineno);
+    else if(strncmp(name,"filename",length) == 0)
+        return make_token(STRING_TOKEN,strdup(ctx->filename),lineno);
+    else if(strncmp(name,"lineno",length) == 0)
+        return make_token(STRING_TOKEN,int64_to_string(ctx->line_num),lineno);
+    else
+        return make_token(END_TOKEN,"",0); //to indicate macro not found
 }
-void str(lexer* ctx,token_vector* tokenlist)
+void str(lexer_ctx* ctx,token_vector* tokenlist)
 {
     size_t j = ctx->k+1;
     bool match = false;
@@ -234,17 +211,10 @@ void str(lexer* ctx,token_vector* tokenlist)
         }
         else if(src[j] == 'x' && escaped)
         {
-            if(j + 2 >= src_length)
-            {
-                lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
-                return;
-            }
-            if(!isalpha(src[j+1]) && !isdigit(src[j+1]))
-            {
-                lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
-                return;
-            }
-            if(!isalpha(src[j+2]) && !isdigit(src[j+2]))
+            bool noMoreChars = (j+2 >= src_length);
+            bool invalidFirstChar = !noMoreChars && (!isalpha(src[j+1]) && !isdigit(src[j+1]));
+            bool invalidSecondChar = !noMoreChars && (!isalpha(src[j+2]) && !isdigit(src[j+2]));
+            if(invalidFirstChar || invalidSecondChar)
             {
                 lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
                 return;
@@ -255,7 +225,6 @@ void str(lexer* ctx,token_vector* tokenlist)
             j += 2;
             escaped = false;
         }
-        
         else
         {
             if(escaped) // unknown escape sequence
@@ -281,7 +250,7 @@ void str(lexer* ctx,token_vector* tokenlist)
     token_vector_push(tokenlist,(make_token(STRING_TOKEN,t.arr,ctx->line_num)));
     ctx->k = j;
 }
-void macro(lexer* ctx,token_vector* tokenlist)
+void macro(lexer_ctx* ctx,token_vector* tokenlist)
 {
     const char* src = ctx->source_code;
     size_t src_length = ctx->srcLen;
@@ -306,35 +275,19 @@ void macro(lexer* ctx,token_vector* tokenlist)
         end = j;
         j+=1;
     }
-    char* t = make_substr(src,src_length,begin,end-begin+1);
-    token tok;
-    if(strcmp(t , "file") == 0)
+    size_t macro_name_length = end - begin + 1;
+    token tok = resolveMacro(ctx,src+begin,macro_name_length);
+    if(tok.type == END_TOKEN)
     {
-        tok.type = STRING_TOKEN;
-        tok.content = clone_str(ctx->filename);
+        ctx->k = src_length - 1;
+        snprintf(ctx->buffer,200,"Unknown macro");
+        lexErr(ctx,"NameError",ctx->buffer);
+        return;
     }
-    else if(strcmp(t , "lineno") == 0)
-    {
-        tok.type = NUM_TOKEN;
-        tok.content = int64_to_string(ctx->line_num);
-    }
-    else
-    {
-        tok = resolveMacro(t);
-        if(tok.type == END_TOKEN)
-        {
-            ctx->k = src_length - 1;
-            snprintf(ctx->buffer,200,"Unknown macro @%s",t);
-            free(t);
-            lexErr(ctx,"NameError",ctx->buffer);
-            return;
-        }
-    }
-    free(t);
     token_vector_push(tokenlist,tok);
     ctx->k = j;
 }
-void comment(lexer* ctx,token_vector* tokenlist)
+void comment(lexer_ctx* ctx,token_vector* tokenlist)
 {
     bool multiline = false;
     bool foundEnd = false;
@@ -372,9 +325,8 @@ void comment(lexer* ctx,token_vector* tokenlist)
     }
     ctx->k = j-1;
 }
-void numeric(lexer* ctx,token_vector* tokenlist)
+void numeric(lexer_ctx* ctx,token_vector* tokenlist)
 {
-
     const char* src = ctx->source_code;
     size_t src_length = ctx->srcLen;
     char c = src[ctx->k];
@@ -386,7 +338,7 @@ void numeric(lexer* ctx,token_vector* tokenlist)
         dyn_str b;
         dyn_str_init(&b);
         token i;
-        while(j<src_length)
+        while(j < src_length)
         {
             c = src[j];
             if(c>='0' && c<='9')
@@ -491,7 +443,7 @@ void numeric(lexer* ctx,token_vector* tokenlist)
     token_vector_push(tokenlist,i);
     ctx->k = j;
 }
-void id(lexer* ctx,token_vector* tokenlist)
+void id(lexer_ctx* ctx,token_vector* tokenlist)
 {
     const char* src = ctx->source_code;
     size_t src_length = ctx->srcLen;
@@ -556,7 +508,7 @@ void id(lexer* ctx,token_vector* tokenlist)
     token_vector_push(tokenlist,i);
     ctx->k = j;
 }
-token_vector lexer_generateTokens(lexer* ctx,const zuko_src* src,bool printErr,size_t root_idx)
+token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx)
 {
     token_vector tokenlist;
     token_vector_init(&tokenlist);

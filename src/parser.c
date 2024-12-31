@@ -1412,7 +1412,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin,k-1)); // lhs
             
             char tmp[2] = {tokens[k].content[0],0};
-            const char* copy = tokens[k].content;
+            char* copy = tokens[k].content;
             tokens[k].content = tmp;
 
             if(k+1 > end)
@@ -2079,12 +2079,12 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         size_t K = ctx->line_num;
                         ctx->filename = str;
                         ctx->line_num = 1;
-                        lexer lex;
+                        lexer_ctx lex;
                         zuko_src tmp;
                         zuko_src_init(&tmp);
                         zuko_src_add_file(&tmp, clone_str(ctx->filename),src);
                         //tmp.addFile(filename,src);
-                        token_vector t = lexer_generateTokens(&lex,&tmp,true,0);
+                        token_vector t = tokenize(&lex,&tmp,true,0);
                         if(lex.hadErr)
                         {
                             ctx->filename = F;

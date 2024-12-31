@@ -61,8 +61,8 @@ int main(int argc, const char* argv[])
     //the variables in curly brackets below are temporary
     //they are not needed during program execution
     {
-        lexer lex;
-        token_vector tokens = lexer_generateTokens(&lex,src,true,0);
+        lexer_ctx lex;
+        token_vector tokens = tokenize(&lex,src,true,0);
         if(lex.hadErr)//had an error which was printed
           return 0;
         parser_ctx* pctx = create_parser_ctx(src);
