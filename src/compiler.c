@@ -148,6 +148,7 @@ compiler_ctx* create_compiler_ctx(zuko_src* p)
         str_vector_push(&ctx->prefixes,"");
         ctx->bytes_done = 0;
     }
+    return ctx;
 
 }
 void compiler_set_source(compiler_ctx* ctx, zuko_src* p, size_t root_idx)
@@ -2318,7 +2319,6 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         MaxRecursionError =make_error_class(ctx,"MaxRecursionError",Error);
         AccessError = make_error_class(ctx,"AccessError",Error);
     }
-
     compile(ctx,ast);
     bool popGlobals = (options & OPT_POP_GLOBALS);
     if(ctx->globals.size!=0 && popGlobals)

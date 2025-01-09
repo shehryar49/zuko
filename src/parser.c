@@ -27,7 +27,7 @@ Node* new_node(NodeType type,const char* val)
     printf("parser_ctx: Error allocating memory for AST!\n");
     exit(1);
   }
-  p->val = val;
+  p->val = (char*)val;
   p->type = type;
   nodeptr_vector_init(&p->childs);
   return p;
@@ -185,7 +185,7 @@ void delete_ast(Node* ast)
      delete_ast(ast->childs.arr[k]);
   }
   nodeptr_vector_destroy(&ast->childs);
-  if(ast->type == line_node)
+  if(ast->type == line_node || ast->type == NUM)
     free((void*)ast->val);
   free(ast);
 }
@@ -242,13 +242,13 @@ int find_token_consecutive(token t,int start,int end,token* tokens)
 }
 bool atGlobalLevel(parser_ctx* ctx)
 {
-return (!ctx->infunc && !ctx->inclass && !ctx->inloop
-    && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
+    return (!ctx->infunc && !ctx->inclass && !ctx->inloop
+        && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
 }
 bool isValidCtxForFunc(parser_ctx* ctx)
 {
     return (!ctx->infunc  && !ctx->inloop
-    && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
+        && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
 }
 parser_ctx* create_parser_ctx(zuko_src* p)
 {
@@ -347,15 +347,14 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
     Node* ast = NULL;
     if(tokens_size==1)
     {
-
         if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"nil")==0 )
         {
-            ast = new_node(NIL,tokens[begin].content);
+            ast = new_node(NIL,NULL);
             return ast;
         }
         else if(tokens[begin].type== BOOL_TOKEN )
         {
-            ast = new_node(BOOL_NODE,tokens[begin].content);
+            ast = new_node(BOOL_NODE,strdup(tokens[begin].content));
             return ast;
         }
         else if(tokens[begin].type == ID_TOKEN)
@@ -369,12 +368,12 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
                     break;
                 free((void*)ctx->aux);
             }
-            ast = new_node(ID_NODE,tokens[begin].content);
+            ast = new_node(ID_NODE,strdup(tokens[begin].content));
             return ast;
         }
         else if(tokens[begin].type == NUM_TOKEN && isnum(tokens[begin].content))
         {
-            ast = new_node(NUM,tokens[begin].content);//int32
+            ast = new_node(NUM,strdup(tokens[begin].content));//int32
             return ast;
         }
         else if(tokens[begin].type == BYTE_TOKEN)
@@ -391,13 +390,14 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         {
             if(find_token(tokens[begin],0,(int)ctx->known_constants.size-1,ctx->known_constants.arr)==-1)
             {
-                token_vector_push(&ctx->known_constants,tokens[begin]);
+                token dup = make_token(tokens[begin].type,strdup(tokens[begin].content),tokens[begin].ln);
+                token_vector_push(&ctx->known_constants,dup);
                 *ctx->num_of_constants = *ctx->num_of_constants + 1;
             }
             if(tokens[begin].type == FLOAT_TOKEN)
-                ast = new_node(FLOAT,tokens[begin].content);
+                ast = new_node(FLOAT,strdup(tokens[begin].content));
             else if(tokens[begin].type == NUM_TOKEN)//int64
-                ast = new_node(NUM,tokens[begin].content);
+                ast = new_node(NUM,strdup(tokens[begin].content));
             return ast;
         }
         parseError(ctx,"SyntaxError","Invalid Syntax");
@@ -821,7 +821,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
     else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"public") == 0)
     {
         isPrivate = false;
-        //tokens.erase(tokens.begin());
         begin += 1;
         if(!ctx->inclass)
             parseError(ctx,"SyntaxError","Error use of keyword public outside class!");
@@ -847,20 +846,11 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         //str_find("::",tokens[1].content);
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        const char* tmp = tokens[begin+1].content;
+        char* tmp = tokens[begin+1].content;
         if(atGlobalLevel(ctx))
-        {
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-    //        puts("adding to_free");
-//            ptr_vector_push(&ctx->to_free,(void*)tmp);
-  //          puts("done");
-        }
         if(isPrivate)
-        {
             tmp = merge_str("@",tokens[begin+1].content);
-     //       puts("adding to _free2");
-       //     ptr_vector_push(&ctx->to_free,(void*)tmp); 
-        }
         ast->val = tmp;
         int expr_begin = begin+3;
         int expr_end = end;

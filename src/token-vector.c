@@ -1,5 +1,6 @@
 #include "token-vector.h"
 #include "token.h"
+#include <stdio.h>
 
 void token_vector_init (token_vector* p)
 {
@@ -54,8 +55,9 @@ void token_vector_destroy(token_vector* p)
     for(size_t i = 0;i < p->size; i++)
     {
         TokenType type = p->arr[i].type;
-        if(type == STRING_TOKEN || type == KEYWORD_TOKEN || type == ID_TOKEN )
+        if(type == STRING_TOKEN || type == KEYWORD_TOKEN || type == ID_TOKEN || type == NUM_TOKEN || type==BYTE_TOKEN)
         {
+//            printf("deleting token %s: %d\n",p->arr[i].content,(int)type);
             free((void*)p->arr[i].content);
         }
     }

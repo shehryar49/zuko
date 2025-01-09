@@ -1669,8 +1669,11 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             NEXT_INST;
         }
         STACK.arr[lcv_idx].l += STACK.arr[end_idx+1].l;
+        
         if(STACK.arr[lcv_idx].l <= STACK.arr[end_idx].l)
             ip = program + where;
+        //if(--STACK.arr[end_idx].l)
+        //    ip = program + where;
         NEXT_INST;
     }
     CASE_CP DLOOP:
@@ -1754,7 +1757,9 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         if(STACK.arr[lcv_idx].l > STACK.arr[end_idx].l)
             ip = program + where;
-        
+        int64_t iterations = (int64_t)ceil((STACK.arr[end_idx].l - STACK.arr[lcv_idx].l + 1)/(double)STACK.arr[end_idx+1].l);
+        //STACK.arr[end_idx].l = iterations;
+        //printf("iterations = %lld\n",iterations);
         NEXT_INST;
     }
     CASE_CP SETUP_DLOOP:
@@ -2499,8 +2504,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     }
     CASE_CP INDEX:
     {
-  //      zlist_fastpop(&STACK,&p1);
-//        zlist_fastpop(&STACK,&p2);
         p1 = STACK.arr[--STACK.size];
         p2 = STACK.arr[--STACK.size];
         if (p2.type == Z_LIST)

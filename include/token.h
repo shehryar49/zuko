@@ -49,6 +49,7 @@ typedef enum TokenType
   BOOL_TOKEN,
   END_TOKEN
 }TokenType;
+
 typedef struct token
 {
   char* content;

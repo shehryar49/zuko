@@ -254,7 +254,7 @@ void macro(lexer_ctx* ctx,token_vector* tokenlist)
 {
     const char* src = ctx->source_code;
     size_t src_length = ctx->srcLen;
-    if(ctx->k==src_length-1)
+    if(ctx->k == src_length-1)
     {
         lexErr(ctx,"SyntaxError","Invalid macro name");
         return;
@@ -301,9 +301,7 @@ void comment(lexer_ctx* ctx,token_vector* tokenlist)
     for(;j<src_length;j+=1)
     {
         if(!multiline && src[j]=='\n')
-        {
             break;
-        }
         else if(multiline && src[j] == '-')
         {
             if(j+1 < src_length && src[j+1]=='#')
@@ -331,7 +329,7 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
     size_t src_length = ctx->srcLen;
     char c = src[ctx->k];
     //hex literal
-    if(c=='0' && ctx->k!=src_length-1 && src[ctx->k+1]=='x')
+    if(c=='0' && ctx->k != src_length-1 && src[ctx->k+1]=='x')
     {
         ctx->k+=1;
         size_t j = ctx->k+1;
@@ -478,7 +476,8 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
         {
             if(tokenlist->arr[tokenlist->size-1].type == KEYWORD_TOKEN && strcmp(tokenlist->arr[tokenlist->size-1].content,"else") == 0)
             {
-                tokenlist->arr[tokenlist->size-1].content = clone_str("else if"); // memory leak
+                free(t.arr);
+                tokenlist->arr[tokenlist->size-1].content = strdup("else if");
                 ctx->k = j;
                 return;
             }

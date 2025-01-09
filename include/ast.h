@@ -101,7 +101,7 @@ typedef enum NodeType
 // No oop nonsense
 typedef struct Node
 {
-  const char* val;
+  char* val;
   NodeType type;
   nodeptr_vector childs;
 }Node;
