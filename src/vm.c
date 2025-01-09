@@ -4182,6 +4182,7 @@ void vm_destroy()
     ptr_vector_destroy(&vm_builtin);
     ptr_vector_destroy(&except_targ);
     ptr_vector_destroy(&vm_important);
+    ptr_vector_destroy(&module_handles);
     mem_map_destroy(&memory);
 }
 

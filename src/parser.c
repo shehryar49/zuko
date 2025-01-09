@@ -185,7 +185,7 @@ void delete_ast(Node* ast)
     nodeptr_vector_destroy(&ast->childs);
     //if(ast->type == ID_NODE)
     //    printf("freeing %s\n",ast->val);
-    if(ast->type == line_node || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE)
+    if(ast->type == line_node || ast->type == declare || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE || ast->type == BOOL_NODE)
         free((void*)ast->val);
     free(ast);
 }
@@ -846,11 +846,13 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         //str_find("::",tokens[1].content);
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        char* tmp = strdup(tokens[begin+1].content);
+        char* tmp = NULL;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        if(isPrivate)
+        else if(isPrivate)
             tmp = merge_str("@",tokens[begin+1].content);
+        else
+            tmp = strdup(tokens[begin+1].content);
         ast->val = tmp;
         int expr_begin = begin+3;
         int expr_end = end;
@@ -2126,4 +2128,5 @@ void parser_destroy(parser_ctx* ctx)
 {
     str_vector_destroy(&ctx->prefixes);
     token_vector_destroy(&ctx->known_constants);
+    free(ctx);
 }

@@ -508,11 +508,26 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
         i.content = t.arr;
         i.ln = ctx->line_num;
     }
-    else if(strcmp(t.arr,"or") == 0 || strcmp(t.arr,"and") == 0 || strcmp(t.arr,"is") == 0)
+    else if(strcmp(t.arr,"or") == 0 )
     {
-        i.content = t.arr;
+        i.content = "or";
         i.type = OP_TOKEN;
         i.ln = ctx->line_num;
+        free(t.arr);
+    }
+    else if(strcmp(t.arr,"and") == 0)
+    {
+        i.content = "and";
+        i.type = OP_TOKEN;
+        i.ln = ctx->line_num;
+        free(t.arr);
+    }
+    else if(strcmp(t.arr,"is") == 0)
+    {
+        i.content = "is";
+        i.type = OP_TOKEN;
+        i.ln = ctx->line_num;
+        free(t.arr);
     }
     else if(strcmp(t.arr,"true") == 0 || strcmp(t.arr,"false") == 0)
     {

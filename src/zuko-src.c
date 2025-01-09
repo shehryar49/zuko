@@ -59,4 +59,5 @@ void zuko_src_destroy(zuko_src* src)
         }
     }
     refgraph_destroy(&src->ref_graph);
+    free(src);
 }
