@@ -178,16 +178,16 @@ const char* NodeTypeNames[] =
 
 void delete_ast(Node* ast)
 {
-  if(!ast)
-    return;
-  for(size_t k = 0;k<ast->childs.size;k+=1)
-  {
-     delete_ast(ast->childs.arr[k]);
-  }
-  nodeptr_vector_destroy(&ast->childs);
-  if(ast->type == line_node || ast->type == NUM)
-    free((void*)ast->val);
-  free(ast);
+    if(!ast)
+        return;
+    for(size_t k = 0;k<ast->childs.size;k+=1)
+        delete_ast(ast->childs.arr[k]);
+    nodeptr_vector_destroy(&ast->childs);
+    //if(ast->type == ID_NODE)
+    //    printf("freeing %s\n",ast->val);
+    if(ast->type == line_node || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE)
+        free((void*)ast->val);
+    free(ast);
 }
 
 //For debugging purposes
@@ -250,7 +250,7 @@ bool isValidCtxForFunc(parser_ctx* ctx)
     return (!ctx->infunc  && !ctx->inloop
         && !ctx->inif && !ctx->inelif && !ctx->inelse && !ctx->intry && !ctx->incatch);
 }
-parser_ctx* create_parser_ctx(zuko_src* p)
+parser_ctx* create_parser_context(zuko_src* p)
 {
     parser_ctx* ctx = malloc(sizeof(parser_ctx));
     
@@ -275,7 +275,7 @@ parser_ctx* create_parser_ctx(zuko_src* p)
     ctx->foundYield = false;
     str_vector v;
     str_vector_init(&v);
-    refgraph_emplace(ctx->refGraph,clone_str(".main"),v);
+    refgraph_emplace(ctx->refGraph,strdup(".main"),v);
     return ctx;
 }
 
@@ -314,7 +314,7 @@ bool addSymRef(parser_ctx* ctx,const char* name)
         return false;
     str_vector* neighbours = refgraph_getref(ctx->refGraph,ctx->currSym);
     if(str_vector_search(neighbours,name) == -1)
-        str_vector_push(neighbours,clone_str(name));
+        str_vector_push(neighbours,strdup(name));
     return true;
 }
 int find_op(const char* prec[5][7],int i,const char* op)
@@ -378,12 +378,12 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         }
         else if(tokens[begin].type == BYTE_TOKEN)
         {
-            ast = new_node(BYTE_NODE,tokens[begin].content);
+            ast = new_node(BYTE_NODE,strdup(tokens[begin].content));
             return ast;
         }
         else if(tokens[begin].type == STRING_TOKEN)
         {
-            ast = new_node(STR_NODE,tokens[begin].content);
+            ast = new_node(STR_NODE,strdup(tokens[begin].content));
             return ast;
         }
         else if(tokens[begin].type== FLOAT_TOKEN || tokens[begin].type== NUM_TOKEN)
@@ -686,7 +686,7 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
 
             Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
             nodeptr_vector_push(&(ast->childs),n);
-            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tokens[begin].content));
+            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(tokens[begin].content)));
             bool done = false;
             for(size_t i = 1;i <= ctx->prefixes.size; i++)
             {
@@ -846,7 +846,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         //str_find("::",tokens[1].content);
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        char* tmp = tokens[begin+1].content;
+        char* tmp = strdup(tokens[begin+1].content);
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
         if(isPrivate)
@@ -889,7 +889,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                 Node* ast = new_node(call,"");
                 Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
                 nodeptr_vector_push(&(ast->childs),n);
-                nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tokens[begin].content));
+                nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(tokens[begin].content)));
                 bool done = false;
                 for(size_t i = 1;i <= ctx->prefixes.size; i++)
                 {
@@ -1007,7 +1007,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //if(((string)tokens[1].content).find("::")!=string::npos)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        const char* tmp = tokens[begin+1].content;
+        const char* tmp = strdup(tokens[begin+1].content);
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
         nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tmp));
@@ -1099,7 +1099,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             else
                 nodeptr_vector_push(&(ast->childs),new_node(nodecl,""));
 
-            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tokens[init_begin].content));
+            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(tokens[init_begin].content)));
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,init_expr_begin,init_expr_end));
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,endpoint_begin,endpoint_end));
             if(use_default_inc)
@@ -1131,7 +1131,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
         //ast->childs = {n,,exprAST};
         add_child(ast,n);
-        add_child(ast,new_node(ID_NODE,tokens[begin+1].content));
+        add_child(ast,new_node(ID_NODE,strdup(tokens[begin+1].content)));
         add_child(ast, exprAST);
         return ast;
     }
@@ -1148,7 +1148,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //if(((string)tokens[1].content).find("::")!=string::npos)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
 
-        nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tokens[begin+1].content));
+        nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(tokens[begin+1].content)));
         return ast;
     }
     if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"if") == 0)
@@ -1183,7 +1183,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             {
                 Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
                 nodeptr_vector_push(&(ast->childs),n);
-                nodeptr_vector_push(&(ast->childs),new_node(STR_NODE,tokens[begin+1].content));
+                nodeptr_vector_push(&(ast->childs),new_node(STR_NODE,strdup(tokens[begin+1].content)));
                 return ast;
             }
             else
@@ -1203,7 +1203,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
             nodeptr_vector_push(&(ast->childs),n);
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin+1,begin+1));
-            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tokens[begin+3].content));
+            nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(tokens[begin+3].content)));
             return ast;
         }
         else if(tokens_size==4)
@@ -1259,7 +1259,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //if(((string)tokens[begin+1].content).find("::")!=string::npos)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        const char* tmp = tokens[begin+1].content;
+        const char* tmp = strdup(tokens[begin+1].content);
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
         if(isPrivate)
@@ -1288,7 +1288,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                 if(tokens[k+1].type!= ID_TOKEN)
                     parseError(ctx,"SyntaxError","Invalid Syntax");
                 //ast->childs[2]->childs.push_back();
-                add_child(ast->childs.arr[2],new_node(ID_NODE,tokens[k+1].content));
+                add_child(ast->childs.arr[2],new_node(ID_NODE,strdup(tokens[k+1].content)));
                 k+=1;
                 if(k<args_end)// or k+1 < args.size() or in simple English(there are more parameters)
                 {
@@ -1845,7 +1845,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                     ctx->currSym = ast->childs.arr[1]->val;
                     str_vector v;
                     str_vector_init(&v);
-                    refgraph_emplace(ctx->refGraph,clone_str(ast->childs.arr[1]->val),v);
+                    refgraph_emplace(ctx->refGraph,strdup(ast->childs.arr[1]->val),v);
                 }
                 ctx-> infunc = true;
                 
@@ -1881,7 +1881,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
 
                 str_vector v;
                 str_vector_init(&v);
-                refgraph_emplace(ctx->refGraph,clone_str(ast->childs.arr[1]->val),v);
+                refgraph_emplace(ctx->refGraph,strdup(ast->childs.arr[1]->val),v);
                 
                 if(ast->type == CLASS)
                     nodeptr_vector_push(&(ast->childs),parse_block(ctx,tokens,class_begin,class_end));
@@ -1891,7 +1891,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                 //backtrack
                 //important: change if planning to support nested classes
                 ctx->inclass = false;
-                ctx->currSym = clone_str(aux);
+                ctx->currSym = strdup(aux);
                 
                 begin=class_end+2;
                 k = class_end+1;
@@ -2011,7 +2011,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                 }
                 catch_begin += 1;
                 catch_end -= 1;
-                nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,catchId));
+                nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,strdup(catchId)));
                 bool ctxCopy = ctx->intry;
                 ctx->intry = true;
                 nodeptr_vector_push(&(ast->childs),parse_block(ctx,tokens,try_begin,try_end));
@@ -2054,7 +2054,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         FILE* file = fopen(str,"rb"); // IMPORTANT: make sure to use readfile in future
                         if(!file)
                             parseError(ctx,"ImportError",strerror(errno));
-                        str_vector_push(ctx->files,clone_str(str));
+                        str_vector_push(ctx->files,strdup(str));
 
                         fseek(file,0,SEEK_END);
                         size_t total = ftell(file);
@@ -2072,7 +2072,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         lexer_ctx lex;
                         zuko_src tmp;
                         zuko_src_init(&tmp);
-                        zuko_src_add_file(&tmp, clone_str(ctx->filename),src);
+                        zuko_src_add_file(&tmp, strdup(ctx->filename),src);
                         //tmp.addFile(filename,src);
                         token_vector t = tokenize(&lex,&tmp,true,0);
                         if(lex.hadErr)

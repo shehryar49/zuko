@@ -6,6 +6,7 @@
 
 void signalHandler(int signum)
 {
+    int x = 1;
     if (signum == SIGABRT || signum == SIGFPE || signum == SIGILL || signum == SIGSEGV)
     {
         char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";
@@ -16,7 +17,7 @@ void signalHandler(int signum)
             write(STDERR_FILENO, buff, sizeof(buff));
         #endif
         exit(EXIT_FAILURE);
-    }  
+    }
 }
 
 int main(int argc, const char *argv[])
@@ -40,30 +41,29 @@ int main(int argc, const char *argv[])
     const char *filename;
     if (argc >= 3 && strncmp(argv[1], "-c", 2) == 0)
     {
-        filename = clone_str("argv");
-        source_code = clone_str(argv[2]);
+        filename = "argv";
+        source_code = strdup(argv[2]);
     } 
     else
     {
         filename = argv[1];
         source_code = readfile(filename);
     }
-    zuko_src *src = create_source(filename, source_code);
-    uint8_t *bytecode;
+    zuko_src* src = create_source(filename, source_code);
+    uint8_t* bytecode;
     size_t bytecode_len;
-    // the variables in curly brackets below are temporary
-    // they are not needed during program execution
     {
-        lexer_ctx lex;
-        token_vector tokens = tokenize(&lex, src, true, 0);
-        if (lex.hadErr) // had an error which was printed
+        lexer_ctx lctx;
+        token_vector tokens = tokenize(&lctx, src, true, 0);
+        if (lctx.hadErr) // had an error which was printed
             return 0;
-        parser_ctx *pctx = create_parser_ctx(src);
-        Node *ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
+        
+        parser_ctx* pctx = create_parser_context(src);
+        Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
         // uncomment below line to print AST in tabular form
         // print_ast(ast,0);
         vm_init();
-        compiler_ctx *cctx = create_compiler_ctx(src);
+        compiler_ctx* cctx = create_compiler_ctx(src);
         bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program
         bytecode_len = cctx->bytes_done;
         // dis(bytecode);

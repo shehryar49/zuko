@@ -48,7 +48,6 @@ void copy_ast(Node** dest,Node* src);
 void print_ast(Node* n,int spaces);
 
 
-char* clone_str(const char* str);
 typedef struct parser_ctx
 {
   token_vector known_constants;
@@ -76,7 +75,7 @@ typedef struct parser_ctx
 
 char* merge_str(const char*,const char*);
 
-parser_ctx* create_parser_ctx(zuko_src*);
+parser_ctx* create_parser_context(zuko_src*);
 void parser_init(parser_ctx*);
 void parser_destroy(parser_ctx*);
 void parser_set_source(parser_ctx*,zuko_src* p,size_t root_idx); // for error printing and stuff

@@ -14,15 +14,44 @@
 extern bool REPL_MODE;
 void REPL();
 
-const char* keywords[] = {"var","if","else","while","dowhile","import","return","break","continue","fn","nil","for","to","dto","step","foreach","namespace","class","private","public","extends","try","catch","throw","yield","as","gc"};
+const char* keywords[] = {
+    "var",
+    "if",
+    "else",
+    "while",
+    "dowhile",
+    "import",
+    "return",
+    "break",
+    "continue",
+    "fn",
+    "nil",
+    "for",
+    "to",
+    "dto",
+    "step",
+    "foreach",
+    "namespace",
+    "class",
+    "private",
+    "public",
+    "extends",
+    "try",
+    "catch",
+    "throw",
+    "yield",
+    "as",
+    "gc"
+};
+
 bool isKeyword(const char* s)
 {
-  for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
-  {
-    if(strcmp(s,keywords[k]) == 0)
-      return true;
-  }
-  return false;
+    for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
+    {
+        if(strcmp(s,keywords[k]) == 0)
+            return true;
+    }
+    return false;
 }
 
 char* char_to_str(char ch)
@@ -79,14 +108,10 @@ static int32_t hex_to_int32(const char* s)
     for(int32_t i=len-1;i>=0;i--)
     {
         if(s[i] >= '0' && s[i]<='9')
-        {
             res+= (s[i]-48) * p;
-        }
         else if(s[i] >= 'a' && s[i]<='z')
-        {
             res+= (s[i]-87) * p;
-        }
-        p<<=4;//p*=16
+        p <<= 4;//p*=16
     }
     return res;
 }
@@ -98,13 +123,9 @@ static int64_t hex_to_int64(const char* s)
     for(int32_t i=len-1;i>=0;i--)
     {
         if(s[i] >= '0' && s[i]<='9')
-        {
             res+= (s[i]-48) * p;
-        }
         else if(s[i] >= 'a' && s[i]<='z')
-        {
             res+= (s[i]-87) * p;
-        }
         
         p<<=4;
     }
@@ -146,7 +167,7 @@ token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 }
 void str(lexer_ctx* ctx,token_vector* tokenlist)
 {
-    size_t j = ctx->k+1;
+    size_t j = ctx->k + 1;
     bool match = false;
     bool escaped = false;
     size_t LN = ctx->line_num;
@@ -157,7 +178,8 @@ void str(lexer_ctx* ctx,token_vector* tokenlist)
 
     while(j < src_length)
     {
-        if(src[j]=='"')
+        char ch = src[j]; // current character
+        if(ch == '"')
         {
             if(!escaped)
             {
@@ -165,55 +187,55 @@ void str(lexer_ctx* ctx,token_vector* tokenlist)
                 break;
             }
             escaped = false;
-            dyn_str_push(&t, src[j]);
+            dyn_str_push(&t, ch);
         }
-        else if(src[j]=='\n')
+        else if(ch == '\n')
         {
-            dyn_str_push(&t, src[j]);
+            dyn_str_push(&t, ch);
             ctx->line_num+=1;
         }
-        else if(src[j]=='\\' && !escaped)
+        else if(ch == '\\' && !escaped)
             escaped = true;
-        else if(src[j] == '\\' && escaped)
+        else if(ch == '\\' && escaped)
         {
             dyn_str_push(&t, '\\');
             escaped = false;
         }
-        else if(src[j] == 'a' && escaped)
+        else if(ch == 'a' && escaped)
         {
             dyn_str_push(&t, '\a');
             escaped = false;
         }
-        else if(src[j] == 'r' && escaped)
+        else if(ch == 'r' && escaped)
         {
             dyn_str_push(&t, '\r');
             escaped = false;
         }
-        else if(src[j] == 'n' && escaped)
+        else if(ch == 'n' && escaped)
         {
             dyn_str_push(&t, '\n');
             escaped = false;
         }
-        else if(src[j] == 't' && escaped)
+        else if(ch == 't' && escaped)
         {
             dyn_str_push(&t, '\t');
             escaped = false;
         }
-        else if(src[j] == 'b' && escaped)
+        else if(ch == 'b' && escaped)
         {
             dyn_str_push(&t, '\b');
             escaped = false;
         }
-        else if(src[j] == 'v' && escaped)
+        else if(ch == 'v' && escaped)
         {
             dyn_str_push(&t, '\v');
             escaped = false;
         }
         else if(src[j] == 'x' && escaped)
         {
-            bool noMoreChars = (j+2 >= src_length);
-            bool invalidFirstChar = !noMoreChars && (!isalpha(src[j+1]) && !isdigit(src[j+1]));
-            bool invalidSecondChar = !noMoreChars && (!isalpha(src[j+2]) && !isdigit(src[j+2]));
+            bool hasMoreChars = (j+2 < src_length);
+            bool invalidFirstChar = hasMoreChars && (!isalpha(src[j+1]) && !isdigit(src[j+1]));
+            bool invalidSecondChar = hasMoreChars && (!isalpha(src[j+2]) && !isdigit(src[j+2]));
             if(invalidFirstChar || invalidSecondChar)
             {
                 lexErr(ctx,"SyntaxError","Expected 2 hex digits after '\\x'");
@@ -254,7 +276,7 @@ void macro(lexer_ctx* ctx,token_vector* tokenlist)
 {
     const char* src = ctx->source_code;
     size_t src_length = ctx->srcLen;
-    if(ctx->k == src_length-1)
+    if(ctx->k + 1 == src_length) //last character
     {
         lexErr(ctx,"SyntaxError","Invalid macro name");
         return;
@@ -276,12 +298,12 @@ void macro(lexer_ctx* ctx,token_vector* tokenlist)
         j+=1;
     }
     size_t macro_name_length = end - begin + 1;
-    token tok = resolveMacro(ctx,src+begin,macro_name_length);
+    token tok = resolveMacro(ctx, src + begin, macro_name_length);
     if(tok.type == END_TOKEN)
     {
         ctx->k = src_length - 1;
-        snprintf(ctx->buffer,200,"Unknown macro");
-        lexErr(ctx,"NameError",ctx->buffer);
+        snprintf(ctx->buffer, 200, "Unknown macro");
+        lexErr(ctx, "NameError", ctx->buffer);
         return;
     }
     token_vector_push(tokenlist,tok);
@@ -329,9 +351,9 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
     size_t src_length = ctx->srcLen;
     char c = src[ctx->k];
     //hex literal
-    if(c=='0' && ctx->k != src_length-1 && src[ctx->k+1]=='x')
+    if(c == '0' && ctx->k != src_length-1 && src[ctx->k+1] == 'x')
     {
-        ctx->k+=1;
+        ctx->k += 1;
         size_t j = ctx->k+1;
         dyn_str b;
         dyn_str_init(&b);
@@ -381,7 +403,7 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
         ctx->k = j-1;
         return;
     }
-    size_t j = ctx->k+1;
+    size_t j = ctx->k + 1;
     dyn_str t;
     dyn_str_init(&t);
     dyn_str_push(&t,c);
@@ -392,14 +414,14 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
     {
         if(!isdigit(src[j]) && src[j]!='.' && src[j]!='e' && src[j]!='-' && src[j]!='+')
         {
-            j = j-1;
+            --j;
             break;
         }
         if(src[j]=='.')
         {
             if(decimal || exp)
             {
-                j = j-1;
+                --j;
                 break;
             }
             decimal = true;
@@ -408,7 +430,7 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
         {
             if(exp)
             {
-                j = j-1;
+                --j;
                 break;
             }
             exp = true;
@@ -459,13 +481,13 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
         }
         else if(!isalpha(src[j]) && !isdigit(src[j]) && src[j]!='_')
         {
-            j = j-1;
+            --j;
             break;
         }
         else
         {
             dyn_str_push(&t, src[j]);
-            j+=1;
+            ++j;
         }
     }
 
@@ -507,6 +529,7 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
     token_vector_push(tokenlist,i);
     ctx->k = j;
 }
+
 token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx)
 {
     token_vector tokenlist;
@@ -528,7 +551,7 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     char c;
 
 
-    while(!ctx->hadErr && ctx->k<ctx->srcLen)
+    while(!ctx->hadErr && ctx->k < ctx->srcLen)
     {
         c = ctx->source_code[ctx->k];
         if(c=='"')
