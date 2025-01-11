@@ -490,7 +490,7 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
             ++j;
         }
     }
-
+    //printf("id: %s\n",t.arr);
     token i;
     if(isKeyword(t.arr))
     {
@@ -499,6 +499,7 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
             if(tokenlist->arr[tokenlist->size-1].type == KEYWORD_TOKEN && strcmp(tokenlist->arr[tokenlist->size-1].content,"else") == 0)
             {
                 free(t.arr);
+                free(tokenlist->arr[tokenlist->size-1].content);
                 tokenlist->arr[tokenlist->size-1].content = strdup("else if");
                 ctx->k = j;
                 return;

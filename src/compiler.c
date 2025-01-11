@@ -1732,6 +1732,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 pair_vector_push(&ctx->backpatches,the_end.arr[i],ctx->bytes_done);
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
             symtable_destroy(&m);
+            sizet_vector_destroy(&the_end);
         }
         else if(ast->type==TRYCATCH)
         {
@@ -1923,6 +1924,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                     ctx->bytes_done+=6;
                 }
                 pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
+                symtable_destroy(&C);
             }
             else
             {
@@ -1980,8 +1982,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             else
                 block_size = compile(ctx,ast->childs.arr[2]);
             ctx->inclass = false;
-            
-
+            symtable_destroy(&M);
             ctx->locals.size--;
             int32_t totalMembers = ctx->classMemb.size;
             ctx->classMemb.size = 0;

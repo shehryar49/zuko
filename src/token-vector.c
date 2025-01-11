@@ -56,10 +56,7 @@ void token_vector_destroy(token_vector* p)
     {
         TokenType type = p->arr[i].type;
         if(type == STRING_TOKEN || type == KEYWORD_TOKEN || type == ID_TOKEN || type == NUM_TOKEN || type==BYTE_TOKEN || type == BOOL_TOKEN)
-        {
-//            printf("deleting token %s: %d\n",p->arr[i].content,(int)type);
             free((void*)p->arr[i].content);
-        }
     }
     free(p->arr);
 }

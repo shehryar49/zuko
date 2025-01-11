@@ -57,7 +57,14 @@ int main(int argc, const char *argv[])
         token_vector tokens = tokenize(&lctx, src, true, 0);
         if (lctx.hadErr) // had an error which was printed
             return 0;
-        
+
+        /*for(size_t i = 0; i < tokens.size; i++)
+        {
+            if(tokens.arr[i].content)
+                printf("%zu. %s\n",i,tokens.arr[i].content);
+        }
+        token_vector_destroy(&tokens);
+        return 0;*/
         parser_ctx* pctx = create_parser_context(src);
         Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
         // uncomment below line to print AST in tabular form

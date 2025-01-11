@@ -1009,9 +1009,11 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //if(((string)tokens[1].content).find("::")!=string::npos)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        const char* tmp = strdup(tokens[begin+1].content);
+        const char* tmp = NULL;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
+        else
+            tmp = strdup(tokens[begin+1].content);
         nodeptr_vector_push(&(ast->childs),new_node(ID_NODE,tmp));
         if(extendedClass)
         {
@@ -1261,11 +1263,13 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         //if(((string)tokens[begin+1].content).find("::")!=string::npos)
         //    parseError(ctx,"SyntaxError","Invalid Syntax");
         const char* fnprefix = ctx->prefixes.arr[ctx->prefixes.size-1];
-        const char* tmp = strdup(tokens[begin+1].content);
+        const char* tmp = NULL;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        if(isPrivate)
+        else if(isPrivate)
             tmp = merge_str("@" , tokens[begin+1].content);
+        else
+            tmp = strdup(tokens[begin+1].content);
         Node* ast = new_node(FUNC,"");
         Node* n = new_node(line_node,int64_to_string(tokens[begin].ln));
         nodeptr_vector_push(&(ast->childs),n);
@@ -1813,6 +1817,10 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                     begin=if_end+2;
                     k = if_end+1;
                 }
+                if(elifConditions)
+                    free(elifConditions);
+                if(elifBlocks)
+                    free(elifBlocks);
             }
             else if(ast->type==FUNC)
             {
@@ -1893,7 +1901,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                 //backtrack
                 //important: change if planning to support nested classes
                 ctx->inclass = false;
-                ctx->currSym = strdup(aux);
+                ctx->currSym = (aux);
                 
                 begin=class_end+2;
                 k = class_end+1;
