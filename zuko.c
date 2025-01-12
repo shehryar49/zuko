@@ -68,7 +68,7 @@ int main(int argc, const char *argv[])
         parser_ctx* pctx = create_parser_context(src);
         Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
         // uncomment below line to print AST in tabular form
-        // print_ast(ast,0);
+        //print_ast(ast,0);
         vm_init();
         compiler_ctx* cctx = create_compiler_ctx(src);
         bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program

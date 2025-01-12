@@ -22,9 +22,9 @@ void zuko_src_init(zuko_src* src)
     refgraph_init(&src->ref_graph);
 }
 
-void zuko_src_add_file(zuko_src* src, char* filename, char* source)
+void zuko_src_add_file(zuko_src* src, const char* filename, char* source)
 {
-    str_vector_push(&src->files,filename);
+    str_vector_push(&src->files,strdup(filename));
     str_vector_push(&src->sources,source);
 }
 void zuko_src_reset(zuko_src* src)

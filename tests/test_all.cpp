@@ -49,7 +49,7 @@ const char* tests[] =
     "coroutines",
     "addedReturn",
     "conversions",
-    //"stdlist",
+    "stdlist",
     "multiline-expr",
     "str",
     "hex_escape_char",

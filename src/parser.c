@@ -2046,35 +2046,23 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                     {
                         A = new_node(file_node,"");
                         add_child(A,new_node(line_node,int64_to_str(ctx->line_num)));
-                        add_child(A,new_node(STR_NODE,str));
+                        add_child(A,new_node(STR_NODE,strdup(str)));
                         add_child(A,new_node(EOP,""));
                     }
                     else
                     {
-                        FILE* file = fopen(str,"rb"); // IMPORTANT: make sure to use readfile in future
-                        if(!file)
+                        char* text = readfile(str);
+                        if(!text)
                             parseError(ctx,"ImportError",strerror(errno));
-                        str_vector_push(ctx->files,strdup(str));
-
-                        fseek(file,0,SEEK_END);
-                        size_t total = ftell(file);
-                        char* src = malloc(sizeof(char)*(total+1));
-                        rewind(file);
-                        if(fread(src,sizeof(char),total,file) != total)
-                            parseError(ctx,"ImportError","Error opening file.");
-                        src[total] = 0;
-                        fclose(file);
-                        str_vector_push(ctx->sources,src);
+                        str_vector_push(ctx->files,strdup(text));
+                        str_vector_push(ctx->sources,strdup(text));
                         const char* F = ctx->filename;
                         size_t K = ctx->line_num;
                         ctx->filename = str;
                         ctx->line_num = 1;
                         lexer_ctx lex;
-                        zuko_src tmp;
-                        zuko_src_init(&tmp);
-                        zuko_src_add_file(&tmp, strdup(ctx->filename),src);
-                        //tmp.addFile(filename,src);
-                        token_vector t = tokenize(&lex,&tmp,true,0);
+                        zuko_src* tmp = create_source(ctx->filename,text);
+                        token_vector t = tokenize(&lex,tmp,true,0);
                         if(lex.hadErr)
                         {
                             ctx->filename = F;
@@ -2084,13 +2072,14 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         }
                         A = new_node(file_node,"");
                         add_child(A,new_node(line_node,int64_to_str(K)));
-                        add_child(A,new_node(STR_NODE,str));
-                        Node* subast;
-                            subast = parse_block(ctx,t.arr,0,t.size-1);
+                        add_child(A,new_node(STR_NODE,strdup(str)));
+                        Node* subast = parse_block(ctx,t.arr,0,t.size-1);
                         add_child(A,subast);
+                        //free(src);
+                        zuko_src_destroy(tmp);
+                        token_vector_destroy(&t);
                         ctx->filename = F;
                         ctx->line_num = K;
-
                     }
                     begin = k+1;
                     delete_ast(ast);
