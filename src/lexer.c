@@ -60,13 +60,7 @@ char* char_to_str(char ch)
     char tmp[2] = {ch,0};
     return strdup(tmp);
 }
-char* make_substr(const char* s,size_t strlen,size_t idx,size_t len)
-{
-    char* d = (char*)malloc(sizeof(char)*(strlen+1));
-    memcpy(d,s+idx,len);
-    d[len] = 0;
-    return d;
-}
+
 void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
 {
     ctx->hadErr = true;
