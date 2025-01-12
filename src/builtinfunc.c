@@ -23,56 +23,13 @@
 #include <unistd.h>
 #include <time.h>
 
-zobject zobj_from_str(const char* str);// makes deep copy of str
-zobject z_err(zclass* errKlass,const char* des);
-zlist* vm_alloc_zlist();
-zbytearr* vm_alloc_zbytearr();
-uint8_t* vm_alloc_raw(size_t);
-zstr* vm_alloc_zstr(size_t);
-zclass* vm_alloc_zclass();
-zmodule* vm_alloc_zmodule();
-zclass_object* vm_alloc_zclassobj(zclass*);
-Coroutine* vm_alloc_coro_obj();//allocates coroutine object
-zfun* vm_alloc_zfun();
-zfun* vm_alloc_coro(); //coroutine can be represented by fun_object
-zfile * vm_alloc_zfile();
-zdict* vm_alloc_zdict();
-znativefun* vm_alloc_znativefun();
-//callObject also behaves as a kind of try/catch since v0.3.1
-bool vm_call_object(zobject*,zobject*,int,zobject*);
-void vm_mark_important(void* mem);
-void vm_unmark_important(void* mem);
-void PromoteType(zobject*,char);
-//
-//Error classes (defined in vm.cpp)
-extern zclass* Error;
-extern zclass* TypeError;
-extern zclass* ValueError;
-extern zclass* MathError; 
-extern zclass* NameError;
-extern zclass* IndexError;
-extern zclass* ArgumentError;
-extern zclass* FileIOError;
-extern zclass* KeyError;
-extern zclass* OverflowError;
-extern zclass* FileOpenError;
-extern zclass* FileSeekError; 
-extern zclass* ImportError;
-extern zclass* ThrowError;
-extern zclass* MaxRecursionError;
-extern zclass* AccessError;
+
 
 bmap funcs;
-
-const char* fullform(char);
-
 static zobject nil;
-//zobject z_err(zclass* k,string s)
-//{
-//  return z_err(k,s.c_str());
-//}
 char error_buffer[100];
-bool validateArgTypes(const char* name,const char* e,zobject* args,int32_t argc,zobject* x)
+
+bool validate_arg_types(const char* name,const char* e,zobject* args,int32_t argc,zobject* x)
 {
     size_t len = strlen(e);
     if(strlen(e)!=(size_t)argc)
@@ -94,6 +51,7 @@ bool validateArgTypes(const char* name,const char* e,zobject* args,int32_t argc,
     }
     return true;
 }
+
 zobject Z_ISALPHA(zobject* args,int32_t argc)
 {
   if(argc!=1)
@@ -232,7 +190,7 @@ void print_zbytearray(zbytearr* arr)
     }
     printf("])");
 }
-zobject print(zobject* args,int32_t argc)
+zobject PRINT(zobject* args,int32_t argc)
 {
     int32_t k = 0;
     while(k<argc)
@@ -303,7 +261,7 @@ zobject PRINTF(zobject* args,int32_t argc)
         zobject ret = nil;
         ret.type = 'n';
         return ret;
-    }
+}
 zobject FORMAT(zobject* args,int32_t argc)
 {
     if(argc < 1)
@@ -342,7 +300,7 @@ zobject FORMAT(zobject* args,int32_t argc)
     return zobj_from_str_ptr(s);
 }
 
-zobject println(zobject* args,int32_t argc)
+zobject PRINTLN(zobject* args,int32_t argc)
 {
     int32_t k = 0;
     ptr_vector seen;
@@ -383,7 +341,7 @@ zobject println(zobject* args,int32_t argc)
     return ret;
 }
 
-zobject input(zobject* args,int32_t argc)
+zobject INPUT(zobject* args,int32_t argc)
 {
     if(argc!=0 && argc!=1)
     {
@@ -396,7 +354,6 @@ zobject input(zobject* args,int32_t argc)
       char* prompt = ((zstr*)args[0].ptr)->val;
       printf("%s",prompt);
     }
-    //string s;
     char ch;
     dyn_str s;
     dyn_str_init(&s);
@@ -425,7 +382,7 @@ zobject TYPEOF(zobject* args,int32_t argc)
   strcpy(p->val,s);
   return zobj_from_str_ptr(p);
 }
-zobject isInstanceOf(zobject* args,int32_t argc)
+zobject ISINSTANCEOF(zobject* args,int32_t argc)
 {
   if(argc!=2)
     return z_err(ArgumentError,"Error function isInstanceOf() takes 2 arguments!");
@@ -473,7 +430,7 @@ zobject OPEN(zobject* args,int32_t argc)
 {
     const char* patt = "ss";
     zobject ret = nil;
-    if(!validateArgTypes("open",patt,args,argc,&ret))
+    if(!validate_arg_types("open",patt,args,argc,&ret))
       return ret;
     const char* filename = AS_STR(args[0])->val;
     const char* mode = AS_STR(args[1])->val;
@@ -528,7 +485,6 @@ zobject CLOSE(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return z_err(ArgumentError,"Error close() takes 1 argument!");
-  //  printf("args[0].type = %c\n",args[0].type);
     if(args[0].type!='u')
         return z_err(TypeError,"Error close() takes a file stream as an argument!");
     zfile* fobj = (zfile*)args[0].ptr;
@@ -553,12 +509,10 @@ zobject FFLUSH(zobject* args,int32_t argc)
         return z_err(TypeError,"Error fflush() takes a file stream as an argument!");
     zfile* fobj = (zfile*)args[0].ptr;
     if(!fobj->open)
-    {
-     // return z_err(ValueError,"Error file is closed!");
-    }
+        return z_err(ValueError,"Error file is closed!");
     FILE* f = fobj->fp;
     fflush(f);
-    zobject ret = nil;
+    zobject ret;
     ret.type='n';
     fobj->open = false;
     return ret;
@@ -607,12 +561,11 @@ zobject BYTEARRAY(zobject* args,int32_t argc)
 
 zobject WRITE(zobject* args,int32_t argc)
 {
-  //printf("writing %s\n",args[0].s.c_str());
   if(argc!=2)
     return z_err(ArgumentError,"Error write() takes two arguments!");
   const char* patt = "su";
   zobject ret = nil;
-  if(!validateArgTypes("write",patt,args,argc,&ret))
+  if(!validate_arg_types("write",patt,args,argc,&ret))
     return ret;
   zstr* data = AS_STR(args[0]);
   zfile* p = (zfile*)args[1].ptr;
@@ -636,7 +589,6 @@ zobject EXIT(zobject* args,int32_t argc)
         return z_err(ArgumentError,"Error exit() takes either 0 or 1 argument!");
     exit(ret);
 }
-////////////////
 zobject REVERSE(zobject* args,int32_t argc)
 {
     if(argc!=1)
@@ -661,12 +613,8 @@ zobject REVERSE(zobject* args,int32_t argc)
     {
         zlist_push(l,currList->arr[k]);
     }
-    zobject ret = nil;// = l;
-    ret.type = 'j';
-    ret.ptr = (void*)l;
-    return ret;
-}///////
-/////////
+    return zobj_from_list(l);
+}
 zobject BYTES(zobject* args,int32_t argc)
 {
     if(argc!=1)
@@ -722,7 +670,6 @@ zobject BYTES(zobject* args,int32_t argc)
         return z_err(TypeError,error_buffer);
     }
 }
-///////////////
 zobject OBJINFO(zobject* args,int32_t argc)
 {
     if(argc!=1)
@@ -757,7 +704,7 @@ zobject OBJINFO(zobject* args,int32_t argc)
         return z_err(TypeError,"Error argument is not an object of any class!");
     }
 }
-zobject moduleInfo(zobject* args,int32_t argc)
+zobject MODULEINFO(zobject* args,int32_t argc)
 {
   if(argc!=1)
     return z_err(ArgumentError,"Error moduleInfo takes 1 argument!");
@@ -811,169 +758,6 @@ zobject TOUPPER(zobject* args,int32_t n)
   }
   return zobj_from_str_ptr(upper);
 }
-
-/*
---Deprecated--
-
-zobject makeList(zobject* args,int32_t argc)
-{
-        zobject ret = nil;
-        if(!validateArgTypes("makeList","js",args,argc,ret))
-          return ret;
-        string& pattern = *(zstr*)args[1].ptr;
-        size_t k = 0;
-        zlist res;
-        size_t i = 0;
-        
-        
-        zlist currList = *(zlist*)args[0].ptr;
-        while(k<currList.size)
-        {
-            if(i>pattern.length()-1)
-            {
-               return z_err(ValueError,"Error no pattern specified for the remaining bytes!");
-            }
-            zobject l = currList.arr[k];
-            if(l.type!='m')
-            {
-                return z_err(ValueError,"Error list should only contain bytes!");
-            }
-            int32_t b = l.i;
-            if(pattern[i]=='i')
-            {
-               FOO.bytes[0] = b;
-               if(k+3 >=currList.size)
-               {
-                   return z_err(ValueError,"Error the list is missing some bytes!");
-               }
-               k+=1;
-               l = currList.arr[k];
-               FOO.bytes[1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO.bytes[1+1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO.bytes[3] = l.i;
-               zobject e;
-               e.type = 'i';
-               e.i =(int32_t) FOO.x;
-               zlist_push(&res,e);
-            }
-            else if(pattern[i]=='b')
-            {
-
-               zobject e;
-               e.type = 'b';
-               e.i = b;
-              zlist_push(&res,e);
-            }
-            else if(pattern[i]=='l')
-            {
-               FOO1.bytes[0] = b;
-               if(k+7 >=currList.size)
-               {
-                   return z_err(ValueError,"Error the list is missing some bytes!");
-               }
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[1+1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[3] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[4] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[5] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[6] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO1.bytes[7] = l.i;
-               zobject e;
-               e.type = 'l';
-               e.l = FOO1.l;
-
-                             zlist_push(&res,e);
-            }
-            else if(pattern[i]=='s')
-            {
-                size_t j = k;
-                zobject e;
-                zstr* f = vm_alloc_zstr();
-                bool terminated = false;
-                while(true)
-                {
-                    if(j>=currList.size)
-                    {
-                        return z_err(ValueError,"Ran out of bytes!");
-                    }
-                    e = currList.arr[j];
-                    if(e.type!='m')
-                        return z_err(ValueError,"Error the list should only contain bytes!");
-                    if(e.i==0)
-                    {
-                        terminated = true;
-                        break;
-                    }
-                    *f+=(char)e.i;
-                    j+=1;
-                }
-                if(!terminated)
-                {
-                    return z_err(ValueError,"Error the bytes are invalid to be converted to string!");
-                }
-
-                zlist_push(&res,zobj_from_str_ptr(f));
-                k  = j;
-            }
-            else if(pattern[i]=='f')
-            {
-               FOO2.bytes[0] = b;
-               if(k+3 >=currList.size)
-               {
-                   return z_err(ValueError,"Error the list is missing some bytes!");
-               }
-               k+=1;
-               l = currList.arr[k];
-               FOO2.bytes[1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO2.bytes[1+1] = l.i;
-               k+=1;
-               l = currList.arr[k];
-               FOO2.bytes[3] = l.i;
-               zobject e;
-               e.type = 'f';
-               e.f = FOO2.f;
-               zlist_push(&res,e);
-            }
-            else
-            {
-                return z_err(TypeError,"Error unknown type used in pattern!");
-            }
-            i+=1;
-            k+=1;
-        }
-        if(i!=pattern.length())
-        {
-            return z_err(ValueError,"Error the list does not have enough bytes to follow the pattern!");
-        }
-        zlist* p = vm_alloc_zlist();
-        zlist_assign(p,&res);
-        ret.ptr = (void*)p;
-        ret.type = 'j';
-        return ret;
-}*/
-///////
-/////////
-
 zobject SUBSTR(zobject* args,int32_t argc)
 {
     if(argc==3)
@@ -1005,7 +789,7 @@ zobject SUBSTR(zobject* args,int32_t argc)
 	}
 	return z_err(ArgumentError,"Error substr() takes three arguments!");
 }
-zobject getFileSize(zobject* args,int32_t argc)
+zobject GETFILESIZE(zobject* args,int32_t argc)
 {
   if(argc==1)
   {
@@ -1136,27 +920,10 @@ zobject GETENV(zobject* args,int32_t argc)
   }
   return z_err(ArgumentError,"Error getenv() takes one argument!");
 }
-zobject SHUFFLE(zobject* args,int32_t argc)
-{
-    if(argc==1)
-		{
-			if(args[0].type=='j')
-			{
-			  zlist* p = (zlist*)args[0].ptr;
-        //std::random_shuffle(p->arr,p->arr+p->size);
-				zobject ret = nil;
-				return ret;
-			}
-			else
-      {
-        return z_err(TypeError,"Error shuffle takes a list as an argument!");
-      }
-		}
-		return z_err(ArgumentError,"Error shuffle() takes exactly one argument!");
-}
+
 zobject STR(zobject* args,int32_t argc)
 {
-  if(argc==1)
+    if(argc==1)
 	{
 		if(args[0].type=='i')
 		{
@@ -1437,7 +1204,7 @@ zobject TOFLOAT(zobject* args,int32_t argc)
 	}
 	return z_err(ArgumentError,"Error float() takes exactly one argument!");
 }
-zobject tonumeric(zobject* args,int32_t argc)
+zobject TONUMERIC(zobject* args,int32_t argc)
 {
     if(argc==1)
     {
@@ -1458,7 +1225,7 @@ zobject tonumeric(zobject* args,int32_t argc)
 	}
     return z_err(ArgumentError,"Error tonumeric() takes one argument!");
 }
-zobject isnumeric(zobject* args,int32_t argc)
+zobject ISNUMERIC(zobject* args,int32_t argc)
 {
     if(argc==1)
     {
@@ -1556,30 +1323,34 @@ zobject SLEEP(zobject* args,int32_t argc)
 
 zobject TOBYTE(zobject* args,int32_t argc)
 {
-  if(argc!=1)
-    return z_err(ArgumentError,"Error byte() takes 1 argument!");
-  if(args[0].type == Z_INT)
-  {
-    if(args[0].i>255 || args[0].i<0)
-      return z_err(ValueError,"The integer must be in range 0 to 255!");
-  }
-  else if(args[0].type == Z_INT64)
-  {
-    if(args[0].l>255 || args[0].l<0)
-      return z_err(ValueError,"The integer must be in range 0 to 255!");
-    args[0].i = args[0].l;
-  }
-  else if(args[0].type == Z_BYTE || args[0].type == Z_BOOL)
-  {
+    if(argc!=1)
+        return z_err(ArgumentError,"Error byte() takes 1 argument!");
+    if(args[0].type == Z_INT)
+    {
+        if(args[0].i>255 || args[0].i<0)
+            return z_err(ValueError,"The integer must be in range 0 to 255!");
+    }
+    else if(args[0].type == Z_INT64)
+    {
+        if(args[0].l>255 || args[0].l<0)
+            return z_err(ValueError,"The integer must be in range 0 to 255!");
+        args[0].i = args[0].l;
+    }
+    else if(args[0].type == Z_BYTE || args[0].type == Z_BOOL)
+    {
+        args[0].type = Z_BYTE;
+        return args[0];
+    }
+    else
+    {
+        char buffer[255];
+        snprintf(buffer,255,"Cannot convert type %s to a byte!",fullform(args[0].type));
+        return z_err(TypeError,buffer);
+    }
     args[0].type = Z_BYTE;
     return args[0];
-  }
-  else
-    ;//return z_err(TypeError,"Cannot convert type "+fullform(args[0].type)+" to byte!");
-  args[0].type = Z_BYTE;
-  return args[0];
 }
-zobject writelines(zobject* args,int32_t argc)
+zobject WRITELINES(zobject* args,int32_t argc)
 {
      if(argc==2)
         {
@@ -1614,7 +1385,7 @@ zobject writelines(zobject* args,int32_t argc)
             exit(0);
         }
 }
-zobject readlines(zobject* args,int32_t argc)
+zobject READLINES(zobject* args,int32_t argc)
 {
     if(argc==1)
     {
@@ -1662,6 +1433,7 @@ zobject readlines(zobject* args,int32_t argc)
     {
         return z_err(ArgumentError,"Error readlines() takes one argument!");
     }
+    return nil;
 }
 void clean_stdin(void)
 {
@@ -1703,7 +1475,7 @@ zobject FWRITE(zobject* args,int32_t argc)
     size_t S = 0;
     if(argc==2)
     {
-    if(!validateArgTypes("fwrite","cu",args,argc,&ret))
+    if(!validate_arg_types("fwrite","cu",args,argc,&ret))
       return ret;
      S = ((zbytearr*)args[0].ptr)->size; 
     }
@@ -1743,7 +1515,7 @@ zobject FSEEK(zobject* args,int32_t argc)
     if(argc!=3)
         return z_err(ArgumentError,"Error fseek() takes 3 arguments!");
     zobject ret = nil;
-    if(!validateArgTypes("fseek","uii",args,argc,&ret))
+    if(!validate_arg_types("fseek","uii",args,argc,&ret))
       return ret;
     int32_t w = 0;
     int32_t whence = args[2].i;
@@ -2253,7 +2025,7 @@ zobject ERASE(zobject* args,int32_t argc)
       //return z_err(NameError,"Error type "+fullform(args[0].type)+" has no member named erase.");
   }
 }
-zobject asMap(zobject* args,int32_t argc)
+zobject ASMAP(zobject* args,int32_t argc)
 {
     if(args[0].type!='j')
       ;//return z_err(NameError,"Error type "+fullform(args[0].type)+" has no member named asMap()");
@@ -2462,28 +2234,27 @@ zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc)
 
 ////////////////////
 ///////////////
-void initFunctions()
+void init_builtin_functions()
 {
   nil.type = Z_NIL;
   bmap_init(&funcs);
-  bmap_emplace(&funcs,"print",&print);
-  bmap_emplace(&funcs,"println",&println);
+  bmap_emplace(&funcs,"print",&PRINT);
+  bmap_emplace(&funcs,"println",&PRINTLN);
   bmap_emplace(&funcs,"printf",&PRINTF);
-  bmap_emplace(&funcs,"input",&input);
+  bmap_emplace(&funcs,"input",&INPUT);
   bmap_emplace(&funcs,"typeof",&TYPEOF);
   bmap_emplace(&funcs,"len",&LEN);
   bmap_emplace(&funcs,"open",&OPEN);
   bmap_emplace(&funcs,"read",&READ);
   bmap_emplace(&funcs,"close",&CLOSE);
   bmap_emplace(&funcs,"rand",&RAND);
-  bmap_emplace(&funcs,"shuffle",&SHUFFLE);
   bmap_emplace(&funcs,"reverse",&REVERSE);
   bmap_emplace(&funcs,"getenv",&GETENV);
   bmap_emplace(&funcs,"system",&SYSTEM);
-  bmap_emplace(&funcs,"readlines",&readlines);
-  bmap_emplace(&funcs,"writelines",&writelines);
+  bmap_emplace(&funcs,"readlines",&READLINES);
+  bmap_emplace(&funcs,"writelines",&WRITELINES);
   bmap_emplace(&funcs,"write",&WRITE);
-  bmap_emplace(&funcs,"getFileSize",getFileSize);
+  bmap_emplace(&funcs,"getFileSize",GETFILESIZE);
   bmap_emplace(&funcs,"fread",&FREAD);
   bmap_emplace(&funcs,"fwrite",&FWRITE);
   bmap_emplace(&funcs,"substr",&SUBSTR);
@@ -2497,11 +2268,10 @@ void initFunctions()
   bmap_emplace(&funcs,"int32",&TOINT32);
   bmap_emplace(&funcs,"int64",&TOINT64);
   bmap_emplace(&funcs,"float",&TOFLOAT);
-  bmap_emplace(&funcs,"tonumeric",&tonumeric);
-  bmap_emplace(&funcs,"isnumeric",&isnumeric);
+  bmap_emplace(&funcs,"tonumeric",&TONUMERIC);
+  bmap_emplace(&funcs,"isnumeric",&ISNUMERIC);
   bmap_emplace(&funcs,"fseek",&FSEEK);
   bmap_emplace(&funcs,"bytes",&BYTES);
- // bmap_emplace(&funcs,"ListFromBytes",&makeList);
   bmap_emplace(&funcs,"str",&STR);
   bmap_emplace(&funcs,"byte",& TOBYTE);
   bmap_emplace(&funcs,"clone",&COPY);
@@ -2511,11 +2281,11 @@ void initFunctions()
   bmap_emplace(&funcs,"ftell",&FTELL);
   bmap_emplace(&funcs,"rewind",&REWIND);
   bmap_emplace(&funcs,"clock",&CLOCK);
-  bmap_emplace(&funcs,"isInstanceOf",&isInstanceOf);
+  bmap_emplace(&funcs,"isinstanceof",&ISINSTANCEOF);
   bmap_emplace(&funcs,"ascii",&ASCII);
   bmap_emplace(&funcs,"char",&TOCHAR);
   bmap_emplace(&funcs,"bytearray",&BYTEARRAY);
-  bmap_emplace(&funcs,"moduleInfo",&moduleInfo);
+  bmap_emplace(&funcs,"moduleInfo",&MODULEINFO);
   bmap_emplace(&funcs,"format",&FORMAT);
   bmap_emplace(&funcs,"fflush",&FFLUSH);
   bmap_emplace(&funcs,"tolower",&TOLOWER);
@@ -2523,7 +2293,7 @@ void initFunctions()
 
 }
 bmap methods;
-void initMethods()
+void init_builtin_methods()
 {
   bmap_init(&methods);
   nil.type = Z_NIL;
@@ -2532,7 +2302,7 @@ void initMethods()
   bmap_emplace(&methods,"clear",&CLEAR);
   bmap_emplace(&methods,"insert",&INSERT);
   bmap_emplace(&methods,"find",&FIND_METHOD);
-  bmap_emplace(&methods,"asMap",&asMap);
+  bmap_emplace(&methods,"asmap",&ASMAP);
   bmap_emplace(&methods,"erase",&ERASE);
   bmap_emplace(&methods,"reverse",&REVERSE_METHOD);
   bmap_emplace(&methods,"emplace",&EMPLACE);

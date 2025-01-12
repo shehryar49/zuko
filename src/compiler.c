@@ -57,10 +57,6 @@ static inline void i32_operand(compiler_ctx* ctx,int32_t operand)
     memcpy(ctx->bytecode.arr+sz,&operand,sizeof(int32_t));
     ctx->bytes_done += sizeof(int32_t);
 }
-
-
-void initFunctions();
-void initMethods();
 extern ptr_vector vm_strings;
 extern ptr_vector vm_builtin;
 extern ptr_vector vm_important;
@@ -103,19 +99,11 @@ compiler_ctx* create_compiler_ctx(zuko_src* p)
     str_vector_init(&ctx->symRef);
     ctx->symRef.size = 0;
     extractSymRef(&ctx->symRef,&p->ref_graph);
-    ctx->num_of_constants = (int32_t*)&(p->num_of_constants);
     ctx->files = &p->files;
     ctx->sources = &p->sources;
     ctx->fileTOP = 0; 
     ctx->line_num_table = &p->line_num_table;
     ctx->filename = p->files.arr[0];
-    if(p->num_of_constants > 0 && !REPL_MODE)
-    {
-        if(vm_constants)
-            free(vm_constants);
-        vm_constants = malloc(sizeof(zobject)*p->num_of_constants);
-        vm_total_constants = 0;
-    }
     sizet_vector_init(&ctx->andJMPS);
     sizet_vector_init(&ctx->orJMPS);
     symtable_init(&ctx->globals);
@@ -126,8 +114,8 @@ compiler_ctx* create_compiler_ctx(zuko_src* p)
     zbytearr_init(&ctx->bytecode);
     pair_vector_init(&ctx->backpatches);
     //init builtins
-    initFunctions();
-    initMethods();
+    init_builtin_functions();
+    init_builtin_methods();
     //reset all state
     ctx->inConstructor = false;
     ctx->inGen = false;
@@ -180,15 +168,6 @@ void compileError(compiler_ctx* ctx,const char* type,const char* msg)
     if(REPL_MODE)
         REPL();
     exit(1);
-}
-static int32_t is_duplicate_constant(zobject x)
-{
-    for (int32_t k = 0; k < vm_total_constants; k += 1)
-    {
-        if (zobject_equals(vm_constants[k],x))
-            return k;
-    }
-    return -1;
 }
 int32_t add_to_vm_strings(const char* n)
 {
@@ -289,21 +268,11 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             }
             else if (is_int64(n))
             {
-                reg.type = 'l';
-                reg.l = str_to_int64(n);
-                int32_t e = is_duplicate_constant(reg);
-                if (e != -1)
-                    foo = e;
-                else
-                {
-                    foo = vm_total_constants;
-                    reg.type = 'l';
-                    reg.l = str_to_int64(n);
-                    vm_constants[vm_total_constants++] = reg;
-                }
-                zbytearr_push(&ctx->bytecode,LOAD_CONST);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 1 + sizeof(int32_t);
+                int64_t tmp = str_to_int64(n);
+                zbytearr_push(&ctx->bytecode,LOAD_INT64);
+                zbytearr_resize(&ctx->bytecode,ctx->bytecode.size+8);
+                memcpy(ctx->bytecode.arr+ctx->bytes_done+1,&tmp,8);
+                ctx->bytes_done+=9;
             }
             else
             {
@@ -316,25 +285,11 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         else if (ast->type == FLOAT)
         {
             const char* n = ast->val;
-            bool neg = false;
-            if (n[0] == '-')
-            {
-                neg = true;
-                //n++;
-            }
-            reg.type = 'f';
-            reg.f = str_to_double(n);
-            int32_t e = is_duplicate_constant(reg);
-            if (e != -1)
-                foo = e;
-            else
-            {
-                foo = vm_total_constants;
-                vm_constants[vm_total_constants++] = reg;
-            }
-            zbytearr_push(&ctx->bytecode,LOAD_CONST);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done += 1 + sizeof(int32_t);
+            double tmp = str_to_double(n);
+            zbytearr_push(&ctx->bytecode,LOAD_DOUBLE);
+            zbytearr_resize(&ctx->bytecode,ctx->bytecode.size+8);
+            memcpy(ctx->bytecode.arr+ctx->bytes_done+1,&tmp,8);
+            ctx->bytes_done+=9;
             return;
         }
         else if (ast->type ==  BOOL_NODE)

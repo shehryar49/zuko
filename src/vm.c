@@ -120,7 +120,6 @@ sizet_vector frames;
 uint8_t* program = NULL;
 uint32_t program_size;
 uint8_t* ip; // instruction pointer
-zobject* vm_constants = NULL;
 //////////////////
 bool viaCO = false;
 sizet_vector try_stack_cleanup;
@@ -140,12 +139,10 @@ str_vector* files;
 str_vector* sources;
 zlist aux; // auxiliary space for markV2
 ptr_vector vm_important;//important memory not to free even when not reachable
-ptr_vector vm_builtin;
-//std::vector<BuiltinFunc> vm_builtin; // addresses of builtin native functions
+ptr_vector vm_builtin; // addresses of builtin native functions
 
 size_t GC_Cycles = 0;
 ptr_vector vm_strings; // string constants used in bytecode
-int32_t vm_total_constants = 0; // total constants stored in the array constants
 apiFuncions api; // to share VM's allocation api with modules
 // just a struct with a bunch of function pointers
 zobject nil;
@@ -906,7 +903,9 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         &&LOADVAR_SUBINT32,
         &&CALL_DIRECT,
         &&INDEX_FAST,
-        &&LOADVAR_ADDINT32
+        &&LOADVAR_ADDINT32,
+        &&LOAD_INT64,
+        &&LOAD_DOUBLE
         };
         //size_t counts[sizeof(targets)/sizeof(void*)];
         //memset(counts,0,sizeof(targets));
@@ -959,7 +958,27 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zlist_push(&STACK,STACK.arr[VEC_LAST(frames) + i1]);
         ip += 4;
         NEXT_INST;
-    }     
+    }
+    CASE_CP LOAD_INT64:
+    {
+        ip++;
+        zobject tmp;
+        tmp.type = Z_INT64;
+        memcpy(&tmp.l,ip,8);
+        zlist_push(&STACK,tmp);
+        ip+=8;
+        NEXT_INST;
+    }
+    CASE_CP LOAD_DOUBLE:
+    {
+        ip++;
+        zobject tmp;
+        tmp.type = Z_FLOAT;
+        memcpy(&tmp.f,ip,8);
+        zlist_push(&STACK,tmp);
+        ip+=8;
+        NEXT_INST;
+    }
     CASE_CP INC_GLOBAL:
     {
         orgk = ip - program;
@@ -1064,7 +1083,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         ip += 1;
         memcpy(&i1, ip, 4);
         ip += 4;
-        zlist_push(&STACK,vm_constants[i1]);
+        //zlist_push(&STACK,vm_constants[i1]);
         NEXT_INST;
     }
     CASE_CP LOAD_INT32:
@@ -4161,9 +4180,6 @@ void vm_destroy()
         free(vm_strings.arr[i]);
     }
     free(vm_strings.arr);
-    //    free(vm_strings.arr[i]->val);
-    if(vm_constants)
-        free(vm_constants);
     for(size_t i = 0;i < module_handles.size; i++)
     {
         #ifdef _WIN32

@@ -73,7 +73,7 @@ int main(int argc, const char *argv[])
         compiler_ctx* cctx = create_compiler_ctx(src);
         bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program
         bytecode_len = cctx->bytes_done;
-        // dis(bytecode);
+        //dis(bytecode);
         delete_ast(ast);
         parser_destroy(pctx);
         compiler_destroy(cctx);

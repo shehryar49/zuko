@@ -5,7 +5,7 @@ try
 }
 catch(err)
 {
-    println(isInstanceOf(err,MathError))
+    println(isinstanceof(err,MathError))
     println(err.msg)
     e = err
 }

@@ -5,7 +5,6 @@
 zuko_src* create_source(const char* filename, char* text)
 {
     zuko_src* src = malloc(sizeof(zuko_src));
-    src->num_of_constants = 0;
     str_vector_init(&src->files);
     str_vector_init(&src->sources);
     lntable_init(&src->line_num_table);
@@ -17,7 +16,6 @@ zuko_src* create_source(const char* filename, char* text)
 }
 void zuko_src_init(zuko_src* src)
 {
-    src->num_of_constants = 0;
     str_vector_init(&src->files);
     str_vector_init(&src->sources);
     lntable_init(&src->line_num_table);
@@ -31,7 +29,6 @@ void zuko_src_add_file(zuko_src* src, char* filename, char* source)
 }
 void zuko_src_reset(zuko_src* src)
 {
-    src->num_of_constants = 0;
     src->files.size = 0;
     src->sources.size = 0;
     lntable_clear(&src->line_num_table);

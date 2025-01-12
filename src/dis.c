@@ -90,7 +90,23 @@ void dis(uint8_t* bytecode)
       {
         printf("%zu  OP_EXIT\n",k);
 
-      }  
+      }
+      else if(inst == LOAD_INT64)
+      {
+            k++;
+            FOO1.bytes[0] = program[k];
+            FOO1.bytes[1] = program[k+1];
+            FOO1.bytes[2] = program[k+2];
+            FOO1.bytes[3] = program[k+3];
+            FOO1.bytes[4] = program[k+4];
+            FOO1.bytes[5] = program[k+5];
+            FOO1.bytes[6] = program[k+6];
+            FOO1.bytes[7] = program[k+7];
+            printf("LOAD_INT64 %lld\n",FOO1.l);
+            k+=8;
+            continue;
+ 
+      }
       else if(inst==LOAD_CONST)
       {
         printf("%zu  LOAD_CONST ",k);
@@ -98,7 +114,6 @@ void dis(uint8_t* bytecode)
         int32_t i;
         memcpy(&i, program+k, 4);
         k+=3;
-        printf("%d(%s)\n",i,zobject_to_str(vm_constants[i]));
       }    
       else if(inst==LOAD_STR)
       {

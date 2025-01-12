@@ -257,8 +257,6 @@ parser_ctx* create_parser_context(zuko_src* p)
     str_vector_init(&ctx->prefixes);
     str_vector_push(&ctx->prefixes,"");
     token_vector_init(&ctx->known_constants);
-
-    ctx->num_of_constants = &p->num_of_constants;
     ctx->refGraph = &p->ref_graph;
     ctx->files = &p->files;
     ctx->sources = &p->sources;
@@ -388,12 +386,6 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         }
         else if(tokens[begin].type== FLOAT_TOKEN || tokens[begin].type== NUM_TOKEN)
         {
-            if(find_token(tokens[begin],0,(int)ctx->known_constants.size-1,ctx->known_constants.arr)==-1)
-            {
-                token dup = make_token(tokens[begin].type,strdup(tokens[begin].content),tokens[begin].ln);
-                token_vector_push(&ctx->known_constants,dup);
-                *ctx->num_of_constants = *ctx->num_of_constants + 1;
-            }
             if(tokens[begin].type == FLOAT_TOKEN)
                 ast = new_node(FLOAT,strdup(tokens[begin].content));
             else if(tokens[begin].type == NUM_TOKEN)//int64
@@ -1691,7 +1683,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
 
                     }
                     else
-                        elif_end = match_token(elif_begin,end,R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
+                        elif_end = match_token(elif_begin,end,R_CURLY_BRACKET_TOKEN,tokens);
                     
 //                    elifBlocks.push_back(std::pair<int,int>(elif_begin+1,elif_end-1));
                     elifBlocks = realloc(elifBlocks,sizeof(pair)*(elif_size+1));
@@ -1725,7 +1717,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
 
                     }
                     else
-                        else_end = match_token(else_begin,end,R_CURLY_BRACKET_TOKEN,tokens);//IMPORTANT
+                        else_end = match_token(else_begin,end,R_CURLY_BRACKET_TOKEN,tokens);
                     else_begin += 1;
                     else_end -= 1;
                 }
