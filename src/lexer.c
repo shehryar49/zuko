@@ -12,7 +12,6 @@
 #include "misc.h"
 #include "convo.h"
 #define ZUKO_VER_STRING "0.3.3"
-extern bool REPL_MODE;
 void REPL();
 
 const char* keywords[] = {
