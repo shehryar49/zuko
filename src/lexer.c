@@ -83,37 +83,6 @@ void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
     //if(REPL_MODE) IMPORTANT: FIX later
     //  REPL();
 }
-static int32_t hex_to_int32(const char* s)
-{
-    int32_t res = 0;
-    int32_t p = 1;
-    int32_t len = strlen(s);
-    for(int32_t i=len-1;i>=0;i--)
-    {
-        if(s[i] >= '0' && s[i]<='9')
-            res+= (s[i]-48) * p;
-        else if(s[i] >= 'a' && s[i]<='z')
-            res+= (s[i]-87) * p;
-        p <<= 4;//p*=16
-    }
-    return res;
-}
-static int64_t hex_to_int64(const char* s)
-{
-    int64_t res = 0;
-    int64_t p = 1;
-    int32_t len = strlen(s);
-    for(int32_t i=len-1;i>=0;i--)
-    {
-        if(s[i] >= '0' && s[i]<='9')
-            res+= (s[i]-48) * p;
-        else if(s[i] >= 'a' && s[i]<='z')
-            res+= (s[i]-87) * p;
-        
-        p<<=4;
-    }
-    return res;
-}
 token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 {
     size_t lineno = ctx->line_num;

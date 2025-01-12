@@ -139,13 +139,9 @@ int32_t hex_to_int32(const char* s)
     for(int32_t i=len-1;i>=0;i--)
     {
         if(s[i] >= '0' && s[i]<='9')
-        {
             res+= (s[i]-48) * p;
-        }
         else if(s[i] >= 'a' && s[i]<='z')
-        {
             res+= (s[i]-87) * p;
-        }
         p<<=4;//p*=16
     }
     return res;
@@ -158,14 +154,9 @@ int64_t hex_to_int64(const char* s)
     for(int32_t i=len-1;i>=0;i--)
     {
         if(s[i] >= '0' && s[i]<='9')
-        {
             res+= (s[i]-48) * p;
-        }
         else if(s[i] >= 'a' && s[i]<='z')
-        {
             res+= (s[i]-87) * p;
-        }
-        
         p<<=4;
     }
     return res;
@@ -246,7 +237,7 @@ string REPL_READLINE(const char* msg)
   printf("%s",msg);
   while((ch = fgetc(stdin))!='\n')
   {
-    if(ch == EOF) // readline is used with REPL, so on EOF (CTRL+D) we exit
+    if(ch == EOF) // on EOF (CTRL+D) we exit
     {
       puts("");
       exit(0);
