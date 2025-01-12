@@ -6,25 +6,25 @@ class Vector
   private var a = nil
   private var b = nil
   private var c = nil
-  fn __construct__(var a,var b,var c)
+  function __construct__(var a,var b,var c)
   {
      self.a = a
      self.b = b
      self.c = c
   }
-  fn add(var a)
+  function add(var a)
   {
     self.a += a.a
     self.b += a.b
     self.c += a.c
   }
-  fn dotProduct(var a)
+  function dotProduct(var a)
   {
     self.a *= a.a
     self.b *= a.b
     self.c *= a.c
   }
-  fn display()
+  function display()
   {
     println(self.a,"i + ",self.b,"j + ",self.c,"k")
   }

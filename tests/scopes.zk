@@ -1,5 +1,5 @@
 var x = 30
-fn f()
+function f()
 {
     if(true)
     {

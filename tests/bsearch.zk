@@ -1,4 +1,4 @@
-fn binary_search(var arr,var x)
+function binary_search(var arr,var x)
 {
   var l = 0
   var h = len(arr)-1

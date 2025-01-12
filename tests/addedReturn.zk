@@ -1,11 +1,11 @@
 class Game
 {
-    fn f()
+    function f()
     {
         if(false)
           return nil
     }
-    fn g()
+    function g()
     {
         println("into g()")
     }

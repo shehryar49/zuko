@@ -2,12 +2,12 @@ class polynomial
 {
   private var coeff = nil
   private var exp = nil
-  fn __construct__(var c,var e)
+  function __construct__(var c,var e)
   {
     self.coeff = c
     self.exp = e
   }
-  fn add(var rhs)
+  function add(var rhs)
   {
     var c = self.coeff
     var e = self.exp
@@ -29,7 +29,7 @@ class polynomial
     self.coeff = c
     self.exp = e
   }
-  fn print()
+  function print()
   {
     var k = 0
     while(k<len(self.coeff))

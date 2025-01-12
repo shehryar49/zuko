@@ -1,5 +1,5 @@
 
-fn bubbleSort(var arr)
+function bubbleSort(var arr)
 {
   var n = len(arr)
   var i = 1

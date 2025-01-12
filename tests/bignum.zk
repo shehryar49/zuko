@@ -2,7 +2,7 @@ import bignum
 
 # test bignum module
 
-fn fact(var n)
+function fact(var n)
 {
     var k = bignum.bignum("1")
     var ans = bignum.bignum("1")

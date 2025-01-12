@@ -1,4 +1,4 @@
-fn fact(var n)
+function fact(var n)
 {
   if(n>1)
   {

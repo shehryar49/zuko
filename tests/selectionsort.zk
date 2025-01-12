@@ -1,4 +1,4 @@
-fn selectionSort(var arr)
+function selectionSort(var arr)
 {
   var i = 0
   while(i<len(arr))

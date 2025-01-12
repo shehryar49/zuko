@@ -24,7 +24,7 @@ const char* keywords[] = {
     "return",
     "break",
     "continue",
-    "fn",
+    "function",
     "nil",
     "for",
     "to",

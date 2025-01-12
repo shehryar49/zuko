@@ -2,7 +2,7 @@ var x = 30
 namespace std
 {
     var x = 40
-    fn f1()
+    function f1()
     {
         println(x) #40
         println(std::x) # 40
@@ -20,19 +20,19 @@ std::f1()
 println(x)
 println(std::Demo.id)
 
-fn f()
+function f()
 {
   return "f"
 }
 namespace outer
 {
-  fn f()
+  function f()
   {
     return "outer f"
   }
   namespace inner
   {
-    fn f()
+    function f()
     {
       return "inner f"
     }

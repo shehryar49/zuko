@@ -5,13 +5,13 @@ class Node
     var char = nil
     var left = nil
     var right = nil
-    fn __construct__(var val,var char)
+    function __construct__(var val,var char)
     {
         self.val = val
         self.char = char
     }
 }
-fn findInNodes(var elem,var list)
+function findInNodes(var elem,var list)
 {
   var k = 0
   foreach(var e: list)
@@ -22,7 +22,7 @@ fn findInNodes(var elem,var list)
   }
   return nil
 }
-fn sort(var list)
+function sort(var list)
 {
     var l=len(list)
     for(var i=1 to l step 1)
@@ -38,7 +38,7 @@ fn sort(var list)
         }
     }
 }
-fn generateHuffmanTree(var v)
+function generateHuffmanTree(var v)
 {
 
   if(len(v)==0)
@@ -59,7 +59,7 @@ fn generateHuffmanTree(var v)
   }
   return v[0]
 }
-fn printTree(var tree,var spaces)
+function printTree(var tree,var spaces)
 {
     if(tree==nil)
       return nil
@@ -69,7 +69,7 @@ fn printTree(var tree,var spaces)
     printTree(tree.left,spaces+2)
     printTree(tree.right,spaces+2)
 }
-fn getCodeFromTree(var ch,var tree)
+function getCodeFromTree(var ch,var tree)
 {
   if(tree==nil)
     return nil
@@ -83,7 +83,7 @@ fn getCodeFromTree(var ch,var tree)
     return "1"+res
   return nil
 }
-fn encode(var str,var tree)
+function encode(var str,var tree)
 {
   var codes = {}
   var encoded = ""
@@ -102,7 +102,7 @@ fn encode(var str,var tree)
   }
   return encoded
 }
-fn decode(var str,var tree)
+function decode(var str,var tree)
 {
   var decoded = ""
   var h = tree

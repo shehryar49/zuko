@@ -3,32 +3,32 @@ class Window
     var width = nil
     var height = nil
     private var x = 30
-    fn __construct__(var a,var b)
+    function __construct__(var a,var b)
     {
       width = a
       height = b
     }
-    fn display()
+    function display()
     {
       println(width,"x",height)
     }
-    fn testIncrment()
+    function testIncrment()
     {
       width+=1
       height+=1
       width+=5
       height+=5
     }
-    fn double()
+    function double()
     {
       width = width*2
       height = height*2
     }
-    fn g()
+    function g()
     {
       println(x*x)
     }
-    fn f()
+    function f()
     {
       g()
     }
@@ -41,7 +41,7 @@ namespace std
     var x = 30
     var y = 40
     var nums = [1,3,5]
-    fn run()
+    function run()
     {
       println(x," => ",y)
       var x = self.x
@@ -51,7 +51,7 @@ namespace std
       }
       return self
     }
-    fn testForEach()
+    function testForEach()
     {
       foreach(var elem: nums)
       {

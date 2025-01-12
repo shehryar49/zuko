@@ -761,7 +761,7 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         }
     }
     bool multiline=false;
-    const char* expr;
+    const char* expr = "";
     for(int i=begin;i<=end;i++)
     {
         token e = tokens[i];
@@ -807,7 +807,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             parseError(ctx,"SyntaxError","Error use of keyword private outside class!");
 
         if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0);
+        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
         else
             parseError(ctx,"SyntaxError","Invalid use of keyword private\n");
     }
@@ -818,7 +818,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         if(!ctx->inclass)
             parseError(ctx,"SyntaxError","Error use of keyword public outside class!");
         if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0);
+        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
         else
             parseError(ctx,"SyntaxError","Invalid use of keyword public");
     }
@@ -1246,7 +1246,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin+1,end));
         return ast;
     }
-    if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"fn") == 0)
+    if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0)
     {
         if(tokens_size<4)
             parseError(ctx,"SyntaxError","Invalid Syntax");
@@ -1357,12 +1357,11 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             k+=1;
             continue;
         }
-        if(strcmp(tokens[k].content,"=")==0)
+        if(strcmp(tokens[k].content,"=") == 0)
         {
             Node* ast = new_node(assign,tokens[k].content);
-            //vector<token> left = {tokens.begin()+begin,tokens.begin()+k};
-            //if(left.size()==0)
-            //    parseError(ctx,"SyntaxError","Invalid Syntax");
+            if(begin > k-1)
+                parseError(ctx,"SyntaxError","Invalid Syntax");
             Node* n = new_node(line_node,int64_to_str(tokens[k].ln));
             nodeptr_vector_push(&(ast->childs),n);
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin,k-1));
@@ -1377,9 +1376,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                 if(rhs_begin > rhs_end)
                     parseError(ctx,"SyntaxError","Error expected expression after return keyword");
                 Node* n = new_node(line_node,int64_to_str(tokens[k+1].ln));
-                //ast->childs.back()->childs.push_back(n);
                 add_child(ast->childs.arr[ast->childs.size-1],n);
-//                ast->childs.back()->childs.push_back(parseExpr(ctx,0,rhs_begin,rhs_end));
                 add_child(ast->childs.arr[ast->childs.size-1],parseExpr(ctx,tokens,rhs_begin,rhs_end));
                 ctx->foundYield = true;
                 return ast;

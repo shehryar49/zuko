@@ -1,91 +1,91 @@
 class Integer
 {
     private var val = nil
-    fn __construct__(var val)
+    function __construct__(var val)
     {
         self.val = val
     }
-    fn __smallerthan__(var rhs)
+    function __smallerthan__(var rhs)
     {
        return self.val < rhs.val
     }
-    fn __greaterthan__(var rhs)
+    function __greaterthan__(var rhs)
     {
        return self.val > rhs.val
     }
-    fn __smallerthaneq__(var rhs)
+    function __smallerthaneq__(var rhs)
     {
         return self.val <= rhs.val
     }
-    fn __greaterthaneq__(var rhs)
+    function __greaterthaneq__(var rhs)
     {
        return self.val >= rhs.val
     }
-    fn __neg__()
+    function __neg__()
     {
        return -self.val
     }
-    fn __lshift__(var n)
+    function __lshift__(var n)
     {
         return self.val << n
     }
-    fn __rshift__(var n)
+    function __rshift__(var n)
     {
         return self.val >> n
     }
-    fn __complement__()
+    function __complement__()
     {
         return ~self.val
     }
-    fn __bitwiseand__(var rhs)
+    function __bitwiseand__(var rhs)
     {
         return self.val & rhs.val
     }
-    fn __bitwiseor__(var rhs)
+    function __bitwiseor__(var rhs)
     {
         return self.val | rhs.val
     }
-    fn __xor__(var n)
+    function __xor__(var n)
     {
         return self.val ^ n.val
     }
-    fn __add__(var n)
+    function __add__(var n)
     {
         return self.val + n.val
     }
-    fn __sub__(var n)
+    function __sub__(var n)
     {
         return self.val - n.val
     }
-    fn __mul__(var n)
+    function __mul__(var n)
     {
         return self.val * n.val
     }
-    fn __div__(var n)
+    function __div__(var n)
     {
         return self.val / n.val
     }
-    fn __eq__(var rhs)
+    function __eq__(var rhs)
     {
         return self.val == rhs.val
     }
-    fn __noteq__(var rhs)
+    function __noteq__(var rhs)
     {
         return self.val != rhs.val
     }
-    fn __not__()
+    function __not__()
     {
         return self.val == 0
     }
-    fn __index__(var idx)
+    function __index__(var idx)
     {
         return "Bitch please!"
     }
-    fn __del__()
+    function __del__()
     {
         println("Object being garbage collected")
     }
-    fn getval()
+    function getval()
     {
         return self.val
     }
