@@ -41,7 +41,7 @@ bool is_int64(const char* s)
 	snprintf(str,50,"%" PRId64,tmp);
 	return strcmp(str,s) == 0;
 }
-bool isnum(const char* s)
+bool is_int32(const char* s)
 {
     while(s[0]=='0' && s[1]!=0)
       s++;

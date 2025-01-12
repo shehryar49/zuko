@@ -260,7 +260,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         if (ast->type == NUM)
         {
             const char* n = ast->val;
-            if (isnum(n))
+            if (is_int32(n))
             {
                 zbytearr_push(&ctx->bytecode,LOAD_INT32);
                 addBytes(&ctx->bytecode,str_to_int32(n));
@@ -383,7 +383,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     }
     if (ast->type == add)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && isnum(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -409,7 +409,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     }
     if (ast->type == sub)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && isnum(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -1960,7 +1960,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(ctx->inConstructor)
                 compileError(ctx,"SyntaxError","Error class constructors should not return anything!");
             //stmt in it's block
-            if(ast->childs.arr[1]->type == NUM && isnum(ast->childs.arr[1]->val))
+            if(ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
             {
                 instruction(ctx,RETURN_INT32);
                 i32_operand(ctx,atoi(ast->childs.arr[1]->val));

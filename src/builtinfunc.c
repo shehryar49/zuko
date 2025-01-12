@@ -1018,7 +1018,7 @@ zobject TOINT(zobject* args,int32_t argc)
 		{
 		    zstr* q = ((zstr*)args[0].ptr);
 			zobject ret = nil;
-            if(isnum(q->val))
+            if(is_int32(q->val))
             {
                 ret.i = str_to_int32(q->val);
                 ret.type = 'i';
@@ -1079,7 +1079,7 @@ zobject TOINT32(zobject* args,int32_t argc)
 		{
 		    zstr* q = (zstr*)args[0].ptr;
 			zobject ret = nil;
-            if(isnum(q->val))
+            if(is_int32(q->val))
                 return zobj_from_int(str_to_int32(q->val));
             else if(is_int64(q->val))
                 return zobj_from_int(INT_MAX);
@@ -1138,7 +1138,7 @@ zobject TOINT64(zobject* args,int32_t argc)
 		{
 		    zstr* q = (zstr*)args[0].ptr;
 			zobject ret = nil;
-            if(isnum(q->val))
+            if(is_int32(q->val))
                 return zobj_from_int64(str_to_int32(q->val));
             else if(is_int64(q->val))
                 return zobj_from_int64(str_to_int64(q->val));
@@ -1183,7 +1183,7 @@ zobject TOFLOAT(zobject* args,int32_t argc)
 		if(args[0].type=='s')
 		{
             zstr* q = (zstr*)args[0].ptr;
-            if(isnum(q->val))
+            if(is_int32(q->val))
                 return zobj_from_double((double)str_to_int32(q->val));
             else if(is_int64(q->val))
                 return zobj_from_double((double)str_to_int64(q->val));
@@ -1211,7 +1211,7 @@ zobject TONUMERIC(zobject* args,int32_t argc)
         if(args[0].type=='s')
         {
             zstr* q = (zstr*)args[0].ptr;
-            if(isnum(q->val))
+            if(is_int32(q->val))
                 return zobj_from_int(str_to_int32(q->val));
             else if(is_int64(q->val))
                 return zobj_from_int64(str_to_int64(q->val));
@@ -1232,7 +1232,7 @@ zobject ISNUMERIC(zobject* args,int32_t argc)
         if(args[0].type=='s')
         {
             zstr* s = (zstr*)args[0].ptr;
-            if(isnum(s->val))
+            if(is_int32(s->val))
                 return zobj_from_bool(true);
             else if(is_int64(s->val))
                 return zobj_from_bool(true);

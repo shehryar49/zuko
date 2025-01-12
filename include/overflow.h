@@ -19,8 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-#ifndef CRASH_OVERFLOW_H_
-#define CRASH_OVERFLOW_H_
+#ifndef ZUKO_OVERFLOW_H_
+#define ZUKO_OVERFLOW_H_
 
 #ifdef __cplusplus
 extern "C"{
@@ -55,6 +55,9 @@ Multiplication
 bool multiplication_overflows_i32(int32_t a,int32_t b);
 bool multiplication_overflows_i64(int64_t a,int64_t b);
 bool multiplication_overflows_double(double a,double b);
+/*
+Division
+*/
 bool division_overflows_i32(int32_t op1, int32_t op2);
 bool division_overflows_i64(int64_t op1,int64_t op2);
 

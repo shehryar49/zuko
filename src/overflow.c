@@ -1,5 +1,6 @@
 #include "overflow.h"
 
+// Improvements required
 bool exponen_overflows_i32(int32_t a,int32_t b)
 {
     double c = pow(a,b);
@@ -127,15 +128,8 @@ bool multiplication_overflows_double(double a,double b)
 }
 bool division_overflows_i32(int32_t op1, int32_t op2) {
 
-  if ( op1 == INT_MIN && op2 == -1 )  {
-    return true;
-  }
-  return false;
+  return ( op1 == INT_MIN && op2 == -1 );
 }
 bool division_overflows_i64(int64_t op1,int64_t op2) {
-
-  if ( op1 == LLONG_MIN && op2 == -1 )  {
-    return true;
-  }
-  return false;
+  return ( op1 == LLONG_MIN && op2 == -1 );
 }
