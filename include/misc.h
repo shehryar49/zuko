@@ -19,8 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-#ifndef Z_UTILITY_H_
-#define Z_UTILITY_H_
+#ifndef Z_MISC_H_
+#define Z_MISC_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include "ptr-vector.h"
@@ -32,12 +32,11 @@ SOFTWARE.*/
 extern "C"{
 #endif
 
-char* clone_str(const char*);
-char* readfile(const char* filename);
-char* zlist_to_str(zlist*,ptr_vector*);
-char* zdict_to_str(zdict*,ptr_vector*);
+char* readfile(const char* filename); /* Take a guess */
+char* zlist_to_str(zlist*,ptr_vector*); /* Returns a string representation of a zuko list */
+char* zdict_to_str(zdict*,ptr_vector*); /* Returns a string representation of a zuko dictionary */
 
-const char* getOS();
+const char* get_os_name(); /* Returns OS name */
 char* zobject_to_str(zobject);
 unsigned char tobyte(const char*);
 void replace_once(zstr*,zstr*,zstr*,dyn_str*);

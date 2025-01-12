@@ -68,13 +68,6 @@ void reverse_str(char* str,size_t len)
     h--;
   }
 }
-char* clone_str(const char* str)
-{
-  size_t len = strlen(str);
-  char* s = malloc(sizeof(char)*(len+1));
-  strcpy(s,str);
-  return s;
-}
 void replace_once(zstr* x,zstr* y,zstr* str,dyn_str* result)
 {
     for(size_t i = 0; i < str->len; i++)
@@ -108,7 +101,7 @@ void replace_all(zstr* x,zstr* y,zstr* str,dyn_str* result)
 char* int_to_hex(int i)
 {
     if(i==0)
-        return clone_str("0x00");
+        return strdup("0x00");
     int r;
     dyn_str res;
     dyn_str_init(&res); 
@@ -323,7 +316,7 @@ char* readfile(const char* filename)
   return src;
 }
 
-const char* getOS()
+const char* get_os_name()
 {
   #ifdef __linux__
     return "Linux";
@@ -398,54 +391,54 @@ char* zobject_to_str(zobject a)
     {
         char buffer[10];
         snprintf(buffer,10,"0x%02x",a.i & 0xff);
-        return clone_str(buffer);
+        return strdup(buffer);
     }
     else if(a.type=='c')
-        return clone_str("<bytearray>");
+        return strdup("<bytearray>");
     else if(a.type=='e')
-        return clone_str("<Error Object>");
+        return strdup("<Error Object>");
     else if(a.type=='b')
     {
         if(a.i)
-            return clone_str("true");
-        return clone_str("false");
+            return strdup("true");
+        return strdup("false");
     }
     else if(a.type=='u')
     {
         snprintf(misc_buffer,100,"<File object at %p>",a.ptr);
-        return clone_str(misc_buffer);
+        return strdup(misc_buffer);
     }
     else if(a.type=='w')
     {
         zfun* p = (zfun*)a.ptr;
         char buffer[100];
         snprintf(buffer,100,"<Function %s>",p->name);
-        return clone_str(buffer);
+        return strdup(buffer);
     }
     else if(a.type=='y')
-        return clone_str("<Native Function>");
+        return strdup("<Native Function>");
     else if(a.type=='v')
     {
         snprintf(misc_buffer,100,"<class %s>",((zclass*)a.ptr)->name);
-		return clone_str(misc_buffer);
+		return strdup(misc_buffer);
     }
 	else if(a.type=='o')
     {
         snprintf(misc_buffer,100,"<%s object>",((zclass*)a.ptr)->name);
-		return clone_str(misc_buffer);
+		return strdup(misc_buffer);
     }
     else if(a.type=='q')
     {
         char buff[100];
         snprintf(buff,100,"<Module Object at %p>",a.ptr);
-        return clone_str(buff);
+        return strdup(buff);
     }
     else if(a.type=='r')
-        return clone_str("<Native Method>");
+        return strdup("<Native Method>");
     else if(a.type=='z')
-        return clone_str("<Coroutine Object>");
+        return strdup("<Coroutine Object>");
     else if(a.type=='g')
-        return clone_str("<Coroutine>");
+        return strdup("<Coroutine>");
     else if(a.type=='j')
     {
         char* zlist_to_str(zlist*,ptr_vector*);
@@ -459,7 +452,7 @@ char* zobject_to_str(zobject a)
     else if(a.type==Z_STR)
     {
         zstr* str = (zstr*)a.ptr;
-        return clone_str(str->val);
+        return strdup(str->val);
     }
     else if(a.type=='a')
     {
@@ -471,7 +464,7 @@ char* zobject_to_str(zobject a)
         ptr_vector_destroy(&seen);
         return str;
     }
-    return clone_str("nil");
+    return strdup("nil");
 }
 
 char* zlist_to_str(zlist* p,ptr_vector* seen)

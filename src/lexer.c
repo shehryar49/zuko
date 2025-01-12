@@ -10,6 +10,7 @@
 #include <limits.h>
 #include "dyn-str.h"
 #include "misc.h"
+#include "convo.h"
 #define ZUKO_VER_STRING "0.3.3"
 extern bool REPL_MODE;
 void REPL();
@@ -88,18 +89,6 @@ void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
     //if(REPL_MODE) IMPORTANT: FIX later
     //  REPL();
 }
-char* int64_to_string(int64_t x)
-{
-    char buffer[50];
-    snprintf(buffer,50,"%zd",x);
-    return clone_str(buffer);
-}
-char* double_to_string(double x)
-{
-    char buffer[50];
-    snprintf(buffer,50,"%f",x);
-    return clone_str(buffer);
-}
 static int32_t hex_to_int32(const char* s)
 {
     int32_t res = 0;
@@ -135,33 +124,33 @@ token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 {
     size_t lineno = ctx->line_num;
     if(strncmp(name , "SEEK_CUR",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(SEEK_CUR),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(SEEK_CUR),lineno);
     else if(strncmp(name , "SEEK_SET",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(SEEK_SET),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(SEEK_SET),lineno);
     else if(strncmp(name , "SEEK_END",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(SEEK_END),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(SEEK_END),lineno);
     else if(strncmp(name , "pi",length) == 0)
         return make_token(FLOAT_TOKEN,strdup("3.14159"),lineno);
     else if(strncmp(name , "e",length) == 0)
         return make_token(FLOAT_TOKEN,strdup("2.718"),lineno);
     else if(strncmp(name , "clocks_per_sec",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(CLOCKS_PER_SEC),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(CLOCKS_PER_SEC),lineno);
     else if(strncmp(name , "INT_MIN",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(INT_MIN),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(INT_MIN),lineno);
     else if(strncmp(name , "INT_MAX",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(INT_MAX),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(INT_MAX),lineno);
     else if(strncmp(name , "INT64_MIN",length) == 0)
-        return make_token(NUM_TOKEN,int64_to_string(LLONG_MIN),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(LLONG_MIN),lineno);
     else if(strncmp(name , "INT64_MAX",length) == 0)        
-        return make_token(NUM_TOKEN,int64_to_string(LLONG_MAX),lineno);
+        return make_token(NUM_TOKEN,int64_to_str(LLONG_MAX),lineno);
     else if(strncmp(name , "os",length) == 0)
-        return make_token(STRING_TOKEN,strdup(getOS()),lineno);
+        return make_token(STRING_TOKEN,strdup(get_os_name()),lineno);
     else if(strncmp(name , "version",length) == 0)
         return make_token(STRING_TOKEN,strdup(ZUKO_VER_STRING),lineno);
     else if(strncmp(name,"filename",length) == 0)
         return make_token(STRING_TOKEN,strdup(ctx->filename),lineno);
     else if(strncmp(name,"lineno",length) == 0)
-        return make_token(STRING_TOKEN,int64_to_string(ctx->line_num),lineno);
+        return make_token(STRING_TOKEN,int64_to_str(ctx->line_num),lineno);
     else
         return make_token(END_TOKEN,"",0); //to indicate macro not found
 }
@@ -383,7 +372,7 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
         {
             i.type = NUM_TOKEN;
             i.ln = ctx->line_num;
-            i.content = int64_to_string(hex_to_int32(b.arr));
+            i.content = int64_to_str(hex_to_int32(b.arr));
             free(b.arr);
             token_vector_push(tokenlist,i);
         }
@@ -391,7 +380,7 @@ void numeric(lexer_ctx* ctx,token_vector* tokenlist)
         {
             i.type = NUM_TOKEN;
             i.ln = ctx->line_num;
-            i.content = int64_to_string(hex_to_int64(b.arr));
+            i.content = int64_to_str(hex_to_int64(b.arr));
             free(b.arr);
             token_vector_push(tokenlist,i);
         }

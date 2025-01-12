@@ -10,7 +10,7 @@ char* double_to_str(double f)
     
     while(buffer[k] == '0' && buffer[k-1] != '.')
         buffer[k--] = 0;
-	return clone_str(buffer);
+	return strdup(buffer);
 }
 int64_t str_to_int64(const char* s)
 {
@@ -79,12 +79,12 @@ char buffer[50];
 char* int32_to_str(int32_t x)
 {
 	snprintf(buffer,50,"%" PRId32,x);
-	return clone_str(buffer);
+	return strdup(buffer);
 }
 char* int64_to_str(int64_t l)
 {
 	snprintf(buffer,50,"%" PRId64,l);
-	return clone_str(buffer);
+	return strdup(buffer);
 }
 double str_to_double(const char* s)
 {

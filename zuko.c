@@ -32,7 +32,7 @@ int main(int argc, const char *argv[])
     if (argc < 2)
     {
         printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n",
-           ZUKO_VER, ZUKO_VER_PATCH, __DATE__, __TIME__, getOS());
+           ZUKO_VER, ZUKO_VER_PATCH, __DATE__, __TIME__, get_os_name());
         REPL_init();
         REPL();
         return 0;
