@@ -14,14 +14,15 @@ zuko_src* create_source(const char* filename, char* text)
     str_vector_push(&src->sources,text);
     return src;
 }
-void zuko_src_init(zuko_src* src)
+zuko_src* create_empty_source()
 {
+    zuko_src* src = malloc(sizeof(zuko_src));
     str_vector_init(&src->files);
     str_vector_init(&src->sources);
     lntable_init(&src->line_num_table);
     refgraph_init(&src->ref_graph);
+    return src;
 }
-
 void zuko_src_add_file(zuko_src* src, const char* filename, char* source)
 {
     str_vector_push(&src->files,strdup(filename));

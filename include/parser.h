@@ -50,7 +50,6 @@ void print_ast(Node* n,int spaces);
 
 typedef struct parser_ctx
 {
-  token_vector known_constants;
   str_vector prefixes;//for namespaces 
   refgraph* refGraph;
   const char* currSym;
@@ -58,8 +57,6 @@ typedef struct parser_ctx
   str_vector* sources;
   const char* filename;
   size_t line_num;
-  int* num_of_constants;
-  const char* aux;
   bool foundYield ;
   //ptr_vector to_free;
   //Context

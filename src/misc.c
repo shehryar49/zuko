@@ -163,7 +163,6 @@ int64_t hex_to_int64(const char* s)
 }
 char* addlnbreaks(const char* s,bool* hadErr) // adds escape sequences
 {
-
     size_t k = 0;
     bool escaped = false;//check if last char was
     dyn_str r;
@@ -179,9 +178,7 @@ char* addlnbreaks(const char* s,bool* hadErr) // adds escape sequences
                 dyn_str_push(&r,'\\');
             }
             else
-            {
                 escaped = true;
-            }
         }
         else if(escaped)
         {
@@ -387,7 +384,7 @@ char* zobject_to_str(zobject a)
     else if(a.type=='c')
         return strdup("<bytearray>");
     else if(a.type=='e')
-        return strdup("<Error Object>");
+        return strdup("<error object>");
     else if(a.type=='b')
     {
         if(a.i)
@@ -396,18 +393,18 @@ char* zobject_to_str(zobject a)
     }
     else if(a.type=='u')
     {
-        snprintf(misc_buffer,100,"<File object at %p>",a.ptr);
+        snprintf(misc_buffer,100,"<file object at %p>",a.ptr);
         return strdup(misc_buffer);
     }
     else if(a.type=='w')
     {
         zfun* p = (zfun*)a.ptr;
         char buffer[100];
-        snprintf(buffer,100,"<Function %s>",p->name);
+        snprintf(buffer,100,"<function %s>",p->name);
         return strdup(buffer);
     }
     else if(a.type=='y')
-        return strdup("<Native Function>");
+        return strdup("<native function>");
     else if(a.type=='v')
     {
         snprintf(misc_buffer,100,"<class %s>",((zclass*)a.ptr)->name);
@@ -415,7 +412,9 @@ char* zobject_to_str(zobject a)
     }
 	else if(a.type=='o')
     {
-        snprintf(misc_buffer,100,"<%s object>",((zclass*)a.ptr)->name);
+        zclass_object* tmp = (zclass_object*)a.ptr;
+        zclass* c = tmp->_klass;
+        snprintf(misc_buffer,100,"<%s object>",c->name);
 		return strdup(misc_buffer);
     }
     else if(a.type=='q')

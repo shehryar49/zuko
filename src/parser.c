@@ -33,7 +33,10 @@ Node* new_node(NodeType type,const char* val)
   nodeptr_vector_init(&p->childs);
   return p;
 }
-
+void add_child(Node* ast,Node* ptr)
+{
+    nodeptr_vector_push(&(ast->childs),ptr);
+}
 void strip_newlines(token* tokens,int* begin,int* end)
 {
     while(*end >= *begin && tokens[*begin].type==NEWLINE_TOKEN )
@@ -257,7 +260,6 @@ parser_ctx* create_parser_context(zuko_src* p)
     
     str_vector_init(&ctx->prefixes);
     str_vector_push(&ctx->prefixes,"");
-    token_vector_init(&ctx->known_constants);
     ctx->refGraph = &p->ref_graph;
     ctx->files = &p->files;
     ctx->sources = &p->sources;
@@ -327,15 +329,6 @@ int find_op(const char* prec[5][7],int i,const char* op)
     }
     return -1;
 }
-static bool isnum(const char* s)
-{
-    while(s[0]=='0' && s[1]!=0)
-      s++;
-    char tmp[50];
-    int x = atoi(s);
-    snprintf(tmp,50,"%d",x);
-	return strcmp(tmp,s) == 0;
-}
 
 Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
 {   
@@ -362,15 +355,18 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
             for(size_t i = 1;i <= ctx->prefixes.size; i++)
             {
                 size_t idx = ctx->prefixes.size - i;
-                ctx->aux = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
-                if((done = addSymRef(ctx,ctx->aux)))
+                char* tmp = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
+                if((done = addSymRef(ctx,tmp)))
+                {
+                    free(tmp);
                     break;
-                free((void*)ctx->aux);
+                }
+                free(tmp);
             }
             ast = new_node(ID_NODE,strdup(tokens[begin].content));
             return ast;
         }
-        else if(tokens[begin].type == NUM_TOKEN && isnum(tokens[begin].content))
+        else if(tokens[begin].type == NUM_TOKEN && is_int32(tokens[begin].content))
         {
             ast = new_node(NUM,strdup(tokens[begin].content));//int32
             return ast;
@@ -461,24 +457,18 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
 
         if(strcmp(tokens[begin].content,"-") == 0)
         {
-            Node* ast = new_node(neg,"");
-            size_t sz = ctx->known_constants.size;
-            Node* E = parseExpr(ctx,tokens,begin+1,end);
-            if(ctx->known_constants.size==sz+1 && begin+1==end && (ctx->known_constants.arr[sz].type==FLOAT_TOKEN || ctx->known_constants.arr[sz].type==NUM_TOKEN))
+            if(begin+1 == end && tokens[end].type == NUM_TOKEN)
             {
-                ctx->known_constants.arr[sz].content = merge_str("-",ctx->known_constants.arr[sz].content);
-                if(ctx->known_constants.arr[sz].type == FLOAT_TOKEN)
-                {
-                    ast->type = FLOAT;
-                    ast->val = ctx->known_constants.arr[sz].content;
-                }
-                else if(ctx->known_constants.arr[sz].type == NUM_TOKEN)
-                {
-                    ast->type = NUM;
-                    ast->val = ctx->known_constants.arr[sz].content;
-                }
-                return ast;
+                const char* content = merge_str("-",tokens[end].content);
+                return new_node(NUM,content);
             }
+            else if(begin+1 == end && tokens[end].type == FLOAT_TOKEN)
+            {
+                const char* content = merge_str("-",tokens[end].content);
+                return new_node(FLOAT,content);
+            }
+            Node* ast = new_node(neg,"");
+            Node* E = parseExpr(ctx,tokens,begin+1,end);
             nodeptr_vector_push(&(ast->childs),E);
             return ast;
         }
@@ -684,15 +674,14 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
             for(size_t i = 1;i <= ctx->prefixes.size; i++)
             {
                 size_t idx = ctx->prefixes.size - i;
-                ctx->aux = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
-                if((done = addSymRef(ctx,ctx->aux)))
+                char* tmp = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
+                if((done = addSymRef(ctx,tmp)))
                 {
-                    free((void*)ctx->aux);                    
+                    free(tmp);                    
                     break;
                 }
-                free((void*)ctx->aux);
+                free(tmp);
             }
-//            vector<token> Args = {tokens.begin()+begin+2,tokens.begin()+end};
             int args_begin = begin+2;
             int args_end = end-1;
             if(args_begin > args_end)
@@ -717,8 +706,6 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
                     int i = match_token(k,args_end,END_LIST_TOKEN,tokens);
                     if(i==-1)
                         parseError(ctx,"SyntaxError","Invalid Syntax");
-                    //vector<token> LIST =  {Args.begin()+k,Args.begin()+i+1};
-                    //T.insert(T.end(),LIST.begin(),LIST.end());
                     k = i;
                 }
                 else if(tokens[k].type== LParen_TOKEN)
@@ -726,8 +713,6 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
                     int i = match_token(k,args_end,RParen_TOKEN,tokens);
                     if(i==-1)
                         parseError(ctx,"SyntaxError","Invalid Syntax");
-                    //vector<token> P =  {Args.begin()+k,Args.begin()+i+1};
-                    //T.insert(T.end(),P.begin(),P.end());
                     k = i;
                 }
                 else if(tokens[k].type== L_CURLY_BRACKET_TOKEN)
@@ -735,18 +720,17 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
                     int i = match_token(k,args_end,R_CURLY_BRACKET_TOKEN,tokens);
                     if(i==-1)
                         parseError(ctx,"SyntaxError","Invalid Syntax");
-                    //vector<token> P =  {Args.begin()+k,Args.begin()+i+1};
-                    //T.insert(T.end(),P.begin(),P.end());
                     k = i;
                 }
             }
             int arg_end = k - 1;
             if(arg_begin > arg_end)
                 parseError(ctx,"SyntaxError","Invalid Syntax bitch");
-            nodeptr_vector_push(&(args->childs),parseExpr(ctx,tokens,arg_begin,arg_end));
-            nodeptr_vector_push(&(ast->childs),args);
+            add_child(args,parseExpr(ctx,tokens,arg_begin,arg_end));
+            add_child(ast,args);
+        
             return ast;
-        }//
+        }
     }
     ///////////////////
     //////////////
@@ -785,10 +769,7 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         parseError(ctx,"SyntaxError",expr);  
     return ast;
 }
-void add_child(Node* ast,Node* ptr)
-{
-    nodeptr_vector_push(&(ast->childs),ptr);
-}
+
 Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
 {
     size_t tokens_size = end-begin+1;
@@ -889,13 +870,13 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                 for(size_t i = 1;i <= ctx->prefixes.size; i++)
                 {
                     size_t idx = ctx->prefixes.size - i;
-                    ctx->aux = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
-                    if((done = addSymRef(ctx,ctx->aux)))
+                    char* tmp = merge_str(ctx->prefixes.arr[idx],tokens[begin].content);
+                    if((done = addSymRef(ctx,tmp)))
                     {
-                        free((void*)ctx->aux);
+                        free(tmp);
                         break;
                     }
-                    free((void*)ctx->aux);
+                    free(tmp);
                 }
                 Node* args = new_node(args_node,"");
                 if(tokens_size==3)
@@ -1208,10 +1189,15 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             if(tokens[begin+1].type!=ID_TOKEN || strcmp(tokens[begin+1].content,"std")!=0 || tokens[begin+2].type!=OP_TOKEN || strcmp(tokens[begin+2].content,"/")!=0 || tokens[begin+3].type!=ID_TOKEN )
                 parseError(ctx,"SyntaxError","Invalid Syntax");
             char* tmp;
+            char* aux;
             #ifdef _WIN32
-            tokens[begin+3].content="C:\\zuko\\std\\"+tokens[begin+3].content+".zk";
+                aux = merge_str("C:\\zuko\\std\\",tokens[begin+3].content);
+                tmp = merge_str(aux,".zk");
+                free(aux);
             #else
-            tmp = merge_str(merge_str("/opt/zuko/std/",tokens[begin+3].content),".zk");
+                aux = merge_str("/opt/zuko/std/",tokens[begin+3].content);
+                tmp = merge_str(aux,".zk");
+                free(aux);
             #endif
             Node* n = new_node(line_node,int64_to_str(tokens[begin].ln));
             nodeptr_vector_push(&(ast->childs),n);
@@ -1909,24 +1895,32 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                     nm_end = match_token(nm_begin,end,R_CURLY_BRACKET_TOKEN,tokens);
                 if(!atGlobalLevel(ctx))
                     parseError(ctx,"SyntaxError","Namespace declaration must be at global scope or within another namespace!");
-                //vector<token> block = {tokens.begin()+j+1,tokens.begin()+i};
                 nm_begin += 1;
                 nm_end -= 1;
 
-                const char* prefix = "";
-                for(size_t i = 0;i<ctx->prefixes.size;i++)
+                //const char* prefix = NULL;
+                size_t len = 0;
+                for(size_t i = 0; i < ctx->prefixes.size; i++)
+                    len += strlen(ctx->prefixes.arr[i]);
+                char* prefix = malloc(sizeof(char)*(len+1));
+                size_t idx = 0;
+                for(size_t i = 0; i < ctx->prefixes.size; i++)
                 {
-                    const char* e = ctx->prefixes.arr[i];
-                    prefix = merge_str(prefix,e);
+                    strcpy(prefix + idx,ctx->prefixes.arr[i]);
+                    idx += strlen(ctx->prefixes.arr[i]);
                 }
+                char* tmp = prefix;
                 prefix = merge_str(prefix,ast->childs.arr[1]->val);
+                free(tmp);
+                tmp = prefix;
                 prefix = merge_str(prefix,"::");
+                free(tmp);
                 str_vector_push(&ctx->prefixes,prefix);
                 //with "namespaceName::"
                 nodeptr_vector_push(&(ast->childs),parse_block(ctx,tokens,nm_begin,nm_end));
-                char* tmp;
+        
                 str_vector_pop(&ctx->prefixes,&tmp);
-            
+                free(tmp);
                 begin = nm_end+2;
                 k = nm_end+1;
             }
@@ -2054,7 +2048,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         char* text = readfile(str);
                         if(!text)
                             parseError(ctx,"ImportError",strerror(errno));
-                        str_vector_push(ctx->files,strdup(text));
+                        str_vector_push(ctx->files,strdup(str));
                         str_vector_push(ctx->sources,strdup(text));
                         const char* F = ctx->filename;
                         size_t K = ctx->line_num;
@@ -2075,7 +2069,6 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         add_child(A,new_node(STR_NODE,strdup(str)));
                         Node* subast = parse_block(ctx,t.arr,0,t.size-1);
                         add_child(A,subast);
-                        //free(src);
                         zuko_src_destroy(tmp);
                         token_vector_destroy(&t);
                         ctx->filename = F;
@@ -2114,6 +2107,5 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
 void parser_destroy(parser_ctx* ctx)
 {
     str_vector_destroy(&ctx->prefixes);
-    token_vector_destroy(&ctx->known_constants);
     free(ctx);
 }

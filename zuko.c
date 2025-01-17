@@ -34,10 +34,10 @@ int main(int argc, const char *argv[])
         printf("Zuko Programming Langauge v%.1f.%i build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n",
            ZUKO_VER, ZUKO_VER_PATCH, __DATE__, __TIME__, get_os_name());
         REPL_init();
-        REPL();
+        repl();
         return 0;
     }
-    char *source_code = NULL;
+    char* source_code = NULL;
     const char *filename;
     if (argc >= 3 && strncmp(argv[1], "-c", 2) == 0)
     {
@@ -49,36 +49,27 @@ int main(int argc, const char *argv[])
         filename = argv[1];
         source_code = readfile(filename);
     }
+    vm_init();
     zuko_src* src = create_source(filename, source_code);
-    uint8_t* bytecode;
-    size_t bytecode_len;
-    {
-        lexer_ctx lctx;
-        token_vector tokens = tokenize(&lctx, src, true, 0);
-        if (lctx.hadErr) // had an error which was printed
-            return 0;
-
-        /*for(size_t i = 0; i < tokens.size; i++)
-        {
-            if(tokens.arr[i].content)
-                printf("%zu. %s\n",i,tokens.arr[i].content);
-        }
-        token_vector_destroy(&tokens);
-        return 0;*/
-        parser_ctx* pctx = create_parser_context(src);
-        Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
-        // uncomment below line to print AST in tabular form
-        //print_ast(ast,0);
-        vm_init();
-        compiler_ctx* cctx = create_compiler_ctx(src);
-        bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program
-        bytecode_len = cctx->bytes_done;
-        //dis(bytecode);
-        delete_ast(ast);
-        parser_destroy(pctx);
-        compiler_destroy(cctx);
-        token_vector_destroy(&tokens);
-    }
+    uint8_t* bytecode = NULL;
+    size_t bytecode_len = 0;
+    lexer_ctx lctx;
+    token_vector tokens = tokenize(&lctx, src, true, 0);
+    if (lctx.hadErr) // had an error which was printed
+        return 0;
+    parser_ctx* pctx = create_parser_context(src); // create parser context and pass it the source we are working on
+    Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
+    // uncomment below line to print AST in tabular form
+    //print_ast(ast,0);
+    compiler_ctx* cctx = create_compiler_ctx(src);
+    bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program
+    bytecode_len = cctx->bytes_done;
+    //dis(bytecode);
+    delete_ast(ast);
+    parser_destroy(pctx);
+    compiler_destroy(cctx);
+    token_vector_destroy(&tokens);
+    
     vm_load(bytecode, bytecode_len,src); // vm uses the src for printing errors and stuff
     // It's showtime
     interpret(0, true);

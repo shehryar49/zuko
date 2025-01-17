@@ -325,7 +325,11 @@ zobject PRINTLN(zobject* args,int32_t argc)
             vm_call_object(&r, args, 1,&ret);
           }
           else
-            printf("%s",zobject_to_str(args[k]));
+          {
+            char* tmp = zobject_to_str(args[k]);
+            printf("%s",tmp);
+            free(tmp);
+          }
         }
         else
         {

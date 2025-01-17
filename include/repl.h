@@ -5,13 +5,11 @@
 extern "C"{
 #endif
 
-// REPL STATE
+#include <stdbool.h>
 extern bool REPL_MODE;
-//Implementation
-//EXPERIMENTAL!
 void REPL_init();
 void REPL();
-
+void repl();
 #ifdef __cplusplus
 }
 #endif

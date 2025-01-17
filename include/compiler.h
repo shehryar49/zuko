@@ -87,9 +87,7 @@ typedef struct compiler_ctx
 }compiler_ctx;
 
 void compileError(compiler_ctx* ctx,const char* type,const char* msg);
-//set_source function is used instead of constructor
-//this way the Compiler class becomes reusable
-//by initializing it again
+
 compiler_ctx* create_compiler_ctx(zuko_src*);
 void compiler_set_source(compiler_ctx* ctx,zuko_src* p,size_t root_idx);
 void compiler_add_builtin(const char* name,BuiltinFunc fn);  

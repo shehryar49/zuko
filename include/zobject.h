@@ -22,9 +22,6 @@ SOFTWARE.*/
 #ifndef ZOBJECT_H_
 #define ZOBJECT_H_
 
-
-
-
 #include "zbytearray.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -88,8 +85,8 @@ typedef zobject(*NativeFunPtr)(zobject*,int);
 #define AS_DOUBLE(x) x.f
 #define AS_BYTE(x) (uint8_t)x.i
 #define AS_STR(x) ((zstr*)x.ptr)
-#define AS_DICT(x) (ZDict*)x.ptr
-#define AS_LIST(x) (ZList*)x.ptr
+#define AS_DICT(x) (zdict*)x.ptr
+#define AS_LIST(x) (zlist*)x.ptr
 #define AS_CLASS(x) (zclass*)x.ptr
 #define AS_ClASSOBJ(x) (zclass_object*)x.ptr
 #define AS_BYTEARRAY(x) (zbytearr*)x.ptr

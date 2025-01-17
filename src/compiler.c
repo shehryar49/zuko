@@ -182,9 +182,6 @@ int32_t add_to_vm_strings(const char* n)
     size_t len = strlen(n);
     char* arr = malloc(sizeof(char)*(len+1)); //will be freed by VM's destructor
     strcpy(arr,n);
-    // the GC does not know about this memory
-    // the string table won't be deallocated until exit, so no point in checking if
-    // strings in it are reachable or not(during collect phase of GC)
     zstr* str = malloc(sizeof(zstr));
     str->len = len;
     str->val = arr;
@@ -1407,6 +1404,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             compile(ctx,ast->childs.arr[2]);
             char* t;
             str_vector_pop(&ctx->prefixes,&t);
+            free(t);
             //Hasta La Vista Baby
         }
         else if (ast->type == IF)

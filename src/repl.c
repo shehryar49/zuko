@@ -1,27 +1,57 @@
 #include "parser.h"
 #include "zuko-src.h"
+#include "compiler.h"
+#include "lexer.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <readline/readline.h>
-bool REPL_MODE = false;
-static zuko_src src;
-static int32_t k = 0;
-static size_t stackSize = 0;//total globals added by VM initially
-//static Compiler compiler;
-static parser_ctx parser;
 
+bool REPL_MODE = false;
+zuko_src* src;
+int32_t k = 0;
+size_t stack_size = 0;//total globals added by VM initially
+parser_ctx* pctx;
+compiler_ctx* cctx;
 void REPL_init()
 {
-  REPL_MODE = true;
+    REPL_MODE = true;
+    src = create_empty_source();
+    //cctx = create_compiler_ctx(src);
   //zuko_src_init(&src);
   //parser_init(&parser);
 }
 //Implementation
 //EXPERIMENTAL!
+
+void repl()
+{
+    char filename[256];
+    k = src->files.size + 1;
+    snprintf(filename,256,"<stdin-%d>",k);
+    //compiler_reduceStackTo(cctx, stack_size);
+    lexer_ctx lex;
+    //size_t offset = cctx->bytes_done;
+    token_vector tokens;
+    const char* prompt = ">>> ";
+    bool continued;
+    while(true)
+    {
+        if(continued)
+            prompt = "... ";
+        char* line = readline(prompt);
+        if(!line) // EOF
+        {
+            puts("");
+            exit(0);
+        }
+        zuko_src_add_file(src,filename,line);
+        tokens = tokenize(&lex,src,true,k);
+    }
+}
 void REPL()
 {
-  /*char filename[256];
-  k = src.files.size+1;
+/*  char filename[256];
+  k = src->files.size+1;
   snprintf(filename,256,"<stdin-%d>",k);
   zuko_src_add_file(&src,clone_str(filename),clone_str(""));
 

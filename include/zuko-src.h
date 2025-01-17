@@ -19,7 +19,7 @@ typedef struct zuko_src
 }zuko_src;
 
 zuko_src* create_source(const char* filename, char* src);
-void zuko_src_init(zuko_src* src);
+zuko_src* create_empty_source();
 void zuko_src_add_file(zuko_src*,const char*,char*);
 void zuko_src_reset(zuko_src*);
 void zuko_src_destroy(zuko_src* src);

@@ -127,11 +127,9 @@ size_t orgk = 0;
 ptr_vector except_targ; // uint*
 sizet_vector try_limit_cleanup;
 
-#ifdef _WIN32
-    std::vector<HINSTANCE> moduleHandles;
-#else
-    ptr_vector module_handles;
-#endif
+
+ptr_vector module_handles;
+
 size_t GC_THRESHHOLD;
 size_t GC_MIN_COLLECT;
 lntable* line_num_table;
@@ -305,6 +303,7 @@ size_t spitErr(zclass* e,const char* msg) // used to show a runtime error
     //which is always OP_EXIT
     //if(!REPL_MODE)//nothing can be done, clear stack and exit
     //    STACK.size = 0;
+    STACK.size = 0;
     return ip - program;
 }
 void DoThreshholdBusiness()
@@ -357,9 +356,9 @@ void PromoteType(zobject* a, char t)
  
 static bool isHeapObj(zobject obj)
 {
-if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != Z_BOOL && obj.type != Z_POINTER)
-    return true; // all other objects are on heap
-return false;
+    if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != Z_BOOL && obj.type != Z_POINTER)
+        return true; // all other objects are on heap
+    return false;
 }
 void markV2(zobject obj)
 {
@@ -3458,21 +3457,18 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         else if (fn.type == Z_CLASS)
         {
-
-            zclass_object*obj = vm_alloc_zclassobj(AS_CLASS(fn)); // instance of class
-
-
+            zclass_object* obj = vm_alloc_zclassobj(AS_CLASS(fn)); // instance of class
             const char* s1 = ((zclass*)fn.ptr) -> name;
-            
             zobject construct;
             if (StrMap_get(&(obj->members),"__construct__", &construct))
             {
                 if (construct.type == Z_FUNC)
                 {
-                    zfun *p = (zfun *)construct.ptr;
+                    zfun* p = (zfun *)construct.ptr;
                     if ((size_t)N + p->opt.size + 1 < p->args || (size_t)N + 1 > p->args)
                     {
-                        //spitErr(ArgumentError, "Error constructor of class " + (string)((zclass* )fn.ptr)->name + " takes " + to_string(p->args - 1) + " arguments," + to_string(N) + " given!");
+                        snprintf(error_buffer,100,"Constructor takes %zu arguments, %d given!",p->args - 1,N);
+                        spitErr(ArgumentError,error_buffer);
                         NEXT_INST;
                     }
                     zobject r;
@@ -3485,6 +3481,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     {
                         zlist_push(&STACK,p->opt.arr[i]);
                     }
+                    
                     ip = program + p->i;
                     ptr_vector_push(&executing,p);
                     DoThreshholdBusiness();

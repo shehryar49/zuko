@@ -1,4 +1,4 @@
-import std/ll
+import "../std/ll.zk"
 var list = ll::List()
 for(var i=1 to 10000 step 1)
 {
