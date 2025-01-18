@@ -1,6 +1,7 @@
 #include "dyn-str.h"
 #include "misc.h"
 #include "convo.h"
+#include "module.h"
 #include "ptr-vector.h"
 #include "vm.h"
 #include "zobject.h"
@@ -366,7 +367,186 @@ string unescape(string s)
 }
 */
 char misc_buffer[100];
-
+void print_with_no_escape_seq(const char* str)
+{
+    size_t i = 0;
+    char ch;
+    putc('"',stdout);
+    while((ch = str[i]))
+    {
+        if(ch == '\n')
+            fputs("\\n",stdout);
+        else if(ch == '\r')
+            fputs("\\r",stdout);
+        else if(ch == '\t')
+            fputs("\\t",stdout);
+        else if(ch == '\v')
+            fputs("\\v",stdout);
+        else if(ch == '\a')
+            fputs("\\a",stdout);
+        else if(ch == '"')
+            fputs("\\\"",stdout);
+        else
+            putc(ch,stdout);
+        i++;
+    }
+    putc('"',stdout);
+}
+void print_zdict(zdict* l,ptr_vector* seen)
+{
+    if(ptr_vector_search(seen,l) != -1)
+    {
+        printf("{...}");
+        return;
+    }
+    ptr_vector_push(seen,l);
+    size_t k = l->size;
+    size_t m = 0;
+    printf("{");
+    for(size_t i=0;i<l->capacity;i++)
+    {
+        if(l->table[i].stat != OCCUPIED)
+            continue;
+        zobject key = l->table[i].key;
+        zobject val = l->table[i].val;
+        if(key.type=='j')
+            print_zlist((zlist*)key.ptr,seen);
+        else if(key.type=='a')
+            print_zdict((zdict*)key.ptr,seen);
+        else if(key.type=='s')
+            print_with_no_escape_seq((AS_STR(key)->val));
+        else
+        {
+            char* tmp = zobject_to_str(key);
+            printf("%s",tmp);
+            free(tmp);
+        }
+        printf(" : ");
+        if(val.type=='j')
+            print_zlist((zlist*)val.ptr,seen);
+        else if(val.type=='a')
+            print_zdict((zdict*)val.ptr,seen);
+        else if(val.type=='s')
+            print_with_no_escape_seq((AS_STR(val)->val));
+        else
+        {
+            char* tmp = zobject_to_str(val);
+            printf("%s",tmp);
+            free(tmp);
+        }
+        if(m!=k-1)
+            printf(",");
+        m+=1;
+ 
+    }
+    printf("}");
+}
+void print_zlist(zlist* l,ptr_vector* seen)
+{
+    if(ptr_vector_search(seen,l) != -1)
+    {
+        printf("[...]");
+        return;
+    }
+    ptr_vector_push(seen,l);
+    size_t k = l->size;
+    zobject val;
+    printf("[");
+    for(size_t i=0;i<k;i+=1)
+    {
+        val = l->arr[i];
+        if(val.type=='j')
+            print_zlist((zlist*)val.ptr,seen);
+        else if(val.type=='a')
+            print_zdict((zdict*)val.ptr,seen);
+        else if(val.type=='s')
+            print_with_no_escape_seq(((zstr*)val.ptr)->val);
+        else
+        {
+            char* s = zobject_to_str(val);
+            printf("%s",s);
+            free(s);
+        }
+        if(i!=k-1)
+            printf(",");
+    }
+    printf("]");
+}
+void print_zbytearray(zbytearr* arr)
+{
+    size_t len = arr->size;
+    printf("bytearr([");
+    char buffer[5];
+    for(size_t i=0;i<len;i++)
+    {
+        printf("0x%x",arr->arr[i]);
+        if(i!=len-1)
+            printf(",");
+    }
+    printf("])");
+}
+void print_zobject(zobject a)
+{
+    if(a.type == Z_INT)
+        printf("%"PRId32,a.i);
+    else if(a.type == Z_INT64)
+        printf("%"PRId64,a.l);
+    else if(a.type == Z_FLOAT)
+    {
+        char* tmp = double_to_str(a.f);
+        fputs(tmp,stdout);
+        free(tmp);
+    }
+    else if(a.type == Z_BYTE)
+        printf("0x%02x",a.i & 0xff);
+    else if(a.type == Z_BYTEARR)
+        print_zbytearray((zbytearr*)a.ptr);
+    else if(a.type == Z_ERROBJ)
+        fputs("<error object>",stdout);
+    else if(a.type == Z_BOOL)
+        fputs((a.i) ? "true" : "false",stdout);
+    else if(a.type == Z_FILESTREAM)
+        fputs("<file object>",stdout);
+    else if(a.type == Z_FUNC)
+    {
+        zfun* p = (zfun*)a.ptr;
+        printf("<function %s>",p->name);
+    }
+    else if(a.type == Z_NATIVE_FUNC)
+        fputs("<native function>",stdout);
+    else if(a.type == Z_CLASS)
+        printf("<class %s>",((zclass*)a.ptr)->name);
+	else if(a.type == Z_OBJ)
+    {
+        zclass_object* tmp = (zclass_object*)a.ptr;
+        zclass* c = tmp->_klass;
+        printf("<%s object>",c->name);
+    }
+    else if(a.type == Z_MODULE)
+        printf("<module %s>",((zmodule*)a.ptr)->name);
+    else if(a.type == Z_COROUTINE_OBJ)
+        fputs("<coroutine object>",stdout);
+    else if(a.type == Z_COROUTINE)
+        fputs("<coroutine>",stdout);
+    else if(a.type == Z_LIST)
+    {
+        ptr_vector seen;
+        ptr_vector_init(&seen);
+        print_zlist(AS_LIST(a),&seen); 
+        ptr_vector_destroy(&seen);
+    }
+    else if(a.type == Z_STR)
+        fputs(AS_STR(a)->val,stdout);
+    else if(a.type == Z_DICT)
+    {
+        ptr_vector seen;
+        ptr_vector_init(&seen);
+        print_zdict(AS_DICT(a),&seen);
+        ptr_vector_destroy(&seen);
+    }
+    else if(a.type == Z_NIL)
+        fputs("nil",stdout);
+}
 char* zobject_to_str(zobject a)
 {
     if(a.type=='i')

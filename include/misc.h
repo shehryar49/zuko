@@ -23,6 +23,7 @@ SOFTWARE.*/
 #define Z_MISC_H_
 #include <stdio.h>
 #include <stdlib.h>
+#include "builtinfunc.h"
 #include "ptr-vector.h"
 #include "zobject.h"
 #include "zbytearray.h"
@@ -33,15 +34,25 @@ extern "C"{
 #endif
 
 char* readfile(const char* filename); /* Take a guess */
+
 char* zlist_to_str(zlist*,ptr_vector*); /* Returns a string representation of a zuko list */
 char* zdict_to_str(zdict*,ptr_vector*); /* Returns a string representation of a zuko dictionary */
 int32_t hex_to_int32(const char*);
 int64_t hex_to_int64(const char*);
-const char* get_os_name(); /* Returns OS name */
-char* zobject_to_str(zobject);
 unsigned char tobyte(const char*);
+
+const char* get_os_name(); /* Returns OS name */
+
+void print_zlist(zlist*,ptr_vector*);
+void print_zdict(zdict*,ptr_vector*);
+void print_zbytearray(zbytearr *arr);
+void print_zobject(zobject);
+
+char* zobject_to_str(zobject);
+
 void replace_once(zstr*,zstr*,zstr*,dyn_str*);
 void replace_all(zstr*,zstr*,zstr*,dyn_str*);
+
 #ifdef __cplusplus
 }
 #endif

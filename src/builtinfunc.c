@@ -99,123 +99,28 @@ zobject TOCHAR(zobject* args,int32_t argc)
   p->val[0] = ch;
   return zobj_from_str_ptr(p);
 }
-//string unescape(string);
-void print_zdict(zdict* l,ptr_vector* seen)
-{
-    if(ptr_vector_search(seen,l) != -1)
-    {
-        printf("{...}");
-        return;
-    }
-    ptr_vector_push(seen,l);
-    size_t k = l->size;
-    size_t m = 0;
-    printf("{");
-    for(size_t i=0;i<l->capacity;i++)
-    {
-        if(l->table[i].stat != OCCUPIED)
-            continue;
-        zobject key = l->table[i].key;
-        zobject val = l->table[i].val;
-        if(key.type=='j')
-            print_zlist((zlist*)key.ptr,seen);
-        else if(key.type=='a')
-            print_zdict((zdict*)key.ptr,seen);
-        else if(key.type=='s')
-            printf("\"%s\"",(AS_STR(key)->val)); // DO UNESCAPE
-        else
-            printf("%s",zobject_to_str(key));
-        printf(" : ");
-    //
-        if(val.type=='j')
-            print_zlist((zlist*)val.ptr,seen);
-        else if(val.type=='a')
-            print_zdict((zdict*)val.ptr,seen);
-        else if(val.type=='s')
-            printf("\"%s\"",(AS_STR(val)->val)); // DO UNESCAPE
-        else
-            printf("%s",zobject_to_str(val));
-        if(m!=k-1)
-            printf(",");
-        m+=1;
- 
-    }
-  printf("}");
-}
-
-void print_zlist(zlist* l,ptr_vector* seen)
-{
-  if(ptr_vector_search(seen,l) != -1)
-  {
-    printf("[...]");
-    return;
-  }
-  ptr_vector_push(seen,l);
-  size_t k = l->size;
-  zobject val;
-  printf("[");
-  for(size_t i=0;i<k;i+=1)
-  {
-    val = l->arr[i];
-    if(val.type=='j')
-      print_zlist((zlist*)val.ptr,seen);
-    else if(val.type=='a')
-      print_zdict((zdict*)val.ptr,seen);
-    else if(val.type=='s')
-    {
-      printf("\"%s\"",(((zstr*)val.ptr)->val)); // DO UNESCAPE
-    }
-    else
-    {
-        char* s = zobject_to_str(val);
-        printf("%s",s);
-        free(s);
-    }
-    if(i!=k-1)
-      printf(",");
-  }
-  printf("]");
-}
-
-void print_zbytearray(zbytearr* arr)
-{
-    size_t len = arr->size;
-    printf("bytearr([");
-    char buffer[5];
-    for(size_t i=0;i<len;i++)
-    {
-        printf("0x%x",arr->arr[i]);
-        if(i!=len-1)
-            printf(",");
-    }
-    printf("])");
-}
 zobject PRINT(zobject* args,int32_t argc)
 {
     int32_t k = 0;
+    ptr_vector seen;
+    ptr_vector_init(&seen);
     while(k<argc)
     {
-        /*if(args[k].type=='j')
-           printList((zlist*)args[k].ptr);
-        else if(args[k].type=='a')
-           printzdict((zdict*)args[k].ptr);
-        else if(args[k].type==Z_BYTEARR)
-          printByteArray((zbytearr*)args[k].ptr);
-        else */if(args[k].type == Z_OBJ)
+        seen.size = 0;
+        if(args[k].type == Z_OBJ)
         {
-          zclass_object* ki = (zclass_object*)args[k].ptr;
-          zobject r,ret;
-
-          if(StrMap_get(&(ki->members),"__print__",&r))
-          {
-            zobject args[] = {zobj_from_classobj(ki)};
-            vm_call_object(&r, args, 1,&ret);
-          }
-          else
-            ;//printf("%s",zobjectToStr(args[k]).c_str());
+            zclass_object* ki = (zclass_object*)args[k].ptr;
+            zobject r,ret;
+            if(StrMap_get(&(ki->members),"__print__",&r))
+            {
+                zobject args[] = {zobj_from_classobj(ki)};
+                vm_call_object(&r, args, 1,&ret);
+            }
+            else
+                print_zobject(args[k]);
         }
         else
-          printf("%s",zobject_to_str(args[k]));
+            print_zobject(args[k]);
         k+=1;
     }
     zobject ret = nil;
@@ -244,23 +149,16 @@ zobject PRINTF(zobject* args,int32_t argc)
             }
             if(j>=argc)
                 return z_err(ArgumentError,"String format requires more arguments!");
-            /*if(args[j].type=='j')
-                printList((zlist*)args[j].ptr);
-            else if(args[j].type=='a')
-            printzdict((zdict*)args[j].ptr);
-            else if(args[j].type==Z_BYTEARR)
-            printByteArray((zbytearr*)args[j].ptr);
-            else
-            printf("%s",zobjectToStr(args[j]).c_str());
-            */j+=1;
-            }
-            else
+            print_zobject(args[j]);
+            j+=1;
+        }
+        else
             printf("%c",format->val[k]);
             k+=1;
-        }
-        zobject ret = nil;
-        ret.type = 'n';
-        return ret;
+    }
+    zobject ret;
+    ret.type = 'n';
+    return ret;
 }
 zobject FORMAT(zobject* args,int32_t argc)
 {
@@ -307,36 +205,20 @@ zobject PRINTLN(zobject* args,int32_t argc)
     ptr_vector_init(&seen);
     while(k<argc)
     {
-        seen.size = 0;
-        if(args[k].type=='j')
-          print_zlist((zlist*)args[k].ptr,&seen);
-        else if(args[k].type=='a')
-          print_zdict((zdict*)args[k].ptr,&seen);
-        else if(args[k].type==Z_BYTEARR)
-          print_zbytearray((zbytearr*)args[k].ptr);
-        else
         if(args[k].type == Z_OBJ)
         {
-          zclass_object* ki = (zclass_object*)args[k].ptr;
-          zobject r,ret;
-          if(StrMap_get(&(ki->members),"__print__",&r))
-          {
-            zobject args[] = {zobj_from_classobj(ki)};
-            vm_call_object(&r, args, 1,&ret);
-          }
-          else
-          {
-            char* tmp = zobject_to_str(args[k]);
-            printf("%s",tmp);
-            free(tmp);
-          }
+            zclass_object* ki = (zclass_object*)args[k].ptr;
+            zobject r,ret;
+            if(StrMap_get(&(ki->members),"__print__",&r))
+            {
+                zobject args[] = {zobj_from_classobj(ki)};
+                vm_call_object(&r, args, 1,&ret);
+            }
+            else
+                print_zobject(args[k]);
         }
         else
-        {
-            char* s = zobject_to_str(args[k]);
-            printf("%s",s);
-            free(s);
-        }
+            print_zobject(args[k]);
         k+=1;
     }
     puts("");
