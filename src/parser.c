@@ -189,7 +189,7 @@ void delete_ast(Node* ast)
     nodeptr_vector_destroy(&ast->childs);
     //if(ast->type == ID_NODE)
     //    printf("freeing %s\n",ast->val);
-    if(ast->type == line_node || ast->type == declare || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE || ast->type == BOOL_NODE)
+    if(ast->type == line_node || ast->type == declare || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE || ast->type == BOOL_NODE || ast->type == BYTE_NODE)
         free((void*)ast->val);
     free(ast);
 }

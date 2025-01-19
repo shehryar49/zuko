@@ -23,11 +23,11 @@ const char* tests[] =
     "types",
     "foreach",
     "functions",
-    "defaultArgs",
+    "default-args",
     "trycatch",
     "classes",
-    "operatorOverloading",
-    "extendedClasses",
+    "operator-overloading",
+    "extended-classes",
     "optionalself",
     "namespaces",
     "scopes",
@@ -44,10 +44,10 @@ const char* tests[] =
     "permutations",
     "huffman",
     "pyramid",
-    "awkwardLexer",
+    "awkward-lexer",
     "polynomial",
     "coroutines",
-    "addedReturn",
+    "added-return",
     "conversions",
     "stdlist",
     "multiline-expr",
@@ -85,7 +85,7 @@ int main(int argc,const char* argv[])
     ifstream fin("outputs/"+test+".txt",ios::in);
     if(!fin)
     {
-   //   cout<<"Output file outputs/"<<test<<".txt does not exist!"<<endl;
+      //cout<<"Output file outputs/"<<test<<".txt does not exist!"<<endl;
       cout<<"Test "<<test<<" (failed)"<<endl;
       failed+=1;
       continue;

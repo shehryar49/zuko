@@ -38,9 +38,6 @@ typedef zobject(*BuiltinFunc)(zobject*,int32_t);
 zobject Z_ISALPHA(zobject* args,int32_t argc);
 zobject ASCII(zobject* args,int32_t argc);
 zobject TOCHAR(zobject* args,int32_t argc);
-void print_zdict(zdict* l,ptr_vector* seen);
-void print_zlist(zlist* l,ptr_vector* seen);
-void print_zbytearray(zbytearr* arr);
 zobject PRINT(zobject* args,int32_t argc);
 zobject PRINTF(zobject* args,int32_t argc);
 zobject FORMAT(zobject* args,int32_t argc);
@@ -91,7 +88,6 @@ zlist* makeListCopy(zlist);
 zdict* makeDictCopy(zdict);
 
 zobject COPY(zobject* args,int32_t argc);
-zobject POW(zobject* args,int32_t argc);
 zobject CLOCK(zobject* args,int32_t argc);
 ////////////////////
 //Builtin Methods
