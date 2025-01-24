@@ -1,6 +1,7 @@
 #include "dyn-str.h"
 #include "parser.h"
 #include "token.h"
+#include "vm.h"
 #include "zuko-src.h"
 #include "compiler.h"
 #include "lexer.h"
@@ -16,7 +17,7 @@ parser_ctx* pctx;
 compiler_ctx* cctx;
 dyn_str text;
 size_t text_size_processed = 0;
-
+size_t vm_offset = 0;
 void REPL_init()
 {
     REPL_MODE = true;
@@ -113,12 +114,17 @@ void repl()
 
         //parse and execute
         Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
-        print_ast(ast,0);
+        //print_ast(ast,0);
         //delete_ast(ast);
-        printf("\nexecuting\n");
-        uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOEXIT);
-        dis(bytecode);
+        //printf("\nexecuting\n");
+        uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOPOP_GLOBALS);
+        vm_load(bytecode,cctx->bytes_done,src);
+        interpret(vm_offset, false);
+        //get rid of OP_EXIT
+        cctx->bytes_done--;
+        cctx->bytecode.size--;
         text_size_processed = text.length;
+        vm_offset = cctx->bytecode.size;
     }
     puts(text.arr);
 }

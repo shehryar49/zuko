@@ -2209,6 +2209,7 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
     ctx->backpatches.size = 0;
     if(ctx->bytecode.size == 0)
     {
+        puts("doing stuff");
         symtable_emplace(&ctx->globals,"argv",0);
         symtable_emplace(&ctx->globals,"stdin",1);
         symtable_emplace(&ctx->globals,"stdout",2);
