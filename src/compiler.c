@@ -2274,17 +2274,19 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         AccessError = make_error_class(ctx,"AccessError",Error);
     }
     compile(ctx,ast);
-    bool popGlobals = (options & OPT_POP_GLOBALS);
-    if(ctx->globals.size!=0 && popGlobals)
+    bool pop_globals = !(options & OPT_NOPOP_GLOBALS);
+    if(ctx->globals.size!=0 && pop_globals)
     {
         zbytearr_push(&ctx->bytecode,NPOP_STACK);
         foo = ctx->globals.size;
         addBytes(&ctx->bytecode,foo);
         ctx->bytes_done+=5;
     }
-
-    zbytearr_push(&ctx->bytecode,OP_EXIT);
-    ctx->bytes_done+=1;
+    if(!(options & OPT_NOEXIT))
+    {
+        zbytearr_push(&ctx->bytecode,OP_EXIT);
+        ctx->bytes_done+=1;
+    }
     if (ctx->bytes_done != ctx->bytecode.size)
     {
         printf("Zuko encountered an internal error.\nError Code: 10\n");

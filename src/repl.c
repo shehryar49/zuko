@@ -1,39 +1,72 @@
+#include "dyn-str.h"
 #include "parser.h"
+#include "token.h"
 #include "zuko-src.h"
 #include "compiler.h"
 #include "lexer.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <readline/readline.h>
-
+#include "dis.h"
 bool REPL_MODE = false;
+
 zuko_src* src;
-int32_t k = 0;
 size_t stack_size = 0;//total globals added by VM initially
 parser_ctx* pctx;
 compiler_ctx* cctx;
+dyn_str text;
+size_t text_size_processed = 0;
+
 void REPL_init()
 {
     REPL_MODE = true;
-    src = create_empty_source();
-    //cctx = create_compiler_ctx(src);
-  //zuko_src_init(&src);
-  //parser_init(&parser);
+    vm_init();
+    dyn_str_init(&text);
+    src = create_source("<stdin>",text.arr);
+    pctx = create_parser_context(src);
+    cctx = create_compiler_ctx(src);
 }
 //Implementation
 //EXPERIMENTAL!
-
+bool is_complete(const char* str)
+{
+    char ch;
+    bool inquotes = false;
+    bool escaped = false;
+    int i1 = 0;
+    int i2 = 0;
+    int i3 = 0;
+    size_t i = 0;
+    while((ch = str[i]))
+    {
+        if(ch == '"')
+        {
+            if(!escaped)
+                inquotes = !inquotes;
+            else
+                escaped = false;
+        }
+        else if(ch == '\\')
+        {
+            if(escaped)
+                escaped = false;
+            else
+                escaped = true;
+        }
+        else
+        {
+            if(escaped)
+                escaped = false;
+        }
+        i++;
+    }
+}
 void repl()
 {
-    char filename[256];
-    k = src->files.size + 1;
-    snprintf(filename,256,"<stdin-%d>",k);
-    //compiler_reduceStackTo(cctx, stack_size);
     lexer_ctx lex;
-    //size_t offset = cctx->bytes_done;
-    token_vector tokens;
     const char* prompt = ">>> ";
-    bool continued;
+    bool continued = false;
+    
     while(true)
     {
         if(continued)
@@ -42,11 +75,52 @@ void repl()
         if(!line) // EOF
         {
             puts("");
-            exit(0);
+            break;
         }
-        zuko_src_add_file(src,filename,line);
-        tokens = tokenize(&lex,src,true,k);
+        dyn_str_append(&text, line);
+        dyn_str_push(&text, '\n');
+        src->sources.arr[0] = text.arr; // jugaad
+        
+        token_vector tokens = tokenize(&lex,src,true,0,text_size_processed);
+        int32_t i1 = 0;
+        int32_t i2 = 0;
+        int32_t i3 = 0;
+        for(size_t i = 0; i < tokens.size; i++)
+        {
+            token curr = tokens.arr[i];
+            if(curr.type == LParen_TOKEN)
+                i1++;
+            if(curr.type == L_CURLY_BRACKET_TOKEN)
+                i2++;
+            if(curr.type == BEGIN_LIST_TOKEN)
+                i3++;
+
+            if(curr.type == RParen_TOKEN)
+                i1--;
+            if(curr.type == R_CURLY_BRACKET_TOKEN)
+                i2--;
+            if(curr.type == END_LIST_TOKEN)
+                i3--;
+        }
+        if(i1 != 0 || i2!= 0 || i3 != 0)
+        {
+            token_vector_destroy(&tokens);
+            continued = true;
+            continue;
+        }
+        continued = false;
+        prompt = ">>> ";
+
+        //parse and execute
+        Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
+        print_ast(ast,0);
+        //delete_ast(ast);
+        printf("\nexecuting\n");
+        uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOEXIT);
+        dis(bytecode);
+        text_size_processed = text.length;
     }
+    puts(text.arr);
 }
 void REPL()
 {

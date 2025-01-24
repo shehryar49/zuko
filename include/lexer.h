@@ -54,7 +54,7 @@ void numeric(lexer_ctx* ctx,token_vector*);
 void id(lexer_ctx* ctx,token_vector*);
 
 void lexErr(lexer_ctx* ctx,const char* type,const char* msg);
-token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx);
+token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx,size_t start);
 
 #ifdef __cplusplus
 }

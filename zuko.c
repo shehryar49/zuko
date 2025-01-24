@@ -54,7 +54,7 @@ int main(int argc, const char *argv[])
     uint8_t* bytecode = NULL;
     size_t bytecode_len = 0;
     lexer_ctx lctx;
-    token_vector tokens = tokenize(&lctx, src, true, 0);
+    token_vector tokens = tokenize(&lctx, src, true, 0, 0);
     if (lctx.hadErr) // had an error which was printed
         return 0;
     parser_ctx* pctx = create_parser_context(src); // create parser context and pass it the source we are working on
@@ -62,7 +62,7 @@ int main(int argc, const char *argv[])
     // uncomment below line to print AST in tabular form
     //print_ast(ast,0);
     compiler_ctx* cctx = create_compiler_ctx(src);
-    bytecode = compile_program(cctx, ast, argc, argv,OPT_POP_GLOBALS); // compile AST of program
+    bytecode = compile_program(cctx, ast, argc, argv,0); // compile AST of program
     bytecode_len = cctx->bytes_done;
     //dis(bytecode);
     delete_ast(ast);

@@ -2056,7 +2056,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                         ctx->line_num = 1;
                         lexer_ctx lex;
                         zuko_src* tmp = create_source(ctx->filename,text);
-                        token_vector t = tokenize(&lex,tmp,true,0);
+                        token_vector t = tokenize(&lex,tmp,true,0,0);
                         if(lex.hadErr)
                         {
                             ctx->filename = F;

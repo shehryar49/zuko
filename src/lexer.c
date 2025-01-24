@@ -497,7 +497,7 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
     ctx->k = j;
 }
 
-token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx)
+token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t root_idx,size_t startidx)
 {
     token_vector tokenlist;
     token_vector_init(&tokenlist);
@@ -514,7 +514,7 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     ctx->hadErr = false;
     ctx->errmsg = NULL;
     ctx->line_num = 1;
-    ctx->k = 0;
+    ctx->k = startidx;
     char c;
 
 

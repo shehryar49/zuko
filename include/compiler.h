@@ -93,8 +93,10 @@ void compiler_set_source(compiler_ctx* ctx,zuko_src* p,size_t root_idx);
 void compiler_add_builtin(const char* name,BuiltinFunc fn);  
 void compiler_reduceStackTo(compiler_ctx* ctx,int size);//for REPL
 //Compile options
-static const int32_t OPT_COMPILE_DEADCODE = 0x1; // does exactly what it says
-static const int32_t OPT_POP_GLOBALS = 0x1 << 1; // to add bytecode instructions to pop globals from VM STACK
+static const int32_t OPT_COMPILE_DEADCODE = 1; // does exactly what it says
+static const int32_t OPT_NOPOP_GLOBALS = 1 << 1; // to add bytecode instructions to pop globals from VM STACK
+static const int32_t OPT_NOEXIT = 1 << 2; // does not add OP_EXIT at the end of bytecode
+
 uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options);//compiles as a complete program adds NPOP_STACK and OP_EXIT
 void compiler_destroy(compiler_ctx*);
 
