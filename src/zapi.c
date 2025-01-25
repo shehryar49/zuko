@@ -18,7 +18,6 @@ zclass* FileSeekError;
 zclass* ImportError;
 zclass* ThrowError;
 zclass* MaxRecursionError;
-zclass* AccessError;
 
 
 
@@ -71,7 +70,6 @@ int api_setup(apiFuncions* p,int ver)
   ImportError = p->k13;
   ThrowError = p->k14;
   MaxRecursionError = p->k15;
-  AccessError = p->k16;
   return 1;
 }
 

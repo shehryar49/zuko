@@ -59,7 +59,6 @@ extern zclass* FileSeekError;
 extern zclass* ImportError;
 extern zclass* ThrowError;
 extern zclass* MaxRecursionError;
-extern zclass* AccessError;
 //these classes are set by the api_setup()
 
 

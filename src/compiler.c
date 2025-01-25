@@ -2270,7 +2270,6 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         ImportError = make_error_class(ctx,"ImportError",Error);
         ThrowError = make_error_class(ctx,"ThrowError",Error);
         MaxRecursionError =make_error_class(ctx,"MaxRecursionError",Error);
-        AccessError = make_error_class(ctx,"AccessError",Error);
     }
     compile(ctx,ast);
     bool pop_globals = !(options & OPT_NOPOP_GLOBALS);

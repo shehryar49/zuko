@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "dyn-str.h"
 #include "lexer.h"
+#include "repl.h"
 #include <string.h>
 #include "nodeptr_vec.h"
 #include "ptr-vector.h"
@@ -16,8 +17,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-extern bool REPL_MODE;
-void REPL();
+#ifdef _WIN32
+    #include <io.h>
+#else
+    #include <unistd.h>
+#endif
 
 
 Node* new_node(NodeType type,const char* val)
@@ -1154,20 +1158,19 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         {
             if(tokens[begin+1].type!=ID_TOKEN || strcmp(tokens[begin+1].content,"std")!=0 || tokens[begin+2].type!=OP_TOKEN || strcmp(tokens[begin+2].content,"/")!=0 || tokens[begin+3].type!=ID_TOKEN )
                 parseError(ctx,"SyntaxError","Invalid Syntax");
-            char* tmp;
-            char* aux;
+            char buffer[512];
             #ifdef _WIN32
-                aux = merge_str("C:\\zuko\\std\\",tokens[begin+3].content);
-                tmp = merge_str(aux,".zk");
-                free(aux);
+                snprintf(buffer,512,"./std/%s.zk",tokens[begin+3].content);
+                if(_access(buffer,R_OK) != 0)
+                    snprintf(buffer,512,"C:\\zuko\\std\\%s.zk",tokens[begin+3].content);
             #else
-                aux = merge_str("/opt/zuko/std/",tokens[begin+3].content);
-                tmp = merge_str(aux,".zk");
-                free(aux);
+                snprintf(buffer,512,"./std/%s.zk",tokens[begin+3].content);
+                if(access(buffer,R_OK) != 0)    
+                    snprintf(buffer,512,"/opt/zuko/std/%s.zk",tokens[begin+3].content);
             #endif
             Node* n = new_node(line_node,int64_to_str(tokens[begin].ln));
             nodeptr_vector_push(&(ast->childs),n);
-            nodeptr_vector_push(&(ast->childs),new_node(STR_NODE,tmp));
+            nodeptr_vector_push(&(ast->childs),new_node(STR_NODE,strdup(buffer)));
             return ast;
         }
         else

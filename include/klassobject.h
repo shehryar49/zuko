@@ -17,7 +17,6 @@ typedef struct zclass_object
 {
   zclass* _klass; //class of the object
   StrMap members;
-  StrMap privateMembers;
 }zclass_object;
 
 zobject zclassobj_get(zclass_object* ko,const char* name);

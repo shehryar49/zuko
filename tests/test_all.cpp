@@ -61,9 +61,9 @@ const char* tests[] =
 int main(int argc,const char* argv[])
 {
   #ifdef _WIN32
-    string path = "..\\zuko.exe";
+    string path = "zuko.exe";
   #else
-    string path = "../zuko";
+    string path = "./zuko";
   #endif
   if(argc == 2)
   {
@@ -82,7 +82,7 @@ int main(int argc,const char* argv[])
     expectedOutput = "";
     line = "";
     test = tests[i-1];
-    ifstream fin("outputs/"+test+".txt",ios::in);
+    ifstream fin("tests/outputs/"+test+".txt",ios::in);
     if(!fin)
     {
       //cout<<"Output file outputs/"<<test<<".txt does not exist!"<<endl;
@@ -94,10 +94,10 @@ int main(int argc,const char* argv[])
     while(fin.get(ch))
       expectedOutput+= ch;
     fin.close();
-    line = path+" ";
-    line += test+".zk > out.txt";
+    line = path+" tests/";
+    line += test+".zk > tests/out.txt";
     int l = system(line.c_str());//produces out.txt
-    ifstream file("out.txt",ios::in);
+    ifstream file("tests/out.txt",ios::in);
     if(l!=0 || !file)
     {
       cout<<"Test "<<test<<" (failed)"<<endl;

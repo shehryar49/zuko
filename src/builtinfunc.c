@@ -573,14 +573,6 @@ zobject OBJINFO(zobject* args,int32_t argc)
           printf("%s: %s\n",e.key,fullform(e.val.type));
           
       }
-      for(size_t idx = 0; idx < k->privateMembers.capacity;idx++)
-      {
-        if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
-          continue;
-        SM_Slot e = k->privateMembers.table[idx];
-        printf("%s: %s\n",e.key,fullform(e.val.type));
-          
-      }
       zobject ret = nil;
       return ret;
     }

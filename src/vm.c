@@ -110,7 +110,6 @@ zclass* FileSeekError;
 zclass* ImportError;
 zclass* ThrowError;
 zclass* MaxRecursionError;
-zclass* AccessError;
 
 zlist STACK;
 ptr_vector executing; // pointer to zuko function object we are executing, NULL means control is not in a function
@@ -206,7 +205,6 @@ void vm_load(uint8_t* bytecode,size_t length,zuko_src* p)
     api.k13 = ImportError;
     api.k14 = ThrowError;
     api.k15 = MaxRecursionError;
-    api.k16 = AccessError;
     srand(time(0));
 }
 size_t spitErr(zclass* e,const char* msg) // used to show a runtime error
@@ -515,18 +513,6 @@ void markV2(zobject obj)
                     zlist_push(&aux,val);
                 }
             }
-            for (size_t idx = 0; idx < k->privateMembers.capacity;idx++)
-            {
-                if(k->privateMembers.table[idx].stat != SM_OCCUPIED)
-                    continue;
-                const char* key = k->privateMembers.table[idx].key;
-                zobject val = k->privateMembers.table[idx].val;
-                if (isHeapObj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
-                {
-                    tmp->ismarked = true;
-                    zlist_push(&aux,val);
-                }
-            }
         }
         else if (curr.type == Z_FUNC || curr.type == 'g')
         {
@@ -638,7 +624,6 @@ void collectGarbage()
         {
             zclass_object* k = (zclass_object*)e;
             StrMap_destroy(&(k->members));
-            StrMap_destroy(&(k->privateMembers));  
             free(e);
             allocated -= sizeof(zclass_object);
         }
@@ -1353,30 +1338,9 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
 
             if (!StrMap_get(&(obj->members),method_name,&tmp))
             {
-                if (StrMap_get(&(obj->privateMembers),method_name,&tmp))
-                {
-                    zfun *p = VEC_LAST(executing);
-                    if (p == NULL)
-                    {
-                        snprintf(error_buffer,100,"%s is private member of object!",method_name);
-                        spitErr(AccessError,error_buffer);
-                        NEXT_INST;
-                    }
-                    if (p->_klass == obj->_klass)
-                    p4 = tmp;
-                    else
-                    {
-                        snprintf(error_buffer,100,"%s is private member of object!",method_name);
-                        spitErr(AccessError, error_buffer);
-                        NEXT_INST;
-                    }
-                }
-                else
-                {
-                    snprintf(error_buffer,100,"Object has no member %s",method_name);
-                    spitErr(NameError,error_buffer);
-                    NEXT_INST;
-                }
+                snprintf(error_buffer,100,"Object has no member %s",method_name);
+                spitErr(NameError,error_buffer);
+                NEXT_INST;
             }
             else
                 p4 = tmp;
@@ -1544,20 +1508,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zobject* ref;
         if (!(ref = StrMap_getRef(&(ptr->members),memberName)))
         {
-            if (( ref = StrMap_getRef(&(ptr->privateMembers),memberName)))
-            {
-                // private member
-                zfun *A = VEC_LAST(executing);
-                if (A == NULL || A->_klass != ptr->_klass)
-                {
-                    snprintf(error_buffer,100,"Cannot access private member %s of class object",memberName);
-                    spitErr(AccessError, error_buffer);
-                    NEXT_INST;
-                }
-                *ref = p2;
-                ip += 1;
-                NEXT_INST;
-            }
             snprintf(error_buffer,100,"Object no member named %s",memberName);
             spitErr(NameError,error_buffer);
             NEXT_INST;
@@ -3083,24 +3033,9 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zobject tmp;
             if (!StrMap_get(&(ptr->members),mname,&tmp))
             {
-                if(StrMap_get(&(ptr->privateMembers),mname,&tmp))
-                {
-                    zfun* A = VEC_LAST(executing);
-                    if (A == NULL || ptr->_klass != A->_klass)
-                    {
-                        //spitErr(AccessError, "Error cannot access private member " + (string)mname + " of class " + ptr->_klass->name + "'s object!");
-                        NEXT_INST;
-                    }
-                    //zlist_push(&STACK,tmp);
-                    STACK.arr[STACK.size++] = tmp;
-                    ip += 1;
-                    NEXT_INST;
-                }
-                else
-                {
-                    //spitErr(NameError, "Error object has no member named " + (string)mname);
-                    NEXT_INST;
-                }
+                snprintf(error_buffer,100,"Object has no member named %s",mname);
+                spitErr(NameError,error_buffer);
+                NEXT_INST;
             }
             STACK.arr[STACK.size++] = tmp;
         }
@@ -3983,29 +3918,15 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zobject tmp;
             if (!StrMap_get(&(ptr->members),mname,&tmp))
             {
-                if (StrMap_get(&(ptr->privateMembers),mname,&tmp))
-                {
-                zfun *A = VEC_LAST(executing);
-                if (A == NULL || A->_klass != ptr->_klass)
-                {
-                    //spitErr(AccessError, "Cannot access private member " + (string)mname + " of class " + ptr->_klass->name + "'s object!");
-                    NEXT_INST;
-                }
-                zlist_push(&STACK,tmp);
-                ip += 1;
+                snprintf(error_buffer,100,"Object 'self' has no member named %s",mname);
+                spitErr(NameError, error_buffer);
                 NEXT_INST;
-                }
-                else
-                {
-                    //spitErr(NameError, "Object 'self' has no member named " + (string)mname);
-                    NEXT_INST;
-                }
             }
             zlist_push(&STACK,tmp);
         }
         else
         {
-            //spitErr(TypeError, "Can not access member "+(string)mname+", self not an object!");
+            spitErr(TypeError, "self is not an object, you fucked up!");
             NEXT_INST;
         }
         ip++; NEXT_INST;
@@ -4030,20 +3951,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zobject* ref;
         if (! ( ref = StrMap_getRef(&(ptr->members),s1) ))
         {
-            if (( ref = StrMap_getRef(&(ptr->privateMembers),s1) ))
-            {
-            // private member
-            zfun* A = VEC_LAST(executing);
-            if (A == NULL || A->_klass != ptr->_klass)
-            {
-                //spitErr(AccessError, "Cannot access private member " + (string)s1 + " of class " + ptr->_klass->name + "'s object!");
-                NEXT_INST;
-            }
-            *ref = val;
-            ip += 1;
-            NEXT_INST;
-            }          
-            //spitErr(NameError, "Object has no member named " + (string)s1);
+            snprintf(error_buffer,100,"Object has no member named %s",s1); 
+            spitErr(NameError, error_buffer);
             NEXT_INST;
         }
         *ref = val;
@@ -4302,7 +4211,6 @@ zclass_object* vm_alloc_zclassobj(zclass* k)
     exit(0);
   }
   StrMap_init(&(p->members));
-  StrMap_init(&(p->privateMembers));
   StrMap_assign(&(p->members),&(k->members));
   p -> _klass = k;
   allocated += sizeof(zclass_object);

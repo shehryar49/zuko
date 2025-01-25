@@ -72,7 +72,6 @@ extern zclass* FileSeekError;
 extern zclass* ImportError;
 extern zclass* ThrowError;
 extern zclass* MaxRecursionError;
-extern zclass* AccessError;
 
 extern zlist STACK;
 void vm_init();

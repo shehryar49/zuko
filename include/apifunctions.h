@@ -59,7 +59,6 @@ extern "C"{
     zclass* k13;
     zclass* k14;
     zclass* k15;
-    zclass* k16;
   }apiFuncions;
 #ifdef __cplusplus
 }
