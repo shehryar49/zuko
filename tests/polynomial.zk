@@ -1,7 +1,7 @@
 class polynomial
 {
-  private var coeff = nil
-  private var exp = nil
+  var coeff = nil
+  var exp = nil
   function __construct__(var c,var e)
   {
     self.coeff = c

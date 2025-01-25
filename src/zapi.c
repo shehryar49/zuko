@@ -85,7 +85,6 @@ zclass* zclass_make_derived(zclass* base)
   super.type = Z_CLASS;
   super.ptr = (void*)base;
   StrMap_assign(&(child->members),&(base->members));
-  StrMap_assign(&(child->privateMembers),&(base->privateMembers));
   zclass_setmember(child,"super",super);
   return child;
 }

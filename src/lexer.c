@@ -11,6 +11,7 @@
 #include "dyn-str.h"
 #include "misc.h"
 #include "convo.h"
+#include "repl.h"
 #define ZUKO_VER_STRING "0.3.3"
 void REPL();
 
@@ -33,8 +34,6 @@ const char* keywords[] = {
     "foreach",
     "namespace",
     "class",
-    "private",
-    "public",
     "extends",
     "try",
     "catch",
@@ -79,8 +78,8 @@ void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
         k+=1;
     }
     fprintf(stderr,"%s\n",msg);
-    //if(REPL_MODE) IMPORTANT: FIX later
-    //  REPL();
+    if(REPL_MODE)
+      repl();
 }
 token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 {

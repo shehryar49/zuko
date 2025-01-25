@@ -1,6 +1,6 @@
 class A
 {
-  private var x = nil
+  var x = nil
   var idk = 69
   function __construct__(var x)
     self.x = x

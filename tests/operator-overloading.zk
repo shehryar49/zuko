@@ -1,6 +1,6 @@
 class Integer
 {
-    private var val = nil
+    var val = nil
     function __construct__(var val)
     {
         self.val = val

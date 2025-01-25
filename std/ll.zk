@@ -40,8 +40,8 @@ namespace ll
     }
     class List
     {
-        private var head = nil
-        private var tail = nil
+        var head = nil
+        var tail = nil
         function __construct__()
         {
             self.head = Node()

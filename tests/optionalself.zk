@@ -2,7 +2,7 @@ class Window
 {
     var width = nil
     var height = nil
-    private var x = 30
+    var x = 30
     function __construct__(var a,var b)
     {
       width = a

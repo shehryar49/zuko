@@ -166,7 +166,7 @@ void compileError(compiler_ctx* ctx,const char* type,const char* msg)
     }
     fprintf(stderr,"\n%s\n",msg);
     if(REPL_MODE)
-        REPL();
+        repl();
     exit(1);
 }
 int32_t add_to_vm_strings(const char* n)
@@ -2145,7 +2145,7 @@ void optimize_jmps(compiler_ctx* ctx,zbytearr* bytecode)
         memcpy(bytecode->arr+e+1,&offset,4);
     }
 }
-void reduceStackTo(compiler_ctx* ctx,int size)//for REPL
+void compiler_reduce_stack_size(compiler_ctx* ctx,int size)//for REPL
 {
     while((int)ctx->STACK_SIZE > size)
     {
@@ -2167,7 +2167,6 @@ zclass* make_error_class(compiler_ctx* ctx,const char* name,zclass* error)
     int32_t idx = add_to_vm_strings(name);
     k->name = name;
     StrMap_assign(&(k->members),&(error->members));
-    StrMap_assign(&(k->members),&(error->privateMembers));
     symtable_emplace(&ctx->globals,name,ctx->STACK_SIZE++);
     zlist_push(&STACK,zobj_from_class(k));
     return k;

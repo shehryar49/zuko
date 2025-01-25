@@ -11,7 +11,6 @@ typedef struct zclass
 {
   const char* name;
   StrMap members;
-  StrMap privateMembers;
 }zclass;
 
 

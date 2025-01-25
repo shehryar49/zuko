@@ -7,8 +7,7 @@ extern "C"{
 
 #include <stdbool.h>
 extern bool REPL_MODE;
-void REPL_init();
-void REPL();
+void repl_init();
 void repl();
 #ifdef __cplusplus
 }

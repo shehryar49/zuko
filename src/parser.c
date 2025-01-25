@@ -779,31 +779,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
     if(tokens_size==1 && tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"gc") == 0)
         return new_node(gc,"");
 
-    bool isPrivate = false;
-    if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"private") == 0)
-    {
-        isPrivate = true;
-        begin+=1;
-        if(!ctx->inclass)
-            parseError(ctx,"SyntaxError","Error use of keyword private outside class!");
-
-        if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
-        else
-            parseError(ctx,"SyntaxError","Invalid use of keyword private\n");
-    }
-    else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"public") == 0)
-    {
-        isPrivate = false;
-        begin += 1;
-        if(!ctx->inclass)
-            parseError(ctx,"SyntaxError","Error use of keyword public outside class!");
-        if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"var") == 0);
-        else if(tokens[begin].type==KEYWORD_TOKEN && strcmp(tokens[begin].content,"function") == 0);
-        else
-            parseError(ctx,"SyntaxError","Invalid use of keyword public");
-    }
-
     if(tokens[begin].type== KEYWORD_TOKEN  && strcmp(tokens[begin].content,"var") == 0)
     {
         //declare statement
@@ -823,8 +798,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         char* tmp = NULL;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        else if(isPrivate)
-            tmp = merge_str("@",tokens[begin+1].content);
         else
             tmp = strdup(tokens[begin+1].content);
         ast->val = tmp;
@@ -914,8 +887,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                             int i = match_token(k,args_end,R_CURLY_BRACKET_TOKEN,tokens);
                             if(i==-1)
                                 parseError(ctx,"SyntaxError","Invalid Syntax");
-                            //vector<token> P = {Args.begin()+k,Args.begin()+i+1};
-                            //T.insert(T.end(),P.begin(),P.end());
                             k = i;
                         }
                         else if(tokens[k].type== LParen_TOKEN)
@@ -923,8 +894,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                             int i = match_token(k,args_end,RParen_TOKEN,tokens);
                             if(i==-1)
                                 parseError(ctx,"SyntaxError","Invalid Syntax");
-                            //vector<token> P = {Args.begin()+k,Args.begin()+i+1};
-                            //T.insert(T.end(),P.begin(),P.end());
                             k = i;
                         }
                 }
@@ -938,13 +907,10 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                 {
                     Node* p = new_node(call,"");
                     Node* n = new_node(line_node,int64_to_str(tokens[begin].ln));
-                    //p->childs.push_back(n);
                     add_child(p,n);
                     add_child(p,new_node(ID_NODE,"println"));
-                    //p->childs.push_back();
                     Node* args = new_node(args_node,"");
                     nodeptr_vector_push(&(args->childs),ast);
-                    //p->childs.push_back(args);
                     add_child(p, args);
                     return p;
                 }
@@ -1245,8 +1211,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         const char* tmp = NULL;
         if(atGlobalLevel(ctx))
             tmp = merge_str(fnprefix,tokens[begin+1].content);
-        else if(isPrivate)
-            tmp = merge_str("@" , tokens[begin+1].content);
         else
             tmp = strdup(tokens[begin+1].content);
         Node* ast = new_node(FUNC,"");

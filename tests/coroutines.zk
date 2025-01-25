@@ -22,7 +22,7 @@ function series()
     }
 }
 var coro = fib(5)
-while(coro.isAlive())
+while(coro.isalive())
 {
     println(coro.resume())
 }

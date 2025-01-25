@@ -3,9 +3,9 @@
 # of OOP
 class Vector
 {
-  private var a = nil
-  private var b = nil
-  private var c = nil
+  var a = nil
+  var b = nil
+  var c = nil
   function __construct__(var a,var b,var c)
   {
      self.a = a
