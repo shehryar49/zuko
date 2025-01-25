@@ -513,7 +513,8 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     ctx->printErr = printErr;
     ctx->hadErr = false;
     ctx->errmsg = NULL;
-    ctx->line_num = 1;
+    if(startidx == 0)
+        ctx->line_num = 1;
     ctx->k = startidx;
     char c;
 
