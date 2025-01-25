@@ -1227,7 +1227,6 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         
         size_t k = args_begin;
         bool found_default = false;//found any default argument
-        //string tname;
         while(k<=args_end)
         {
             if((tokens[k].type== KEYWORD_TOKEN && strcmp(tokens[k].content,"var") == 0))
