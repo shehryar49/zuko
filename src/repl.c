@@ -29,39 +29,6 @@ void REPL_init()
 }
 //Implementation
 //EXPERIMENTAL!
-bool is_complete(const char* str)
-{
-    char ch;
-    bool inquotes = false;
-    bool escaped = false;
-    int i1 = 0;
-    int i2 = 0;
-    int i3 = 0;
-    size_t i = 0;
-    while((ch = str[i]))
-    {
-        if(ch == '"')
-        {
-            if(!escaped)
-                inquotes = !inquotes;
-            else
-                escaped = false;
-        }
-        else if(ch == '\\')
-        {
-            if(escaped)
-                escaped = false;
-            else
-                escaped = true;
-        }
-        else
-        {
-            if(escaped)
-                escaped = false;
-        }
-        i++;
-    }
-}
 void repl()
 {
     lexer_ctx lex;
@@ -114,9 +81,6 @@ void repl()
 
         //parse and execute
         Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
-        //print_ast(ast,0);
-        //delete_ast(ast);
-        //printf("\nexecuting\n");
         uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOPOP_GLOBALS);
         vm_load(bytecode,cctx->bytes_done,src);
         interpret(vm_offset, false);
@@ -126,7 +90,7 @@ void repl()
         text_size_processed = text.length;
         vm_offset = cctx->bytecode.size;
     }
-    puts(text.arr);
+
 }
 void REPL()
 {

@@ -1468,7 +1468,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         token_vector_push(&dummyStmt,make_token(ID_TOKEN,"println",tokens[0].ln));
         token_vector_push(&dummyStmt,make_token(LParen_TOKEN,"(",0));
         for(int i=begin;i<=end;i++)
-            token_vector_push(&dummyStmt,tokens[k]);
+            token_vector_push(&dummyStmt,tokens[i]);
         token_vector_push(&dummyStmt,make_token(RParen_TOKEN,")",0));
         Node* ast = parseExpr(ctx,dummyStmt.arr,0,dummyStmt.size-1);
         free(dummyStmt.arr);

@@ -122,8 +122,8 @@ compiler_ctx* create_compiler_ctx(zuko_src* p)
     ctx->inclass = false;
     ctx->infunc = false;
     ctx->infor = false;
-    if(!REPL_MODE)
-    {
+    //if(!REPL_MODE)
+    //{
         ctx->bytecode.size = 0;
         symtable_clear(&ctx->globals);
         ctx->locals.size = 0;
@@ -135,7 +135,7 @@ compiler_ctx* create_compiler_ctx(zuko_src* p)
         str_vector_init(&ctx->prefixes);
         str_vector_push(&ctx->prefixes,"");
         ctx->bytes_done = 0;
-    }
+    //}
     return ctx;
 
 }
@@ -2209,7 +2209,6 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
     ctx->backpatches.size = 0;
     if(ctx->bytecode.size == 0)
     {
-        puts("doing stuff");
         symtable_emplace(&ctx->globals,"argv",0);
         symtable_emplace(&ctx->globals,"stdin",1);
         symtable_emplace(&ctx->globals,"stdout",2);
