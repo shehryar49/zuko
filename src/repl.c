@@ -35,8 +35,10 @@ void repl_init() {
 void repl() {
     const char* prompt = ">>> ";
     bool continued = false;
+    printf("repl called\n");
+    printf("resetting stack size to = %zu\n",stack_size);
     compiler_reduce_stack_size(cctx, stack_size);
-
+    printf("stack was reset\n");
     while(true) {
         if(continued)
             prompt = "... ";
@@ -98,6 +100,8 @@ void repl() {
         Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
         token_vector_destroy(&tokens);
         uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOPOP_GLOBALS);
+        size_t copy = stack_size;
+        stack_size = cctx->STACK_SIZE;
         vm_load(bytecode,cctx->bytes_done,src);
         interpret(vm_offset, false);
         stack_size = STACK.size;

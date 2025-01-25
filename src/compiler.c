@@ -166,7 +166,9 @@ void compileError(compiler_ctx* ctx,const char* type,const char* msg)
     }
     fprintf(stderr,"\n%s\n",msg);
     if(REPL_MODE)
+    {
         repl();
+    }
     exit(1);
 }
 int32_t add_to_vm_strings(const char* n)

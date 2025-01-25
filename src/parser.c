@@ -305,8 +305,8 @@ void parseError(parser_ctx* ctx,const char* type,const char* msg)
     }
     puts("");
     fprintf(stderr,"%s\n",msg);
-    //if(REPL_MODE)
-    //    REPL();
+    if(REPL_MODE)
+        repl();
     exit(1);
 }
 
@@ -399,7 +399,6 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
 
     /////////
     //Following precdence is in reverse order
-    //static vector<vector<string>> prec = {{"and","or","is"},{"<",">","<=",">=","==","!="},{"<<",">>","&","|","^"},{"+","-"},{"/","*","%"}};
     static const char* prec[5][7] = {{"and","or","is",NULL},{"<",">","<=",">=","==","!=",NULL},{"<<",">>","&","|","^",NULL},{"+","-",NULL},{"/","*","%",NULL}};
     static NodeType op_node_types[5][7] = {
             {AND,OR,IS_node},
@@ -507,7 +506,6 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         }
         else
         {
-
             ast = new_node(list,"");
             if(tokens_size==2)//empty list
                 return ast;
@@ -537,17 +535,13 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
                     int R = match_token(k,end,R_CURLY_BRACKET_TOKEN,tokens);
                     if(R>L || R==-1)
                         parseError(ctx,"SyntaxError","Invalid Syntax");
-                    //vector<token> subdict = {tokens.begin()+k,tokens.begin()+R+1};
-                    //t.insert(t.end(),subdict.begin(),subdict.end());
                     k = R;
                 }
                 else if(tokens[k].type==ID_TOKEN && tokens[k+1].type==LParen_TOKEN)
                 {
-                    int R = match_token(k,end,RParen_TOKEN,tokens);
+                    int R = match_token(k+1,end,RParen_TOKEN,tokens);
                     if(R>L || R==-1)
                         parseError(ctx,"SyntaxError","Invalid Syntax");
-                    //vector<token> subfn = {tokens.begin()+k,tokens.begin()+R+1};
-                    //t.insert(t.end(),subfn.begin(),subfn.end());
                     k = R;
                 }
 
