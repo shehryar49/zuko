@@ -1,10 +1,12 @@
 #include "dyn-str.h"
 #include "parser.h"
+#include "token-vector.h"
 #include "token.h"
 #include "vm.h"
 #include "zuko-src.h"
 #include "compiler.h"
 #include "lexer.h"
+#include <readline/history.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <readline/readline.h>
@@ -45,8 +47,18 @@ void repl()
             puts("");
             break;
         }
+        if(strcmp(line,"yawr") == 0 || strcmp(line,"quit") == 0)
+        {
+            free(line);
+            puts("");
+            break;
+        }
+        if(line[0])
+            add_history(line);
         dyn_str_append(&text, line);
         dyn_str_push(&text, '\n');
+        free(line);
+        
         src->sources.arr[0] = text.arr; // jugaad
         
         token_vector tokens = tokenize(&lex,src,true,0,text_size_processed);
@@ -81,6 +93,7 @@ void repl()
 
         //parse and execute
         Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
+        token_vector_destroy(&tokens);
         uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOPOP_GLOBALS);
         vm_load(bytecode,cctx->bytes_done,src);
         interpret(vm_offset, false);
@@ -90,7 +103,11 @@ void repl()
         text_size_processed = text.length;
         vm_offset = cctx->bytecode.size;
     }
-
+    free(cctx->bytecode.arr);
+    zuko_src_destroy(src);
+    parser_destroy(pctx);
+    compiler_destroy(cctx);
+    
 }
 void REPL()
 {
