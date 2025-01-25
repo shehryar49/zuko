@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "sizet_vector.h"
 #include "mem_map.h"
+#include "repl.h"
 #define THREADED_INTERPRETER //ask vm to use threaded interpreter if possible
 //not defining this macro will always result in the simple switch based interpret loop
 
@@ -300,7 +301,8 @@ size_t spitErr(zclass* e,const char* msg) // used to show a runtime error
     //which is always OP_EXIT
     //if(!REPL_MODE)//nothing can be done, clear stack and exit
     //    STACK.size = 0;
-    STACK.size = 0;
+    if(!REPL_MODE)
+        STACK.size = 0;
     return ip - program;
 }
 void DoThreshholdBusiness()
