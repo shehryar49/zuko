@@ -8,32 +8,20 @@
 import libcurl
 import json
 
-var installed_json_path = ""
 var packages_json_path = ""
 var module_install_path = ""
-var std_install_path = ""
-var local_module_install_path = ""
-var local_std_install_path = ""
 
 function setup_paths()
 {
     if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
     {
-        installed_json_path = "C:\\zuko\\fiza\\installed.json"
         packages_json_path = "C:\\zuko\\fiza\\packages.json"
         module_install_path = "C:\\zuko\\modules"
-        std_install_path = "C:\\zuko\\std"
-        local_module_install_path = ".\\modules"
-        local_std_install_path = ".\\std"
     }
     else
     {
-        installed_json_path = "/opt/zuko/fiza/installed.json"
         packages_json_path = "/opt/zuko/fiza/packages.json"
         module_install_path = "/opt/zuko/modules"
-        std_install_path = "/opt/zuko/std"
-        local_module_install_path = "./modules"
-        local_std_install_path = "./std"
     }
 }
 
