@@ -6,7 +6,6 @@
 
 void signalHandler(int signum)
 {
-    int x = 1;
     if (signum == SIGABRT || signum == SIGFPE || signum == SIGILL || signum == SIGSEGV)
     {
         char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";

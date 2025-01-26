@@ -77,40 +77,44 @@ void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
             fputc(ctx->source_code[k],stderr);
         k+=1;
     }
-    fprintf(stderr,"%s\n",msg);
+    fprintf(stderr,"\n%s\n",msg);
     if(REPL_MODE)
       repl();
+}
+bool matches(const char* a,const char* b,size_t b_length)
+{
+    return strncmp(a,b,b_length) == 0 && strlen(a) == b_length;
 }
 token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
 {
     size_t lineno = ctx->line_num;
-    if(strncmp(name , "SEEK_CUR",length) == 0)
+    if(matches(name , "SEEK_CUR",length))
         return make_token(NUM_TOKEN,int64_to_str(SEEK_CUR),lineno);
-    else if(strncmp(name , "SEEK_SET",length) == 0)
+    else if(matches(name , "SEEK_SET",length))
         return make_token(NUM_TOKEN,int64_to_str(SEEK_SET),lineno);
-    else if(strncmp(name , "SEEK_END",length) == 0)
+    else if(matches(name , "SEEK_END",length))
         return make_token(NUM_TOKEN,int64_to_str(SEEK_END),lineno);
-    else if(strncmp(name , "pi",length) == 0)
+    else if(matches(name , "pi",length))
         return make_token(FLOAT_TOKEN,strdup("3.14159"),lineno);
-    else if(strncmp(name , "e",length) == 0)
+    else if(matches(name , "e",length))
         return make_token(FLOAT_TOKEN,strdup("2.718"),lineno);
-    else if(strncmp(name , "clocks_per_sec",length) == 0)
+    else if(matches(name , "clocks_per_sec",length) == 0)
         return make_token(NUM_TOKEN,int64_to_str(CLOCKS_PER_SEC),lineno);
-    else if(strncmp(name , "INT_MIN",length) == 0)
+    else if(matches(name , "INT_MIN",length))
         return make_token(NUM_TOKEN,int64_to_str(INT_MIN),lineno);
-    else if(strncmp(name , "INT_MAX",length) == 0)
+    else if(matches(name , "INT_MAX",length))
         return make_token(NUM_TOKEN,int64_to_str(INT_MAX),lineno);
-    else if(strncmp(name , "INT64_MIN",length) == 0)
+    else if(matches(name , "INT64_MIN",length))
         return make_token(NUM_TOKEN,int64_to_str(LLONG_MIN),lineno);
-    else if(strncmp(name , "INT64_MAX",length) == 0)        
+    else if(matches(name , "INT64_MAX",length) )        
         return make_token(NUM_TOKEN,int64_to_str(LLONG_MAX),lineno);
-    else if(strncmp(name , "os",length) == 0)
+    else if(matches(name , "os",length))
         return make_token(STRING_TOKEN,strdup(get_os_name()),lineno);
-    else if(strncmp(name , "version",length) == 0)
+    else if(matches(name , "version",length))
         return make_token(STRING_TOKEN,strdup(ZUKO_VER_STRING),lineno);
-    else if(strncmp(name,"filename",length) == 0)
+    else if(matches(name,"filename",length))
         return make_token(STRING_TOKEN,strdup(ctx->filename),lineno);
-    else if(strncmp(name,"lineno",length) == 0)
+    else if(matches(name,"lineno",length))
         return make_token(STRING_TOKEN,int64_to_str(ctx->line_num),lineno);
     else
         return make_token(END_TOKEN,"",0); //to indicate macro not found
@@ -514,6 +518,15 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     ctx->errmsg = NULL;
     if(startidx == 0)
         ctx->line_num = 1;
+    else
+    {
+        ctx->line_num = 1;
+        for(size_t i = 0; i<startidx; i++)
+        {
+            if(ctx->source_code[i] == '\n')
+                ctx->line_num++;
+        }
+    }
     ctx->k = startidx;
     char c;
 

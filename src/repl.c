@@ -36,6 +36,7 @@ void repl() {
     const char* prompt = ">>> ";
     bool continued = false;
     compiler_reduce_stack_size(cctx, stack_size);
+    text_size_processed = text.length;
     while(true) {
         if(continued)
             prompt = "... ";
@@ -57,6 +58,16 @@ void repl() {
             free(line);
             continue;
         }
+        else if(strcmp(line,".showtext") == 0)
+        {
+            puts(text.arr);
+            free(line);
+            continue;
+        }
+        else if(strcmp(line,"") == 0) {
+            free(line);
+            continue;
+        }
         if(line[0])
             add_history(line);
         dyn_str_append(&text, line);
@@ -64,9 +75,7 @@ void repl() {
         free(line);
         
         src->sources.arr[0] = text.arr; // jugaad
-        size_t copy = text_size_processed; 
-        text_size_processed = text.length;
-        token_vector tokens = tokenize(&lex,src,true,0,copy);
+        token_vector tokens = tokenize(&lex,src,true,0,text_size_processed);
         int32_t i1 = 0;
         int32_t i2 = 0;
         int32_t i3 = 0;
@@ -95,6 +104,7 @@ void repl() {
         prompt = ">>> ";
 
         //parse and execute
+        text_size_processed = text.length;
         Node* ast = parse_block(pctx,tokens.arr, 0, tokens.size - 1);
         token_vector_destroy(&tokens);
         uint8_t* bytecode = compile_program(cctx, ast, 0, NULL, OPT_COMPILE_DEADCODE | OPT_NOPOP_GLOBALS);
