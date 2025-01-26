@@ -1,0 +1,40 @@
+{
+    "available": [
+        {
+            "name": "turtle",
+            "repo": "https://github.com/shehryar49/zuko-turtle",
+            "version": "0.0.3",
+            "type": "module"
+        },
+        {
+            "name": "nuke",
+            "repo": "https://github.com/shehryar49/nuke",
+            "version": "0.0.2",
+            "type": "module"
+        },
+        {
+            "name": "sfml",
+            "repo": "https://github.com/shehryar49/zuko-sfml",
+            "version": "1.0.0",
+            "type": "module"
+        },
+        {
+            "name": "falcon",
+            "repo": "https://github.com/Nafees10/falcon",
+            "version": "0.1.5",
+            "type": "module"
+        },
+        {
+            "name": "mariadb",
+            "repo": "https://github.com/shehryar49/zuko-mariadb",
+            "version": "0.0.2",
+            "type": "module"
+        }, 
+        {
+            "name": "ffi",
+            "repo": "https://github.com/shehryar49/zuko-ffi",
+            "version": "0.0.2",
+            "type": "module"
+        }
+    ]
+}

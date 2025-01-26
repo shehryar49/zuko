@@ -66,6 +66,73 @@ function update_packagelist()
     close(file)
     println("Updated package list successfully!")
 }
+function clear_screen()
+{
+    if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+        system("cls")
+    else
+        system("clear")
+}
+var size = 0
+function write_memory(var bytes,var opened_file)
+{
+    clear_screen()
+    size += len(bytes)
+    println("Downloaded ",size, " bytes ")
+    fwrite(bytes,opened_file)
+}
+function download_file(var url,var output_path)
+{
+    size = 0
+    var opened_file = open(output_path,"wb")
+    var req = libcurl.curl()
+    req.setopt(libcurl.OPT_URL,url)
+    req.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+    req.setopt(libcurl.OPT_WRITEFUNCTION,write_memory)
+    req.setopt(libcurl.OPT_WRITEDATA,opened_file)
+    var res = req.perform()
+    if(res != libcurl.CURLE_OK)
+        throw Error(libcurl.strerror(res))
+    var code = req.getinfo(libcurl.INFO_HTTP_CODE)
+    if(code != 200)
+        throw Error("HTTP Error: "+str(code))
+    close(opened_file)
+}
+
+function install_package(var package)
+{
+    var name = package["name"]
+    var ver = "v"+package["version"]
+    var download_url = package["repo"]
+    var dest_path = ""
+    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
+    {
+        # download dll from repo
+        if(@os == "Windows 64 bit")
+            download_url += "/releases/download/"+ver+"/"+name+"-win64.dll"
+        else
+            download_url += "/releases/download/"+ver+"/"+name+"-win32.dll"
+        dest_path = module_install_path + "/" + name + ".dll"
+        download_file(download_url,dest_path)
+    }
+    else # unix like systems (install from source)
+    {
+        download_url +=  "/archive/refs/tags/"+ver+".tar.gz"
+        download_file(download_url,"fizatmp.tar.gz")
+        var ret = system("mkdir fizatmp && tar -xf fizatmp.tar.gz -C fizatmp --strip-components 1")
+        if(ret != 0)
+            throw Error("Failed to extract archive!")
+        ret = system("cd fizatmp && cmake . -DCMAKE_BUILD_TYPE=Release && make && cd ..")
+        if(ret != 0)
+            throw Error("Build failed.")
+        dest_path = module_install_path
+        var command = format("cp fizatmp/%.so % 2> /dev/null & cp fizatmp/%.dylib % 2> /dev/null",name,dest_path,name,dest_path)
+        ret = system(command) 
+        #if(ret != 0)
+        #    throw Error("Failed to copy files")
+        ret = system("rm -rf fizatmp && rm fizatmp.tar.gz")
+    }
+}
 
 ###################
 
@@ -78,27 +145,17 @@ if(argv == ["update"])
 else if(argv == ["list-installed"])
 {
     # list installed packages
-    var path = ""
-    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-        path = "C:\\zuko\\fiza\\installed.json"
-    else
-        path = "/opt/zuko/fiza/installed.json"
-    path = "installed.json"
-    var file = open(path,"r")
+    var file = open(installed_json_path,"r")
     var installed = read(file)
     installed = json.loads(installed)["installed"]
     foreach(var package: installed)
         printf("% %\n",package["name"],package["version"])
+    close(file)
 }
 else if(argv == ["list-available"])
 {
     # list available
-    var path = ""
-    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-        path = "C:\\zuko\\fiza\\packages.json"
-    else
-        path = "/opt/zuko/fiza/packages.json"
-    var file = open(path,"r")
+    var file = open(packages_json_path,"r")
     var available = read(file)
     available = json.loads(available)["available"]
     foreach(var package: available)
@@ -106,20 +163,32 @@ else if(argv == ["list-available"])
 }
 else if(len(argv) == 2 and argv[0] == "install")
 {
-    # install package globally
-}
-else if(len(argv) == 2 and argv[0] == "install-local")
-{
-    # install package locally
+    # install package
+    var file = open(packages_json_path,"r")
+    var available = read(file)
+    available = json.loads(available)["available"]
+    var found = false
+    var idx = nil
+    for(var i=0 to len(available)-1)
+    {
+        if(available[i]["name"] == argv[1])
+        {
+            found = true
+            idx = i
+            break
+        }
+    }
+    if(!found)
+    {
+        printf("Package % not found  🤷‍🤷\nMaybe try updating the package list\n",argv[1])
+        exit(1)
+    }
+    install_package(available[idx])
+    println("[+] Installation done!  🫦🫦")
 }
 else if(len(argv) == 2 and argv[0] == "remove")
 {
     # remove a globally installed package
-
-}
-else if(len(argv) == 2 and argv[0] == "remove-local")
-{
-    # remove a locally installed package
 }
 else
 {
@@ -127,11 +196,8 @@ else
     println("usage: fiza <action> [package]")
     println("Examples: ")
     println("\tinstall packageName")
-    println("\tinstall-local packageName")
     println("\tremove packageName")
-    println("\tremove-local packageName")
     println("\tupdate")
     println("\tlist-available")
-    println("\tlist-installed")
- 
+    println("\tlist-installed") 
 }

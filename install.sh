@@ -55,7 +55,8 @@ sudo cp include/apifunctions.h /opt/zuko/include
 sudo cp libzapi.a /opt/zuko/lib
 
 # Configure permissions
-sudo chmod 777 /opt/zuko/fiza/packages.txt
+sudo chmod 777 /opt/zuko/fiza/packages.json
+sudo chmod 777 /opt/zuko/fiza/installed.json
 sudo chmod +x /opt/zuko/fiza.zk
 sudo ln -s /opt/zuko/zuko /usr/local/bin/zuko
 sudo ln -s /opt/zuko/fiza.zk /usr/local/bin/fiza
