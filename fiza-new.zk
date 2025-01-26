@@ -8,9 +8,72 @@
 import libcurl
 import json
 
+var installed_json_path = ""
+var packages_json_path = ""
+var module_install_path = ""
+var std_install_path = ""
+var local_module_install_path = ""
+var local_std_install_path = ""
+
+function setup_paths()
+{
+    if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+    {
+        installed_json_path = "C:\\zuko\\fiza\\installed.json"
+        packages_json_path = "C:\\zuko\\fiza\\packages.json"
+        module_install_path = "C:\\zuko\\modules"
+        std_install_path = "C:\\zuko\\std"
+        local_module_install_path = ".\\modules"
+        local_std_install_path = ".\\std"
+    }
+    else
+    {
+        installed_json_path = "/opt/zuko/fiza/installed.json"
+        packages_json_path = "/opt/zuko/fiza/packages.json"
+        module_install_path = "/opt/zuko/modules"
+        std_install_path = "/opt/zuko/std"
+        local_module_install_path = "./modules"
+        local_std_install_path = "./std"
+    }
+}
+
+function update_packagelist()
+{
+    var c = libcurl.curl()
+    var ver_str = "v"+@version
+    c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/"+ver_str+"/packages.json")
+    c.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+    c.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+    var res = c.perform()
+    if(res != libcurl.CURLE_OK)
+    {
+        println("Error updading package list.")
+        println(libcurl.strerror(res))
+        return nil
+    }
+    var http_code = c.getinfo(libcurl.INFO_HTTP_CODE)
+    if(http_code != 200)
+    {
+        println("Error updating package list. HTTP Code: ",http_code)
+        return nil
+    }
+    var file = nil
+    if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+        file = open("C:\\zuko\\fiza\\packages.json","wb")
+    else
+        file = open("/opt/zuko/fiza/packages.json","wb")
+    fwrite(c.data,file)
+    close(file)
+    println("Updated package list successfully!")
+}
+
+###################
+
+setup_paths()
+
 if(argv == ["update"])
 {
-    # update package-list
+    update_packagelist()
 }
 else if(argv == ["list-installed"])
 {
@@ -25,13 +88,21 @@ else if(argv == ["list-installed"])
     var installed = read(file)
     installed = json.loads(installed)["installed"]
     foreach(var package: installed)
-    {
-        printf("% %\n")
-    }
+        printf("% %\n",package["name"],package["version"])
 }
 else if(argv == ["list-available"])
 {
     # list available
+    var path = ""
+    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
+        path = "C:\\zuko\\fiza\\packages.json"
+    else
+        path = "/opt/zuko/fiza/packages.json"
+    var file = open(path,"r")
+    var available = read(file)
+    available = json.loads(available)["available"]
+    foreach(var package: available)
+        printf("% %\n",package["name"],package["version"])
 }
 else if(len(argv) == 2 and argv[0] == "install")
 {
@@ -44,6 +115,7 @@ else if(len(argv) == 2 and argv[0] == "install-local")
 else if(len(argv) == 2 and argv[0] == "remove")
 {
     # remove a globally installed package
+
 }
 else if(len(argv) == 2 and argv[0] == "remove-local")
 {

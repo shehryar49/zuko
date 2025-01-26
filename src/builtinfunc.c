@@ -365,6 +365,7 @@ zobject READ(zobject* args,int32_t argc)
     }
     zstr* s = vm_alloc_zstr(p.length);
     strcpy(s->val,p.arr);
+    dyn_str_destroy(&p);
     return zobj_from_str_ptr(s);
 }
 zobject CLOSE(zobject* args,int32_t argc)
