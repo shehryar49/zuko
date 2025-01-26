@@ -38,7 +38,7 @@ add_executable(
   src/builtin-map.c
   src/mem_map.c
 )
-include_directories(include/) # even modules use this (include/zobject.h)
+include_directories(include/) # even modules use this (include/zapi.h)
 if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})
   target_link_libraries(zuko -lreadline) # GNU readline

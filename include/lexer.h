@@ -46,7 +46,7 @@ typedef struct lexer_ctx
 }lexer_ctx;
 
 bool isKeyword(const char* s);
-token resolveMacro(lexer_ctx* ctx,const char* name,size_t length);
+token resolve_macro(lexer_ctx* ctx,const char* name,size_t length);
 void str(lexer_ctx* ctx,token_vector*);
 void macro(lexer_ctx* ctx,token_vector*);
 void comment(lexer_ctx* ctx,token_vector*);

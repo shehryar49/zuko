@@ -85,7 +85,7 @@ bool matches(const char* a,const char* b,size_t b_length)
 {
     return strncmp(a,b,b_length) == 0 && strlen(a) == b_length;
 }
-token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
+token resolve_macro(lexer_ctx* ctx,const char* name,size_t length)
 {
     size_t lineno = ctx->line_num;
     if(matches(name , "SEEK_CUR",length))
@@ -98,7 +98,7 @@ token resolveMacro(lexer_ctx* ctx,const char* name,size_t length)
         return make_token(FLOAT_TOKEN,strdup("3.14159"),lineno);
     else if(matches(name , "e",length))
         return make_token(FLOAT_TOKEN,strdup("2.718"),lineno);
-    else if(matches(name , "clocks_per_sec",length) == 0)
+    else if(matches(name , "clocks_per_sec",length))
         return make_token(NUM_TOKEN,int64_to_str(CLOCKS_PER_SEC),lineno);
     else if(matches(name , "INT_MIN",length))
         return make_token(NUM_TOKEN,int64_to_str(INT_MIN),lineno);
@@ -252,7 +252,7 @@ void macro(lexer_ctx* ctx,token_vector* tokenlist)
         j+=1;
     }
     size_t macro_name_length = end - begin + 1;
-    token tok = resolveMacro(ctx, src + begin, macro_name_length);
+    token tok = resolve_macro(ctx, src + begin, macro_name_length);
     if(tok.type == END_TOKEN)
     {
         ctx->k = src_length - 1;
