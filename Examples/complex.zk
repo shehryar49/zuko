@@ -1,8 +1,8 @@
 import math
 class complex
 {
-  private var real = nil
-  private var imaginary = nil
+  var real = nil
+  var imaginary = nil
   function __construct__(var r,var i)
   {
      self.real = r

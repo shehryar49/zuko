@@ -56,7 +56,8 @@ const char* tests[] =
     "bignum",
     "regex",
     "json",
-    "base64"
+    "base64",
+    "macro"
 };
 int main(int argc,const char* argv[])
 {

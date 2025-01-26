@@ -1527,12 +1527,17 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         typedef zobject (*initFun)();
         typedef int (*apiFun)(apiFuncions *,int);
         #ifdef _WIN32
-            s1 = "C:\\zuko\\modules\\" + s1 + ".dll";
-            HINSTANCE module = LoadLibraryA(s1);
+            snprintf(error_buffer,100,".\\modules\\%s.dll",s1);
+            HINSTANCE module = LoadLibraryA(error_buffer);
             if (!module)
             {
-                spitErr(ImportError, "LoadLibrary() returned " + to_string(GetLastError()));
-                NEXT_INST;
+                snprintf(error_buffer,100,"C:\\zuko\\modules\\%s.dll",s1);
+                module = LoadLibraryA(error_buffer);
+                if(!module)
+                {
+                    spitErr(ImportError, "LoadLibrary() returned " + to_string(GetLastError()));
+                    NEXT_INST;
+                }
             }
             apiFun a = (apiFun)GetProcAddress(module, "api_setup");
             initFun f = (initFun)GetProcAddress(module, "init");
@@ -1547,7 +1552,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                 module = dlopen(error_buffer, RTLD_LAZY);
                 if (!module)
                 {
-                    spitErr(ImportError, "Failed to import module");
+                    spitErr(ImportError, dlerror());
                     NEXT_INST;
                 }
             }
@@ -1555,12 +1560,17 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             apiFun a = (apiFun)dlsym(module, "api_setup");
         #endif
         #ifdef __APPLE__
-            s1 = "/opt/zuko/modules/"+s1+".dylib";
-            void *module = dlopen(s1.c_str(), RTLD_LAZY);
-            if (!module)
+            snprintf(error_buffer,100,"./modules/%s.dylib",s1);
+            void* module = dlopen(error_buffer,RTLD_LAZY);
+            if(!module)
             {
-                spitErr(ImportError, (std::string)(dlerror()));
-                NEXT_INST;
+                snprintf(error_buffer,100,"/opt/zuko/modules/%s.dylib",s1);
+                module = dlopen(error_buffer, RTLD_LAZY);
+                if (!module)
+                {
+                    spitErr(ImportError, dlerror());
+                    NEXT_INST;
+                }
             }
             initFun f = (initFun)dlsym(module, "init");
             apiFun a = (apiFun)dlsym(module, "api_setup");

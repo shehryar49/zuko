@@ -12,7 +12,7 @@
 #include "misc.h"
 #include "convo.h"
 #include "repl.h"
-#define ZUKO_VER_STRING "0.3.3"
+#include "zuko-ver.h"
 void REPL();
 
 const char* keywords[] = {
@@ -81,9 +81,9 @@ void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
     if(REPL_MODE)
       repl();
 }
-bool matches(const char* a,const char* b,size_t b_length)
+bool matches(const char* a,const char* b,size_t a_length)
 {
-    return strncmp(a,b,b_length) == 0 && strlen(a) == b_length;
+    return (strncmp(a,b,a_length) == 0) && strlen(b) == a_length;
 }
 token resolve_macro(lexer_ctx* ctx,const char* name,size_t length)
 {
@@ -111,7 +111,7 @@ token resolve_macro(lexer_ctx* ctx,const char* name,size_t length)
     else if(matches(name , "os",length))
         return make_token(STRING_TOKEN,strdup(get_os_name()),lineno);
     else if(matches(name , "version",length))
-        return make_token(STRING_TOKEN,strdup(ZUKO_VER_STRING),lineno);
+        return make_token(STRING_TOKEN,strdup(ZUKO_VER_STR),lineno);
     else if(matches(name,"filename",length))
         return make_token(STRING_TOKEN,strdup(ctx->filename),lineno);
     else if(matches(name,"lineno",length))

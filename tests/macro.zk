@@ -1,0 +1,4 @@
+println(@lineno)
+println(@e)
+println(@pi)
+println(@version)
