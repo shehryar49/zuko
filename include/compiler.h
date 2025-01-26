@@ -88,8 +88,7 @@ typedef struct compiler_ctx
 
 void compileError(compiler_ctx* ctx,const char* type,const char* msg);
 
-compiler_ctx* create_compiler_ctx(zuko_src*);
-void compiler_set_source(compiler_ctx* ctx,zuko_src* p,size_t root_idx);
+compiler_ctx* create_compiler_context(zuko_src*);
 void compiler_add_builtin(const char* name,BuiltinFunc fn);  
 void compiler_reduce_stack_size(compiler_ctx* ctx,int size);//for REPL
 //Compile options

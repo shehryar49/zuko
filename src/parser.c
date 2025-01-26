@@ -1404,7 +1404,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
         else if(tokens[k].type== OP_TOKEN && strcmp(tokens[k].content,".")==0)
         {
             Node* ast = new_node(memb,"");
-            Node* line = new_node(line_node,int64_to_str(tokens[0].ln));
+            Node* line = new_node(line_node,int64_to_str(tokens[begin].ln));
             nodeptr_vector_push(&(ast->childs),line);
            
             nodeptr_vector_push(&(ast->childs),parseExpr(ctx,tokens,begin,k-1));

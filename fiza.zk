@@ -5,78 +5,73 @@
  10 Feb 2022
  This code is available under MIT license
 -#
-
-
 import libcurl
 
-
 var size = 0
-var ZUKO_VERSION = "v0.3.3"
-function clearScreen()
+function clear_screen()
 {
-  if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
-    system("cls")
-  else
-    system("clear")
-}
-function WriteMemory(var bytes,var openedFile)
-{
-  clearScreen()
-  size+=len(bytes)
-  println("Downloaded ",size, " bytes ")
-  fwrite(bytes,openedFile)
-}
-function downloadFile(var url,var outputPath)
-{
-  var openedFile = open(outputPath,"wb")
-  var req = libcurl.curl()
-  req.setopt(libcurl.OPT_URL,url)
-  req.setopt(libcurl.OPT_FOLLOWLOCATION,1)
-  req.setopt(libcurl.OPT_WRITEFUNCTION,WriteMemory)
-  req.setopt(libcurl.OPT_WRITEDATA,openedFile)
-  var res = req.perform()
-  if(res != libcurl.CURLE_OK)
-    throw Error(libcurl.strerror(res))
-  var code = req.getinfo(libcurl.INFO_HTTP_CODE)
-  if(code != 200)
-    throw Error("HTTP Error: "+str(code))
-  close(openedFile)
-}
-function installPackage(var name,var url,var ver,var locally = false)
-{
-  if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-  {
-    # download dll from repo
-    if(@os == "Windows 64 bit")
-      url = url + "/releases/download/"+ver+"/"+name+"-win64.dll"
+    if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+        system("cls")
     else
-      url = url + "/releases/download/"+ver+"/"+name+"-win32.dll"
-    var dest = "C:\\zuko\\modules\\"+name+".dll"
-    if(locally)
-      dest = ".\\modules\\"+name+".dll"
-    downloadFile(url,dest)
-  }
-  else # unix like systems (install from source)
-  {
-    url = url + "/archive/refs/tags/"+ver+".tar.gz"
-    downloadFile(url,"fizatmp.tar.gz")
-    var ret = system("mkdir fizatmp && tar -xf fizatmp.tar.gz -C fizatmp --strip-components 1")
-    if(ret != 0)
-      throw Error("Failed to extract archive!")
-    ret = system("cd fizatmp && cmake . -DCMAKE_BUILD_TYPE=Release && make && cd ..")
-    if(ret != 0)
-      throw Error("Build failed.")
-    if(locally)
-      ret = system("cp fizatmp/"+name+".so ./modules")
-    else
-      ret = system("sudo cp fizatmp/"+name+".so /opt/zuko/modules")
-    if(ret != 0)
-      throw Error("[-] Failed to copy files")
-    ret = system("rm -rf fizatmp && rm fizatmp.tar.gz")
-    
-  }
+        system("clear")
 }
-function removePackage(var name,var locally = false)
+function write_memory(var bytes,var openedFile)
+{
+    clear_screen()
+    size += len(bytes)
+    println("Downloaded ",size, " bytes ")
+    fwrite(bytes,openedFile)
+}
+function download_file(var url,var outputPath)
+{
+    var openedFile = open(outputPath,"wb")
+    var req = 0#libcurl.curl()
+    #req.setopt(libcurl.OPT_URL,url)
+    #req.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+    req.setopt(libcurl.OPT_WRITEFUNCTION,WriteMemory)
+    #req.setopt(libcurl.OPT_WRITEDATA,openedFile)
+    var res = req.perform()
+    if(res != libcurl.CURLE_OK)
+        throw Error(libcurl.strerror(res))
+    var code = req.getinfo(libcurl.INFO_HTTP_CODE)
+    if(code != 200)
+        throw Error("HTTP Error: "+str(code))
+    close(openedFile)
+}
+function install_package(var name,var url,var ver,var locally = false)
+{
+    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
+    {
+        # download dll from repo
+        if(@os == "Windows 64 bit")
+            url = url + "/releases/download/"+ver+"/"+name+"-win64.dll"
+        else
+            url = url + "/releases/download/"+ver+"/"+name+"-win32.dll"
+        var dest = "C:\\zuko\\modules\\"+name+".dll"
+        if(locally)
+            dest = ".\\modules\\"+name+".dll"
+        download_file(url,dest)
+    }
+    else # unix like systems (install from source)
+    {
+        url = url + "/archive/refs/tags/"+ver+".tar.gz"
+        download_file(url,"fizatmp.tar.gz")
+        var ret = system("mkdir fizatmp && tar -xf fizatmp.tar.gz -C fizatmp --strip-components 1")
+        if(ret != 0)
+            throw Error("Failed to extract archive!")
+        ret = system("cd fizatmp && cmake . -DCMAKE_BUILD_TYPE=Release && make && cd ..")
+        if(ret != 0)
+            throw Error("Build failed.")
+        if(locally)
+            ret = system("cp fizatmp/"+name+".so ./modules")
+        else
+            ret = system("sudo cp fizatmp/"+name+".so /opt/zuko/modules")
+        if(ret != 0)
+            throw Error("[-] Failed to copy files")
+        ret = system("rm -rf fizatmp && rm fizatmp.tar.gz")
+    }
+}
+function remove_package(var name,var locally = false)
 {
     if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
     {
@@ -93,67 +88,67 @@ function removePackage(var name,var locally = false)
             system("sudo rm /opt/zuko/modules/"+name+".so")
     }
 }
-function listPackages()
+function list_installed_packages()
 {
-  if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
-    system("dir /B C:\\zuko\\modules")
-  else 
-    system("ls -1 /opt/zuko/modules")
+    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
+        system("dir /B C:\\zuko\\modules")
+    else 
+        system("ls -1 /opt/zuko/modules")
 }
 function clean()
 {
-  println("🧹🧹 Cleaning cache")
-  if(@os == "Linux")
-  {
-    system("rm -rf fizatmp")
-    system("rm -rf fizatmp.tar.gz")
-  }
-  
+    println("🧹🧹 Cleaning cache")
+    if(@os == "Linux")
+    {
+        system("rm -rf fizatmp")
+        system("rm -rf fizatmp.tar.gz")
+    }  
 }
-function updatePackageList()
+function update_packagelist()
 {
-  var c = libcurl.curl()
-  c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/"+ZUKO_VERSION+"/packages.txt")
-  c.setopt(libcurl.OPT_FOLLOWLOCATION,1)
-  c.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
-  var res = c.perform()
-  if(res != libcurl.CURLE_OK)
-  {
-    println("Error updading package list.")
-    println(libcurl.strerror(res))
-    return nil
-  }
-  var http_code = c.getinfo(libcurl.INFO_HTTP_CODE)
-  if(http_code != 200)
-  {
-    println("Error updating package list. HTTP Code: ",http_code)
-    return nil
-  }
-  var file = nil
-  if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
-    file = open("C:\\zuko\\fiza\\packages.txt","wb")
-  else
-    file = open("/opt/zuko/fiza/packages.txt","wb")
-  fwrite(c.data,file)
-  close(file)
-  println("Updated package list successfully!")
+    var c = libcurl.curl()
+    var ver_str = "v0.3.3"
+    c.setopt(libcurl.OPT_URL,"https://raw.githubusercontent.com/shehryar49/fiza/main/packages/"+ver_str+"/packages.txt")
+    c.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+    c.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
+    var res = c.perform()
+    if(res != libcurl.CURLE_OK)
+    {
+        println("Error updading package list.")
+        println(libcurl.strerror(res))
+        return nil
+    }
+    var http_code = c.getinfo(libcurl.INFO_HTTP_CODE)
+    if(http_code != 200)
+    {
+        println("Error updating package list. HTTP Code: ",http_code)
+        return nil
+    }
+    var file = nil
+    if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
+        file = open("C:\\zuko\\fiza\\packages.txt","wb")
+    else
+        file = open("/opt/zuko/fiza/packages.txt","wb")
+    fwrite(c.data,file)
+    close(file)
+    println("Updated package list successfully!")
 }
 
 #########
 
 if(len(argv) == 1 and argv[0] == "update")
-    updatePackageList()
+    update_packagelist()
 else if(len(argv)==1 and argv[0]=="list")
-    listPackages()
+    list_installed_packages()
 else if(len(argv) == 1 and argv[0]=="clean")
     clean()
 else if(len(argv) == 2 and argv[0] == "list" and argv[1] == "available")
 {
     var srcfile = nil
     if(@os == "Windows 64 bit" or @os == "Windows 32 bit")
-    srcfile = open("C:\\zuko\\fiza\\packages.txt","r")
+        srcfile = open("C:\\zuko\\fiza\\packages.txt","r")
     else
-    srcfile = open("/opt/zuko/fiza/packages.txt","r")
+        srcfile = open("/opt/zuko/fiza/packages.txt","r")
     var lines = readlines(srcfile)
     close(srcfile)
     foreach(var line: lines)
@@ -196,7 +191,7 @@ else if(len(argv) == 2)
             ver = ver.substr(0,len(ver)-2)
         try
         {
-            installPackage(name,url,ver,locally)
+            install_package(name,url,ver,locally)
         }
         catch(err)
         {

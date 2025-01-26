@@ -48,6 +48,11 @@ int main(int argc, const char *argv[])
     {
         filename = argv[1];
         source_code = readfile(filename);
+        if(!source_code)
+        {
+            printf("Error opening file: %s\n",strerror(errno));
+            return 1;
+        }
     }
     vm_init();
     zuko_src* src = create_source(filename, source_code);
@@ -61,7 +66,7 @@ int main(int argc, const char *argv[])
     Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
     // uncomment below line to print AST in tabular form
     //print_ast(ast,0);
-    compiler_ctx* cctx = create_compiler_ctx(src);
+    compiler_ctx* cctx = create_compiler_context(src);
     bytecode = compile_program(cctx, ast, argc, argv,0); // compile AST of program
     bytecode_len = cctx->bytes_done;
     //dis(bytecode);

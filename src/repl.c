@@ -29,7 +29,7 @@ void repl_init() {
     dyn_str_init(&text);
     src = create_source("<stdin>",text.arr);
     pctx = create_parser_context(src);
-    cctx = create_compiler_ctx(src);
+    cctx = create_compiler_context(src);
 }
 //Implementation
 void repl() {

@@ -162,71 +162,6 @@ int64_t hex_to_int64(const char* s)
     }
     return res;
 }
-char* addlnbreaks(const char* s,bool* hadErr) // adds escape sequences
-{
-    size_t k = 0;
-    bool escaped = false;//check if last char was
-    dyn_str r;
-    dyn_str_init(&r);
-    size_t len = strlen(s);
-    while(s[k])
-    {
-        if(s[k]=='\\')
-        {
-            if(escaped)
-            {
-                escaped = false;
-                dyn_str_push(&r,'\\');
-            }
-            else
-                escaped = true;
-        }
-        else if(escaped)
-        {
-            if(s[k]=='n')
-                dyn_str_push(&r,'\n');
-            else if(s[k]=='r')
-                dyn_str_push(&r,'\r');
-            else if(s[k]=='t')
-                dyn_str_push(&r,'\t');
-            else if(s[k]=='v')
-                dyn_str_push(&r,'\v');
-            else if(s[k]=='b')
-                dyn_str_push(&r,'\b');
-            else if(s[k]=='a')
-                dyn_str_push(&r,'\a');
-            else if(s[k] == 'x')
-            {
-                if(k+2 >= len)
-                {
-                    *hadErr = true;
-                    return "Expected characters after '\\x' ";
-                }
-                const char tmp[] = {s[k+1],s[k+2]};
-                unsigned char ch = tobyte(tmp);
-                dyn_str_push(&r,ch);
-                k += 2;
-            }
-            else if(s[k]=='"')
-                dyn_str_push(&r,'"');
-            else
-            {
-                *hadErr = true;
-                return "Unknown escape character";
-            }
-            escaped = false;
-        }
-        else if(!escaped)
-            dyn_str_push(&r,s[k]);
-        k+=1;
-    }
-   if(escaped)
-   {
-       *hadErr = true;
-       return "Error string contains non terminated escape chars";
-   }
-	return r.arr;
-}
 #ifdef _WIN32
 string REPL_READLINE(const char* msg)
 {
@@ -250,59 +185,55 @@ string REPL_READLINE(const char* msg)
 #endif
 char* readfile(const char* filename)
 {
-  FILE* fp = fopen(filename, "rb");
-  if(!fp)
-  {
-      printf("Error opening file: %s\n", strerror(errno));
-      exit(1);
-  }
-  fseek(fp,0,SEEK_END);
-  size_t total = ftell(fp);
-  rewind(fp);
-
-  char* src = malloc(sizeof(char)* (total+1));
-  size_t k = 0;
-  signed char ch;
-  int32_t expect = 0;//continuation bytes to expect
-  while ((ch = fgetc(fp)) != EOF)
-  {
-      if(expect)
-      {
-        if(ch & 0x80) //msb is on
+    FILE* fp = fopen(filename, "rb");
+    if(!fp)
+        return NULL;
+    fseek(fp,0,SEEK_END);
+    size_t total = ftell(fp);
+    rewind(fp);
+    char* src = malloc(sizeof(char)* (total+1));
+    size_t k = 0;
+    signed char ch;
+    int32_t expect = 0;//continuation bytes to expect
+    while ((ch = fgetc(fp)) != EOF)
+    {
+        if(expect)
         {
-          expect-=1;
-          src[k++] = ch;
-          continue;
+            if(ch & 0x80) //msb is on
+            {
+                expect-=1;
+                src[k++] = ch;
+                continue;
+            }
+            else
+            {
+                printf("Error the file %s does not seem to be a utf-8 text file.\n",filename);
+                exit(0);
+            }
         }
+        if(!(ch & 0x80)) //single byte codepoint
+        ;
+        else if((ch & 0xe0) == 0xc0) // 2 byte codepoint
+            expect = 1;
+        else if((ch & 0xf0) == 0xe0) // 3 byte codepoint
+            expect = 2;
+        else if((ch & 0xf8) == 0xf0) // 4 byte codepoint
+            expect = 3;
         else
         {
-          printf("Error the file %s does not seem to be a utf-8 text file.\n",filename);
-          exit(0);
+            printf("Error the file %s does not seem to be a utf-8 text file.\n",filename);
+            exit(0);
         }
-      }
-      if(!(ch & 0x80)) //single byte codepoint
-      ;
-      else if((ch & 0xe0) == 0xc0) // 2 byte codepoint
-        expect = 1;
-      else if((ch & 0xf0) == 0xe0) // 3 byte codepoint
-        expect = 2;
-      else if((ch & 0xf8) == 0xf0) // 4 byte codepoint
-        expect = 3;
-      else
-      {
+        src[k++] = ch;
+    }
+    if(expect)
+    {
         printf("Error the file %s does not seem to be a utf-8 text file.\n",filename);
         exit(0);
-      }
-      src[k++] = ch;
-  }
-  if(expect)
-  {
-    printf("Error the file %s does not seem to be a utf-8 text file.\n",filename);
-    exit(0);
-  }
-  fclose(fp);
-  src[total] = 0;
-  return src;
+    }
+    fclose(fp);
+    src[total] = 0;
+    return src;
 }
 
 const char* get_os_name()
@@ -322,50 +253,7 @@ const char* get_os_name()
   #endif
   return "OS Unknown";
 }
-/*string replace(int startpos,int endpos,string x,string s)
-{
-  string p1,p2,p3;
-  if(startpos!=0)
-  {
-     p1 = substr(0,startpos-1,s);
-  }
-  p2 = x;
-  if(endpos!=len(s))
-  {
-    p3 = substr(endpos+1,len(s),s);
-  }
-  s = p1+p2+p3;
-  return s;
-}
-string replace_all(string x,string y,string s)//replaces all x strings in s with string y
-{
-	int  startpos = 0;
-	while((size_t)startpos<s.length())
-	{
-		if(s[startpos]==x[0] && substr(startpos,startpos+len(x),s)==x)
-		{
-		  s = replace(startpos,startpos+len(x),y,s);
-		  startpos+=len(y)+1;
-		  continue;
-	    }
-		startpos+=1;
-	}
-	return s;
-}
 
-string unescape(string s)
-{
-    //This function replaces real escape sequences with printable ones
-    s = replace_all("\\","\\\\",s);
-    s = replace_all("\n","\\n",s);
-    s = replace_all("\r","\\r",s);
-    s = replace_all("\v","\\v",s);
-    s = replace_all("\t","\\t",s);
-    s = replace_all("\a","\\b",s);
-  	s = replace_all("\"","\\\"",s);
-	  return s;
-}
-*/
 char misc_buffer[100];
 void print_with_no_escape_seq(const char* str)
 {

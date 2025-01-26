@@ -93,7 +93,7 @@ static inline void addBytes(zbytearr* vec,int32_t x)
   zbytearr_resize(vec,sz + sizeof(int32_t));
   memcpy(vec->arr+sz,&x,sizeof(int32_t));
 }
-compiler_ctx* create_compiler_ctx(zuko_src* p)
+compiler_ctx* create_compiler_context(zuko_src* p)
 {
     compiler_ctx* ctx = malloc(sizeof(compiler_ctx));
     str_vector_init(&ctx->symRef);
@@ -208,9 +208,9 @@ int32_t add_builtin_to_vm(const char* name)
     ptr_vector_push(&vm_builtin,fnAddr);
     return (int32_t)vm_builtin.size-1;
 }
-int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isGlobal,bool blowUp,bool* isFromSelf)
+int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isglobal,bool blowup,bool* isfromself)
 {
-    *isGlobal = false;
+    *isglobal = false;
     for(int32_t i=ctx->locals.size-1;i>=0;i-=1)
     {
         size_t tmp;
@@ -218,13 +218,13 @@ int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isGlobal,bool blow
             return tmp;
     }
 
-    if(isFromSelf)
+    if(isfromself)
     {
         char buffer[strlen(name)+2];
         snprintf(buffer,50,"@%s",name);
         if(ctx->inclass && ctx->infunc && str_vector_search(&ctx->classMemb,name)!=-1 || str_vector_search(&ctx->classMemb,buffer)!=-1 )
         {
-            *isFromSelf = true;
+            *isfromself = true;
             return -2;
         }
     }
@@ -235,13 +235,13 @@ int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isGlobal,bool blow
         char* new_name = merge_str(prefix,name);
         if(symtable_get(&ctx->globals,new_name,&val))
         {
-            *isGlobal = true;
+            *isglobal = true;
             free((void*)new_name);
             return val;
         }
         free(new_name);
     }
-    if(blowUp)
+    if(blowup)
     {
         char buffer[60];
         snprintf(buffer,60,"Error name %s is not defined!", name);
@@ -2197,7 +2197,7 @@ zobject make_zfile(FILE* fp)
     f->open = true;
     return zobj_from_file(f);
 }
-uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options)//compiles as a complete program adds NPOP_STACK and OP_EXIT
+uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* argv[],int32_t options)
 {
     //If prev vector is empty then this program will be compiled as an independent new one
     //otherwise this program will be an addon to the previous one
