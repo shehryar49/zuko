@@ -875,23 +875,21 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
                         {
                             int i = match_token(k,args_end,END_LIST_TOKEN,tokens);
                             if(i==-1)
-                                parseError(ctx,"SyntaxError","Invalid Syntax");
-                            //vector<token> P = {Args.begin()+k,Args.begin()+i+1};
-                            //T.insert(T.end(),P.begin(),P.end());
+                                parseError(ctx,"3SyntaxError","Invalid Syntax");
                             k = i;
                         }
                         else if(tokens[k].type== L_CURLY_BRACKET_TOKEN)
                         {
                             int i = match_token(k,args_end,R_CURLY_BRACKET_TOKEN,tokens);
                             if(i==-1)
-                                parseError(ctx,"SyntaxError","Invalid Syntax");
+                                parseError(ctx,"2SyntaxError","Invalid Syntax");
                             k = i;
                         }
                         else if(tokens[k].type== LParen_TOKEN)
                         {
                             int i = match_token(k,args_end,RParen_TOKEN,tokens);
                             if(i==-1)
-                                parseError(ctx,"SyntaxError","Invalid Syntax");
+                                parseError(ctx,"1SyntaxError","Invalid Syntax");
                             k = i;
                         }
                 }
@@ -1893,7 +1891,7 @@ Node* parse_block(parser_ctx* ctx,token* tokens,int begin,int end)
                     loop_begin = find_token_consecutive(newline_token,begin+line_size,end,tokens);
                     loop_end = find_token(newline_token,loop_begin+1,end,tokens);
                     if(loop_end==-1)
-                        loop_end = end;
+                        loop_end = end+1;
                 }
                 else
                     loop_end = match_token(loop_begin,end,R_CURLY_BRACKET_TOKEN,tokens);

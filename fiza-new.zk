@@ -1,0 +1,65 @@
+#!/usr/local/bin/zuko
+
+#-
+    Fiza Package Manager for Zuko
+    Written by Shahryar Ahmad
+-#
+
+import libcurl
+import json
+
+if(argv == ["update"])
+{
+    # update package-list
+}
+else if(argv == ["list-installed"])
+{
+    # list installed packages
+    var path = ""
+    if(@os == "Windows 32 bit" or @os == "Windows 64 bit")
+        path = "C:\\zuko\\fiza\\installed.json"
+    else
+        path = "/opt/zuko/fiza/installed.json"
+    path = "installed.json"
+    var file = open(path,"r")
+    var installed = read(file)
+    installed = json.loads(installed)["installed"]
+    foreach(var package: installed)
+    {
+        printf("% %\n")
+    }
+}
+else if(argv == ["list-available"])
+{
+    # list available
+}
+else if(len(argv) == 2 and argv[0] == "install")
+{
+    # install package globally
+}
+else if(len(argv) == 2 and argv[0] == "install-local")
+{
+    # install package locally
+}
+else if(len(argv) == 2 and argv[0] == "remove")
+{
+    # remove a globally installed package
+}
+else if(len(argv) == 2 and argv[0] == "remove-local")
+{
+    # remove a locally installed package
+}
+else
+{
+    println("Fiza 🧕🧕 package manager") 
+    println("usage: fiza <action> [package]")
+    println("Examples: ")
+    println("\tinstall packageName")
+    println("\tinstall-local packageName")
+    println("\tremove packageName")
+    println("\tremove-local packageName")
+    println("\tupdate")
+    println("\tlist-available")
+    println("\tlist-installed")
+ 
+}
