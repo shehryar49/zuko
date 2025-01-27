@@ -51,7 +51,7 @@ enum OPCODE
     GOTONPSTACK=26,//goto a certain bytecode index and pop n values from stack
     GOTO=27,//goto a certain bytecode index
     POP_STACK = 28,//pop stack
-    LOAD_CONST = 29,//LOAD_CONST <index> loads a constant at a certain index in constant table onto the stack 
+    CONDITIONAL_RETURN_I32 = 29,// 
     CO_STOP = 30, //stops a co routine,marks it as dead and returns nil
     SMOREQ = 31,//smaller than or equal to
     GROREQ = 32,//greater than or equal to
@@ -101,7 +101,8 @@ enum OPCODE
     INDEX_FAST=76,
     LOADVAR_ADDINT32=77, // i+1 , j+1 etc etc this is a very common pattern in zuko programs
     LOAD_INT64,
-    LOAD_DOUBLE
+    LOAD_DOUBLE,
+    CONDITIONAL_RETURN_LOCAL
 };
 
 #endif

@@ -113,7 +113,6 @@ zclass* ThrowError;
 zclass* MaxRecursionError;
 
 zlist STACK;
-ptr_vector executing; // pointer to zuko function object we are executing, NULL means control is not in a function
 ptr_vector callstack;
 sizet_vector frames;
 uint8_t* program = NULL;
@@ -153,7 +152,6 @@ void vm_init()
     zlist_init(&aux);
     zlist_init(&STACK);
     ptr_vector_init(&callstack);
-    ptr_vector_init(&executing);
     ptr_vector_init(&vm_strings);
     ptr_vector_init(&vm_important);
     ptr_vector_init(&vm_builtin);
@@ -164,7 +162,6 @@ void vm_init()
     sizet_vector_init(&try_stack_cleanup);
     sizet_vector_init(&try_limit_cleanup);
     mem_map_init(&memory);
-    ptr_vector_push(&executing,NULL);
     sizet_vector_push(&frames,0);
 }
 void vm_load(uint8_t* bytecode,size_t length,zuko_src* p)
@@ -720,7 +717,6 @@ bool invokeOperator(const char* meth, zobject A, size_t args, const char* op, zo
                     spitErr(MaxRecursionError, "Max recursion limit 1000 reached.");
                     return false;
                 }
-                ptr_vector_push(&executing,fn);
                 sizet_vector_push(&frames,STACK.size);
                 zlist_push(&STACK,A);
                 if (rhs != NULL)
@@ -825,7 +821,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         &&GOTONPSTACK,
         &&GOTO,
         &&POP_STACK,
-        &&LOAD_CONST,
+        &&CONDITIONAL_RETURN_I32,
         &&CO_STOP,
         &&SMOREQ,
         &&GROREQ,
@@ -875,7 +871,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         &&INDEX_FAST,
         &&LOADVAR_ADDINT32,
         &&LOAD_INT64,
-        &&LOAD_DOUBLE
+        &&LOAD_DOUBLE,
+        &&CONDITIONAL_RETURN_LOCAL
         };
         //size_t counts[sizeof(targets)/sizeof(void*)];
         //memset(counts,0,sizeof(targets));
@@ -1046,14 +1043,42 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         ip++; NEXT_INST;
     }
-    CASE_CP LOAD_CONST:
+    CASE_CP CONDITIONAL_RETURN_I32:
     {
         ip += 1;
-        memcpy(&i1, ip, 4);
+        memcpy(&i1,ip,4);
         ip += 4;
-        //zlist_push(&STACK,vm_constants[i1]);
+        zobject cond = STACK.arr[--STACK.size];
+        if(cond.type == Z_NIL || (cond.type == Z_BOOL && cond.i==0)) //falsy value
+                {NEXT_INST;}
+        ip = VEC_LAST(callstack);
+        callstack.size--;
+        alwaysi32.i = i1;
+        STACK.size = VEC_LAST(frames)+1;
+        STACK.arr[VEC_LAST(frames)] = alwaysi32;
+        frames.size--;
+        if(!ip)
+            return;//return from interpret function
         NEXT_INST;
     }
+    CASE_CP CONDITIONAL_RETURN_LOCAL:
+    {
+        ip += 1;
+        memcpy(&i1,ip,4);
+        ip += 4;
+        zobject cond = STACK.arr[--STACK.size];
+        if(cond.type == Z_NIL || (cond.type == Z_BOOL && cond.i==0)) //falsy value
+                {NEXT_INST;}
+        ip = VEC_LAST(callstack);
+        callstack.size--;
+        STACK.size = VEC_LAST(frames)+1;
+        STACK.arr[VEC_LAST(frames)] = STACK.arr[VEC_LAST(frames)+i1];
+        frames.size--;
+        if(!ip)
+            return;//return from interpret function
+        NEXT_INST;
+    }
+
     CASE_CP LOAD_INT32:
     {
         ip += 1;
@@ -1360,7 +1385,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
                     NEXT_INST;
                 }
-                ptr_vector_push(&executing,memFun);
                 sizet_vector_push(&frames,STACK.size-i2-1);
                 // add default arguments
                 for (size_t i = memFun->opt.size - (memFun->args - 1 - (size_t)i2); i < (memFun->opt.size); i++)
@@ -1475,7 +1499,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                 spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
                 NEXT_INST;
             }
-            ptr_vector_push(&executing,NULL);
             sizet_vector_push(&frames,STACK.size-i2);
             zlist_insert_list(&STACK,STACK.size,&(g->locals));
             g->state = RUNNING;
@@ -1780,7 +1803,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     {
         ip = VEC_LAST(callstack);
         callstack.size--;
-        executing.size--;
         p1 = STACK.arr[STACK.size - 1];
         STACK.size = VEC_LAST(frames)+1;
         STACK.arr[VEC_LAST(frames)] = p1;
@@ -1796,7 +1818,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         ip+=4;
         ip = VEC_LAST(callstack);
         callstack.size--;
-        executing.size--;
         STACK.size = VEC_LAST(frames);
         p1.type = Z_INT;
 //        STACK.arr[STACK.size++] = p1;
@@ -1808,7 +1829,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     }
     CASE_CP YIELD:
     {
-        executing.size--;
         zlist_fastpop(&STACK,&p1);
         zobject* locals = STACK.arr + VEC_LAST(frames);
         size_t total = STACK.size - VEC_LAST(frames);
@@ -1830,7 +1850,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     }
     CASE_CP YIELD_AND_EXPECTVAL:
     {
-        executing.size--;
         zlist_fastpop(&STACK,&p2);
         zobject* locals = STACK.arr + VEC_LAST(frames);
         size_t total = STACK.size - VEC_LAST(frames);
@@ -1857,7 +1876,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     }
     CASE_CP CO_STOP:
     {
-        executing.size--;
         zobject val;
         zlist_fastpop(&STACK,&val);
         //we don't really need to save the coroutines locals anymore
@@ -3299,7 +3317,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             }
             for (size_t i = obj->opt.size - (obj->args - N); i < obj->opt.size; i++)
                 zlist_push(&STACK,obj->opt.arr[i]);
-            ptr_vector_push(&executing,obj);
             ip = program + obj->i;
             NEXT_INST;
         }
@@ -3372,7 +3389,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     }
                     
                     ip = program + p->i;
-                    ptr_vector_push(&executing,p);
                     DoThreshholdBusiness();
                     NEXT_INST;
                 }
@@ -3484,7 +3500,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             spitErr(MaxRecursionError, "Error max recursion limit 1000 reached.");
             NEXT_INST;
         }
-        ptr_vector_push(&executing,fn);
         ip = program + fn->i;
         NEXT_INST;
     }
@@ -4054,7 +4069,6 @@ void vm_destroy()
     sizet_vector_destroy(&try_limit_cleanup);
     sizet_vector_destroy(&try_stack_cleanup);
     ptr_vector_destroy(&callstack);
-    ptr_vector_destroy(&executing);
     ptr_vector_destroy(&vm_builtin);
     ptr_vector_destroy(&except_targ);
     ptr_vector_destroy(&vm_important);
@@ -4345,7 +4359,6 @@ bool vm_call_object(zobject* obj,zobject* args,int N,zobject* rr)
      uint8_t* prev = ip;
      ptr_vector_push(&callstack,NULL);
      sizet_vector_push(&frames,STACK.size);
-     ptr_vector_push(&executing,fn);
      for(int i=0;i<N;i++)
        zlist_push(&STACK,args[i]);
      for(size_t i = fn->opt.size - (fn->args - N); i < fn->opt.size; i++)

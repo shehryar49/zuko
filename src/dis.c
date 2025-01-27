@@ -107,14 +107,16 @@ void dis(uint8_t* bytecode)
             continue;
  
       }
-      else if(inst==LOAD_CONST)
+      else if(inst==CONDITIONAL_RETURN_I32)
       {
-        printf("%zu  LOAD_CONST ",k);
-        k+=1;
-        int32_t i;
-        memcpy(&i, program+k, 4);
-        k+=3;
-      }    
+        printf("%zu  CONDITIONAL_RETURN_I32\n",k);
+        k+=4;
+      }     
+      else if(inst==CONDITIONAL_RETURN_LOCAL)
+      {
+        printf("%zu  CONDITIONAL_RETURN_LOCAL\n",k);
+        k+=4;
+      } 
       else if(inst==LOAD_STR)
       {
         printf("%zu  LOAD_STR ",k);

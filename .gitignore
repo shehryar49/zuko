@@ -25,3 +25,4 @@ Debug
 compile_commands.json
 .cache
 installed.json
+program.py

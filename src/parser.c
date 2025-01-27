@@ -193,7 +193,7 @@ void delete_ast(Node* ast)
     nodeptr_vector_destroy(&ast->childs);
     //if(ast->type == ID_NODE)
     //    printf("freeing %s\n",ast->val);
-    if(ast->type == line_node || ast->type == declare || ast->type == NUM || ast->type == STR_NODE || ast->type == FLOAT || ast->type == ID_NODE || ast->type == BOOL_NODE || ast->type == BYTE_NODE)
+    if(ast->type == line_node || ast->type == declare || ast->type == NUM_NODE || ast->type == STR_NODE || ast->type == FLOAT_NODE || ast->type == ID_NODE || ast->type == BOOL_NODE || ast->type == BYTE_NODE)
         free((void*)ast->val);
     free(ast);
 }
@@ -345,7 +345,7 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
     {
         if(tokens[begin].type== KEYWORD_TOKEN && strcmp(tokens[begin].content,"nil")==0 )
         {
-            ast = new_node(NIL,NULL);
+            ast = new_node(NIL_NODE,NULL);
             return ast;
         }
         else if(tokens[begin].type== BOOL_TOKEN )
@@ -372,7 +372,7 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         }
         else if(tokens[begin].type == NUM_TOKEN && is_int32(tokens[begin].content))
         {
-            ast = new_node(NUM,strdup(tokens[begin].content));//int32
+            ast = new_node(NUM_NODE,strdup(tokens[begin].content));//int32
             return ast;
         }
         else if(tokens[begin].type == BYTE_TOKEN)
@@ -388,9 +388,9 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
         else if(tokens[begin].type== FLOAT_TOKEN || tokens[begin].type== NUM_TOKEN)
         {
             if(tokens[begin].type == FLOAT_TOKEN)
-                ast = new_node(FLOAT,strdup(tokens[begin].content));
+                ast = new_node(FLOAT_NODE,strdup(tokens[begin].content));
             else if(tokens[begin].type == NUM_TOKEN)//int64
-                ast = new_node(NUM,strdup(tokens[begin].content));
+                ast = new_node(NUM_NODE,strdup(tokens[begin].content));
             return ast;
         }
         parseError(ctx,"SyntaxError","Invalid Syntax");
@@ -463,12 +463,12 @@ Node* parseExpr(parser_ctx* ctx,token* tokens,int begin,int end)
             if(begin+1 == end && tokens[end].type == NUM_TOKEN)
             {
                 const char* content = merge_str("-",tokens[end].content);
-                return new_node(NUM,content);
+                return new_node(NUM_NODE,content);
             }
             else if(begin+1 == end && tokens[end].type == FLOAT_TOKEN)
             {
                 const char* content = merge_str("-",tokens[end].content);
-                return new_node(FLOAT,content);
+                return new_node(FLOAT_NODE,content);
             }
             Node* ast = new_node(neg,"");
             Node* E = parseExpr(ctx,tokens,begin+1,end);

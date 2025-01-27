@@ -256,7 +256,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     zobject reg;
     if (ast->childs.size == 0)
     {
-        if (ast->type == NUM)
+        if (ast->type == NUM_NODE)
         {
             const char* n = ast->val;
             if (is_int32(n))
@@ -281,7 +281,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             }
             return;
         }
-        else if (ast->type == FLOAT)
+        else if (ast->type == FLOAT_NODE)
         {
             const char* n = ast->val;
             double tmp = str_to_double(n);
@@ -306,7 +306,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             ctx->bytes_done += 5;
             return;
         }
-        else if (ast->type == NIL)
+        else if (ast->type == NIL_NODE)
         {
             zbytearr_push(&ctx->bytecode,LOAD_NIL);
             ctx->bytes_done += 1;
@@ -382,7 +382,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     }
     if (ast->type == add)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -408,7 +408,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     }
     if (ast->type == sub)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -960,7 +960,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             {
                 if (ast->childs.arr[2]->childs.size == 2)
                 {
-                    if (ast->childs.arr[2]->type == add && ast->childs.arr[2]->childs.arr[0]->val == ast->childs.arr[1]->val && ast->childs.arr[2]->childs.arr[0]->type==ID_NODE && ast->childs.arr[2]->childs.arr[1]->type==NUM && strcmp(ast->childs.arr[2]->childs.arr[1]->val,"1") == 0)
+                    if (ast->childs.arr[2]->type == add && ast->childs.arr[2]->childs.arr[0]->val == ast->childs.arr[1]->val && ast->childs.arr[2]->childs.arr[0]->type==ID_NODE && ast->childs.arr[2]->childs.arr[1]->type==NUM_NODE && strcmp(ast->childs.arr[2]->childs.arr[1]->val,"1") == 0)
                     {
                         bool isGlobal = false;
                         bool isSelf = false;
@@ -1412,6 +1412,37 @@ size_t compile(compiler_ctx* ctx,Node* ast)
         else if (ast->type == IF)
         {
             int32_t offset1_idx;
+            //print_ast(ast,0);
+            Node* return_stmt = NULL;
+            bool is_global = false;
+            bool isfromself = false;
+            int32_t idx;
+            if(ast->childs.arr[2]->type == RETURN_NODE && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == NUM_NODE && is_int32(return_stmt->childs.arr[1]->val)))
+            {
+                //print_ast(return_stmt,0);
+                Node* cond = ast->childs.arr[1]->childs.arr[0];
+                int32_t val_to_return = str_to_int32(return_stmt->childs.arr[1]->val);
+                expr_bytecode(ctx,cond);
+                zbytearr_push(&ctx->bytecode,CONDITIONAL_RETURN_I32);
+                addBytes(&ctx->bytecode, val_to_return);
+                ctx->bytes_done+=5;
+                ctx->last_stmt_type = ast->type;
+                ast = ast->childs.arr[ast->childs.size-1];
+                continue;
+            }
+            if(ast->childs.arr[2]->type == RETURN_NODE && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == ID_NODE) && (idx = resolve_name(ctx,return_stmt->childs.arr[1]->val,&is_global,false,&isfromself))!=-1 && !is_global && !isfromself )
+            {
+                //print_ast(return_stmt,0);
+                Node* cond = ast->childs.arr[1]->childs.arr[0];
+                int32_t val_to_return = str_to_int32(return_stmt->childs.arr[1]->val);
+                expr_bytecode(ctx,cond);
+                zbytearr_push(&ctx->bytecode,CONDITIONAL_RETURN_LOCAL);
+                addBytes(&ctx->bytecode, idx);
+                ctx->bytes_done+=5;
+                ctx->last_stmt_type = ast->type;
+                ast = ast->childs.arr[ast->childs.size-1];
+                continue;
+            }
 
             /*if(ast->childs.arr[1]->childs.arr[0]->type == NodeType::equal)
             {
@@ -1961,7 +1992,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(ctx->inConstructor)
                 compileError(ctx,"SyntaxError","Error class constructors should not return anything!");
             //stmt in it's block
-            if(ast->childs.arr[1]->type == NUM && is_int32(ast->childs.arr[1]->val))
+            if(ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
             {
                 instruction(ctx,RETURN_INT32);
                 i32_operand(ctx,atoi(ast->childs.arr[1]->val));
