@@ -42,7 +42,11 @@ extern "C"{
 
 #define JUMPOFFSET_SIZE 4
 
-
+typedef struct compiled_fn
+{
+    Node* fn_node;
+    size_t offset;
+}compiled_fn;
 
 typedef struct compiler_ctx
 {
@@ -59,7 +63,7 @@ typedef struct compiler_ctx
   lntable* line_num_table;
   //std::unordered_map<std::string,std::pair<Node*,int32_t>> compiled_functions; //compiled functions (not methods)
   //this allows code generation for direct function call
-  
+  ptr_vector compiled_functions; 
   symtable globals;
   ptr_vector locals;
   str_vector prefixes;

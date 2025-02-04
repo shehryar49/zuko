@@ -108,6 +108,7 @@ compiler_ctx* create_compiler_context(zuko_src* p)
     sizet_vector_init(&ctx->orJMPS);
     symtable_init(&ctx->globals);
     ptr_vector_init(&ctx->locals);
+    ptr_vector_init(&ctx->compiled_functions);
     str_vector_init(&ctx->classMemb);
     sizet_vector_init(&ctx->breakIdx);
     sizet_vector_init(&ctx->contIdx);
@@ -147,6 +148,16 @@ void compiler_set_source(compiler_ctx* ctx, zuko_src* p, size_t root_idx)
         exit(1);
     }
 
+}
+int find_compiled_function(ptr_vector* vec,const char* name)
+{
+    for(size_t i = 0; i < vec->size; i++)
+    {
+        compiled_fn* fn = vec->arr[i];
+        if(strcmp(fn->fn_node->childs.arr[1]->val,name)==0)
+            return i;
+    }
+    return -1;
 }
 void compileError(compiler_ctx* ctx,const char* type,const char* msg)
 {
@@ -712,11 +723,11 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             bool isGlobal = false;
             bool isSelf = false;
             int foo = resolve_name(ctx,name,&isGlobal,true,&isSelf);
-            /*if(isGlobal && compiled_functions.find(name)!=compiled_functions.end()) // Make direct call
+            int idx;
+            if(isGlobal && (idx = find_compiled_function(&ctx->compiled_functions,name))!=-1) // Make direct call
             {
-                auto p = compiled_functions[name];
-                Node* fn = p.first;
-                int32_t stack_idx = p.second;
+                Node* fn = ((compiled_fn*)ctx->compiled_functions.arr[idx])->fn_node;
+                int32_t stack_idx = ((compiled_fn*)ctx->compiled_functions.arr[idx])->offset;
                 int32_t N = ast->childs.arr[2]->childs.size; //arguments given
                 int32_t args_required = fn->childs.arr[2]->childs.size;
                 int32_t opt_args = 0;
@@ -734,26 +745,28 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 }
                 if ( (size_t)N + def_params < args_required || (size_t)N > args_required)
                 {
-                    compileError("ArgumentError", "Error function " + (string)name + " takes " + to_string(args_required) + " arguments," + to_string(N) + " given!");
+                    char error_buffer[100];
+                    snprintf(error_buffer,100,"Function %s takes %d arguments, %d given!",name,args_required,N);
+                    compileError(ctx,"ArgumentError", error_buffer);
                 }
                 //load all args
                 for(size_t i=0;i<ast->childs.arr[2]->childs.size;i++)
                 {
                     Node* arg = ast->childs.arr[2]->childs.arr[i];
-                    expr_bytecode(arg);
+                    expr_bytecode(ctx,arg);
                 }
                 //load optional args
                 for (size_t i = def_params - (args_required - N); i < def_params; i++)
                 {
                     //printf("i = %zu\n",i);
                     Node* arg = fn->childs.arr[2]->childs.arr[def_begin+i]->childs.arr[0];
-                    expr_bytecode(arg);
+                    expr_bytecode(ctx,arg);
                 }
-                zbytearr_push(&bytecode,CALL_DIRECT);
-                addBytes(&bytecode, stack_idx);
-                bytes_done+=5;
+                zbytearr_push(&ctx->bytecode,CALL_DIRECT);
+                addBytes(&ctx->bytecode, stack_idx);
+                ctx->bytes_done+=5;
                 return;
-            }*/
+            }
             if(isSelf)
             {
                 zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
@@ -1816,11 +1829,16 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 }
                 if(!ctx->inclass)
                 {
-                    if(ctx->locals.size==0)
+                    if(ctx->locals.size==0)// at global level
                     {
                         symtable_emplace(&ctx->globals,name,ctx->STACK_SIZE);
-                        //if(!isGen)
-                        //    compiled_functions.emplace(name,std::pair<Node*,int32_t>(ast,STACK_SIZE));
+                        if(!isGen)
+                        {
+                            compiled_fn* fn = malloc(sizeof(compiled_fn));
+                            fn->fn_node = ast;
+                            fn->offset = ctx->STACK_SIZE;
+                            ptr_vector_push(&ctx->compiled_functions,fn);
+                        }
                     }
                     else
                         symtable_emplace(last,name,ctx->STACK_SIZE);
@@ -2339,10 +2357,13 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
 
 void compiler_destroy(compiler_ctx* ctx)
 {
+    //for(size_t i = 0; ctx->compiled_functions.size; i++)
+    //    free(ctx->compiled_functions.arr[i]);
     sizet_vector_destroy(&ctx->andJMPS);
     sizet_vector_destroy(&ctx->orJMPS);
     symtable_destroy(&ctx->globals);
     ptr_vector_destroy(&ctx->locals);
+    ptr_vector_destroy(&ctx->compiled_functions);
     str_vector_destroy(&ctx->classMemb);
     sizet_vector_destroy(&ctx->breakIdx);
     sizet_vector_destroy(&ctx->contIdx);    
