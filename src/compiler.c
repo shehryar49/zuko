@@ -2357,8 +2357,8 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
 
 void compiler_destroy(compiler_ctx* ctx)
 {
-    //for(size_t i = 0; ctx->compiled_functions.size; i++)
-    //    free(ctx->compiled_functions.arr[i]);
+    for(size_t i = 0; i < ctx->compiled_functions.size; i++)
+        free(ctx->compiled_functions.arr[i]);
     sizet_vector_destroy(&ctx->andJMPS);
     sizet_vector_destroy(&ctx->orJMPS);
     symtable_destroy(&ctx->globals);
