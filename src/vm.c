@@ -833,7 +833,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         &&LOOP,
         &&CALLFORVAL,
         &&INC_GLOBAL,
-        &&DLOOP, //unused for now
+        &&DLOOP, 
         &&LOAD_GLOBAL,
         &&MEMB,
         &&JMPIFFALSENOPOP,
@@ -874,8 +874,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         &&LOAD_DOUBLE,
         &&CONDITIONAL_RETURN_LOCAL
         };
-        //size_t counts[sizeof(targets)/sizeof(void*)];
-        //memset(counts,0,sizeof(targets));
         #endif
     #endif
     zobject p1;
@@ -2717,7 +2715,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zstr* p = vm_alloc_zstr(1);
             p->val[0] = c;
             zlist_push(&STACK,zobj_from_str_ptr(p));
-            //STACK.arr[STACK.size++] = zobj_from_str_ptr(p);
             DoThreshholdBusiness();
         }
         else if (p2.type == Z_OBJ)
@@ -2882,7 +2879,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         else if (p1.type == Z_INT64 && p2.type == Z_INT)
             PromoteType(&p2, Z_INT64);
         p3.i = (bool)!(zobject_equals(p1,p2));
-        //zlist_push(&STACK,p3);
         STACK.arr[STACK.size++] = p3;
         ip++; NEXT_INST;
     }
@@ -2990,7 +2986,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             if (!multiplication_overflows_i32(p1.i, p2.i))
             {
                 c.i = p1.i * p2.i;
-                //zlist_push(&STACK,c);
                 STACK.arr[STACK.size++] = c;
                 ip++; NEXT_INST;
             }
@@ -3002,7 +2997,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             }
             c.type = Z_INT64;
             c.l = (int64_t)(p1.i) * (int64_t)(p2.i);
-            //zlist_push(&STACK,c);
             STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_FLOAT)
@@ -3015,7 +3009,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             }
             c.type = Z_FLOAT;
             c.f = p1.f * p2.f;
-            //zlist_push(&STACK,c);
             STACK.arr[STACK.size++] = c;
         }
         else if (t == Z_INT64)
@@ -3028,7 +3021,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             }
             c.type = Z_INT64;
             c.l = p1.l * p2.l;
-            //zlist_push(&STACK,c);
             STACK.arr[STACK.size++] = c;
         }
         ip++; NEXT_INST;
@@ -3305,7 +3297,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zfun *obj = (zfun *)fn.ptr;
             if ((size_t)N + obj->opt.size < obj->args || (size_t)N > obj->args)
             {
-                //spitErr(ArgumentError, "Error function " + (string)obj->name + " takes " + to_string(obj->args) + " arguments," + to_string(N) + " given!");
+                snprintf(error_buffer,100,"Function %s takes %zu arguments, %d given!",obj->name,obj->args,N);
+                spitErr(ArgumentError, error_buffer);
                 NEXT_INST;
             }
             ptr_vector_push(&callstack,ip + 1);
@@ -3331,7 +3324,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             size_t len = strlen(A->signature);
             if(len != N)
             {
-                //spitErr(ArgumentError,(string)"Native function "+ (string)A->name + (string)" takes "+to_string(len)+" arguments, "+to_string(N)+" given!");
+                snprintf(error_buffer,100,"Native Function %s takes %zu arguments, %d given!",A->name,len,N);
+                spitErr(ArgumentError,error_buffer);
                 NEXT_INST;
             }
             size_t i = 0;
@@ -3339,7 +3333,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             {
                 if(args[i].type != A->signature[i])
                 {
-                    //spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)A->name+(string)+"should be a "+(std::string)fullform(A->signature[i]));
+                    snprintf(error_buffer,100,"Argument %zu to %s should be a %s",i+1,A->name,fullform(A->signature[i]));
+                    spitErr(TypeError,error_buffer);
                     NEXT_INST;
                 }
                 i+=1;
@@ -3349,8 +3344,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p4 = f(&(STACK.arr[STACK.size - N]), N);
             if (p4.type == Z_ERROBJ)
             {
-                //s1 = "Native Function:  " + *(string *)p4.ptr;
-                //spitErr((zclass*)p4.ptr, s1);
+                snprintf(error_buffer,100,"%s(): %s",A->name,AS_STR(p4)->val);
+                spitErr((zclass*)p4.ptr, error_buffer);
                 NEXT_INST;
             }
             if (strcmp(fullform(p4.type),"Unknown")==0 && p4.type != Z_NIL)
@@ -3406,7 +3401,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     size_t len = strlen(M->signature);
                     if(len != N+1)
                     {
-                        //spitErr(ArgumentError,(string)"Native function "+ (string)M->name + (string)" takes "+to_string(len)+" arguments, "+to_string(N+1)+" given!");
+                        snprintf(error_buffer,100,"Native function %s takes %zu arguments, %d given!",M->name,len,N+1);
+                        spitErr(ArgumentError,error_buffer);
                         NEXT_INST;
                     }
                     size_t i = 0;
@@ -3414,7 +3410,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     {
                         if(args[i].type != M->signature[i])
                         {
-                            //spitErr(TypeError,"Argument "+to_string(i+1)+" to "+(string)M->name+(string)+"should be a "+(std::string)fullform(M->signature[i]));
+                            snprintf(error_buffer,100,"Argument %zu to %s should be a %s",i+1,M->name,fullform(M->signature[i]));
+                            spitErr(TypeError,error_buffer);
                             NEXT_INST;
                         }
                         i+=1;
@@ -3428,7 +3425,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     zobject msg;
                     StrMap_get(&(E->members),"msg",&msg);
                     char* errmsg = ((zstr*)msg.ptr) -> val;
-                    //spitErr((zclass*)p4.ptr, s1+ "." + "__construct__:  " + errmsg);
+                    snprintf(error_buffer,100,"%s.__construct__(): %s",s1,errmsg);
+                    spitErr((zclass*)p4.ptr,error_buffer);
                     NEXT_INST;
                 }
                 zlist_push(&STACK,r);
@@ -3438,17 +3436,18 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             }
             else
             {
-                //spitErr(TypeError, "Error constructor of class " + (string)((zclass* )fn.ptr)->name + " is not a function!");
+                snprintf(error_buffer,100,"Constructor of class %s is not a function!",((zclass*)fn.ptr)->name);
+                spitErr(TypeError,error_buffer);
                 NEXT_INST;
             }
             }
             else
             {
-            if (N != 0)
-            {
-                //spitErr(ArgumentError, "Error constructor class " + (string)((zclass* )fn.ptr)->name + " takes 0 arguments!");
-                NEXT_INST;
-            }
+                if (N != 0)
+                {
+                    spitErr(ArgumentError,"Default constructor takes 0 arguments");
+                    NEXT_INST;
+                }
             }
             zobject r;
             r.type = Z_OBJ;
@@ -3461,7 +3460,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zfun* f = (zfun*)fn.ptr;
             if ((size_t)N != f->args)
             {
-                //spitErr(ArgumentError, "Error coroutine " + *(string *)fn.ptr + " takes " + to_string(f->args) + " arguments," + to_string(N) + " given!");
+                snprintf(error_buffer,100,"Coroutine takes %zu arguments, %d given!",f->args,N);
+                spitErr(ArgumentError,error_buffer);
                 NEXT_INST;
             }
             Coroutine *g = vm_alloc_coro_obj();
@@ -3482,7 +3482,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         else
         {
-            //spitErr(TypeError, "Error type " +(std::string)fullform(fn.type) + " not callable!");
+            snprintf(error_buffer,100,"Type %s is not callable!",fullform(fn.type));
+            spitErr(TypeError,error_buffer);
             NEXT_INST;
         }
         ip++; NEXT_INST;
@@ -3535,7 +3536,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         else
         {
             orgk = ip - program;
-            //spitErr(TypeError, "Error operator '%' unsupported for " +(std::string)fullform(a.type) + " and " +(std::string)fullform(b.type));
+            snprintf(error_buffer,100,"Operator '%%' unsupported for %s and %s",fullform(a.type),fullform(b.type));
+            spitErr(TypeError,error_buffer);
             NEXT_INST;
         }
         //
@@ -3546,7 +3548,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             if (b.i == 0)
             {
                 orgk = ip - program;
-                spitErr(MathError, "Error modulo by zero");
+                spitErr(MathError, "modulo by zero!");
                 NEXT_INST;
             }
             if ((a.i == INT_MIN) && (b.i == -1))
@@ -3616,7 +3618,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         else
         {
-            //spitErr(TypeError, "Error cannot add numeric constant to type " +(std::string)fullform(t));
+            spitErr(TypeError, "Cannot increment non numberic type!");
             NEXT_INST;
         }
         ip++; 
@@ -3651,7 +3653,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         else
         {
             orgk = ip - program;
-            //spitErr(TypeError, "Error operator '-' unsupported for " +(std::string)fullform(a.type) + " and " +(std::string)fullform(b.type));
+            snprintf(error_buffer,100,"Operator '-' unsupported for %s and %s",fullform(a.type),fullform(b.type));
+            spitErr(TypeError,error_buffer);
             NEXT_INST;
         }
 
@@ -3728,7 +3731,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         else
         {
             orgk = ip - program;
-            //spitErr(TypeError, "Error operator '/' unsupported for " +(std::string)fullform(a.type) + " and " +(std::string)fullform(b.type));
+            snprintf(error_buffer,100,"Operator '/' unsupported for %s and %s",fullform(a.type),fullform(b.type));
+            spitErr(TypeError,error_buffer);
             NEXT_INST;
         }
 
@@ -3856,7 +3860,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zlist_fastpop(&STACK,&p3); //val
         if(p3.type != Z_OBJ)
         {
-            //spitErr(TypeError,"Value of type "+(std::string)fullform(p3.type)+" not throwable!");
+            spitErr(TypeError,"Type is not throwable!");
             NEXT_INST;
         }
         zclass_object* ki = (zclass_object*)p3.ptr;
@@ -3868,7 +3872,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         }
         if (except_targ.size == 0)
         {
-            ///IMPORTANT
             spitErr(ki->_klass,((zstr*)(msg.ptr))->val );
             NEXT_INST;
         }
@@ -3938,7 +3941,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         ++ip;
         memcpy(&i1, ip, sizeof(int32_t));
         ip += 3;
-        const char* mname = ((zstr*)vm_strings.arr[i1])->val;//optimize
+        const char* mname = ((zstr*)vm_strings.arr[i1])->val;
         if(a.type == Z_OBJ)
         {
             zclass_object*ptr = (zclass_object*)a.ptr;
@@ -3971,7 +3974,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         
         if (Parent.type != Z_OBJ)
         {
-            //spitErr(TypeError, "Cannot access variable "+(string)s1+" ,self is not a class object!");
+            spitErr(TypeError,"'self' is not an object!");
             NEXT_INST;
         }
         zclass_object*ptr = (zclass_object*)Parent.ptr;
@@ -4010,21 +4013,17 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     ip += 1;
 
 } // end while loop
-#endif
+    #endif
 
 
-if (STACK.size != 0 && panic)
-{
-    fprintf(stderr,"An InternalError occurred.Error Code: 15\n");
-    printf("STACK.size = %zu\n",STACK.size);
-    exit(1);
-}
-zlist_destroy(&names);
-zlist_destroy(&values);
-/*printf("--Counts--\n");
-for(size_t i=0;i<sizeof(targets)/sizeof(void*);i++)
-    if(counts[i]!=0)
-        printf("%zu: %zu\n",i,counts[i]);*/
+    if (STACK.size != 0 && panic)
+    {
+        fprintf(stderr,"An InternalError occurred.Error Code: 15\n");
+        printf("STACK.size = %zu\n",STACK.size);
+        exit(1);
+    }
+    zlist_destroy(&names);
+    zlist_destroy(&values);
 } // end function interpret
 void vm_destroy()
 {
