@@ -7,10 +7,8 @@
 #include "zuko-src.h"
 #include "compiler.h"
 #include "lexer.h"
-#include <readline/history.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <readline/readline.h>
 #include "dis.h"
 bool REPL_MODE = false;
 
@@ -40,7 +38,7 @@ void repl() {
     while(true) {
         if(continued)
             prompt = "... ";
-        char* line = readline(prompt);
+        char* line = REPL_READLINE(prompt);
         if(!line) { // EOF
             puts("");
             break;
@@ -68,8 +66,10 @@ void repl() {
             free(line);
             continue;
         }
+        #ifndef _WIN32
         if(line[0])
             add_history(line);
+        #endif
         dyn_str_append(&text, line);
         dyn_str_push(&text, '\n');
         free(line);

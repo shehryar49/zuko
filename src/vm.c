@@ -1556,7 +1556,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                 module = LoadLibraryA(error_buffer);
                 if(!module)
                 {
-                    spitErr(ImportError, "LoadLibrary() returned " + to_string(GetLastError()));
+                    snprintf(error_buffer, 100, "LoadLibrary(): %zu", GetLastError());
+                    spitErr(ImportError, error_buffer);
                     NEXT_INST;
                 }
             }

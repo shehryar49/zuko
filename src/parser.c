@@ -61,9 +61,9 @@ char* merge_str(const char* str1,const char* str2)
     return result;
 }
 //Function to find match for tokens like '(' '[' '{'
-int match_token(int k,int endidx,TokenType end,token* tokens)
+int match_token(int k,int endidx,token_type end,token* tokens)
 {
-    TokenType start = tokens[k].type;
+    token_type start = tokens[k].type;
     int ignore = 0;
     while(k<=endidx)
     {
@@ -79,9 +79,9 @@ int match_token(int k,int endidx,TokenType end,token* tokens)
     }
     return -1;
 }
-int match_token_right(int k,int begin,TokenType end,token* tokens)
+int match_token_right(int k,int begin,token_type end,token* tokens)
 {
-    TokenType start = tokens[k].type;
+    token_type start = tokens[k].type;
     
     int ignore = 0;
     while(k>=begin)
@@ -199,7 +199,7 @@ void delete_ast(Node* ast)
 }
 
 //For debugging purposes
-/*const char* StrTokenTypes[] =
+/*const char* Strtoken_types[] =
 {
   "id",
   "string",

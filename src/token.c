@@ -1,6 +1,6 @@
 #include "token.h"
 
-token make_token(TokenType t,const char* content,size_t ln)
+token make_token(token_type t,const char* content,size_t ln)
 {
     token tok;
     tok.type = t;

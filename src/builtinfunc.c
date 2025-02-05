@@ -22,7 +22,9 @@
 #include <limits.h>
 #include <unistd.h>
 #include <time.h>
-
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 
 bmap funcs;
@@ -228,7 +230,7 @@ zobject PRINTLN(zobject* args,int32_t argc)
     return ret;
 }
 
-zobject INPUT(zobject* args,int32_t argc)
+zobject ZUKO_INPUT(zobject* args,int32_t argc)
 {
     if(argc!=0 && argc!=1)
     {
@@ -1133,7 +1135,7 @@ zobject REPLACE_ONCE(zobject* args,int32_t argc)
             return z_err(ArgumentError,"Error replace_once() takes three arguments\n");
         }
 }
-zobject SLEEP(zobject* args,int32_t argc)
+zobject ZUKO_SLEEP(zobject* args,int32_t argc)
 {
     if(argc!=1)
         return z_err(ArgumentError,"Error sleep() takes 1 argument!");
@@ -1142,7 +1144,6 @@ zobject SLEEP(zobject* args,int32_t argc)
       zobject r = args[0];
       PromoteType(&r,'l');
       #ifdef _WIN32
-      #include <windows.h>
          Sleep(r.l);
       #else
         usleep(r.l*1000);
@@ -2022,7 +2023,7 @@ void init_builtin_functions()
   bmap_emplace(&funcs,"print",&PRINT);
   bmap_emplace(&funcs,"println",&PRINTLN);
   bmap_emplace(&funcs,"printf",&PRINTF);
-  bmap_emplace(&funcs,"input",&INPUT);
+  bmap_emplace(&funcs,"input",&ZUKO_INPUT);
   bmap_emplace(&funcs,"typeof",&TYPEOF);
   bmap_emplace(&funcs,"len",&LEN);
   bmap_emplace(&funcs,"open",&OPEN);
@@ -2042,7 +2043,7 @@ void init_builtin_functions()
   bmap_emplace(&funcs,"find",&FIND);
   bmap_emplace(&funcs,"replace_once",&REPLACE_ONCE);
   bmap_emplace(&funcs,"replace",&REPLACE);
-  bmap_emplace(&funcs,"sleep",&SLEEP);
+  bmap_emplace(&funcs,"sleep",&ZUKO_SLEEP);
   bmap_emplace(&funcs,"exit",&EXIT);
   bmap_emplace(&funcs,"split",&SPLIT);
   bmap_emplace(&funcs,"int",&TOINT);
