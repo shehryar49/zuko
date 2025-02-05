@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "dis.h"
+#include "repl.h"
 bool REPL_MODE = false;
 
 zuko_src* src;
