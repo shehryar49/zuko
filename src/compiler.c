@@ -104,22 +104,22 @@ compiler_ctx* create_compiler_context(zuko_src* p)
     ctx->fileTOP = 0; 
     ctx->line_num_table = &p->line_num_table;
     ctx->filename = p->files.arr[0];
-    sizet_vector_init(&ctx->andJMPS);
-    sizet_vector_init(&ctx->orJMPS);
+    sizet_vector_init(&ctx->and_jumps);
+    sizet_vector_init(&ctx->or_jumps);
     symtable_init(&ctx->globals);
     ptr_vector_init(&ctx->locals);
     ptr_vector_init(&ctx->compiled_functions);
-    str_vector_init(&ctx->classMemb);
-    sizet_vector_init(&ctx->breakIdx);
-    sizet_vector_init(&ctx->contIdx);
+    str_vector_init(&ctx->curr_class_members);
+    sizet_vector_init(&ctx->break_stmt_idx);
+    sizet_vector_init(&ctx->continue_stmt_idx);
     zbytearr_init(&ctx->bytecode);
     pair_vector_init(&ctx->backpatches);
     //init builtins
     init_builtin_functions();
     init_builtin_methods();
     //reset all state
-    ctx->inConstructor = false;
-    ctx->inGen = false;
+    ctx->in_constructor = false;
+    ctx->in_coroutine = false;
     ctx->inclass = false;
     ctx->infunc = false;
     ctx->infor = false;
@@ -128,11 +128,11 @@ compiler_ctx* create_compiler_context(zuko_src* p)
         ctx->bytecode.size = 0;
         symtable_clear(&ctx->globals);
         ctx->locals.size = 0;
-        ctx->className = "";
-        ctx->classMemb.size  = 0;
+        ctx->classname = "";
+        ctx->curr_class_members.size  = 0;
         ctx->line_num = 1;
-        ctx->andJMPS.size = 0;
-        ctx->orJMPS.size = 0;
+        ctx->and_jumps.size = 0;
+        ctx->or_jumps.size = 0;
         str_vector_init(&ctx->prefixes);
         str_vector_push(&ctx->prefixes,"");
         ctx->bytes_done = 0;
@@ -233,7 +233,7 @@ int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isglobal,bool blow
     {
         char buffer[strlen(name)+2];
         snprintf(buffer,50,"@%s",name);
-        if(ctx->inclass && ctx->infunc && str_vector_search(&ctx->classMemb,name)!=-1 || str_vector_search(&ctx->classMemb,buffer)!=-1 )
+        if(ctx->inclass && ctx->infunc && str_vector_search(&ctx->curr_class_members,name)!=-1 || str_vector_search(&ctx->curr_class_members,buffer)!=-1 )
         {
             *isfromself = true;
             return -2;
@@ -267,7 +267,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     zobject reg;
     if (ast->childs.size == 0)
     {
-        if (ast->type == NUM_NODE)
+        if (ast->type == num_node)
         {
             const char* n = ast->val;
             if (is_int32(n))
@@ -292,7 +292,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             }
             return;
         }
-        else if (ast->type == FLOAT_NODE)
+        else if (ast->type == float_node)
         {
             const char* n = ast->val;
             double tmp = str_to_double(n);
@@ -302,14 +302,14 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             ctx->bytes_done+=9;
             return;
         }
-        else if (ast->type ==  BOOL_NODE)
+        else if (ast->type ==  bool_node)
         {
             const char* n = ast->val;
             zbytearr_push(&ctx->bytecode,(strcmp(n,"true") == 0) ? LOAD_TRUE : LOAD_FALSE);
             ctx->bytes_done+=1;
             return;
         }
-        else if (ast->type == STR_NODE)
+        else if (ast->type == str_node)
         {
             zbytearr_push(&ctx->bytecode,LOAD_STR);
             foo = add_to_vm_strings(ast->val);
@@ -317,13 +317,13 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             ctx->bytes_done += 5;
             return;
         }
-        else if (ast->type == NIL_NODE)
+        else if (ast->type == nil_node)
         {
             zbytearr_push(&ctx->bytecode,LOAD_NIL);
             ctx->bytes_done += 1;
             return;
         }
-        else if (ast->type == ID_NODE)
+        else if (ast->type == id_node)
         {
             const char* name = ast->val;
             bool isGlobal = false;
@@ -353,7 +353,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 return;
             }
         }
-        else if (ast->type == BYTE_NODE)
+        else if (ast->type == byte_node)
         {
             zbytearr_push(&ctx->bytecode,LOAD_BYTE);
             zbytearr_push(&ctx->bytecode,tobyte(ast->val));
@@ -362,7 +362,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         }
 
     }
-    if (ast->type == list)
+    if (ast->type == list_node)
     {
         
         for (size_t k = 0; k < ast->childs.size; k += 1)
@@ -376,7 +376,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 2 + 4;
         return;
     }
-    if (ast->type == dict)
+    if (ast->type == dict_node)
     {
         
         for (size_t k = 0; k < ast->childs.size; k += 1)
@@ -391,9 +391,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 2 + 4;
         return;
     }
-    if (ast->type == add)
+    if (ast->type == add_node)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == id_node && ast->childs.arr[1]->type == num_node && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -417,9 +417,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == sub)
+    if (ast->type == sub_node)
     {
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
+        if(ast->childs.arr[0]->type == id_node && ast->childs.arr[1]->type == num_node && is_int32(ast->childs.arr[1]->val))
         {
             bool self1 = false;
             bool is_global1;
@@ -454,7 +454,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == mul)
+    if (ast->type == mul_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -463,7 +463,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == XOR_node)
+    if (ast->type == xor_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -472,7 +472,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == mod)
+    if (ast->type == mod_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -481,7 +481,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == lshift)
+    if (ast->type == lshift_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -490,7 +490,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == rshift)
+    if (ast->type == rshift_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -499,7 +499,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == bitwiseand)
+    if (ast->type == bitwiseand_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -508,7 +508,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == bitwiseor)
+    if (ast->type == bitwiseor_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -517,10 +517,10 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == memb)
+    if (ast->type == memb_node)
     {
         
-        if (ast->childs.arr[1]->type == call)
+        if (ast->childs.arr[1]->type == call_node)
         {
             Node* callnode = ast->childs.arr[1];
 
@@ -547,7 +547,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             expr_bytecode(ctx,ast->childs.arr[0]);
             add_lntable_entry(ctx,ctx->bytes_done);
             zbytearr_push(&ctx->bytecode,MEMB);
-            if (ast->childs.arr[1]->type != ID_NODE)
+            if (ast->childs.arr[1]->type != id_node)
                 compileError(ctx,"SyntaxError", "Invalid Syntax");
             const char* name = ast->childs.arr[1]->val;
             foo = add_to_vm_strings(name);
@@ -556,11 +556,11 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             return;
         }
     }
-    if (ast->type == AND)
+    if (ast->type == and_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         zbytearr_push(&ctx->bytecode,JMPIFFALSENOPOP);
-        sizet_vector_push(&ctx->andJMPS,ctx->bytes_done);
+        sizet_vector_push(&ctx->and_jumps,ctx->bytes_done);
         int32_t I = ctx->bytecode.size;
         zbytearr_push(&ctx->bytecode,0);
         zbytearr_push(&ctx->bytecode,0);
@@ -574,20 +574,20 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         memcpy(ctx->bytecode.arr+I,&foo,sizeof(int32_t));
         return;
     }
-    if (ast->type == IS_node)
+    if (ast->type == is_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
-        zbytearr_push(&ctx->bytecode,IS);
+        zbytearr_push(&ctx->bytecode,is_node);
         add_lntable_entry(ctx,ctx->bytes_done);
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == OR)
+    if (ast->type == or_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         zbytearr_push(&ctx->bytecode,NOPOPJMPIF);
-        sizet_vector_push(&ctx->orJMPS,ctx->bytes_done);
+        sizet_vector_push(&ctx->or_jumps,ctx->bytes_done);
         int32_t I = ctx->bytecode.size;
         zbytearr_push(&ctx->bytecode,0);
         zbytearr_push(&ctx->bytecode,0);
@@ -601,7 +601,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         memcpy(ctx->bytecode.arr + I,&foo,sizeof(int32_t));
         return;
     }
-    if (ast->type == lt)
+    if (ast->type == lt_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -610,7 +610,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == gt)
+    if (ast->type == gt_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -619,7 +619,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == equal)
+    if (ast->type == equal_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -628,7 +628,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == noteq)
+    if (ast->type == noteq_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -637,7 +637,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == gte)
+    if (ast->type == gte_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -646,7 +646,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == lte)
+    if (ast->type == lte_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
@@ -655,7 +655,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == neg)
+    if (ast->type == neg_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         zbytearr_push(&ctx->bytecode,NEG);
@@ -663,7 +663,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == complement)
+    if (ast->type == complement_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         zbytearr_push(&ctx->bytecode,COMPLEMENT);
@@ -671,7 +671,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == NOT_node)
+    if (ast->type == not_node)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         zbytearr_push(&ctx->bytecode,NOT);
@@ -684,7 +684,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         int32_t idx1;
         int32_t idx2;
 
-        if(ast->childs.arr[0]->type == ID_NODE && ast->childs.arr[1]->type == ID_NODE)
+        if(ast->childs.arr[0]->type == id_node && ast->childs.arr[1]->type == id_node)
         {
             bool self1 = false;
             bool self2 = false;
@@ -712,7 +712,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         ctx->bytes_done += 1;
         return;
     }
-    if (ast->type == call)
+    if (ast->type == call_node)
     {
         const char* name = ast->childs.arr[1]->val;
         bool udf = false;
@@ -836,9 +836,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             return;
         }
     }
-    if (ast->type == YIELD_node)
+    if (ast->type == yield_node)
     {
-        if(ctx->inConstructor)
+        if(ctx->in_constructor)
             compileError(ctx,"SyntaxError","Error class constructor can not be generators!");
         
         expr_bytecode(ctx,ast->childs.arr[1]);         
@@ -854,42 +854,42 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
 static char error_buffer[100];
 void scan_class(compiler_ctx* ctx,Node* ast)
 {
-    ctx->classMemb.size = 0;
-    while(ast->type!=EOP)
+    ctx->curr_class_members.size = 0;
+    while(ast->type!=eop_node)
     {
-        if(ast->type==declare)
+        if(ast->type==declare_node)
         {
             const char* n = ast->val;
             if(n[0]=='@')
                 n++;
-            if(str_vector_search(&ctx->classMemb,n)!=-1 || str_vector_search(&ctx->classMemb,(ast->val))!=-1)
+            if(str_vector_search(&ctx->curr_class_members,n)!=-1 || str_vector_search(&ctx->curr_class_members,(ast->val))!=-1)
             {
                 ctx->line_num = atoi(ast->childs.arr[0]->val);
                 snprintf(error_buffer,100,"Error redeclaration of %s",n);
                 compileError(ctx,"NameError",error_buffer);
             }
-            str_vector_push(&ctx->classMemb,ast->val);
+            str_vector_push(&ctx->curr_class_members,ast->val);
         }
-        else if(ast->type == FUNC)
+        else if(ast->type == func_node)
         {
             const char* n = ast->childs.arr[1]->val;
             if(n[0]=='@')
                 n++;
-            if(str_vector_search(&ctx->classMemb,n)!=-1 || str_vector_search(&ctx->classMemb,ast->val)!=-1)
+            if(str_vector_search(&ctx->curr_class_members,n)!=-1 || str_vector_search(&ctx->curr_class_members,ast->val)!=-1)
             {
                 ctx->line_num = atoi(ast->childs.arr[0]->val);
                 snprintf(error_buffer,100,"Error redeclaration of %s",n);
                 compileError(ctx,"NameError",error_buffer);
             }
-            str_vector_push(&ctx->classMemb,ast->childs.arr[1]->val);
+            str_vector_push(&ctx->curr_class_members,ast->childs.arr[1]->val);
         }
-        else if(ast->type == CORO) //generator function or coroutine
+        else if(ast->type == coro_node) //generator function or coroutine
         {
             ctx->line_num = atoi(ast->childs.arr[0]->val);
             compileError(ctx,"NameError","Error coroutine inside class not allowed.");
         }
         
-        else if(ast->type==CLASS)
+        else if(ast->type==class_node)
         {
             ctx->line_num = atoi(ast->childs.arr[0]->val);
             compileError(ctx,"SyntaxError","Error nested classes not supported");     
@@ -903,11 +903,11 @@ size_t compile(compiler_ctx* ctx,Node* ast)
     size_t bytes_done_before = ctx->bytes_done; 
     bool isGen = false;
     bool dfor = false;
-    while (ast->type != EOP)
+    while (ast->type != eop_node)
     {
         if(ast->childs.size >= 1 && ast->childs.arr[0]->type == line_node)
                 ctx->line_num = str_to_int32(ast->childs.arr[0]->val);
-        if (ast->type == declare)
+        if (ast->type == declare_node)
         {
             expr_bytecode(ctx,ast->childs.arr[1]);
             const char* name = ast->val;
@@ -940,10 +940,10 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             }
 
         }
-        else if (ast->type == import || ast->type==importas)
+        else if (ast->type == import_node || ast->type==importas_node)
         {
             const char* name = ast->childs.arr[1]->val;
-            const char* vname = (ast->type == importas) ? ast->childs.arr[2]->val : name;
+            const char* vname = (ast->type == importas_node) ? ast->childs.arr[2]->val : name;
             bool f;
             if(resolve_name(ctx,vname,&f,false,NULL)!=-1)
             {
@@ -965,15 +965,15 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             }
             ctx->STACK_SIZE+=1;
         }
-        else if (ast->type == assign)
+        else if (ast->type == assign_node)
         {        
             const char* name = ast->childs.arr[1]->val;
             bool doit = true;
-            if (ast->childs.arr[1]->type == ID_NODE)
+            if (ast->childs.arr[1]->type == id_node)
             {
                 if (ast->childs.arr[2]->childs.size == 2)
                 {
-                    if (ast->childs.arr[2]->type == add && ast->childs.arr[2]->childs.arr[0]->val == ast->childs.arr[1]->val && ast->childs.arr[2]->childs.arr[0]->type==ID_NODE && ast->childs.arr[2]->childs.arr[1]->type==NUM_NODE && strcmp(ast->childs.arr[2]->childs.arr[1]->val,"1") == 0)
+                    if (ast->childs.arr[2]->type == add_node && ast->childs.arr[2]->childs.arr[0]->val == ast->childs.arr[1]->val && ast->childs.arr[2]->childs.arr[0]->type==id_node && ast->childs.arr[2]->childs.arr[1]->type==num_node && strcmp(ast->childs.arr[2]->childs.arr[1]->val,"1") == 0)
                     {
                         bool isGlobal = false;
                         bool isSelf = false;
@@ -1040,11 +1040,11 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 add_lntable_entry(ctx,ctx->bytes_done);
                 ctx->bytes_done+=1;
             }
-            else if (ast->childs.arr[1]->type == memb)
+            else if (ast->childs.arr[1]->type == memb_node)
             {
                 //reassign object member
                 expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[0]);
-                if(ast->childs.arr[1]->childs.arr[1]->type!=ID_NODE)
+                if(ast->childs.arr[1]->childs.arr[1]->type!=id_node)
                     compileError(ctx,"SyntaxError","Invalid Syntax");
                 const char* mname = ast->childs.arr[1]->childs.arr[1]->val;
                 expr_bytecode(ctx,ast->childs.arr[2]);
@@ -1056,9 +1056,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
 
             }
         }
-        else if (ast->type == memb)
+        else if (ast->type == memb_node)
         {
-            Node* bitch = new_node(memb,".");
+            Node* bitch = new_node(memb_node,".");
             nodeptr_vector_push(&(bitch->childs),ast->childs.arr[1]);
             nodeptr_vector_push(&(bitch->childs),ast->childs.arr[2]);
             expr_bytecode(ctx,bitch);
@@ -1067,11 +1067,11 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             zbytearr_push(&ctx->bytecode,POP_STACK);
             ctx->bytes_done +=1;
         }
-        else if (ast->type == WHILE || ast->type == DOWHILE)
+        else if (ast->type == while_node || ast->type == dowhile_node)
         {
             size_t offset1_idx; 
             size_t offset2_idx;
-            if(ast->type == DOWHILE)
+            if(ast->type == dowhile_node)
             {
                 //to skip the condition first time
                 zbytearr_push(&ctx->bytecode,GOTO);
@@ -1092,8 +1092,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_init(&m);
             ptr_vector_push(&ctx->locals,&m);
 
-            size_t breakIdxSizeCopy = ctx->breakIdx.size;
-            size_t contIdxSizeCopy = ctx->contIdx.size;
+            size_t break_stmt_idxSizeCopy = ctx->break_stmt_idx.size;
+            size_t continue_stmt_idxSizeCopy = ctx->continue_stmt_idx.size;
 
             int32_t localsBeginCopy = ctx->localsBegin; //idx of vector locals, from where
             //the locals of this loop begin
@@ -1123,23 +1123,23 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             int32_t a = (int)ctx->bytes_done;
             int32_t b = (int)L;
             
-            for(size_t i=breakIdxSizeCopy;i<ctx->breakIdx.size;i++)
+            for(size_t i=break_stmt_idxSizeCopy;i<ctx->break_stmt_idx.size;i++)
             {
-                pair_vector_push(&ctx->backpatches,ctx->breakIdx.arr[i],a);  
+                pair_vector_push(&ctx->backpatches,ctx->break_stmt_idx.arr[i],a);  
             }
-            for(size_t i=contIdxSizeCopy;i<ctx->contIdx.size;i++)
+            for(size_t i=continue_stmt_idxSizeCopy;i<ctx->continue_stmt_idx.size;i++)
             {
-                pair_vector_push(&ctx->backpatches,ctx->contIdx.arr[i],b);
+                pair_vector_push(&ctx->backpatches,ctx->continue_stmt_idx.arr[i],b);
             }
-            if(ast->type == DOWHILE)
+            if(ast->type == dowhile_node)
                 pair_vector_push(&ctx->backpatches,offset1_idx,loop_body_begin);
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
             //backtrack
-            ctx->breakIdx.size = breakIdxSizeCopy;
-            ctx->contIdx.size  = contIdxSizeCopy;
+            ctx->break_stmt_idx.size = break_stmt_idxSizeCopy;
+            ctx->continue_stmt_idx.size  = continue_stmt_idxSizeCopy;
             symtable_destroy(&m);
         }
-        else if((ast->type == FOR) || (dfor = (ast->type == DFOR)))
+        else if((ast->type == for_node) || (dfor = (ast->type == dfor_node)))
         {
             bool decl_variable = (ast->childs.arr[1]->type == decl_node);
             size_t linenum_copy = ctx->line_num;
@@ -1214,8 +1214,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             size_t stacksize_before_body = ctx->STACK_SIZE;
             size_t loop_start = ctx->bytes_done;
             bool infor_copy = ctx->infor;
-            size_t breakIdxSizeCopy = ctx->breakIdx.size;
-            size_t contIdxSizeCopy= ctx->contIdx.size;
+            size_t break_stmt_idxSizeCopy = ctx->break_stmt_idx.size;
+            size_t continue_stmt_idxSizeCopy= ctx->continue_stmt_idx.size;
 
             ctx->infor = true;
             size_t a = ctx->bytes_done;
@@ -1267,21 +1267,21 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             else
                 addBytes(&ctx->bytecode,2);
             ctx->bytes_done += 5;
-            for(size_t i=breakIdxSizeCopy;i<ctx->breakIdx.size;i++)
+            for(size_t i=break_stmt_idxSizeCopy;i<ctx->break_stmt_idx.size;i++)
             {
-                pair_vector_push(&ctx->backpatches,ctx->breakIdx.arr[i],break_dest);
+                pair_vector_push(&ctx->backpatches,ctx->break_stmt_idx.arr[i],break_dest);
             }
-            for(size_t i=contIdxSizeCopy;i<ctx->contIdx.size;i++)
+            for(size_t i=continue_stmt_idxSizeCopy;i<ctx->continue_stmt_idx.size;i++)
             {
-                pair_vector_push(&ctx->backpatches,ctx->contIdx.arr[i],cont_dest);
+                pair_vector_push(&ctx->backpatches,ctx->continue_stmt_idx.arr[i],cont_dest);
             }
             pair_vector_push(&ctx->backpatches,skip_loop,(int32_t)break_dest);
-            ctx->breakIdx.size = breakIdxSizeCopy;
-            ctx->contIdx.size = contIdxSizeCopy;
+            ctx->break_stmt_idx.size = break_stmt_idxSizeCopy;
+            ctx->continue_stmt_idx.size = continue_stmt_idxSizeCopy;
             ctx->STACK_SIZE = stack_before;
             symtable_destroy(&m);
         }
-        else if (ast->type == FOREACH)
+        else if (ast->type == foreach_node)
         {
             const char* loop_var_name = ast->childs.arr[1]->val;
             int32_t fnIdx = add_builtin_to_vm("len"); //builtin len()
@@ -1339,8 +1339,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_emplace(&m,loop_var_name,ctx->STACK_SIZE++);
             ptr_vector_push(&ctx->locals,&m);
 
-            size_t breakIdxSizeCopy = ctx->breakIdx.size;
-            size_t contIdxSizeCopy = ctx->contIdx.size;
+            size_t break_stmt_idxSizeCopy = ctx->break_stmt_idx.size;
+            size_t continue_stmt_idxSizeCopy = ctx->continue_stmt_idx.size;
             int32_t localsBeginCopy = ctx->localsBegin; //idx of vector locals, from where
             //the locals of this loop begin
             ctx->localsBegin = ctx->locals.size - 1;
@@ -1377,25 +1377,25 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             ctx->bytes_done += 5;
                         
             //backpatching             
-            for(size_t i=breakIdxSizeCopy;i < ctx->breakIdx.size;i++)
+            for(size_t i=break_stmt_idxSizeCopy;i < ctx->break_stmt_idx.size;i++)
             {
-                pair_vector_push(&ctx->backpatches,ctx->breakIdx.arr[i],brk_target);
+                pair_vector_push(&ctx->backpatches,ctx->break_stmt_idx.arr[i],brk_target);
             }
-            for(size_t i = contIdxSizeCopy; i< ctx->contIdx.size; i++)
+            for(size_t i = continue_stmt_idxSizeCopy; i< ctx->continue_stmt_idx.size; i++)
             {
-                size_t k = ctx->contIdx.arr[i];
+                size_t k = ctx->continue_stmt_idx.arr[i];
                 int32_t x = m.size - 1;
                 memcpy(ctx->bytecode.arr+k-4,&x,sizeof(int32_t));
-                pair_vector_push(&ctx->backpatches,ctx->contIdx.arr[i],cont_target);
+                pair_vector_push(&ctx->backpatches,ctx->continue_stmt_idx.arr[i],cont_target);
             }
             pair_vector_push(&ctx->backpatches,goto1_offset_idx,brk_target);
             //backtrack
-            ctx->breakIdx.size = breakIdxSizeCopy;
-            ctx->contIdx.size  = contIdxSizeCopy;
+            ctx->break_stmt_idx.size = break_stmt_idxSizeCopy;
+            ctx->continue_stmt_idx.size  = continue_stmt_idxSizeCopy;
             ctx->STACK_SIZE -= 3;
             symtable_destroy(&m);
         }
-        else if(ast->type == NAMESPACE)
+        else if(ast->type == namespace_node)
         {
             const char* name = ast->childs.arr[1]->val;
             char* prefix;
@@ -1422,7 +1422,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             free(t);
             //Hasta La Vista Baby
         }
-        else if (ast->type == IF)
+        else if (ast->type == if_node)
         {
             int32_t offset1_idx;
             //print_ast(ast,0);
@@ -1430,7 +1430,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             bool is_global = false;
             bool isfromself = false;
             int32_t idx;
-            if(ast->childs.arr[2]->type == RETURN_NODE && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == NUM_NODE && is_int32(return_stmt->childs.arr[1]->val)))
+            if(ast->childs.arr[2]->type == return_node && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == num_node && is_int32(return_stmt->childs.arr[1]->val)))
             {
                 //print_ast(return_stmt,0);
                 Node* cond = ast->childs.arr[1]->childs.arr[0];
@@ -1443,7 +1443,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 ast = ast->childs.arr[ast->childs.size-1];
                 continue;
             }
-            if(ast->childs.arr[2]->type == RETURN_NODE && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == ID_NODE) && (idx = resolve_name(ctx,return_stmt->childs.arr[1]->val,&is_global,false,&isfromself))!=-1 && !is_global && !isfromself )
+            if(ast->childs.arr[2]->type == return_node && (return_stmt = ast->childs.arr[2]) && (return_stmt->childs.arr[1]->type == id_node) && (idx = resolve_name(ctx,return_stmt->childs.arr[1]->val,&is_global,false,&isfromself))!=-1 && !is_global && !isfromself )
             {
                 //print_ast(return_stmt,0);
                 Node* cond = ast->childs.arr[1]->childs.arr[0];
@@ -1497,7 +1497,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
             symtable_destroy(&m);
         }
-        else if (ast->type == IFELSE)
+        else if (ast->type == ifelse_node)
         {
             size_t offset1_idx;
             size_t offset2_idx;
@@ -1552,7 +1552,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
             symtable_destroy(&m);
         }
-        else if (ast->type == IFELIFELSE)
+        else if (ast->type == ifelifelse_node)
         {  
             size_t offset1_idx;
             size_t offset2_idx;
@@ -1649,7 +1649,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_destroy(&m);
             sizet_vector_destroy(&the_end);
         }
-        else if (ast->type == IFELIF)
+        else if (ast->type == ifelif_node)
         {  
             size_t offset1_idx;
             size_t offset2_idx;
@@ -1734,7 +1734,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_destroy(&m);
             sizet_vector_destroy(&the_end);
         }
-        else if(ast->type==TRYCATCH)
+        else if(ast->type==trycatch_node)
         {
             size_t offset1_idx;
             size_t offset2_idx;
@@ -1797,7 +1797,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
             symtable_destroy(&m);
         }
-        else if (ast->type==FUNC || (isGen = ast->type == CORO))
+        else if (ast->type==func_node || (isGen = ast->type == coro_node))
         {
             int32_t selfIdx= 0;
             if(ctx->infunc)
@@ -1808,7 +1808,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             const char* name = ast->childs.arr[1]->val;
             bool isRef = (str_vector_search(&ctx->symRef,name) != -1);
             size_t tmp;
-            if(ctx->compileAllFuncs || isRef || ctx->inclass)
+            if(ctx->compile_deadcode || isRef || ctx->inclass)
             {
                 symtable* last = (ctx->locals.size == 0) ? NULL : (symtable*)ctx->locals.arr[ctx->locals.size-1];
                 size_t tmp;
@@ -1854,7 +1854,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                     symtable_emplace(last,"self",ctx->STACK_SIZE);
                     selfIdx = ctx->STACK_SIZE;
                     if(strcmp(name,"__construct__")==0)
-                        ctx->inConstructor = true;
+                        ctx->in_constructor = true;
                     ctx->STACK_SIZE+=1;
                 }
                 for (size_t k =0; k<ast->childs.arr[2]->childs.size; k += 1)
@@ -1899,18 +1899,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 ptr_vector_push(&ctx->locals,&C);
                 
                 ctx->infunc = true;
-                ctx->inGen = isGen;
-                ctx->returnStmtAtFnScope = false;
+                ctx->in_coroutine = isGen;
                 size_t funcBody_size = compile(ctx,ast->childs.arr[3]);
                 ctx->infunc = false;
                 
-                ctx->inConstructor = false;
-                ctx->inGen = false;
+                ctx->in_constructor = false;
+                ctx->in_coroutine = false;
                 ctx->locals.size--;
                 ctx->STACK_SIZE = before;
                 if(strcmp(name,"__construct__")!=0)
                 {
-                    if (funcBody_size == 0 || ctx->last_stmt_type!=RETURN_NODE)
+                    if (funcBody_size == 0 || ctx->last_stmt_type!=return_node)
                     {
                         zbytearr_push(&ctx->bytecode,LOAD_NIL);
                         if(isGen)
@@ -1937,9 +1936,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             }
             isGen = false;
         }
-        else if(ast->type==CLASS || ast->type==EXTCLASS)
+        else if(ast->type==class_node || ast->type==extclass_node)
         {
-            bool extendedClass = (ast->type == EXTCLASS);
+            bool extendedClass = (ast->type == extclass_node);
             const char* name = ast->childs.arr[1]->val;
             bool isRef = (str_vector_search(&ctx->symRef,name) != -1);
             if(!REPL_MODE && !isRef)
@@ -1957,14 +1956,14 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             }
             symtable_emplace(&ctx->globals,name,ctx->STACK_SIZE);
             ctx->STACK_SIZE+=1;
-            scan_class(ctx,ast->childs.arr[(extendedClass) ? 3: 2]); // sets classMemb
+            scan_class(ctx,ast->childs.arr[(extendedClass) ? 3: 2]); // sets curr_class_members
             if(extendedClass)
             {
                 expr_bytecode(ctx,ast->childs.arr[2]);
             }
-            for(size_t i=0;i<ctx->classMemb.size;i++)
+            for(size_t i=0;i<ctx->curr_class_members.size;i++)
             {
-                const char* e = ctx->classMemb.arr[i];
+                const char* e = ctx->curr_class_members.arr[i];
                 if(strcmp(e,"super")==0 || strcmp(e,"self")==0)
                 {
                     compileError(ctx,"NameError","Error class not allowed to have members named \"super\" or \"self\"");
@@ -1980,7 +1979,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             int32_t before = ctx->STACK_SIZE;
             
             ctx->inclass = true;
-            ctx->className = name;
+            ctx->classname = name;
             size_t block_size;
             if(extendedClass)
                 block_size = compile(ctx,ast->childs.arr[3]);
@@ -1989,8 +1988,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             ctx->inclass = false;
             symtable_destroy(&M);
             ctx->locals.size--;
-            int32_t totalMembers = ctx->classMemb.size;
-            ctx->classMemb.size = 0;
+            int32_t totalMembers = ctx->curr_class_members.size;
+            printf("total members = %zu\n",ctx->curr_class_members.size);
+            ctx->curr_class_members.size = 0;
             ctx->STACK_SIZE = before;
             if(extendedClass)
             {
@@ -2005,12 +2005,12 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             addBytes(&ctx->bytecode,foo);
             ctx->bytes_done+=9;
         }
-        else if (ast->type == RETURN_NODE)
+        else if (ast->type == return_node)
         {
-            if(ctx->inConstructor)
+            if(ctx->in_constructor)
                 compileError(ctx,"SyntaxError","Error class constructors should not return anything!");
             //stmt in it's block
-            if(ast->childs.arr[1]->type == NUM_NODE && is_int32(ast->childs.arr[1]->val))
+            if(ast->childs.arr[1]->type == num_node && is_int32(ast->childs.arr[1]->val))
             {
                 instruction(ctx,RETURN_INT32);
                 i32_operand(ctx,atoi(ast->childs.arr[1]->val));
@@ -2019,23 +2019,23 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             {
                 expr_bytecode(ctx,ast->childs.arr[1]);
                 add_lntable_entry(ctx,ctx->bytes_done);
-                if(ctx->inGen)
+                if(ctx->in_coroutine)
                     zbytearr_push(&ctx->bytecode,CO_STOP);
                 else
                     zbytearr_push(&ctx->bytecode,OP_RETURN);
                 ctx->bytes_done += 1;
             }
         }
-        else if (ast->type == THROW_node)
+        else if (ast->type == throw_node)
         {   
             expr_bytecode(ctx,ast->childs.arr[1]);
             add_lntable_entry(ctx,ctx->bytes_done);
             zbytearr_push(&ctx->bytecode,THROW);
             ctx->bytes_done += 1;
         }
-        else if (ast->type == YIELD_node)
+        else if (ast->type == yield_node)
         {
-            if(ctx->inConstructor)
+            if(ctx->in_constructor)
                 compileError(ctx,"SyntaxError","Error class constructor can not be generators!");
             
             expr_bytecode(ctx,ast->childs.arr[1]);            
@@ -2043,10 +2043,10 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             zbytearr_push(&ctx->bytecode,YIELD);
             ctx->bytes_done += 1;
         }
-        else if (ast->type == BREAK_node)
+        else if (ast->type == break_node)
         {
             zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-            sizet_vector_push(&ctx->breakIdx,ctx->bytes_done+5);
+            sizet_vector_push(&ctx->break_stmt_idx,ctx->bytes_done+5);
             foo = 0;
             for(size_t i=ctx->localsBegin;i<ctx->locals.size;i++)
                 foo+=((symtable*)ctx->locals.arr[i])->size;
@@ -2057,25 +2057,25 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             addBytes(&ctx->bytecode,foo);
             ctx->bytes_done += 9;
         }
-        else if(ast->type==gc)
+        else if(ast->type==gc_node)
         {
             zbytearr_push(&ctx->bytecode,GC);
             ctx->bytes_done+=1;
         }
-        else if (ast->type == CONTINUE_node)
+        else if (ast->type == continue_node)
         {
             if(ctx->infor)
             {
                 zbytearr_push(&ctx->bytecode,GOTO);
                 ctx->bytes_done+=1;
-                sizet_vector_push(&ctx->contIdx,ctx->bytes_done);
+                sizet_vector_push(&ctx->continue_stmt_idx,ctx->bytes_done);
                 addBytes(&ctx->bytecode,0);
                 ctx->bytes_done+=4;
             }
             else
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                sizet_vector_push(&ctx->contIdx,ctx->bytes_done+5);
+                sizet_vector_push(&ctx->continue_stmt_idx,ctx->bytes_done+5);
                 foo = 0;
                 for(size_t i=ctx->localsBegin;i<ctx->locals.size;i++)
                     foo+=((symtable*)ctx->locals.arr[i])->size;
@@ -2087,7 +2087,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 ctx->bytes_done += 9;
             }
         }
-        else if (ast->type == call)
+        else if (ast->type == call_node)
         {
             const char* name = ast->childs.arr[1]->val;
             bool udf = !function_exists(name);  
@@ -2165,9 +2165,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
 }
 void optimize_jmps(compiler_ctx* ctx,zbytearr* bytecode)
 {
-    for(size_t i=0; i < ctx->andJMPS.size; i++)
+    for(size_t i=0; i < ctx->and_jumps.size; i++)
     {
-        size_t e = ctx->andJMPS.arr[i];
+        size_t e = ctx->and_jumps.arr[i];
         int offset;
         memcpy(&offset,bytecode->arr+e+1,4);
         size_t k = e+5+offset;
@@ -2181,9 +2181,9 @@ void optimize_jmps(compiler_ctx* ctx,zbytearr* bytecode)
         memcpy(bytecode->arr+e+1,&offset,4);
     }
     //optimize short circuit jumps for or
-    for(size_t i=0; i < ctx->orJMPS.size; i++)
+    for(size_t i=0; i < ctx->or_jumps.size; i++)
     {
-        size_t e = ctx->orJMPS.arr[i];
+        size_t e = ctx->or_jumps.arr[i];
         int offset;
         memcpy(&offset,bytecode->arr+e+1,4);
         size_t k = e+5+offset;
@@ -2218,7 +2218,7 @@ zclass* make_error_class(compiler_ctx* ctx,const char* name,zclass* error)
     zclass* k = vm_alloc_zclass();
     int32_t idx = add_to_vm_strings(name);
     k->name = name;
-    StrMap_assign(&(k->members),&(error->members));
+    strmap_assign(&(k->members),&(error->members));
     symtable_emplace(&ctx->globals,name,ctx->STACK_SIZE++);
     zlist_push(&STACK,zobj_from_class(k));
     return k;
@@ -2253,10 +2253,10 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
     //otherwise this program will be an addon to the previous one
     //new = prev +curr
     ctx->bytes_done = ctx->bytecode.size;
-    ctx->compileAllFuncs = (options & OPT_COMPILE_DEADCODE);
+    ctx->compile_deadcode = (options & OPT_COMPILE_DEADCODE);
     ctx->line_num = 1;
-    ctx->andJMPS.size = 0;
-    ctx->orJMPS.size = 0;
+    ctx->and_jumps.size = 0;
+    ctx->or_jumps.size = 0;
     ctx->backpatches.size = 0;
     if(ctx->bytecode.size == 0)
     {
@@ -2278,7 +2278,7 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
 
         Error = vm_alloc_zclass();
         Error->name = "Error";
-        StrMap_emplace(&(Error->members),"msg",nil);
+        strmap_emplace(&(Error->members),"msg",nil);
         //Any class inheriting from Error will have 'msg'
         symtable_emplace(&ctx->globals,"Error",ctx->STACK_SIZE);
         add_to_vm_strings("__construct__");
@@ -2305,7 +2305,7 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         zobject construct;
         construct.type = Z_FUNC;
         construct.ptr = (void*)fun;
-        StrMap_emplace(&(Error->members),"__construct__",construct);
+        strmap_emplace(&(Error->members),"__construct__",construct);
         zlist_push(&STACK,zobj_from_class(Error));
         ctx->STACK_SIZE+=1;
         TypeError = make_error_class(ctx,"TypeError",Error);
@@ -2359,14 +2359,14 @@ void compiler_destroy(compiler_ctx* ctx)
 {
     for(size_t i = 0; i < ctx->compiled_functions.size; i++)
         free(ctx->compiled_functions.arr[i]);
-    sizet_vector_destroy(&ctx->andJMPS);
-    sizet_vector_destroy(&ctx->orJMPS);
+    sizet_vector_destroy(&ctx->and_jumps);
+    sizet_vector_destroy(&ctx->or_jumps);
     symtable_destroy(&ctx->globals);
     ptr_vector_destroy(&ctx->locals);
     ptr_vector_destroy(&ctx->compiled_functions);
-    str_vector_destroy(&ctx->classMemb);
-    sizet_vector_destroy(&ctx->breakIdx);
-    sizet_vector_destroy(&ctx->contIdx);    
+    str_vector_destroy(&ctx->curr_class_members);
+    sizet_vector_destroy(&ctx->break_stmt_idx);
+    sizet_vector_destroy(&ctx->continue_stmt_idx);    
     str_vector_destroy(&ctx->prefixes);
     str_vector_destroy(&ctx->symRef);
     pair_vector_destroy(&ctx->backpatches);

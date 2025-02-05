@@ -9,8 +9,8 @@ extern "C"{
 
 typedef struct zmodule
 {
-  const char* name;
-  StrMap members;
+    const char* name;
+    strmap members;
 }zmodule;
 
 

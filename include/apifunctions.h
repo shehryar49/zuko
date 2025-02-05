@@ -19,7 +19,7 @@ extern "C"{
   typedef zlist*(*fn1)();//alloc_zlist
   typedef zdict*(*fn2)();//alloc_zdict
   typedef zstr*(*fn3)(size_t);//alloc_zstr
-  typedef uint8_t*(*fn4)(size_t);//unused
+  typedef uint8_t*(*fn4)(size_t);//alloc_zbytearr
   typedef zfile*(*fn5)();//alloc_zfile
   typedef zclass*(*fn6)();//alloc_zclass
   typedef zclass_object*(*fn7)(zclass*);//alloc_zclassobj
@@ -29,7 +29,7 @@ extern "C"{
   typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//call_object
   typedef void(*fn12)(void*);//mark_important
   typedef void(*fn13)(void*);//unmark_impotant
-  typedef struct apiFuncions
+  typedef struct api_funcions
   {
     fn1 a1;//api function 1
     fn2 a2;//and so on
@@ -59,7 +59,7 @@ extern "C"{
     zclass* k13;
     zclass* k14;
     zclass* k15;
-  }apiFuncions;
+  }api_funcions;
 #ifdef __cplusplus
 }
 #endif

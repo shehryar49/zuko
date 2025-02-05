@@ -12,26 +12,29 @@ extern "C"{
 
 typedef enum memmap_slot_status
 {
-  MM_EMPTY,
-  MM_OCCUPIED,
-  MM_DELETED
+    MM_EMPTY,
+    MM_OCCUPIED,
+    MM_DELETED
 }memmap_slot_status;
+
 typedef struct mem_info
 {
     char type;
     bool ismarked;
 }mem_info;
+
 typedef struct memmap_slot
 {
-  void* key;
-  mem_info val;
-  memmap_slot_status stat;
+    void* key;
+    mem_info val;
+    memmap_slot_status stat;
 }memmap_slot;
+
 typedef struct mem_map
 {
-  memmap_slot* table;
-  size_t size;
-  size_t capacity;
+    memmap_slot* table;
+    size_t size;
+    size_t capacity;
 }mem_map;
 
 

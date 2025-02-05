@@ -32,7 +32,7 @@ void symtable_init(symtable *h);
 void symtable_set(symtable *h, const char *key, size_t val);
 void symtable_emplace(symtable *h, const char *key, size_t val);
 bool symtable_get(symtable *h, const char *key, size_t* val);
-size_t* symtable_getRef(symtable *h, const char *key);
+size_t* symtable_getref(symtable *h, const char *key);
 bool symtable_erase(symtable *h, const char *key);
 void symtable_assign(symtable *h, symtable *other); // makes deep copy
 void symtable_clear(symtable* h);

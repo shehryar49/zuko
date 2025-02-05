@@ -12,24 +12,24 @@ extern "C"{
 
 typedef enum lntable_slot_status
 {
-  LN_EMPTY,
-  LN_OCCUPIED,
-  LN_DELETED
+    LN_EMPTY,
+    LN_OCCUPIED,
+    LN_DELETED
 }lntable_slot_status;
+
 typedef struct lntable_slot
 {
-  size_t key;
-  byte_src val;
-  lntable_slot_status stat;
+    size_t key;
+    byte_src val;
+    lntable_slot_status stat;
 }lntable_slot;
+
 typedef struct lntable
 {
-  lntable_slot* table;
-  size_t size;
-  size_t capacity;
+    lntable_slot* table;
+    size_t size;
+    size_t capacity;
 }lntable;
-
-
 
 
 void lntable_init(lntable* h);

@@ -10,7 +10,7 @@ extern "C"{
 typedef struct zclass
 {
   const char* name;
-  StrMap members;
+  strmap members;
 }zclass;
 
 

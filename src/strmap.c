@@ -1,14 +1,14 @@
 #include "strmap.h"
 #include "zobject.h"
 
-void StrMap_init(StrMap *h) {
+void strmap_init(strmap *h) {
   h->table = (SM_Slot *)malloc(sizeof(SM_Slot) * 4);
   h->size = 0;
   h->capacity = 4;
   for (int i = 0; i < 4; i++)
     h->table[i].stat = SM_EMPTY;
 }
-void StrMap_set(StrMap *h, const char *key, zobject val) {
+void strmap_set(strmap *h, const char *key, zobject val) {
   size_t idx;
   idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -39,12 +39,12 @@ void StrMap_set(StrMap *h, const char *key, zobject val) {
     h->capacity = h->capacity * 2;
     for (size_t i = 0; i < oldcap; i++) {
       if (old[i].stat == SM_OCCUPIED)
-        StrMap_set(h, old[i].key, old[i].val);
+        strmap_set(h, old[i].key, old[i].val);
     }
     free(old);
   }
 }
-void StrMap_emplace(StrMap *h, const char *key, zobject val) {
+void strmap_emplace(strmap *h, const char *key, zobject val) {
   size_t idx;
   idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -70,12 +70,12 @@ void StrMap_emplace(StrMap *h, const char *key, zobject val) {
     h->capacity = h->capacity * 2;
     for (size_t i = 0; i < oldcap; i++) {
       if (old[i].stat == SM_OCCUPIED)
-        StrMap_set(h, old[i].key, old[i].val);
+        strmap_set(h, old[i].key, old[i].val);
     }
     free(old);
   }
 }
-bool StrMap_get(StrMap *h, const char *key, zobject *val) {
+bool strmap_get(strmap *h, const char *key, zobject *val) {
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
   while (h->table[idx].stat != SM_EMPTY) {
@@ -88,7 +88,7 @@ bool StrMap_get(StrMap *h, const char *key, zobject *val) {
   }
   return false;
 }
-zobject* StrMap_getRef(StrMap *h, const char *key) 
+zobject* strmap_getRef(strmap *h, const char *key) 
 {
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -101,7 +101,7 @@ zobject* StrMap_getRef(StrMap *h, const char *key)
   }
   return NULL;
 }
-bool StrMap_erase(StrMap *h, const char *key) 
+bool strmap_erase(strmap *h, const char *key) 
 {
   size_t idx = hashDJB2(key, h->capacity);
   int i = 1;
@@ -120,12 +120,12 @@ bool StrMap_erase(StrMap *h, const char *key)
   }
   return false;
 }
-void StrMap_assign(StrMap *h, StrMap *other) // makes deep copy
+void strmap_assign(strmap *h, strmap *other) // makes deep copy
 {
   for (size_t idx = 0; idx < other->capacity; idx++) {
     if (other->table[idx].stat != SM_OCCUPIED)
       continue;
-    StrMap_emplace(h, other->table[idx].key, other->table[idx].val);
+    strmap_emplace(h, other->table[idx].key, other->table[idx].val);
   }
 }
-void StrMap_destroy(StrMap *h) { free(h->table); }
+void strmap_destroy(strmap *h) { free(h->table); }

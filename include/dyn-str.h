@@ -6,11 +6,12 @@
 #ifdef __cplusplus
   extern "C"{
 #endif
+
 typedef struct dyn_str
 {
-  char* arr;
-  size_t length; //length+1 bytes are being used always
-  size_t capacity;
+    char* arr;
+    size_t length; //length+1 bytes are being used always
+    size_t capacity;
 }dyn_str;
 
 void dyn_str_init(dyn_str* p);
@@ -21,6 +22,6 @@ void dyn_str_append(dyn_str*,const char*);
 void dyn_str_destroy(dyn_str* p);
 
 #ifdef __cplusplus
-  }
+}
 #endif
 #endif

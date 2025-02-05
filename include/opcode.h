@@ -100,9 +100,9 @@ enum OPCODE
     CALL_DIRECT=75,
     INDEX_FAST=76,
     LOADVAR_ADDINT32=77, // i+1 , j+1 etc etc this is a very common pattern in zuko programs
-    LOAD_INT64,
-    LOAD_DOUBLE,
-    CONDITIONAL_RETURN_LOCAL
+    LOAD_INT64=78,
+    LOAD_DOUBLE=79,
+    CONDITIONAL_RETURN_LOCAL=80
 };
 
 #endif

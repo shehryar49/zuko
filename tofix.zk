@@ -1,0 +1,6 @@
+var a = [1]
+var b = [1]
+a.push(a)
+b.push(b)
+println(a==b)
+

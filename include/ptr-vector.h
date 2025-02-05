@@ -4,7 +4,6 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-typedef struct Node Node;
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>

@@ -32,7 +32,9 @@ SOFTWARE.*/
 #ifdef __cplusplus
 extern "C"{
 #endif
+
 typedef zobject(*BuiltinFunc)(zobject*,int32_t);
+
 //Regular functions
 //All their names are in uppercase, picked this naming convention for no particular reason
 zobject Z_ISALPHA(zobject* args,int32_t argc);

@@ -32,9 +32,9 @@ SOFTWARE.*/
 extern "C"{
 #endif
 
-void PromoteType(zobject* a, char t);
+void promote_numeric_type(zobject* a, char t);
   
-const char* fullform(char);
+const char* zuko_typename(char);
 zobject zobj_from_str(const char* str);// makes deep copy of str
 zobject z_err(zclass* errKlass,const char* des);
 zlist* vm_alloc_zlist();
@@ -44,7 +44,7 @@ zstr* vm_alloc_zstr(size_t);
 zclass* vm_alloc_zclass();
 zmodule* vm_alloc_zmodule();
 zclass_object* vm_alloc_zclassobj(zclass*);
-Coroutine* vm_alloc_coro_obj();//allocates coroutine object
+coroutine* vm_alloc_coro_obj();//allocates coroutine object
 zfun* vm_alloc_zfun();
 zfun* vm_alloc_coro(); //coroutine can be represented by fun_object
 zfile * vm_alloc_zfile();

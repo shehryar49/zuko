@@ -32,9 +32,6 @@ extern "C"{
 #include <stdbool.h>
 #include <math.h>
 
-bool exponen_overflows_i32(int32_t a,int32_t b);
-bool exponen_overflows_i64(int64_t a,int64_t b);
-bool exponen_overflows_double(double a,double b);
 /*
 Addition
 */

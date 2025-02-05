@@ -51,13 +51,13 @@ void print_ast(Node* n,int spaces);
 typedef struct parser_ctx
 {
   str_vector prefixes;//for namespaces 
-  refgraph* refGraph;
-  const char* currSym;
+  refgraph* reference_graph;
+  const char* curr_sym;
   str_vector* files;
   str_vector* sources;
   const char* filename;
   size_t line_num;
-  bool foundYield ;
+  bool found_yield ;
   //ptr_vector to_free;
   //Context
   bool infunc;

@@ -11,12 +11,11 @@ typedef struct zobject zobject;
 #include "zobject.h"
 #include "strmap.h"
 
-typedef struct StrMap StrMap;
 
 typedef struct zclass_object
 {
   zclass* _klass; //class of the object
-  StrMap members;
+  strmap members;
 }zclass_object;
 
 zobject zclassobj_get(zclass_object* ko,const char* name);

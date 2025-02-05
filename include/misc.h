@@ -57,31 +57,13 @@ void replace_all(zstr*,zstr*,zstr*,dyn_str*);
 }
 #endif
 
-//int len(std::string s);
-//std::string substr(int x,int y,const std::string& s);
-/*std::vector<std::string> split(std::string s,const std::string& x);
-std::string lstrip(std::string s);
-std::string replace(std::string x,std::string y,std::string s);//Replaces only once
-
-std::string IntToHex(int i);
-unsigned char tobyte(const std::string& s);
-int32_t hexToInt32(const std::string& s);
-int64_t hexToInt64(const std::string& s);
-std::string addlnbreaks(std::string s,bool& hadErr);
-*/
 #ifdef _WIN32
-char* REPL_READLINE(const char* msg);
+    char* REPL_READLINE(const char* msg);
 #else
-  //use GNU Readline library
-  #define REPL_READLINE readline
+    //use GNU Readline library
+    #define REPL_READLINE readline
 #endif
 
 
-/*std::string replace(int startpos,int endpos,std::string x,std::string s);
-std::string replace_all(std::string x,std::string y,std::string s);//replaces all x strings in s with string y
-std::string unescape(std::string s);
-std::string zobjectToStr(const zobject& a);
-std::string ZListToStr(zlist* p,std::vector<void*>* prev=nullptr);
-std::string DictToStr(zdict* p,std::vector<void*>* prev=nullptr);*/
 
 #endif

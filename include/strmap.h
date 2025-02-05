@@ -22,26 +22,26 @@ typedef struct SM_Slot {
 } SM_Slot;
 
 
-typedef struct StrMap {
+typedef struct strmap {
   SM_Slot *table;
   size_t size;
   size_t capacity;
 #ifdef __cpluscplus
-  StrMap &operator=(const StrMap &) = delete;
-  StrMap(const StrMap &) = delete;
+  strmap &operator=(const strmap &) = delete;
+  strmap(const strmap &) = delete;
 #endif
-} StrMap;
+}strmap;
 
 size_t hashDJB2(const char *, size_t);
 
-void StrMap_init(StrMap *h);
-void StrMap_set(StrMap *h, const char *key, zobject val);
-void StrMap_emplace(StrMap *h, const char *key, zobject val);
-bool StrMap_get(StrMap *h, const char *key, zobject *val);
-zobject *StrMap_getRef(StrMap *h, const char *key);
-bool StrMap_erase(StrMap *h, const char *key);
-void StrMap_assign(StrMap *h, StrMap *other); // makes deep copy
-void StrMap_destroy(StrMap *h);
+void strmap_init(strmap *h);
+void strmap_set(strmap *h, const char *key, zobject val);
+void strmap_emplace(strmap *h, const char *key, zobject val);
+bool strmap_get(strmap *h, const char *key, zobject *val);
+zobject *strmap_getRef(strmap *h, const char *key);
+bool strmap_erase(strmap *h, const char *key);
+void strmap_assign(strmap *h, strmap *other); // makes deep copy
+void strmap_destroy(strmap *h);
 
 #ifdef __cplusplus
 }

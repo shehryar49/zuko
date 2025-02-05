@@ -61,10 +61,10 @@ char* char_to_str(char ch)
 
 void lexErr(lexer_ctx* ctx,const char* type,const char* msg)
 {
-    ctx->hadErr = true;
+    ctx->had_error = true;
     ctx->errmsg = msg;
-    if(!ctx->printErr)
-      return;
+    if(!ctx->print_error)
+        return;
     fprintf(stderr,"\nFile %s\n",ctx->filename);
     fprintf(stderr,"%s at line %zu\n",type,ctx->line_num);
     size_t l = 1;
@@ -506,15 +506,15 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     token_vector_init(&tokenlist);
     if(root_idx >= src->files.size)
     {
-        ctx->hadErr = true;
+        ctx->had_error = true;
         ctx->errmsg = "root_idx out of range!";
         return tokenlist;
     }
     ctx->filename = src->files.arr[root_idx];
     ctx->source_code = src->sources.arr[root_idx];
     ctx->srcLen = strlen(ctx->source_code);
-    ctx->printErr = printErr;
-    ctx->hadErr = false;
+    ctx->print_error = printErr;
+    ctx->had_error = false;
     ctx->errmsg = NULL;
     if(startidx == 0)
         ctx->line_num = 1;
@@ -531,7 +531,7 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
     char c;
 
 
-    while(!ctx->hadErr && ctx->k < ctx->srcLen)
+    while(!ctx->had_error && ctx->k < ctx->srcLen)
     {
         c = ctx->source_code[ctx->k];
         if(c=='"')
@@ -709,7 +709,7 @@ token_vector tokenize(lexer_ctx* ctx,const zuko_src* src,bool printErr,size_t ro
         }
         ctx->k+=1;
     }
-    if(ctx->hadErr)
+    if(ctx->had_error)
       return tokenlist;
     return tokenlist;
 }

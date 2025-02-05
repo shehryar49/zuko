@@ -60,7 +60,7 @@ int main(int argc, const char *argv[])
     size_t bytecode_len = 0;
     lexer_ctx lctx;
     token_vector tokens = tokenize(&lctx, src, true, 0, 0);
-    if (lctx.hadErr) // had an error which was printed
+    if (lctx.had_error) // had an error which was printed
         return 0;
     parser_ctx* pctx = create_parser_context(src); // create parser context and pass it the source we are working on
     Node* ast = parse_block(pctx, tokens.arr, 0,tokens.size - 1); // parse the tokens of root file
@@ -69,7 +69,7 @@ int main(int argc, const char *argv[])
     compiler_ctx* cctx = create_compiler_context(src);
     bytecode = compile_program(cctx, ast, argc, argv,0); // compile AST of program
     bytecode_len = cctx->bytes_done;
-    //dis(bytecode);
+    dis(bytecode);
     delete_ast(ast);
     parser_destroy(pctx);
     compiler_destroy(cctx);
