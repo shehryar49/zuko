@@ -70,7 +70,7 @@ int64_t hexToInt64(const std::string& s);
 std::string addlnbreaks(std::string s,bool& hadErr);
 */
 #ifdef _WIN32
-string REPL_READLINE(const char* msg);
+char* REPL_READLINE(const char* msg);
 #else
   //use GNU Readline library
   #define REPL_READLINE readline

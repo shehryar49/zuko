@@ -42,7 +42,7 @@ zobject PRINT(zobject* args,int32_t argc);
 zobject PRINTF(zobject* args,int32_t argc);
 zobject FORMAT(zobject* args,int32_t argc);
 zobject PRINTLN(zobject* args,int32_t argc);
-zobject INPUT(zobject* args,int32_t argc);
+zobject ZUKO_INPUT(zobject* args,int32_t argc); // fuck Visual Studio for not letting me use "INPUT"
 zobject TYPEOF(zobject* args,int32_t argc);
 zobject ISINSTANCEOF(zobject* args,int32_t argc);
 zobject LEN(zobject* args,int32_t argc);
@@ -74,7 +74,7 @@ zobject tonumeric(zobject* args,int32_t argc);
 zobject isnumeric(zobject* args,int32_t argc);
 zobject REPLACE(zobject* args,int32_t argc);
 zobject REPLACE_ONCE(zobject* args,int32_t argc);
-zobject SLEEP(zobject* args,int32_t argc);
+zobject ZUKO_SLEEP(zobject* args,int32_t argc);
 zobject TOBYTE(zobject* args,int32_t argc); //the byte() type conversion function, couldn't use that name here
 zobject WRITELINES(zobject* args,int32_t argc);
 zobject READLINES(zobject* args,int32_t argc);

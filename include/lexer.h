@@ -26,6 +26,8 @@ SOFTWARE.*/
 #include "zuko-src.h"
 #include "token.h"
 #include "token-vector.h"
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C"{
 #endif

@@ -38,8 +38,8 @@ Node* new_node(NodeType type,const char*);
 int find_token(token t,int start,int end,token* tokens);
 int find_token_consecutive(token t,int start,int end,token* tokens);
 
-int match_token(int,int,TokenType,token*);
-int match_token_right(int,int,TokenType,token*);
+int match_token(int,int,token_type,token*);
+int match_token_right(int,int,token_type,token*);
 
 void delete_ast(Node* ast);
 void copy_ast(Node** dest,Node* src);

@@ -28,7 +28,7 @@ extern "C"{
 
 #include <stdlib.h>
 
-typedef enum TokenType
+typedef enum token_type
 {
   ID_TOKEN,
   STRING_TOKEN,
@@ -48,16 +48,16 @@ typedef enum TokenType
   BYTE_TOKEN,
   BOOL_TOKEN,
   END_TOKEN
-}TokenType;
+}token_type;
 
 typedef struct token
 {
   char* content;
-  enum TokenType type;
+  enum token_type type;
   size_t ln;
 }token;
 
-token make_token(TokenType type,const char* content,size_t line);
+token make_token(token_type type,const char* content,size_t line);
 
 #ifdef __cplusplus
 }
