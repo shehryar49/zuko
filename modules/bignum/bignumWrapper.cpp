@@ -46,7 +46,7 @@ extern "C"
     if(!b)
       return z_err(Error,"Error allocating memory");
     zclass_object* k = (zclass_object*)args[0].ptr;
-    StrMap_set(&(k->members),".ptr",zobj_from_ptr((void*)b));
+    strmap_set(&(k->members),".ptr",zobj_from_ptr((void*)b));
     return nil;
   }
   zobject init()
@@ -272,7 +272,7 @@ extern "C"
   {
     zclass_object* d = (zclass_object*)args[0].ptr;
     zobject ptr = nil;
-    StrMap_get(&(d->members),".ptr",&ptr);
+    strmap_get(&(d->members),".ptr",&ptr);
     if(ptr.type!=Z_POINTER)
       return nil;  
     bignum* a = (bignum*)ptr.ptr;
@@ -309,7 +309,7 @@ extern "C"
       return z_err(TypeError,"Error bignum object needed!");
     zclass_object* self = (zclass_object*)args[0].ptr;
     zobject ptr;
-    StrMap_get(&(self->members),".ptr",&ptr);
+    strmap_get(&(self->members),".ptr",&ptr);
     bignum& a = *(bignum*)ptr.ptr;
     a.increment();
     return nil;

@@ -137,28 +137,15 @@ void dis(uint8_t* bytecode)
       }
       else if(inst==BUILD_CLASS)
       {
-        int orgk = k;
-                    k+=1;
-        FOO.bytes[0] = program[k];
-                      k+=1;
-        FOO.bytes[1] = program[k];
-                      k+=1;
-        FOO.bytes[2] = program[k];
-                      k+=1;
-        FOO.bytes[3] = program[k];
-        int where = FOO.x;
-                      k+=1;
-        FOO.bytes[0] = program[k];
-                      k+=1;
-        FOO.bytes[1] = program[k];
-                      k+=1;
-        FOO.bytes[2] = program[k];
-        k+=1;
-        FOO.bytes[3] = program[k];
-      int n = FOO.x;
-      printf("%d  BUILD_CLASS  %d  %d\n",orgk,where,n);
-      k+=1;
-      continue;
+            int orgk = k;
+            int a;
+            int b;
+            k++;
+            memcpy(&a,program+k,4);
+            memcpy(&b,program+k+4,4);
+            k+=8;
+            printf("%d  BUILD_CLASS  %d  %d\n",orgk,a,b);
+            continue;
       }
       else if(inst==BUILD_DERIVED_CLASS)
       {

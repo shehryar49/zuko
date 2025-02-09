@@ -578,7 +578,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
     {
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
-        zbytearr_push(&ctx->bytecode,is_node);
+        zbytearr_push(&ctx->bytecode,IS);
         add_lntable_entry(ctx,ctx->bytes_done);
         ctx->bytes_done += 1;
         return;
@@ -758,7 +758,6 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 //load optional args
                 for (size_t i = def_params - (args_required - N); i < def_params; i++)
                 {
-                    //printf("i = %zu\n",i);
                     Node* arg = fn->childs.arr[2]->childs.arr[def_begin+i]->childs.arr[0];
                     expr_bytecode(ctx,arg);
                 }
@@ -1945,7 +1944,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             {
                 //class not referenced in source code
                 //no need to compile
-                ast = ast->childs.arr[ast->childs.size-1];
+                ctx->last_stmt_type = ast->type;
+                ast = ast->childs.arr[ast->childs.size-1]; 
                 continue;
             }
             size_t tmp;
@@ -1989,7 +1989,6 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_destroy(&M);
             ctx->locals.size--;
             int32_t totalMembers = ctx->curr_class_members.size;
-            printf("total members = %zu\n",ctx->curr_class_members.size);
             ctx->curr_class_members.size = 0;
             ctx->STACK_SIZE = before;
             if(extendedClass)

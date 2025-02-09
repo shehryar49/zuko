@@ -3139,9 +3139,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zobject zclass_packed;
         zclass_packed.type = Z_CLASS;
         zclass* obj = vm_alloc_zclass();
-        printf("idx = %d\n",idx);
         obj->name = ((zstr*)vm_strings.arr[idx])->val;
-        puts(obj->name);
         values.size = 0;
         names.size = 0;
         for (int32_t i = 1; i <= N; i++)

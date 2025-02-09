@@ -38,7 +38,7 @@ fn12 vm_mark_important;
 fn13 vm_unmark_important;
 
 //Api setup
-int api_setup(apiFuncions* p,int ver)
+int api_setup(api_funcions* p,int ver)
 {
   if(ver != ZUKO_API_VERSION)
     return 0;  
@@ -82,7 +82,7 @@ zclass* zclass_make_derived(zclass* base)
   zobject super;
   super.type = Z_CLASS;
   super.ptr = (void*)base;
-  StrMap_assign(&(child->members),&(base->members));
+  strmap_assign(&(child->members),&(base->members));
   zclass_setmember(child,"super",super);
   return child;
 }
@@ -124,7 +124,7 @@ zobject z_err(zclass* errklass,const char* des)
 {
   zobject ret;
   zclass_object* p = vm_alloc_zclassobj(errklass);
-  StrMap_set(&(p->members),"msg",zobj_from_str(des)); // OPTIMIZE!
+  strmap_set(&(p->members),"msg",zobj_from_str(des)); // OPTIMIZE!
   ret.type = Z_ERROBJ;//indicates an object in thrown state
   ret.ptr = (void*) p;
   return ret;
@@ -134,25 +134,25 @@ zobject z_err(zclass* errklass,const char* des)
 void zmodule_add_fun(zmodule* m,const char* name,NativeFunPtr p)
 {
   zobject val = zobj_from_function(name,p);
-  StrMap_emplace(&(m->members),name,val);
+  strmap_emplace(&(m->members),name,val);
 }
 void zmodule_add_sig_fun(zmodule* m,const char* name,NativeFunPtr p,const char* sig)
 {
   zobject val = zobj_from_function(name,p);
   znativefun* fn = (znativefun*)val.ptr;
   fn->signature = sig;
-  StrMap_emplace(&(m->members),name,val);
+  strmap_emplace(&(m->members),name,val);
 }
 
 void zclass_add_method(zclass* k,const char* name,NativeFunPtr p)
 {
   zobject val = zobj_from_method(name,p,k);
-  StrMap_emplace(&(k->members),name,val);
+  strmap_emplace(&(k->members),name,val);
 }
 void zclass_add_sig_method(zclass* k,const char* name,NativeFunPtr p,const char* sig)
 {
   zobject val = zobj_from_method(name,p,k);
   znativefun* fn = (znativefun*)val.ptr;
   fn->signature = sig;
-  StrMap_emplace(&(k->members),name,val);
+  strmap_emplace(&(k->members),name,val);
 }
