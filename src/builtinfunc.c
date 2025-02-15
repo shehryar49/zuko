@@ -20,10 +20,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include <unistd.h>
 #include <time.h>
+
 #ifdef _WIN32
-#include <windows.h>
+    #include <windows.h>
+#else
+    #include <unistd.h>
 #endif
 
 

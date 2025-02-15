@@ -1152,7 +1152,7 @@ Node* parseStmt(parser_ctx* ctx,token* tokens,int begin,int end)
             char buffer[512];
             #ifdef _WIN32
                 snprintf(buffer,512,"./std/%s.zk",tokens[begin+3].content);
-                if(_access(buffer,R_OK) != 0)
+                if(_access(buffer,0) != 0)
                     snprintf(buffer,512,"C:\\zuko\\std\\%s.zk",tokens[begin+3].content);
             #else
                 snprintf(buffer,512,"./std/%s.zk",tokens[begin+3].content);
