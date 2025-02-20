@@ -1557,7 +1557,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                 module = LoadLibraryA(error_buffer);
                 if(!module)
                 {
-                    snprintf(error_buffer, 100, "LoadLibrary(): %zu", GetLastError());
+                    snprintf(error_buffer, 100, "LoadLibrary(): %lu", GetLastError());
                     spitErr(ImportError, error_buffer);
                     NEXT_INST;
                 }
@@ -1843,7 +1843,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         g->give_val_on_resume = false;
         frames.size--;
         zlist_push(&STACK,p1);
-        ip = callstack.arr[callstack.size - 1] - 1;
+        ip = callstack.arr[callstack.size - 1];
+        ip--;
         callstack.size--;
         ip++; 
         NEXT_INST;
@@ -1864,7 +1865,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         g->give_val_on_resume = true;
         frames.size--;
         zlist_push(&STACK,p2);
-        ip = callstack.arr[callstack.size - 1] - 1;
+        ip = (uint8_t*)(callstack.arr[callstack.size - 1]) - 1;
         callstack.size--;
         ip++; NEXT_INST;
     }
@@ -1888,7 +1889,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         g->state = COROUTINE_STATE_STOPPED;
         frames.size--;
         zlist_push(&STACK,val);
-        ip = callstack.arr[callstack.size - 1] - 1;
+        ip = (uint8_t*)(callstack.arr[callstack.size - 1]) - 1;
         callstack.size--;
         ip++; NEXT_INST;
     }

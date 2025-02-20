@@ -1,18 +1,14 @@
 # Official Repository of Zuko Programming Langauge
 
-Zuko is a dynamically typed and lightweight programming language written in C++. Zuko is compiled to bytecode and then interpreted by a virtual machine. It aims to be minimalistic and as fast as possible without a JIT. 
+Zuko is a dynamically typed and lightweight programming language written in C. Zuko is compiled to bytecode and then interpreted by a virtual machine. It aims to be minimalistic and as fast as possible without a JIT. 
 
 # HOW TO COMPILE:
 Download source code of the latest release.
 ## Visual Studio:
-    
 - Install CMake
 - Run ```cmake . -DCMAKE_BUILD_TYPE=Release```
 - It will generate zuko.sln file which you can open and build
 
-
-IMPORTANT: You MUST build in Release mode and using Multithreaded runtime library if you want your build to be compatible with
-binaries distributed under release tags. Because these are the options that were used to build those binaries.
 To install your build create C:\zuko and copy zuko.exe to it. **Note that binaries for Windows are already available. See releases. So you don't really have to build zuko from source on Windows unless you want to contribute.**
     
 ## Linux/Unix:

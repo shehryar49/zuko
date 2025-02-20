@@ -231,7 +231,7 @@ int32_t resolve_name(compiler_ctx* ctx,const char* name,bool* isglobal,bool blow
 
     if(isfromself)
     {
-        char buffer[strlen(name)+2];
+        char buffer[50];
         snprintf(buffer,50,"@%s",name);
         if(ctx->inclass && ctx->infunc && str_vector_search(&ctx->curr_class_members,name)!=-1 || str_vector_search(&ctx->curr_class_members,buffer)!=-1 )
         {
