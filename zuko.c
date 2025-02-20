@@ -2,8 +2,6 @@
 #include "include/zuko-ver.h"
 #include <signal.h>
 
-#define ZUKO_VER 0.3
-#define ZUKO_VER_PATCH 3
 
 void signalHandler(int signum)
 {
@@ -31,14 +29,12 @@ int main(int argc, const char *argv[])
     signal(SIGSEGV, signalHandler);
     if (argc < 2)
     {
-        printf("Zuko Programming Langauge v%d.%d.%d build date(%s %s) %s\nCreated by Shahryar Ahmad\nREPL Mode(Experimental)\n",
-           ZUKO_VER_MAJOR,ZUKO_VER_MINOR,ZUKO_VER_PATCH, __DATE__, __TIME__, get_os_name());
         repl_init();
         repl();
         return 0;
     }
     char* source_code = NULL;
-    const char *filename;
+    const char* filename;
     if (argc >= 3 && strncmp(argv[1], "-c", 2) == 0)
     {
         filename = "argv";
