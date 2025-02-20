@@ -37,6 +37,7 @@ add_executable(
   src/pair-vector.c
   src/builtin-map.c
   src/mem_map.c
+  src/signal-handlers.c
 )
 include_directories(include/) # even modules use this (include/zapi.h)
 if(UNIX)

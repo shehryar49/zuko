@@ -1,32 +1,10 @@
 #include "include/zuko.h"
-#include "include/zuko-ver.h"
-#include <signal.h>
+#include "include/signal-handlers.h"
 
-
-void signalHandler(int signum)
-{
-    if (signum == SIGABRT || signum == SIGFPE || signum == SIGILL || signum == SIGSEGV)
-    {
-        char buff[] = "Oops! Either the interpreter or one of the loaded modules just crashed. Please report this incident.\n";
-        #ifdef _WIN32
-            size_t written = _write(_fileno(stderr), buff, sizeof(buff));
-        #else
-            size_t written __attribute__((unused)) =
-            write(STDERR_FILENO, buff, sizeof(buff));
-        #endif
-        exit(EXIT_FAILURE);
-    }
-}
 
 int main(int argc, const char *argv[])
 {
-    // Handle crashes
-    // Very unlikely but ...
-    // Shit happens
-    signal(SIGFPE, signalHandler);
-    signal(SIGILL, signalHandler);
-    signal(SIGABRT, signalHandler);
-    signal(SIGSEGV, signalHandler);
+    setup_signal_handlers();
     if (argc < 2)
     {
         repl_init();
