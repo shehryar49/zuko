@@ -74,14 +74,14 @@ char* int_to_hex(int i)
     return res.arr;
 }
 
-unsigned char tobyte(const char* s)
+uint8_t hex_to_uint8(const char* s)
 {
     //s.length() is always 2
     if(strlen(s) != 2)
       return 0;
     char x = tolower(s[0]);
     char y = tolower(s[1]);
-    unsigned char b = 0;
+    uint8_t b = 0;
     b = (isdigit(y)) ? y-48 : y-87;
     b += (isdigit(x)) ? (x-48)<<4 : (x-87)<<4;
     return b;

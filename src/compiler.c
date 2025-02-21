@@ -356,7 +356,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         else if (ast->type == byte_node)
         {
             zbytearr_push(&ctx->bytecode,LOAD_BYTE);
-            zbytearr_push(&ctx->bytecode,tobyte(ast->val));
+            zbytearr_push(&ctx->bytecode,hex_to_uint8(ast->val));
             ctx->bytes_done+=2;
             return;
         }

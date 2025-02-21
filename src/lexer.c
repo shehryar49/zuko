@@ -43,7 +43,7 @@ const char* keywords[] = {
     "gc"
 };
 
-bool isKeyword(const char* s)
+bool iskeyword(const char* s)
 {
     for(size_t k=0;k<sizeof(keywords)/sizeof(char*);k+=1)
     {
@@ -196,7 +196,7 @@ void str(lexer_ctx* ctx,token_vector* tokenlist)
                 return;
             }
             char tmp[] = {src[j+1],src[j+2],0};
-            unsigned char ch = tobyte(tmp);
+            unsigned char ch = hex_to_uint8(tmp);
             dyn_str_push(&t, ch);
             j += 2;
             escaped = false;
@@ -446,7 +446,7 @@ void id(lexer_ctx* ctx,token_vector* tokenlist)
     }
     //printf("id: %s\n",t.arr);
     token i;
-    if(isKeyword(t.arr))
+    if(iskeyword(t.arr))
     {
         if(strcmp(t.arr,"if") == 0 && ctx->k!=0 && tokenlist->size!=0)
         {

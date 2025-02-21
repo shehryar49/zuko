@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 #ifndef Z_MISC_H_
 #define Z_MISC_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "builtinfunc.h"
@@ -29,6 +30,7 @@ SOFTWARE.*/
 #include "zbytearray.h"
 #include "zdict.h"
 #include "dyn-str.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -39,7 +41,7 @@ char* zlist_to_str(zlist*,ptr_vector*); /* Returns a string representation of a 
 char* zdict_to_str(zdict*,ptr_vector*); /* Returns a string representation of a zuko dictionary */
 int32_t hex_to_int32(const char*);
 int64_t hex_to_int64(const char*);
-unsigned char tobyte(const char*);
+uint8_t hex_to_uint8(const char*);
 
 const char* get_os_name(); /* Returns OS name */
 

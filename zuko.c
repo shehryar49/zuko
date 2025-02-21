@@ -4,7 +4,6 @@
 
 int main(int argc, const char *argv[])
 {
-    setup_signal_handlers();
     if (argc < 2)
     {
         repl_init();
@@ -28,6 +27,7 @@ int main(int argc, const char *argv[])
             return 1;
         }
     }
+    setup_signal_handlers();
     vm_init();
     zuko_src* src = create_source(filename, source_code);
     uint8_t* bytecode = NULL;
