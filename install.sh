@@ -31,7 +31,6 @@ sudo mkdir /opt/zuko/lib
 sudo cp zuko /opt/zuko/
 sudo cp -r std /opt/zuko
 sudo cp -r fiza /opt/zuko
-sudo cp fiza.zk /opt/zuko/
 sudo cp modules/*.so /opt/zuko/modules/ 2> /dev/null
 sudo cp modules/*.dylib /opt/zuko/modules/ 2> /dev/null
 
@@ -57,9 +56,9 @@ sudo cp libzapi.a /opt/zuko/lib
 # Configure permissions
 sudo chmod 777 /opt/zuko/fiza/packages.json
 sudo chmod 777 /opt/zuko/modules
-sudo chmod +x /opt/zuko/fiza.zk
+sudo chmod +x /opt/zuko/fiza/fiza.zk
 sudo ln -s /opt/zuko/zuko /usr/local/bin/zuko
-sudo ln -s /opt/zuko/fiza.zk /usr/local/bin/fiza
+sudo ln -s /opt/zuko/fiza/fiza.zk /usr/local/bin/fiza
 
 # Hasta la vista baby
 echo "[+] Installation done"

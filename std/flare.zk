@@ -131,7 +131,7 @@ namespace flare
         if(res != libcurl.CURLE_OK)
             throw FlareError(libcurl.strerror(res))
         var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
-        content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        var content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
         return response(curl.data,http_code,content_type)
     }
     
