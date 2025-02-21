@@ -55,6 +55,9 @@ char* zobject_to_str(zobject);
 void replace_once(zstr*,zstr*,zstr*,dyn_str*);
 void replace_all(zstr*,zstr*,zstr*,dyn_str*);
 
+void run_zuko_file(const char* filename,int argc,const char** argv);
+void run_zuko_code(const char* filename,char* code,int argc,const char** argv);
+
 #ifdef __cplusplus
 }
 #endif

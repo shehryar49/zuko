@@ -1,10 +1,16 @@
+#include "compiler.h"
 #include "dyn-str.h"
 #include "misc.h"
 #include "convo.h"
 #include "module.h"
 #include "ptr-vector.h"
+#include "signal-handlers.h"
 #include "vm.h"
 #include "zobject.h"
+#include "zuko-src.h"
+#include "token-vector.h"
+#include "lexer.h"
+#include "parser.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -611,4 +617,42 @@ char* zdict_to_str(zdict* p,ptr_vector* seen)
         res.arr[res.length - 1] = 0;
     dyn_str_push(&res,'}');
     return res.arr;
+}
+
+
+void run_zuko_file(const char* filename,int argc,const char* argv[])
+{
+    char* code = readfile(filename);
+    if(!code)
+    {
+        perror("fopen");
+        return;
+    }
+    run_zuko_code(filename,code,argc,argv);
+}
+
+void run_zuko_code(const char* filename,char* code,int argc,const char* argv[])
+{
+    setup_signal_handlers();
+    vm_init();
+    zuko_src* src = create_source(filename, code);
+    lexer_ctx lexer_context;
+    token_vector tokens = tokenize(&lexer_context,src,true,0,0);
+    if(lexer_context.had_error)
+        return;
+    parser_ctx* pctx = create_parser_context(src);
+    Node* ast = parse_block(pctx,tokens.arr,0,tokens.size-1);
+    compiler_ctx* cctx = create_compiler_context(src);
+    uint8_t* bytecode = compile_program(cctx,ast,argc,argv,0);
+    size_t bytecode_len = cctx->bytes_done;
+    delete_ast(ast);
+    parser_destroy(pctx);
+    compiler_destroy(cctx);
+    token_vector_destroy(&tokens);
+    // It's showtime baby
+    vm_load(bytecode,bytecode_len,src);
+    interpret(0,true);
+    vm_destroy();
+    zuko_src_destroy(src);
+    free(bytecode);
 }
