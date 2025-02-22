@@ -57,6 +57,14 @@ static inline void i32_operand(compiler_ctx* ctx,int32_t operand)
     memcpy(ctx->bytecode.arr+sz,&operand,sizeof(int32_t));
     ctx->bytes_done += sizeof(int32_t);
 }
+static inline void i64_operand(compiler_ctx* ctx,int64_t operand)
+{
+    size_t sz = ctx->bytecode.size;
+    zbytearr_resize(&ctx->bytecode,sz + sizeof(int64_t));
+    memcpy(ctx->bytecode.arr+sz,&operand,sizeof(int64_t));
+    ctx->bytes_done += sizeof(int64_t);
+}
+
 extern ptr_vector vm_strings;
 extern ptr_vector vm_builtin;
 extern ptr_vector vm_important;
@@ -87,12 +95,12 @@ void extractSymRef(str_vector* ref,refgraph* graph)//gives the names of symbols 
   str_vector_destroy(&q);
   //printf("--end DFS--\n");
 }
-static inline void addBytes(zbytearr* vec,int32_t x)
+/*static inline void addBytes(zbytearr* vec,int32_t x)
 {
   size_t sz = vec->size;
   zbytearr_resize(vec,sz + sizeof(int32_t));
   memcpy(vec->arr+sz,&x,sizeof(int32_t));
-}
+}*/
 compiler_ctx* create_compiler_context(zuko_src* p)
 {
     compiler_ctx* ctx = malloc(sizeof(compiler_ctx));
@@ -272,17 +280,14 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             const char* n = ast->val;
             if (is_int32(n))
             {
-                zbytearr_push(&ctx->bytecode,LOAD_INT32);
-                addBytes(&ctx->bytecode,str_to_int32(n));
-                ctx->bytes_done += 1 + sizeof(int32_t);
+                instruction(ctx,LOAD_INT32);
+                i32_operand(ctx,str_to_int32(n));
             }
             else if (is_int64(n))
             {
                 int64_t tmp = str_to_int64(n);
-                zbytearr_push(&ctx->bytecode,LOAD_INT64);
-                zbytearr_resize(&ctx->bytecode,ctx->bytecode.size+8);
-                memcpy(ctx->bytecode.arr+ctx->bytes_done+1,&tmp,8);
-                ctx->bytes_done+=9;
+                instruction(ctx,LOAD_INT64);
+                i64_operand(ctx,tmp);
             }
             else
             {
@@ -305,22 +310,19 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         else if (ast->type ==  bool_node)
         {
             const char* n = ast->val;
-            zbytearr_push(&ctx->bytecode,(strcmp(n,"true") == 0) ? LOAD_TRUE : LOAD_FALSE);
-            ctx->bytes_done+=1;
+            instruction(ctx,strcmp(n,"true") ? LOAD_FALSE : LOAD_TRUE);;
             return;
         }
         else if (ast->type == str_node)
         {
-            zbytearr_push(&ctx->bytecode,LOAD_STR);
+            instruction(ctx,LOAD_STR);
             foo = add_to_vm_strings(ast->val);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done += 5;
+            i32_operand(ctx,foo);
             return;
         }
         else if (ast->type == nil_node)
         {
-            zbytearr_push(&ctx->bytecode,LOAD_NIL);
-            ctx->bytes_done += 1;
+            instruction(ctx,LOAD_NIL);
             return;
         }
         else if (ast->type == id_node)
@@ -332,32 +334,29 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             if(isSelf)
             {
                 add_lntable_entry(ctx,ctx->bytes_done);
-                zbytearr_push(&ctx->bytecode,SELFMEMB);
+                instruction(ctx,SELFMEMB);
                 foo = add_to_vm_strings(ast->val);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,foo);
                 return;
             }
             else if(!isGlobal)
             {
-                zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done+=5;
+                instruction(ctx,LOAD_LOCAL);
+                i32_operand(ctx,foo);
                 return;
             }
             else
             {
-                zbytearr_push(&ctx->bytecode,LOAD_GLOBAL);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 5;
+                instruction(ctx,LOAD_GLOBAL);
+                i32_operand(ctx,foo);
                 return;
             }
         }
         else if (ast->type == byte_node)
         {
-            zbytearr_push(&ctx->bytecode,LOAD_BYTE);
+            instruction(ctx,LOAD_BYTE);
             zbytearr_push(&ctx->bytecode,hex_to_uint8(ast->val));
-            ctx->bytes_done+=2;
+            ctx->bytes_done++;
             return;
         }
 
@@ -372,8 +371,8 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         zbytearr_push(&ctx->bytecode,LOAD);
         zbytearr_push(&ctx->bytecode,'j');
         foo = ast->childs.size;
-        addBytes(&ctx->bytecode,foo);
-        ctx->bytes_done += 2 + 4;
+        i32_operand(ctx,foo);
+        ctx->bytes_done += 2;
         return;
     }
     if (ast->type == dict_node)
@@ -387,8 +386,8 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         zbytearr_push(&ctx->bytecode,LOAD);
         zbytearr_push(&ctx->bytecode,'a');
         foo = ast->childs.size / 2;//number of key value pairs in dictionary
-        addBytes(&ctx->bytecode,foo);
-        ctx->bytes_done += 2 + 4;
+        i32_operand(ctx,foo);
+        ctx->bytes_done += 2;
         return;
     }
     if (ast->type == add_node)
@@ -403,9 +402,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             {
                 zbytearr_push(&ctx->bytecode,LOADVAR_ADDINT32);
                 zbytearr_push(&ctx->bytecode,(is_global1)? 1 : 0);
-                addBytes(&ctx->bytecode, i);
-                addBytes(&ctx->bytecode, (int32_t)atoi(ast->childs.arr[1]->val));
-                ctx->bytes_done += 10;
+                i32_operand(ctx, i);
+                i32_operand(ctx, (int32_t)atoi(ast->childs.arr[1]->val));
+                ctx->bytes_done += 2;
                 return;
             }
             
@@ -429,9 +428,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             {
                 zbytearr_push(&ctx->bytecode,LOADVAR_SUBINT32);
                 zbytearr_push(&ctx->bytecode,(is_global1)? 1 : 0);
-                addBytes(&ctx->bytecode, i);
-                addBytes(&ctx->bytecode, (int32_t)atoi(ast->childs.arr[1]->val));
-                ctx->bytes_done += 10;
+                i32_operand(ctx, i);
+                i32_operand(ctx, (int32_t)atoi(ast->childs.arr[1]->val));
+                ctx->bytes_done += 2;
                 return;
             }
             
@@ -535,11 +534,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             byte_src tmp;
             const char* memberName = callnode->childs.arr[1]->val;
             foo = add_to_vm_strings(memberName);
-            addBytes(&ctx->bytecode,foo);
+            i32_operand(ctx,foo);
             zbytearr_push(&ctx->bytecode,args->childs.size);
-            
-            ctx->bytes_done +=6;
-
+            ctx->bytes_done += 2;
             return;
         }
         else
@@ -551,8 +548,8 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 compileError(ctx,"SyntaxError", "Invalid Syntax");
             const char* name = ast->childs.arr[1]->val;
             foo = add_to_vm_strings(name);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done +=5;
+            i32_operand(ctx,foo);
+            ctx->bytes_done++;
             return;
         }
     }
@@ -698,18 +695,17 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 zbytearr_push(&ctx->bytecode,INDEX_FAST);
                 zbytearr_push(&ctx->bytecode,(is_global1)? 1 : 0);
                 zbytearr_push(&ctx->bytecode,(is_global2)? 1 : 0);
-                addBytes(&ctx->bytecode, i);
-                addBytes(&ctx->bytecode, j);
-                ctx->bytes_done += 11;
+                i32_operand(ctx, i);
+                i32_operand(ctx, j);
+                ctx->bytes_done += 3;
                 return;
             }
             
         }
         expr_bytecode(ctx,ast->childs.arr[0]);
         expr_bytecode(ctx,ast->childs.arr[1]);
-        zbytearr_push(&ctx->bytecode,INDEX);
         add_lntable_entry(ctx,ctx->bytes_done);
-        ctx->bytes_done += 1;
+        instruction(ctx,INDEX);
         return;
     }
     if (ast->type == call_node)
@@ -762,15 +758,15 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                     expr_bytecode(ctx,arg);
                 }
                 zbytearr_push(&ctx->bytecode,CALL_DIRECT);
-                addBytes(&ctx->bytecode, stack_idx);
-                ctx->bytes_done+=5;
+                i32_operand(ctx, stack_idx);
+                ctx->bytes_done++;
                 return;
             }
             if(isSelf)
             {
                 zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-                addBytes(&ctx->bytecode,0);//load self to pass as first argument
-                ctx->bytes_done+=5;
+                i32_operand(ctx,0);//load self to pass as first argument
+                ctx->bytes_done++;
             }
             for (size_t k = 0; k < ast->childs.arr[2]->childs.size; k += 1)
             {
@@ -781,8 +777,8 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 add_lntable_entry(ctx,ctx->bytes_done);
                 zbytearr_push(&ctx->bytecode,SELFMEMB);
                 foo = add_to_vm_strings(name);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,foo);
+                ctx->bytes_done++;
                 add_lntable_entry(ctx,ctx->bytes_done);
                 zbytearr_push(&ctx->bytecode,CALLUDF);
                 zbytearr_push(&ctx->bytecode,ast->childs.arr[2]->childs.size+1);
@@ -793,8 +789,8 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
                 zbytearr_push(&ctx->bytecode,LOAD_GLOBAL);
             else
                 zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done+=5;
+            i32_operand(ctx,foo);
+            ctx->bytes_done++;
             add_lntable_entry(ctx,ctx->bytes_done);
             zbytearr_push(&ctx->bytecode,CALLUDF);
             zbytearr_push(&ctx->bytecode,ast->childs.arr[2]->childs.size);
@@ -829,9 +825,9 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
             }
             else
                 foo = index;
-            addBytes(&ctx->bytecode,foo);
+            i32_operand(ctx,foo);
             zbytearr_push(&ctx->bytecode,(char)ast->childs.arr[2]->childs.size);
-            ctx->bytes_done += 6;
+            ctx->bytes_done += 2;
             return;
         }
     }
@@ -953,8 +949,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             add_lntable_entry(ctx,ctx->bytes_done);
             zbytearr_push(&ctx->bytecode,IMPORT);
             foo = add_to_vm_strings(name);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done += 5;
+            i32_operand(ctx,foo);
+            ctx->bytes_done++;
             if(ctx->locals.size == 0)
                 symtable_emplace(&ctx->globals,vname,ctx->STACK_SIZE);
             else
@@ -998,8 +994,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                             zbytearr_push(&ctx->bytecode,INPLACE_INC);
                         else
                             zbytearr_push(&ctx->bytecode,INC_GLOBAL);
-                        addBytes(&ctx->bytecode,foo);
-                        ctx->bytes_done+=5;
+                        i32_operand(ctx,foo);
+                        ctx->bytes_done++;
                         doit = false;
                     }
                 }
@@ -1025,8 +1021,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                         zbytearr_push(&ctx->bytecode,ASSIGN);
                     else
                         zbytearr_push(&ctx->bytecode,ASSIGN_GLOBAL);
-                    addBytes(&ctx->bytecode,idx);
-                    ctx->bytes_done += 5;
+                    i32_operand(ctx,idx);
+                    ctx->bytes_done ++;
                 }
             }
             else if (ast->childs.arr[1]->type == index_node)
@@ -1049,9 +1045,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 expr_bytecode(ctx,ast->childs.arr[2]);
                 zbytearr_push(&ctx->bytecode,ASSIGNMEMB);
                 foo = add_to_vm_strings(mname);
-                addBytes(&ctx->bytecode,foo);
                 add_lntable_entry(ctx,ctx->bytes_done);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,foo);
+                ctx->bytes_done++;
 
             }
         }
@@ -1063,8 +1059,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             expr_bytecode(ctx,bitch);
             nodeptr_vector_destroy(&bitch->childs);
             free(bitch);
-            zbytearr_push(&ctx->bytecode,POP_STACK);
-            ctx->bytes_done +=1;
+            instruction(ctx,POP_STACK);
         }
         else if (ast->type == while_node || ast->type == dowhile_node)
         {
@@ -1074,17 +1069,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             {
                 //to skip the condition first time
                 zbytearr_push(&ctx->bytecode,GOTO);
-                addBytes(&ctx->bytecode,0);
                 offset1_idx = ctx->bytes_done+1;
-                ctx->bytes_done += 5;
+                i32_operand(ctx,0);
+                ctx->bytes_done++;
             }
             
             size_t L = ctx->bytes_done;
             expr_bytecode(ctx,ast->childs.arr[1]);
             zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
             offset2_idx = ctx->bytes_done + 1;
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 5;
+            i32_operand(ctx,0);
+            ctx->bytes_done ++;
 
             int32_t before = ctx->STACK_SIZE;
             symtable m;
@@ -1110,14 +1105,13 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);
                 foo = whileLocals;
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 4;
+                i32_operand(ctx,foo);
             }
             else
                 zbytearr_push(&ctx->bytecode,GOTO);
             foo = L; // goto the start of loop
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+            i32_operand(ctx,foo);
+            ctx->bytes_done++;
             // backpatch break and continue offsets
             int32_t a = (int)ctx->bytes_done;
             int32_t b = (int)L;
@@ -1168,8 +1162,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                     zbytearr_push(&ctx->bytecode,ASSIGN_GLOBAL);
                 else
                     zbytearr_push(&ctx->bytecode,ASSIGN);
-                addBytes(&ctx->bytecode,lcv_idx);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,lcv_idx);
+                ctx->bytes_done++;
             }
             //load end value
             expr_bytecode(ctx,ast->childs.arr[4]);
@@ -1189,19 +1183,18 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(lcv_is_global)
             {
                 zbytearr_push(&ctx->bytecode,1);
-                addBytes(&ctx->bytecode,lcv_idx);
-                addBytes(&ctx->bytecode, end_idx);
-                ctx->bytes_done+=9;
+                i32_operand(ctx,lcv_idx);
+                i32_operand(ctx, end_idx);
+                ctx->bytes_done++;
             }
             else
             {
                 zbytearr_push(&ctx->bytecode,0);
-                addBytes(&ctx->bytecode,lcv_idx);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,lcv_idx);
+                ctx->bytes_done++;
             }
             int32_t skip_loop = ctx->bytes_done;
-            addBytes(&ctx->bytecode,0); // apply backpatch here
-            ctx->bytes_done += 4;
+            i32_operand(ctx,0); // apply backpatch here
 
             // add loop body
             symtable m;
@@ -1249,23 +1242,22 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             else
                 zbytearr_push(&ctx->bytecode,0);
             ctx->bytes_done+=1;
-            addBytes(&ctx->bytecode, lcv_idx); //can be global or local
+            i32_operand(ctx, lcv_idx); //can be global or local
             if(lcv_is_global)
             {
-                addBytes(&ctx->bytecode, end_idx); // is a local ( see above we reserved stack space for it)
-                ctx->bytes_done+=4;
+                i32_operand(ctx, end_idx); // is a local ( see above we reserved stack space for it)
             }
-            addBytes(&ctx->bytecode, (int32_t)loop_start);
-            ctx->bytes_done += 9;//10;//18;
+            i32_operand(ctx, (int32_t)loop_start);
+            ctx->bytes_done++;//10;//18;
             
             //cleanup the locals we created
             int32_t break_dest = (int32_t)ctx->bytes_done;
             zbytearr_push(&ctx->bytecode,NPOP_STACK);
             if(decl_variable)
-                addBytes(&ctx->bytecode,3);
+                i32_operand(ctx,3);
             else
-                addBytes(&ctx->bytecode,2);
-            ctx->bytes_done += 5;
+                i32_operand(ctx,2);
+            ctx->bytes_done++;
             for(size_t i=break_stmt_idxSizeCopy;i<ctx->break_stmt_idx.size;i++)
             {
                 pair_vector_push(&ctx->backpatches,ctx->break_stmt_idx.arr[i],break_dest);
@@ -1290,17 +1282,16 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             size_t goto1_offset_idx;
 
             //load integer iterator
-            zbytearr_push(&ctx->bytecode,LOAD_INT32);
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 5;
-            lcv_idx = ctx->STACK_SIZE;
-            ctx->STACK_SIZE++;
+            instruction(ctx,LOAD_INT32);
+            i32_operand(ctx,0);
+            lcv_idx = ctx->STACK_SIZE++;
             //load the list and calculate length
             expr_bytecode(ctx,ast->childs.arr[2]); //load the list
-            zbytearr_push(&ctx->bytecode,CALLFORVAL);
-            addBytes(&ctx->bytecode,fnIdx);
+            instruction(ctx,CALLFORVAL);
+            i32_operand(ctx,fnIdx);
             zbytearr_push(&ctx->bytecode,1);
-            ctx->bytes_done += 6;
+            ctx->bytes_done++;
+
             len_idx = ctx->STACK_SIZE;
             ctx->STACK_SIZE++;
 
@@ -1310,30 +1301,28 @@ size_t compile(compiler_ctx* ctx,Node* ast)
 
             // Generate loop condition
             int32_t loop_start = ctx->bytes_done;
-            zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-            addBytes(&ctx->bytecode,lcv_idx);
-            zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-            addBytes(&ctx->bytecode,len_idx);
-            ctx->bytes_done += 10;
-            zbytearr_push(&ctx->bytecode,SMALLERTHAN);
+            instruction(ctx,LOAD_LOCAL);
+            i32_operand(ctx,lcv_idx);
+            instruction(ctx,LOAD_LOCAL);
+            i32_operand(ctx,len_idx);
+            
+            instruction(ctx,SMALLERTHAN);
             add_lntable_entry(ctx,ctx->bytes_done);
-            zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
-            goto1_offset_idx = ctx->bytes_done + 2;
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 6;
-
-
-
+            instruction(ctx,GOTOIFFALSE);
+            goto1_offset_idx = ctx->bytes_done;
+            i32_operand(ctx,0);
+            
             //load the indexed element
             symtable m;
             symtable_init(&m);
-            zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-            addBytes(&ctx->bytecode,list_idx);
-            zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-            addBytes(&ctx->bytecode,lcv_idx);
-            ctx->bytes_done += 10;
-            zbytearr_push(&ctx->bytecode,INDEX);
-            add_lntable_entry(ctx,ctx->bytes_done++);
+            instruction(ctx,LOAD_LOCAL);
+            i32_operand(ctx,list_idx);
+            instruction(ctx,LOAD_LOCAL);
+            i32_operand(ctx,lcv_idx);
+            
+            add_lntable_entry(ctx,ctx->bytes_done);
+            instruction(ctx,INDEX);
+
             size_t stack_size_before = ctx->STACK_SIZE;
             symtable_emplace(&m,loop_var_name,ctx->STACK_SIZE++);
             ptr_vector_push(&ctx->locals,&m);
@@ -1352,28 +1341,24 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             ctx->STACK_SIZE = stack_size_before;
 
             size_t cont_target = ctx->bytes_done;
-            zbytearr_push(&ctx->bytecode,INPLACE_INC);
-            addBytes(&ctx->bytecode,lcv_idx);
-            ctx->bytes_done += 5;
+            instruction(ctx,INPLACE_INC);
+            i32_operand(ctx,lcv_idx);
             int32_t whileLocals = m.size;
             if(whileLocals != 0)
             {
-                zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                addBytes(&ctx->bytecode,whileLocals);
-                addBytes(&ctx->bytecode,loop_start);
-                ctx->bytes_done += 9;
+                instruction(ctx,GOTONPSTACK);
+                i32_operand(ctx,whileLocals);
+                i32_operand(ctx,loop_start);
             }
             else
             {
-                zbytearr_push(&ctx->bytecode,GOTO);;
-                addBytes(&ctx->bytecode,loop_start);
-                ctx->bytes_done += 5;
+                instruction(ctx,GOTO);
+                i32_operand(ctx,loop_start);
             }
         
             int32_t brk_target = ctx->bytes_done;
-            zbytearr_push(&ctx->bytecode,NPOP_STACK);
-            addBytes(&ctx->bytecode,3);
-            ctx->bytes_done += 5;
+            instruction(ctx,NPOP_STACK);
+            i32_operand(ctx,3);
                         
             //backpatching             
             for(size_t i=break_stmt_idxSizeCopy;i < ctx->break_stmt_idx.size;i++)
@@ -1435,9 +1420,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 Node* cond = ast->childs.arr[1]->childs.arr[0];
                 int32_t val_to_return = str_to_int32(return_stmt->childs.arr[1]->val);
                 expr_bytecode(ctx,cond);
-                zbytearr_push(&ctx->bytecode,CONDITIONAL_RETURN_I32);
-                addBytes(&ctx->bytecode, val_to_return);
-                ctx->bytes_done+=5;
+                instruction(ctx,CONDITIONAL_RETURN_I32);
+                i32_operand(ctx, val_to_return);
                 ctx->last_stmt_type = ast->type;
                 ast = ast->childs.arr[ast->childs.size-1];
                 continue;
@@ -1448,9 +1432,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 Node* cond = ast->childs.arr[1]->childs.arr[0];
                 int32_t val_to_return = str_to_int32(return_stmt->childs.arr[1]->val);
                 expr_bytecode(ctx,cond);
-                zbytearr_push(&ctx->bytecode,CONDITIONAL_RETURN_LOCAL);
-                addBytes(&ctx->bytecode, idx);
-                ctx->bytes_done+=5;
+                instruction(ctx,CONDITIONAL_RETURN_LOCAL);
+                i32_operand(ctx,idx);
                 ctx->last_stmt_type = ast->type;
                 ast = ast->childs.arr[ast->childs.size-1];
                 continue;
@@ -1474,8 +1457,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[0]); // load condition
                 zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
                 offset1_idx = ++ctx->bytes_done;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 4;
+                i32_operand(ctx,0);
             //}
 
             int32_t before = ctx->STACK_SIZE;
@@ -1487,10 +1469,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             bool hasLocals = (m.size!=0);
             if(hasLocals)
             {
-                zbytearr_push(&ctx->bytecode,NPOP_STACK);
                 foo = m.size;
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 5;
+                instruction(ctx,NPOP_STACK);
+                i32_operand(ctx,foo);
             }
             ctx->locals.size--;
             pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
@@ -1506,9 +1487,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
 
             expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[0]); //bytecode to load if condition
             offset1_idx = ctx->bytes_done+1;
-            zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+            instruction(ctx,GOTOIFFALSE);
+            i32_operand(ctx,0);
             int32_t before = ctx->STACK_SIZE;
             symtable_init(&m);
             ptr_vector_push(&ctx->locals,&m);
@@ -1520,17 +1500,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(iflocals != 0)
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);      
-                addBytes(&ctx->bytecode,iflocals);
-                offset2_idx = ctx->bytes_done+5;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 9;
+                i32_operand(ctx,iflocals);
+                offset2_idx = ctx->bytes_done+1;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
             }          
             else
             {
                 zbytearr_push(&ctx->bytecode,GOTO);
                 offset2_idx = ctx->bytes_done + 1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 5;
+                i32_operand(ctx,0);
+                ctx->bytes_done++;
             }
 
             else_offset = ctx->bytes_done;
@@ -1543,9 +1523,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             ctx->locals.size--;
             if(elseLocals!=0)
             {
-                zbytearr_push(&ctx->bytecode,NPOP_STACK);
-                addBytes(&ctx->bytecode,elseLocals);
-                ctx->bytes_done += 5;
+                instruction(ctx,NPOP_STACK);
+                i32_operand(ctx,elseLocals);
             }
             pair_vector_push(&ctx->backpatches,offset1_idx,else_offset);
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
@@ -1559,8 +1538,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[0]); //load if condition
             zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
             offset1_idx = ctx->bytes_done + 1;
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+            i32_operand(ctx,0);
+
+            ctx->bytes_done += 1;
             
             symtable m;
             symtable_init(&m);
@@ -1574,17 +1554,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(iflocals != 0)
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                addBytes(&ctx->bytecode,iflocals);
-                offset2_idx = ctx->bytes_done + 5;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 9;
+                i32_operand(ctx,iflocals);
+                offset2_idx = ctx->bytes_done + 1;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
             }
             else
             {
                 zbytearr_push(&ctx->bytecode,GOTO);
                 offset2_idx = ctx->bytes_done+1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 5;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
             }
 
             pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
@@ -1599,8 +1579,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[k]); // load elif condition
                 zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
                 goto1_offset_idx = ctx->bytes_done + 1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
                 before = ctx->STACK_SIZE;
                 symtable_clear(&m);
                 ptr_vector_push(&ctx->locals,&m);
@@ -1612,17 +1592,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 if(eliflocals != 0)
                 {
                     zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                    addBytes(&ctx->bytecode,eliflocals);
-                    goto2_offset_idx = ctx->bytes_done + 5;
-                    addBytes(&ctx->bytecode,0);
-                    ctx->bytes_done += 9;
+                    i32_operand(ctx,eliflocals);
+                    goto2_offset_idx = ctx->bytes_done + 1;
+                    i32_operand(ctx,0);
+                    ctx->bytes_done += 1;
                 }
                 else
                 {
                     zbytearr_push(&ctx->bytecode,GOTO);
                     goto2_offset_idx = ctx->bytes_done+1;
-                    addBytes(&ctx->bytecode, 0);
-                    ctx->bytes_done += 5;
+                    i32_operand(ctx, 0);
+                    ctx->bytes_done++;
                 }
                 pair_vector_push(&ctx->backpatches,goto1_offset_idx,ctx->bytes_done);
                 sizet_vector_push(&the_end,goto2_offset_idx);
@@ -1639,8 +1619,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(elseLocals!=0)
             {
                 zbytearr_push(&ctx->bytecode,NPOP_STACK);
-                addBytes(&ctx->bytecode,elseLocals);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,elseLocals);
+                ctx->bytes_done++;
             }
             for(size_t i=0;i<the_end.size;i++)
                 pair_vector_push(&ctx->backpatches,the_end.arr[i],ctx->bytes_done);
@@ -1656,8 +1636,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[0]); //load if condition
             zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
             offset1_idx = ctx->bytes_done + 1;
-            addBytes(&ctx->bytecode,0);
-            ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+            i32_operand(ctx,0);
+            ctx->bytes_done += 1;
             
             symtable m;
             symtable_init(&m);
@@ -1671,17 +1651,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(iflocals != 0)
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                addBytes(&ctx->bytecode,iflocals);
-                offset2_idx = ctx->bytes_done + 5;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 9;
+                i32_operand(ctx,iflocals);
+                offset2_idx = ctx->bytes_done + 1;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
             }
             else
             {
                 zbytearr_push(&ctx->bytecode,GOTO);
                 offset2_idx = ctx->bytes_done+1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 5;
+                i32_operand(ctx,0);
+                ctx->bytes_done++;
             }
 
             pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
@@ -1696,8 +1676,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 expr_bytecode(ctx,ast->childs.arr[1]->childs.arr[k]); // load elif condition
                 zbytearr_push(&ctx->bytecode,GOTOIFFALSE);
                 goto1_offset_idx = ctx->bytes_done + 1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 1 + JUMPOFFSET_SIZE;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
                 before = ctx->STACK_SIZE;
                 symtable_clear(&m);
                 ptr_vector_push(&ctx->locals,&m);
@@ -1709,17 +1689,17 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 if(eliflocals != 0)
                 {
                     zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                    addBytes(&ctx->bytecode,eliflocals);
-                    goto2_offset_idx = ctx->bytes_done + 5;
-                    addBytes(&ctx->bytecode,0);
-                    ctx->bytes_done += 9;
+                    i32_operand(ctx,eliflocals);
+                    goto2_offset_idx = ctx->bytes_done + 1;
+                    i32_operand(ctx,0);
+                    ctx->bytes_done += 1;
                 }
                 else if(k != ast->childs.arr[1]->childs.size - 1) // not last elif
                 {
                     zbytearr_push(&ctx->bytecode,GOTO);
                     goto2_offset_idx = ctx->bytes_done+1;
-                    addBytes(&ctx->bytecode, 0);
-                    ctx->bytes_done += 5;
+                    i32_operand(ctx, 0);
+                    ctx->bytes_done += 1;
                 }
                 pair_vector_push(&ctx->backpatches,goto1_offset_idx,ctx->bytes_done);
                 if(k != ast->childs.arr[1]->childs.size - 1) // not last elif
@@ -1738,9 +1718,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             size_t offset1_idx;
             size_t offset2_idx;
             zbytearr_push(&ctx->bytecode,ONERR_GOTO);
-            addBytes(&ctx->bytecode,0);
             offset1_idx = ctx->bytes_done+1;
-            ctx->bytes_done+=5;
+            i32_operand(ctx,0);
+            ctx->bytes_done+=1;
             
             int32_t before = ctx->STACK_SIZE;
             symtable m;
@@ -1758,17 +1738,16 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(trylocals!=0)
             {
                 zbytearr_push(&ctx->bytecode,GOTONPSTACK);
-                addBytes(&ctx->bytecode,trylocals);
-                offset2_idx = ctx->bytes_done + 5;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 9;
+                instruction(ctx,GOTONPSTACK);
+                i32_operand(ctx,trylocals);
+                offset2_idx = ctx->bytes_done;
+                i32_operand(ctx,0);
             }
             else
             {
-                zbytearr_push(&ctx->bytecode,GOTO);
-                addBytes(&ctx->bytecode,0);
-                offset2_idx = ctx->bytes_done+1;
-                ctx->bytes_done += 5;
+                instruction(ctx,GOTO);
+                offset2_idx = ctx->bytes_done;
+                i32_operand(ctx,0);
             }
 
             pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
@@ -1785,14 +1764,11 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             if(catchlocals > 1)
             {
                 zbytearr_push(&ctx->bytecode,NPOP_STACK);
-                addBytes(&ctx->bytecode,catchlocals);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,catchlocals);
+                ctx->bytes_done++;
             }
             else
-            {
-                zbytearr_push(&ctx->bytecode,POP_STACK);
-                ctx->bytes_done+=1;
-            }
+                instruction(ctx,POP_STACK);
             pair_vector_push(&ctx->backpatches,offset2_idx,ctx->bytes_done);
             symtable_destroy(&m);
         }
@@ -1874,9 +1850,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 else
                     zbytearr_push(&ctx->bytecode,LOAD_FUNC);
                 foo = ctx->bytes_done+2+JUMPOFFSET_SIZE+JUMPOFFSET_SIZE+JUMPOFFSET_SIZE+1 +((isGen) ? 0 : 1);
-                addBytes(&ctx->bytecode,foo);
+                i32_operand(ctx,foo);
                 foo = add_to_vm_strings(name);
-                addBytes(&ctx->bytecode,foo);
+                i32_operand(ctx,foo);
                 if(ctx->inclass)
                     zbytearr_push(&ctx->bytecode,ast->childs.arr[2]->childs.size+1);
                 else
@@ -1887,13 +1863,13 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                     zbytearr_push(&ctx->bytecode,def_param);
                     ctx->bytes_done++;
                 }
-                ctx->bytes_done+=10;
+                ctx->bytes_done+=2;
 
                 /////////
                 zbytearr_push(&ctx->bytecode,GOTO);
                 size_t offset1_idx = ctx->bytes_done+1;
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done += 1 + JUMPOFFSET_SIZE ;
+                i32_operand(ctx,0);
+                ctx->bytes_done += 1;
                 
                 ptr_vector_push(&ctx->locals,&C);
                 
@@ -1922,9 +1898,9 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 {
                     zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
                     foo = selfIdx;
-                    addBytes(&ctx->bytecode,foo);
+                    i32_operand(ctx,foo);
                     zbytearr_push(&ctx->bytecode,OP_RETURN);
-                    ctx->bytes_done+=6;
+                    ctx->bytes_done+=2;
                 }
                 pair_vector_push(&ctx->backpatches,offset1_idx,ctx->bytes_done);
                 symtable_destroy(&C);
@@ -1970,8 +1946,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 }
                 foo = add_to_vm_strings(e);
                 zbytearr_push(&ctx->bytecode,LOAD_STR);
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done+=5;
+                i32_operand(ctx,foo);
+                ctx->bytes_done+=1;
             }
             symtable M;
             symtable_init(&M);
@@ -1999,10 +1975,10 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             else
                 zbytearr_push(&ctx->bytecode,BUILD_CLASS);
 
-            addBytes(&ctx->bytecode,totalMembers);
+            i32_operand(ctx,totalMembers);
             foo = add_to_vm_strings(name);
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done+=9;
+            i32_operand(ctx,foo);
+            ctx->bytes_done+=1;
         }
         else if (ast->type == return_node)
         {
@@ -2051,10 +2027,10 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 foo+=((symtable*)ctx->locals.arr[i])->size;
             if(ctx->infor)
                 foo-=1; //don't pop loop control variable
-            addBytes(&ctx->bytecode,foo);
+            i32_operand(ctx,foo);
             foo = 0;
-            addBytes(&ctx->bytecode,foo);
-            ctx->bytes_done += 9;
+            i32_operand(ctx,foo);
+            ctx->bytes_done += 1;
         }
         else if(ast->type==gc_node)
         {
@@ -2068,8 +2044,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 zbytearr_push(&ctx->bytecode,GOTO);
                 ctx->bytes_done+=1;
                 sizet_vector_push(&ctx->continue_stmt_idx,ctx->bytes_done);
-                addBytes(&ctx->bytecode,0);
-                ctx->bytes_done+=4;
+                i32_operand(ctx,0);
             }
             else
             {
@@ -2080,10 +2055,10 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                     foo+=((symtable*)ctx->locals.arr[i])->size;
                 if(ctx->infor)
                     foo -= 1;
-                addBytes(&ctx->bytecode,foo);
+                i32_operand(ctx,foo);
                 foo = 0;
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 9;
+                i32_operand(ctx,foo);
+                ctx->bytes_done += 1;
             }
         }
         else if (ast->type == call_node)
@@ -2124,8 +2099,8 @@ size_t compile(compiler_ctx* ctx,Node* ast)
                 }
                 else
                     foo = index;
-                addBytes(&ctx->bytecode,foo);
-                ctx->bytes_done += 5;
+                i32_operand(ctx,foo);
+                ctx->bytes_done += 1;
                 zbytearr_push(&ctx->bytecode,(char)ast->childs.arr[2]->childs.size);
 
             }
@@ -2288,19 +2263,18 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         fun->_klass = NULL;
         ptr_vector_push(&vm_important,fun);
 
-        zbytearr_push(&ctx->bytecode,JMP);
-        addBytes(&ctx->bytecode,21);
-        zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-        addBytes(&ctx->bytecode,0);
-        zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-        addBytes(&ctx->bytecode,1);
-        zbytearr_push(&ctx->bytecode,ASSIGNMEMB);
-        addBytes(&ctx->bytecode,0);
-        zbytearr_push(&ctx->bytecode,LOAD_LOCAL);
-        addBytes(&ctx->bytecode,0);
-        zbytearr_push(&ctx->bytecode,OP_RETURN);
+        instruction(ctx,JMP);
+        i32_operand(ctx,21);
+        instruction(ctx,LOAD_LOCAL);
+        i32_operand(ctx,0);
+        instruction(ctx,LOAD_LOCAL);
+        i32_operand(ctx,1);
+        instruction(ctx,ASSIGNMEMB);
+        i32_operand(ctx,0);
+        instruction(ctx,LOAD_LOCAL);
+        i32_operand(ctx,0);
+        instruction(ctx,OP_RETURN);
 
-        ctx->bytes_done+=26;
         zobject construct;
         construct.type = Z_FUNC;
         construct.ptr = (void*)fun;
@@ -2326,10 +2300,9 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
     bool pop_globals = !(options & OPT_NOPOP_GLOBALS);
     if(ctx->globals.size!=0 && pop_globals)
     {
-        zbytearr_push(&ctx->bytecode,NPOP_STACK);
         foo = ctx->globals.size;
-        addBytes(&ctx->bytecode,foo);
-        ctx->bytes_done+=5;
+        instruction(ctx,NPOP_STACK);
+        i32_operand(ctx,foo);
     }
     if(!(options & OPT_NOEXIT))
     {
