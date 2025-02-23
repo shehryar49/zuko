@@ -1,5 +1,5 @@
-#include "include/zuko.h"
-#include "misc.h"
+#include "include/repl.h"
+#include "include/misc.h"
 
 
 int main(int argc, const char *argv[])
