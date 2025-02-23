@@ -29,7 +29,7 @@ extern "C"{
   typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//call_object
   typedef void(*fn12)(void*);//mark_important
   typedef void(*fn13)(void*);//unmark_impotant
-  typedef struct api_funcions
+  typedef struct api_functions
   {
     fn1 a1;//api function 1
     fn2 a2;//and so on
@@ -59,7 +59,7 @@ extern "C"{
     zclass* k13;
     zclass* k14;
     zclass* k15;
-  }api_funcions;
+  }api_functions;
 #ifdef __cplusplus
 }
 #endif

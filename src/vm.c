@@ -140,7 +140,7 @@ ptr_vector vm_builtin; // addresses of builtin native functions
 
 size_t GC_Cycles = 0;
 ptr_vector vm_strings; // string constants used in bytecode
-api_funcions api; // to share VM's allocation api with modules
+api_functions api; // to share VM's allocation api with modules
 // just a struct with a bunch of function pointers
 zobject nil;
 void mark();
@@ -1547,7 +1547,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         ip += 3;
         const char* s1 = ((zstr*)vm_strings.arr[i1])->val;
         typedef zobject (*initFun)();
-        typedef int (*apiFun)(api_funcions *,int);
+        typedef int (*apiFun)(api_functions *,int);
         #ifdef _WIN32
             snprintf(error_buffer,100,".\\modules\\%s.dll",s1);
             HINSTANCE module = LoadLibraryA(error_buffer);

@@ -38,7 +38,7 @@ fn12 vm_mark_important;
 fn13 vm_unmark_important;
 
 //Api setup
-int api_setup(api_funcions* p,int ver)
+int api_setup(api_functions* p,int ver)
 {
   if(ver != ZUKO_API_VERSION)
     return 0;  

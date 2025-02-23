@@ -83,7 +83,7 @@ extern fn13 vm_unmark_important;
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int api_setup(api_funcions* p,int ver);
+int api_setup(api_functions* p,int ver);
 
 //Some more helper functions for module developers
 
