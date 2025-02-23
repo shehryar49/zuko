@@ -7,7 +7,6 @@ int main(int argc, const char *argv[])
     if (argc < 2)
     {
         repl_init();
-        repl();
         return 0;
     }
     char* source_code = NULL;
