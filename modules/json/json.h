@@ -1,5 +1,5 @@
-#ifndef PLT_JSON_H_
-#define PLT_JSON_H_
+#ifndef ZUKO_JSON_H_
+#define ZUKO_JSON_H_
 #include "zapi.h"
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)

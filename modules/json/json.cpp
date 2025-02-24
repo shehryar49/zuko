@@ -43,80 +43,80 @@ const char* StrTokens[] = {
 };
 struct Token
 {
-  TokenType type;
-  string content;
-  Token(TokenType t,string cont)
-  {
-    type =t;
-    content = cont;
-  }
+    TokenType type;
+    string content;
+    Token(TokenType t,const string& cont)
+    {
+        type =t;
+        content = cont;
+    }
 };
 vector<Token> tokenize(zstr* zstr,bool& hadErr,string& msg)
 {
-  std::vector<Token> tokens;
-  hadErr = true;
-  string str = zstr->val;
-  size_t l = zstr->len;
-  size_t i = 0;
-  int line_num = 1;
-  int line_begin = 0;
-  while(i<l)
-  {
-    char c = str[i];
-    string cont;
-    if(c=='"')
+    std::vector<Token> tokens;
+    hadErr = true;
+    string str = zstr->val;
+    size_t l = zstr->len;
+    size_t i = 0;
+    int line_num = 1;
+    int line_begin = 0;
+    while(i<l)
     {
-      i+=1;
-      int j = i;
-      bool escaped = false;
-      bool terminated = false;
-      while(j<l)
-      {
-          if(str[j]=='"')
-          {
-              if(!escaped)
-              {
-                terminated = true;
-                break;
-              }
-              cont+=str[j];
-              escaped = false;
-          }
-          else if(str[j]=='\\')
-          {
-            if(escaped)
-              cont+="\\";
-            else
-              escaped = true;
-          }
-          else
-          {
-            if(escaped)
+        char c = str[i];
+        string cont;
+        if(c=='"')
+        {
+            i+=1;
+            int j = i;
+            bool escaped = false;
+            bool terminated = false;
+            while(j<l)
             {
-              if(str[j]=='n')
-                cont+='\n';
-              else if(str[j]=='r')
-                cont+='\r';
-              else if(str[j] == 't')
-                cont+='\t';
-              else if(str[j]=='b')
-                cont+='\b';
-              else if(str[j] == 'u')//unicode is not supported atleast not yet
-                cont+="\\u";
-              else
-              {
-                msg = (string)"Unknown escape char \\"+str[j];
-                return tokens;
-              }  
-              escaped = false;            
-            }
-            else
-              cont+=str[j];
-          }
-          j+=1;
-      }
-      if(!terminated)
-      {
+                if(str[j]=='"')
+                {
+                    if(!escaped)
+                    {
+                        terminated = true;
+                        break;
+                    }
+                    cont+=str[j];
+                    escaped = false;
+                }
+                else if(str[j]=='\\')
+                {
+                    if(escaped)
+                        cont+="\\";
+                    else
+                        escaped = true;
+                }
+                else
+                {
+                    if(escaped)
+                    {
+                        if(str[j]=='n')
+                            cont+='\n';
+                        else if(str[j]=='r')
+                            cont+='\r';
+                        else if(str[j] == 't')
+                            cont+='\t';
+                        else if(str[j]=='b')
+                            cont+='\b';
+                        else if(str[j] == 'u')//unicode is not supported atleast not yet
+                            cont+="\\u";
+                        else
+                        {
+                            msg = (string)"Unknown escape char \\"+str[j];
+                            return tokens;
+                        }  
+                        escaped = false;            
+                    }
+                    else
+                        cont+=str[j];
+                }
+            j+=1;
+        }
+        if(!terminated)
+        {
           msg = "Non terminated string!";
           return tokens;
       }
@@ -232,7 +232,7 @@ bool isValTok(Token t)
 }
 zobject nil;
 
-zobject TokToPObj(Token t)
+zobject TokToZObj(Token t)
 {
   if(t.type == NULLVAL)
     return nil;
@@ -291,7 +291,7 @@ zlist* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& m
   {
     if(isValTok(tokens[k]))
     {
-      zlist_push(M,TokToPObj(tokens[k]));
+      zlist_push(M,TokToZObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
@@ -370,7 +370,7 @@ zdict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& ms
     //values begins at tokens[k]
     if(isValTok(tokens[k]))
     {
-      zdict_emplace(M,zobj_from_str(tokens[k-2].content.c_str()),TokToPObj(tokens[k]));
+      zdict_emplace(M,zobj_from_str(tokens[k-2].content.c_str()),TokToZObj(tokens[k]));
       k+=1;
     }
     else if(tokens[k].type == LCB) //subobject
