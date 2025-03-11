@@ -18,16 +18,16 @@
 
 void reverse_str(char* str,size_t len)
 {
-  size_t l = 1;
-  size_t h = len -1;
-  while( l < h)
-  {
-    char c = str[l];
-    str[l] = str[h];
-    str[h] = c;
-    l++;
-    h--;
-  }
+    size_t l = 1;
+    size_t h = len -1;
+    while( l < h)
+    {
+        char c = str[l];
+        str[l] = str[h];
+        str[h] = c;
+        l++;
+        h--;
+    }
 }
 void replace_once(zstr* x,zstr* y,zstr* str,dyn_str* result)
 {

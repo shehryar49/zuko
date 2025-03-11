@@ -1767,7 +1767,7 @@ zobject ERASE(zobject* args,int32_t argc)
             return z_err(ValueError,"Error index is negative!");
         if((size_t)idx1.l >= p->len || (size_t)idx2.l >= p->len)
             return z_err(ValueError,"Error index out of range!");
-        if(idx1.l >= idx2.l)
+        if(idx1.l > idx2.l)
             return z_err(IndexError,"erase(): idx1 must be less than idx2");
 
         size_t len = p->len - (idx2.l - idx1.l + 1);
