@@ -65,7 +65,7 @@ namespace argparse
             var idx = pattern.find(curr_option)
             if(len(curr_option) == 1 and idx!=nil)
             {
-
+                if(i+1 < l and pattern[i])
             }
         }
     }

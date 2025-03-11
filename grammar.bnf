@@ -1,0 +1,25 @@
+program -> stmt | stmt newlines program
+newlines -> "\n" | "\n" newlines
+stmt -> ifstmt | ifelsestmt | ifelifelsestmt | whilestmt | forstmt | foreachstmt | dowhilestmt | varstmt | assignstmt
+varstmt -> VAR ID EQ expr
+assignstmt -> lval EQ expr
+ifstmt -> IF LPAREN expr RPAREN block
+ifelsestmt -> IF LPAREN expr RPAREN block ELSE block
+ifelifelsestmt -> IF LPAREN expr RPAREN block elifs ELSE block
+whilestmt -> WHILE LPAREN expr RPAREN block
+dowhilestmt -> DOWHILE LPAREN expr RPAREN block
+forstmt -> FOR LPAREN VAR ID EQ expr TO expr STEP expr RPAREN block |
+           FOR LPAREN ID EQ expr TO expr STEP expr RPAREN block
+foreachstmt-> FOREACH LPAREN VAR ID COLON expr RPAREN block
+classstmt -> CLASS ID LCB classblock RCB
+namespace_stmt -> NAMESPACE ID block
+functionstmt -> FUNCTION ID LPAREN args RPAREN block
+args -> VAR param_name | VAR param_name COMMA args
+param_name -> ID | ID EQ expr
+classblock -> classdecl | classdecl newlines classblock 
+classdecl -> varstmt | functionstmt
+elifs -> ELSE IF LPAREN expr RPAREN block | ELSE IF LPAREN expr RPAREN block elifs
+block -> LCB program RCB | stmt
+lval -> ID | ID membs | ID indexes
+membs -> DOT ID | DOT ID membs
+indexes -> LCB expr RCB | LCB expr RCB indexes
