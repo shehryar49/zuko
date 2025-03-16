@@ -23,3 +23,10 @@ block -> LCB program RCB | stmt
 lval -> ID | ID membs | ID indexes
 membs -> DOT ID | DOT ID membs
 indexes -> LCB expr RCB | LCB expr RCB indexes
+// Operators have the same precedence as they are listed in
+expr -> NUM | FLOAT | BOOL | BYTE | expr binop1 expr | expr binop2 expr
+binop1 -> DIV | MOD | MUL
+binop2 -> ADD | SUB
+binop3 -> XOR | BITWISEAND | BITWISEOR | LSHIFT | RSHIFT
+binop4 -> LT | LTE | GT | GTE | EQUALTO | NOTEQ
+binop5 -> AND | OR | IS
