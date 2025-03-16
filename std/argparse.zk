@@ -4,57 +4,6 @@ Written by Shahryar Ahmad
 -#
 namespace argparse
 {
-    function parse(var str,var names)
-    {
-        var l = len(str)
-        var parsed = {}
-        var k = 0
-        var args = clone(argv) # make deep copy of argv
-        for(var i=0 to l-1)
-        {
-            var opt = str[i]
-            var name = names[k]
-            var consume = false
-
-            if(i+1 < l and str[i+1] == ":")
-            {
-                i+=1
-                consume = true
-            }
-            var m = len(args)
-            for(var j=0 to m-1)
-            {
-                if(args[j] == "-"+opt)
-                {
-                    if(consume)
-                    {
-                        if(j+1 >= m)
-                        {
-                          printf("Required % after -% option!",name,opt)
-                          var idk = ""
-                          foreach(var arg: argv)
-                          {
-                            print(arg," ")
-                            idk += " "*int32(len(arg))
-                          }
-                          print("\n",idk," ^\n")
-                          exit(1)
-                        }
-                        parsed.emplace(name,args[j+1])
-                        args.erase(j,j+1)
-                    }
-                    else
-                    {
-                        parsed.emplace(name,true)
-                        args.erase(j)
-                    }
-                    break
-                }
-            }
-            k+=1
-        }
-        return parsed
-    }
     function parse(var pattern)
     {
         var argv = clone(argv)
@@ -62,11 +11,25 @@ namespace argparse
         for(var i = 0 to len(argv)-1)
         {
             var curr_option = argv[i]
-            var idx = pattern.find(curr_option)
-            if(len(curr_option) == 1 and idx!=nil)
+            if(len(curr_option) == 1 or curr_option[0] !="-")
+                continue
+            curr_option = curr_option.erase(0,0)
+            foreach(var opt: curr_option)
             {
-                if(i+1 < l and pattern[i])
+                var idx = pattern.find(opt)
+                if(idx == nil)
+                    throw NameError(format("Unknown command line option '%'",opt))
+                if(idx + 1 < len(pattern) and pattern[idx+1] == ":")
+                {
+                    if(len(curr_option) != 1 or i+1 >= len(argv))
+                        throw ValueError("Syntax Error")
+                    parsed.emplace(opt,argv[i+1])
+                    i+=1
+                }
+                else
+                    parsed.emplace(opt,true)
             }
         }
+        return parsed
     }
 }
