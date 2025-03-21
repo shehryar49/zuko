@@ -9,6 +9,7 @@ int main(int argc, const char *argv[])
         repl_init();
         return 0;
     }
+     
     if (argc >= 3 && strncmp(argv[1], "-c", 2) == 0)
         run_zuko_code("argv",strdup(argv[2]), argc, argv);
     else
