@@ -58,17 +58,17 @@ EXPORT zobject init()
     socketKlass = vm_alloc_zclass();
     socketKlass->name = "socket";
     
-    zclass_add_method(socketKlass,"__construct__",&socket__construct);
-    zclass_add_method(socketKlass,"bind",&socket_Bind);
-    zclass_add_method(socketKlass,"connect",  &socket_Connect);
-    zclass_add_method(socketKlass,"send",  &socket_Send);
-    zclass_add_method(socketKlass,"recv",  & socket_Recv);
-    zclass_add_method(socketKlass,"listen",  & socket_Listen);
-    zclass_add_method(socketKlass,"accept",  &socket_Accept);
-    zclass_add_method(socketKlass,"sendto",  &socket_SendTo);
-    zclass_add_method(socketKlass,"recvfrom", &socket_RecvFrom);
-    zclass_add_method(socketKlass,"close",  & socket_Close);
-    zclass_add_method(socketKlass,"__del__", &socket_del__);
+    zclass_add_method(socketKlass,"__construct__",&socket_construct);
+    zclass_add_method(socketKlass,"bind",&socket_bind);
+    zclass_add_method(socketKlass,"connect",  &socket_connect);
+    zclass_add_method(socketKlass,"send",  &socket_send);
+    zclass_add_method(socketKlass,"recv",  & socket_recv);
+    zclass_add_method(socketKlass,"listen",  & socket_listen);
+    zclass_add_method(socketKlass,"accept",  &socket_accept);
+    zclass_add_method(socketKlass,"sendto",  &socket_sendto);
+    zclass_add_method(socketKlass,"recvfrom", &socket_recvfrom);
+    zclass_add_method(socketKlass,"close",  & socket_close);
+    zclass_add_method(socketKlass,"__del__", &socket_del);
     zclass_addmember(socketKlass,".internalPTR",nil );
     
     udpResKlass = vm_alloc_zclass();
@@ -87,12 +87,12 @@ EXPORT zobject init()
     return zobj_from_module(d);
 
 }
-EXPORT zobject socket_del__( zobject* args, int n)
+EXPORT zobject socket_del( zobject* args, int n)
 {
     return nil;
 }
 
-EXPORT zobject socket__construct(zobject* args, int n)
+zobject socket_construct(zobject* args, int n)
 {
   int e = validateArgTypes("oii", args, n);
   if (e == -1)
@@ -118,7 +118,7 @@ EXPORT zobject socket__construct(zobject* args, int n)
   zclassobj_set(ko,".ipfamily",args[1]);
   return nil;
 }
-EXPORT zobject socket_Bind(zobject* args, int n)
+zobject socket_bind(zobject* args, int n)
 {
     int e = validateArgTypes("osi", args, n);
     if (e == -1)
@@ -152,7 +152,7 @@ EXPORT zobject socket_Bind(zobject* args, int n)
     #endif
     return nil;
 }
-EXPORT zobject socket_Listen( zobject* args, int n)
+zobject socket_listen( zobject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
@@ -181,7 +181,7 @@ EXPORT zobject socket_Listen( zobject* args, int n)
     
     return nil;
 }
-EXPORT zobject socket_Accept( zobject* args, int n)
+zobject socket_accept( zobject* args, int n)
 {
     if (n != 1)
       return quickErr(ValueError, "1 argument needed");
@@ -215,7 +215,7 @@ EXPORT zobject socket_Accept( zobject* args, int n)
     return zobj_from_classobj(d);
     
 }
-EXPORT zobject socket_Connect( zobject* args, int n)
+zobject socket_connect( zobject* args, int n)
 {
     int e = validateArgTypes("osi", args, n);
     if (e == -1)
@@ -245,7 +245,7 @@ EXPORT zobject socket_Connect( zobject* args, int n)
     #endif
     return nil;
 }
-EXPORT zobject socket_Send(zobject* args, int n)
+zobject socket_send(zobject* args, int n)
 {
     int e = validateArgTypes("oc", args, n);
     if (e == -1)
@@ -271,7 +271,7 @@ EXPORT zobject socket_Send(zobject* args, int n)
     #endif
     return zobj_from_int(ret);
 }
-EXPORT zobject socket_Recv( zobject* args, int n)
+zobject socket_recv( zobject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
@@ -305,7 +305,7 @@ EXPORT zobject socket_Recv( zobject* args, int n)
     delete[] msg;
     return zobj_from_bytearr(l);
 }
-EXPORT zobject socket_RecvFrom( zobject* args, int n)
+zobject socket_recvfrom( zobject* args, int n)
 {
     int e = validateArgTypes("oi", args, n);
     if (e == -1)
@@ -356,7 +356,7 @@ EXPORT zobject socket_RecvFrom( zobject* args, int n)
     delete[] msg;
     return zobj_from_classobj(d);
 }
-EXPORT zobject socket_SendTo( zobject* args, int n)
+zobject socket_sendto( zobject* args, int n)
 {
     int e = validateArgTypes("ocsi", args, n);
     if (e == -1)
@@ -393,7 +393,7 @@ EXPORT zobject socket_SendTo( zobject* args, int n)
     #endif
     return nil;
 }
-EXPORT zobject socket_Close( zobject* args, int n)
+zobject socket_close( zobject* args, int n)
 {
     if (n != 1)
         return quickErr(ValueError, "1 arguments needed!.");

@@ -1,5 +1,5 @@
-#ifndef PROCESS_PLT_H_
-#define PROCESS_PLT_H_
+#ifndef PROCESS_ZUKO_H_
+#define PROCESS_ZUKO_H_
 #include "zapi.h"
 
 extern "C"

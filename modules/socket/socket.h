@@ -1,5 +1,5 @@
-#ifndef SOCKET_PLT_H_
-#define SOCKET_PLT_H_
+#ifndef SOCKET_ZUKO_H_
+#define SOCKET_ZUKO_H_
 #ifdef _WIN32
   #include "zapi.h"
   #define EXPORT __declspec(dllexport)
@@ -12,17 +12,17 @@ extern "C"
 	//Functions
 	EXPORT zobject init();
 	//Methods
-	EXPORT zobject socket__construct(zobject*, int);
-	EXPORT zobject socket_Setopt(zobject*,int);
-	EXPORT zobject socket_Bind( zobject*,int);
-	EXPORT zobject socket_Connect( zobject*,int);
-	EXPORT zobject socket_Send( zobject*,int);
-	EXPORT zobject socket_Recv( zobject*,int);
-	EXPORT zobject socket_Listen( zobject*,int);
-	EXPORT zobject socket_Accept( zobject*,int);
-	EXPORT zobject socket_Close( zobject*,int);
-	EXPORT zobject socket_SendTo( zobject*, int);
-	EXPORT zobject socket_RecvFrom( zobject*, int);
-	EXPORT zobject socket_del__( zobject*, int);
+	EXPORT zobject socket_construct(zobject*, int);
+	EXPORT zobject socket_setopt(zobject*,int);
+	EXPORT zobject socket_bind( zobject*,int);
+	EXPORT zobject socket_connect( zobject*,int);
+	EXPORT zobject socket_send( zobject*,int);
+	EXPORT zobject socket_recv( zobject*,int);
+	EXPORT zobject socket_listen( zobject*,int);
+	EXPORT zobject socket_accept( zobject*,int);
+	EXPORT zobject socket_close( zobject*,int);
+	EXPORT zobject socket_sendto( zobject*, int);
+	EXPORT zobject socket_recvfrom( zobject*, int);
+	EXPORT zobject socket_del( zobject*, int);
 }
 #endif
