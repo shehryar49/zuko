@@ -53,12 +53,6 @@ zobject init()
     zclass_add_method(mimepart_class,"type",mimepart_content_type);
     zclass_add_method(mimepart_class,"__del__",mimepart__del__);
 
-    zclass_setmember(mimepart_class,"data",zobj_from_method("mimepart.data",&mimepart_data,mimepart_class));
-    zclass_setmember(mimepart_class,("name"),zobj_from_method("mimepart.name",&mimepart_name,mimepart_class));
-    zclass_setmember(mimepart_class,("filename"),zobj_from_method("mimepart.filename",&mimepart_filename,mimepart_class));
-    zclass_setmember(mimepart_class,("filedata"),zobj_from_method("mimepart.filedata",&mimepart_filedata,mimepart_class));
-    zclass_setmember(mimepart_class,("type"),zobj_from_method("mimepart.type",&mimepart_content_type,mimepart_class));
-    zclass_setmember(mimepart_class,("__del__"),zobj_from_method("mimepart.__del__",&mimepart__del__,mimepart_class));
     //
     mime_class = vm_alloc_zclass("libcurl.mimepart");
     //add methods to object
