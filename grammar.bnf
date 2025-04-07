@@ -30,3 +30,5 @@ binop2 -> ADD | SUB
 binop3 -> XOR | BITWISEAND | BITWISEOR | LSHIFT | RSHIFT
 binop4 -> LT | LTE | GT | GTE | EQUALTO | NOTEQ
 binop5 -> AND | OR | IS
+
+L -> R binop5 R

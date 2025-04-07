@@ -52,10 +52,8 @@ extern "C"
   zobject init()
   {
     nil.type = 'n';
-    zmodule* d  = vm_alloc_zmodule();
-    d->name = "bignum";
-    bignumKlass = vm_alloc_zclass();
-    bignumKlass->name = "bignum";
+    zmodule* d  = vm_alloc_zmodule("bignum");
+    bignumKlass = vm_alloc_zclass("bignum");
     zclass_add_method(bignumKlass,"__construct__",&bignum__construct);
     zclass_addmember(bignumKlass,".ptr",nil);
     zclass_add_method(bignumKlass,"__add__",&bignum__add);

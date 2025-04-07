@@ -2189,9 +2189,8 @@ void compiler_reduce_stack_size(compiler_ctx* ctx,int size)//for REPL
 }
 zclass* make_error_class(compiler_ctx* ctx,const char* name,zclass* error)
 {
-    zclass* k = vm_alloc_zclass();
-    int32_t idx = add_to_vm_strings(name);
-    k->name = name;
+    zclass* k = vm_alloc_zclass(name);
+    //int32_t idx = add_to_vm_strings(name);
     strmap_assign(&(k->members),&(error->members));
     symtable_emplace(&ctx->globals,name,ctx->STACK_SIZE++);
     zlist_push(&STACK,zobj_from_class(k));
@@ -2250,8 +2249,7 @@ uint8_t* compile_program(compiler_ctx* ctx,Node* ast,int32_t argc,const char* ar
         zobject nil;
         nil.type = Z_NIL;
 
-        Error = vm_alloc_zclass();
-        Error->name = "Error";
+        Error = vm_alloc_zclass("Error");
         strmap_emplace(&(Error->members),"msg",nil);
         //Any class inheriting from Error will have 'msg'
         symtable_emplace(&ctx->globals,"Error",ctx->STACK_SIZE);

@@ -2,6 +2,13 @@
 
 void zlist_init(zlist* p)
 {
+    /*#ifdef BUILDING_ZUKO_INTERPRETER
+        #pragma message "Zlist being used in the interpeter"
+    #endif
+
+    #ifndef BUILDING_ZUKO_INTERPRETER
+        #pragma message "zlist being used in zapi"
+    #endif*/
     p->arr = (zobject*)malloc(sizeof(zobject)*4);  
     p->capacity = 4;
     p->size = 0;

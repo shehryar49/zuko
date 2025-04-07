@@ -12,13 +12,14 @@ The code is completely free to use and comes without any guarantee/warrantee
 zclass* tmklass;
 zobject init()
 {
-    zmodule* d = vm_alloc_zmodule();
+    zmodule* d = vm_alloc_zmodule("datetime");
+
     zmodule_add_fun(d,"time",&TIME);
     zmodule_add_fun(d,"ctime",&CTIME);
-    tmklass = vm_alloc_zclass(); //kinda like the tm_struct
-    tmklass->name = "tm";
-    // not actually methods of tmklass, but the following functions use tmklass
-    // 
+
+    tmklass = vm_alloc_zclass("tm"); //kinda like the tm_struct
+    
+    // not actually methods of tmklass, but the following functions use tmklass 
     zmodule_add_member(d,"localtime",zobj_from_method("localtime",&LOCALTIME,tmklass));
     zmodule_add_member(d,"gmtime",zobj_from_method("gmtime",&GMTIME,tmklass));
 

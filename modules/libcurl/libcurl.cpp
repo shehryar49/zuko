@@ -32,11 +32,9 @@ zobject init()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    zmodule* d = vm_alloc_zmodule();
-    d->name = "libcurl";
+    zmodule* d = vm_alloc_zmodule("libcurl");
     //
-    curl_class = vm_alloc_zclass();
-    curl_class->name = "libcurl.curl";
+    curl_class = vm_alloc_zclass("libcurl.curl");
 
     zclass_add_method(curl_class,"__construct__",&zcurl_construct);
     zclass_add_method(curl_class,"perform",&zcurl_perform);
@@ -47,23 +45,28 @@ zobject init()
     zclass_add_method(curl_class,"unescape",&zcurl_unescape);
     
     //
-    mimepart_class = vm_alloc_zclass();
-    mimepart_class->name = "libcurl.mimepart";
+    mimepart_class = vm_alloc_zclass("libcurl.mimepart");
+    zclass_add_method(mimepart_class,"data",mimepart_data);
+    zclass_add_method(mimepart_class,"name",mimepart_name);
+    zclass_add_method(mimepart_class,"filename",mimepart_filename);
+    zclass_add_method(mimepart_class,"filedata",mimepart_filedata);
+    zclass_add_method(mimepart_class,"type",mimepart_content_type);
+    zclass_add_method(mimepart_class,"__del__",mimepart__del__);
+
     zclass_setmember(mimepart_class,"data",zobj_from_method("mimepart.data",&mimepart_data,mimepart_class));
     zclass_setmember(mimepart_class,("name"),zobj_from_method("mimepart.name",&mimepart_name,mimepart_class));
     zclass_setmember(mimepart_class,("filename"),zobj_from_method("mimepart.filename",&mimepart_filename,mimepart_class));
+    zclass_setmember(mimepart_class,("filedata"),zobj_from_method("mimepart.filedata",&mimepart_filedata,mimepart_class));
     zclass_setmember(mimepart_class,("type"),zobj_from_method("mimepart.type",&mimepart_content_type,mimepart_class));
     zclass_setmember(mimepart_class,("__del__"),zobj_from_method("mimepart.__del__",&mimepart__del__,mimepart_class));
     //
-    mime_class = vm_alloc_zclass();
-    mime_class->name = "libcurl.mime";
+    mime_class = vm_alloc_zclass("libcurl.mimepart");
     //add methods to object
     zclass_add_method(mime_class,"__construct__",&mime_construct);
     zclass_add_method(mime_class,"addpart",&mime_addpart);
     zclass_add_method(mime_class,"__del__",&mime__del__);
     //
-    slist_class = vm_alloc_zclass();
-    slist_class->name = "libcurl.slist";
+    slist_class = vm_alloc_zclass("libcurl.slist");
     zclass_add_method(slist_class,"__construct__",&slist_construct);
     zclass_add_method(slist_class,"append",&slist_append);
     zclass_add_method(slist_class,"__del__",&slist__del__);

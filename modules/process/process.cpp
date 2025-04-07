@@ -5,7 +5,7 @@ using namespace std;
 
 zobject init(zobject* rrr)
 {
-    zmodule* prcMod = vm_alloc_zmodule();
+    zmodule* prcMod = vm_alloc_zmodule("process");
     zmodule_add_fun(prcMod,"fork",&FORK);
     zmodule_add_fun(prcMod,"getpid",&GETPID);
     return zobj_from_module(prcMod);

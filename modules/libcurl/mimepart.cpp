@@ -33,6 +33,21 @@ zobject mimepart_filename(zobject* args,int n)
   curl_mime_filename(obj,name->val);
   return zobj_nil();
 }
+zobject mimepart_filedata(zobject* args,int n)
+{
+    if(n!=2)
+        return z_err(ArgumentError,"2 argument needed!");
+    if(args[1].type !=  Z_STR)
+        return z_err(TypeError,"Argument 2 must be string!");
+    if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepart_class)
+        return z_err(TypeError,"Argument 1 must be a MimePart object");
+    zclass_object* d = (zclass_object*)args[0].ptr;
+    curl_mimepart* obj = (curl_mimepart*)AS_PTR(zclassobj_get(d,".handle"));
+    zstr* filename = AS_STR(args[1]);
+    curl_mime_filedata(obj,filename->val);
+    return zobj_nil();
+}
+
 zobject mimepart_content_type(zobject* args,int n)
 {
     if(n!=2)
@@ -51,14 +66,16 @@ zobject mimepart_data(zobject* args,int n)
 {
     if(n!=2)
         return z_err(ArgumentError,"1 argument needed!");
-    if(args[1].type!='c')
-      return z_err(TypeError,"Argument 2 must be a Byte array!");
+    if(args[1].type!=Z_STR)
+      return z_err(TypeError,"Argument 2 must be a string!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepart_class)
       return z_err(TypeError,"Argument 1 must be a MimePart object");
     zclass_object* d = (zclass_object*)args[0].ptr;
     curl_mimepart* obj = (curl_mimepart*)AS_PTR(zclassobj_get(d,".handle"));
-    auto l = AS_BYTEARRAY(args[1]);
-    curl_mime_data(obj,(const char*)l->arr,l->size);
+    auto l = AS_STR(args[1]);
+    //curl_mime_data(obj,l,CURL_ZERO_TERMINATED);
+    curl_mime_data(obj,l->val,CURL_ZERO_TERMINATED);
+    //curl_mime_data(obj,(const char*)l->arr,l->size);
     return zobj_nil();
 }
 

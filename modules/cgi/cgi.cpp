@@ -49,8 +49,8 @@ zdict* POST()
     string type = t;
     size_t len = atoll(q);
     char* s = new char[len+1];
-    fread(s,sizeof(char),len,stdin);
-    s[len] = 0;
+    size_t read = fread(s,sizeof(char),len,stdin);
+    s[read] = 0;
     
     if(type == "application/x-www-form-urlencoded")
     {
@@ -133,10 +133,10 @@ zobject init()
     //reading from stdin
     #endif
 
-    zmodule* cgi_module = vm_alloc_zmodule();
+    zmodule* cgi_module = vm_alloc_zmodule("cgi");
 
-    part_class = vm_alloc_zclass();
-    part_class->name = "cgi.part";
+    part_class = vm_alloc_zclass("cgi.part");
+
     zclass_addmember(part_class,"filename",zobj_nil());
     zclass_addmember(part_class,"type",zobj_nil());
     zclass_addmember(part_class,"bytes",zobj_nil());

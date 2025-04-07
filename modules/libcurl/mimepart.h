@@ -14,6 +14,7 @@ extern "C"
 {
     EXPORT zobject mimepart_name(zobject*,int);
     EXPORT zobject mimepart_filename(zobject*,int);
+    EXPORT zobject mimepart_filedata(zobject*,int);
     EXPORT zobject mimepart_content_type(zobject*,int);
     EXPORT zobject mimepart_data(zobject*,int);
     EXPORT zobject mimepart__del__(zobject*,int);

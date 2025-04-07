@@ -505,8 +505,7 @@ zobject init()
   vm_mark_important(parseError);
   vm_mark_important(tokenizeError);
   //
-  zmodule* d = vm_alloc_zmodule();
-  d->name = "json";
+  zmodule* d = vm_alloc_zmodule("json");
   zmodule_add_fun(d,"loads",&loads);
   zmodule_add_fun(d,"dumps",&dumps);
   return zobj_from_module(d);

@@ -5,8 +5,7 @@
 using namespace std;
 zobject init()
 {
-    zmodule* d = vm_alloc_zmodule();
-    d->name = "regex";
+    zmodule* d = vm_alloc_zmodule("regex");
     zmodule_add_fun(d,"match",&match);
     zmodule_add_fun(d,"search",&search);
     zmodule_add_fun(d,"replace",&replace);

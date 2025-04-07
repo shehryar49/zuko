@@ -78,7 +78,7 @@ int api_setup(api_functions* p,int ver)
 //that is why they are defined here
 zclass* zclass_make_derived(zclass* base)
 {
-  zclass* child = vm_alloc_zclass();
+  zclass* child = vm_alloc_zclass(NULL);
   zobject super;
   super.type = Z_CLASS;
   super.ptr = (void*)base;

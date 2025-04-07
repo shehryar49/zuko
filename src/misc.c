@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "dyn-str.h"
 #include "misc.h"
+#include "dis.h"
 #include "convo.h"
 #include "module.h"
 #include "ptr-vector.h"
@@ -644,6 +645,7 @@ void run_zuko_code(const char* filename,char* code,int argc,const char* argv[])
     Node* ast = parse_block(pctx,tokens.arr,0,tokens.size-1);
     compiler_ctx* cctx = create_compiler_context(src);
     uint8_t* bytecode = compile_program(cctx,ast,argc,argv,0);
+    //dis(bytecode);
     size_t bytecode_len = cctx->bytes_done;
     delete_ast(ast);
     parser_destroy(pctx);

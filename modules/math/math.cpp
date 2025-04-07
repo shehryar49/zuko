@@ -8,9 +8,8 @@ zobject init()
 {
 
     nil.type = Z_NIL;
-    zmodule* moduleObject = vm_alloc_zmodule();//allocate a module object
+    zmodule* moduleObject = vm_alloc_zmodule("math");//allocate a module object
 
-    moduleObject->name = "math";//module name is math
     //Add functions to the module
     zmodule_add_fun(moduleObject,"floor",&FLOOR);
     zmodule_add_fun(moduleObject,"ceil",&CEIL);

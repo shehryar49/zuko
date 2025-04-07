@@ -54,9 +54,8 @@ EXPORT zobject init()
           return quickErr(Error, errMsg);
       }
     #endif
-    zmodule* d = vm_alloc_zmodule();
-    socketKlass = vm_alloc_zclass();
-    socketKlass->name = "socket";
+    zmodule* d = vm_alloc_zmodule("socket");
+    socketKlass = vm_alloc_zclass("socket");
     
     zclass_add_method(socketKlass,"__construct__",&socket_construct);
     zclass_add_method(socketKlass,"bind",&socket_bind);
@@ -71,7 +70,7 @@ EXPORT zobject init()
     zclass_add_method(socketKlass,"__del__", &socket_del);
     zclass_addmember(socketKlass,".internalPTR",nil );
     
-    udpResKlass = vm_alloc_zclass();
+    udpResKlass = vm_alloc_zclass("udpres");
     zclass_addmember(udpResKlass,("addr"), nil);
     zclass_addmember(udpResKlass,("data"), nil);
 

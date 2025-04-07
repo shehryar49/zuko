@@ -1,1 +1,26 @@
-for
+function bubblesort(var arr)
+{
+    var l = len(arr)
+    var m = l-1 
+    for(var i=1 to l)
+    {
+        for(var j = 0 to l-i-1)
+        {
+            if(arr[j] > arr[j+1])
+            {
+                # swap arr[j] and arr[j+1]
+                var c = arr[j]
+                arr[j] = arr[j+1]
+                arr[j+1] = c
+            }
+        }
+    }
+}
+
+var nums = []
+for(var i=10000 dto 1 )
+{
+    nums.push(i)
+}
+bubblesort(nums)
+#println(nums)

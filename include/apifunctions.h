@@ -21,10 +21,10 @@ extern "C"{
   typedef zstr*(*fn3)(size_t);//alloc_zstr
   typedef uint8_t*(*fn4)(size_t);//alloc_zbytearr
   typedef zfile*(*fn5)();//alloc_zfile
-  typedef zclass*(*fn6)();//alloc_zclass
+  typedef zclass*(*fn6)(const char*);//alloc_zclass
   typedef zclass_object*(*fn7)(zclass*);//alloc_zclassobj
   typedef znativefun*(*fn8)();//alloc_znativefun
-  typedef zmodule*(*fn9)();//alloc_zmodule
+  typedef zmodule*(*fn9)(const char*);//alloc_zmodule
   typedef zbytearr*(*fn10)();//alloc_zbytearr
   typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//call_object
   typedef void(*fn12)(void*);//mark_important

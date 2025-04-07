@@ -39,6 +39,8 @@ add_executable(
   src/mem_map.c
   src/signal-handlers.c
 )
+target_compile_definitions(zuko PRIVATE BUILDING_ZUKO_INTERPRETER=1)
+
 include_directories(include/) # even modules use this (include/zapi.h)
 if(UNIX)
   target_link_libraries(zuko ${CMAKE_DL_LIBS})

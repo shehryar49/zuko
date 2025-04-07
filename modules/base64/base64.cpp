@@ -8,8 +8,7 @@ char base64Table[64];
 zobject init()
 {
     nil.type = Z_NIL;
-    zmodule* m = vm_alloc_zmodule();
-    m->name = "base64";
+    zmodule* m = vm_alloc_zmodule("base64");
     zmodule_add_fun(m,"encode",&ENCODE);
     zmodule_add_sig_fun(m,"decode",&DECODE,"s");
     //init base64Table

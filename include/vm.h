@@ -39,10 +39,10 @@ zobject zobj_from_str(const char* str);// makes deep copy of str
 zobject z_err(zclass* errKlass,const char* des);
 zlist* vm_alloc_zlist();
 zbytearr* vm_alloc_zbytearr();
-uint8_t* vm_alloc_raw(size_t);
+//uint8_t* vm_alloc_raw(size_t);
 zstr* vm_alloc_zstr(size_t);
-zclass* vm_alloc_zclass();
-zmodule* vm_alloc_zmodule();
+zclass* vm_alloc_zclass(const char*);
+zmodule* vm_alloc_zmodule(const char*);
 zclass_object* vm_alloc_zclassobj(zclass*);
 coroutine* vm_alloc_coro_obj();//allocates coroutine object
 zfun* vm_alloc_zfun();
