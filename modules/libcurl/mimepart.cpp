@@ -66,16 +66,15 @@ zobject mimepart_data(zobject* args,int n)
 {
     if(n!=2)
         return z_err(ArgumentError,"1 argument needed!");
-    if(args[1].type!=Z_STR)
+    if(args[1].type!=Z_BYTEARR)
       return z_err(TypeError,"Argument 2 must be a string!");
     if(args[0].type!='o' || ((zclass_object*)args[0].ptr)->_klass!=mimepart_class)
       return z_err(TypeError,"Argument 1 must be a MimePart object");
     zclass_object* d = (zclass_object*)args[0].ptr;
     curl_mimepart* obj = (curl_mimepart*)AS_PTR(zclassobj_get(d,".handle"));
     auto l = AS_STR(args[1]);
-    //curl_mime_data(obj,l,CURL_ZERO_TERMINATED);
-    curl_mime_data(obj,l->val,CURL_ZERO_TERMINATED);
-    //curl_mime_data(obj,(const char*)l->arr,l->size);
+    zbytearr* arr = (zbytearr*)args[1].ptr;
+    curl_mime_data(obj,(const char*)arr->arr,arr->size);
     return zobj_nil();
 }
 
