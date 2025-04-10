@@ -26,6 +26,7 @@ SOFTWARE.*/
 #include <stdlib.h>
 #include "builtinfunc.h"
 #include "ptr-vector.h"
+#include "vm.h"
 #include "zobject.h"
 #include "zbytearray.h"
 #include "zdict.h"
@@ -57,6 +58,8 @@ void replace_all(zstr*,zstr*,zstr*,dyn_str*);
 
 void run_zuko_file(const char* filename,int argc,const char** argv);
 void run_zuko_code(const char* filename,char* code,int argc,const char** argv);
+
+void promote_numeric_type(zobject*, char);
 
 #ifdef __cplusplus
 }

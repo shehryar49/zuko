@@ -170,3 +170,50 @@ zobject zobj_from_file(zfile* file)
   return ret;
 }
 
+const char* zobject_typename(char t)
+{
+  if (t == Z_INT)
+    return "Integer 32 bit";
+  else if (t == Z_INT64)
+    return "Integer 64 bit";
+  else if (t == Z_FLOAT)
+    return "Float";
+  else if (t == Z_STR)
+    return "String";
+  else if (t == Z_LIST)
+    return "List";
+  else if (t == Z_BYTE)
+    return "Byte";
+  else if(t == Z_BYTEARR)
+    return "Byte Array";
+  else if (t == Z_BOOL)
+    return "Boolean";
+  else if (t == Z_FILESTREAM)
+    return "File Stream";
+  else if (t == Z_DICT)
+    return "zdict";
+  else if (t == Z_MODULE)
+    return "Module";
+  else if (t == Z_FUNC)
+    return "Function";
+  else if (t == Z_CLASS)
+    return "Class";
+  else if (t == Z_OBJ)
+    return "Class Object";
+  else if (t == Z_NIL)
+    return "nil";
+  else if (t == Z_NATIVE_FUNC)
+    return "Native Function";
+  else if (t == Z_POINTER)
+    return "Native Pointer";
+  else if (t == Z_ERROBJ)
+    return "Error Object";
+  else if (t == 'g')
+    return "coroutine";
+  else if (t == 'z')
+    return "coroutine Object";
+  else
+    return "Unknown";
+}
+
+

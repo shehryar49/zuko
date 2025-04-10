@@ -47,7 +47,7 @@ bool validate_arg_types(const char* name,const char* e,zobject* args,int32_t arg
         zobject k = args[f-1];
         if(k.type!=e[f-1])
         {
-          snprintf(error_buffer,100, "Error argument %d of %s() should be of type %s",f,name,zuko_typename(e[f-1]));
+          snprintf(error_buffer,100, "Error argument %d of %s() should be of type %s",f,name,zobject_typename(e[f-1]));
           *x = z_err(TypeError,error_buffer);
           return false;
         }
@@ -267,8 +267,8 @@ zobject TYPEOF(zobject* args,int32_t argc)
   {
       return z_err(TypeError,"Error typeof() takes one argument only!");
   }
-  const char* zuko_typename(char);
-  const char* s = zuko_typename(args[0].type);
+  const char* zobject_typename(char);
+  const char* s = zobject_typename(args[0].type);
   zstr* p = vm_alloc_zstr(strlen(s));
   strcpy(p->val,s);
   return zobj_from_str_ptr(p);
@@ -311,7 +311,7 @@ zobject LEN(zobject* args,int32_t argc)
         ret.l = ((zbytearr*)args[0].ptr)->size;
     else
     {
-      snprintf(error_buffer,100,"Error len() unsupported for type %s",zuko_typename(args[0].type));
+      snprintf(error_buffer,100,"Error len() unsupported for type %s",zobject_typename(args[0].type));
         return z_err(TypeError,error_buffer);
     }
     return ret;
@@ -556,7 +556,7 @@ zobject BYTES(zobject* args,int32_t argc)
     }
     else
     {
-        snprintf(error_buffer,100,"Cannot convert type %s to bytes",zuko_typename(e.type));
+        snprintf(error_buffer,100,"Cannot convert type %s to bytes",zobject_typename(e.type));
         return z_err(TypeError,error_buffer);
     }
 }
@@ -575,7 +575,7 @@ zobject OBJINFO(zobject* args,int32_t argc)
         if(e.val.type == Z_POINTER)
           printf("%s: %p\n",e.key,e.val.ptr);
         else
-          printf("%s: %s\n",e.key,zuko_typename(e.val.type));
+          printf("%s: %s\n",e.key,zobject_typename(e.val.type));
           
       }
       zobject ret = nil;
@@ -600,7 +600,7 @@ zobject MODULEINFO(zobject* args,int32_t argc)
     if(mod->members.table[idx].stat != SM_OCCUPIED)
       continue;
     SM_Slot e = mod->members.table[idx];
-    printf("%s  %s\n",e.key,zuko_typename(e.val.type));
+    printf("%s  %s\n",e.key,zobject_typename(e.val.type));
 
   }
   zobject ret = nil;
@@ -819,7 +819,7 @@ zobject STR(zobject* args,int32_t argc)
         if(!str)
         {
             char error_buffer[50];
-            snprintf(error_buffer,50,"str() unsupported for type %s",zuko_typename(args[0].type));
+            snprintf(error_buffer,50,"str() unsupported for type %s",zobject_typename(args[0].type));
             return z_err(TypeError,error_buffer);
         }
         zobject t = zobj_from_str(str);
@@ -906,7 +906,7 @@ zobject TOINT(zobject* args,int32_t argc)
         else if(args[0].type == Z_INT || args[0].type == Z_INT64)
             return args[0];
         char buffer[50];
-        snprintf(buffer,50,"Error int() unsupported for type %s",zuko_typename(args[0].type));
+        snprintf(buffer,50,"Error int() unsupported for type %s",zobject_typename(args[0].type));
         return z_err(TypeError,buffer);
 	}
 	return z_err(ArgumentError,"Error int() takes exactly one argument!");
@@ -965,7 +965,7 @@ zobject TOINT32(zobject* args,int32_t argc)
             return zobj_from_int((int32_t)args[0].l); 
         }
         char buffer[50];
-        snprintf(buffer,50,"int32() unsupported for type %s",zuko_typename(args[0].type));
+        snprintf(buffer,50,"int32() unsupported for type %s",zobject_typename(args[0].type));
         return z_err(TypeError,buffer);
 	}
 	return z_err(ArgumentError,"Error int32() takes exactly one argument!");
@@ -1011,7 +1011,7 @@ zobject TOINT64(zobject* args,int32_t argc)
         else if(args[0].type == Z_INT64)
             return args[0];
         char buffer[50];
-        snprintf(buffer,50,"int64() unsupported for type %s",zuko_typename(args[0].type));
+        snprintf(buffer,50,"int64() unsupported for type %s",zobject_typename(args[0].type));
         return z_err(TypeError,buffer);
 	}
 	return z_err(ArgumentError,"Error int64() takes exactly one argument!");
@@ -1039,7 +1039,7 @@ zobject TOFLOAT(zobject* args,int32_t argc)
         else if(args[0].type == Z_FLOAT)
             return args[0];
         char buffer[50];
-        snprintf(buffer,50,"float() unsupported for type %s",zuko_typename(args[0].type));
+        snprintf(buffer,50,"float() unsupported for type %s",zobject_typename(args[0].type));
         return z_err(TypeError,buffer);
 	}
 	return z_err(ArgumentError,"Error float() takes exactly one argument!");
@@ -1183,7 +1183,7 @@ zobject TOBYTE(zobject* args,int32_t argc)
     else
     {
         char buffer[255];
-        snprintf(buffer,255,"Cannot convert type %s to a byte!",zuko_typename(args[0].type));
+        snprintf(buffer,255,"Cannot convert type %s to a byte!",zobject_typename(args[0].type));
         return z_err(TypeError,buffer);
     }
     args[0].type = Z_BYTE;
@@ -1437,7 +1437,7 @@ zobject POP(zobject* args,int32_t argc)
 {
     if(args[0].type!=Z_LIST && args[0].type!=Z_BYTEARR )
     {
-        snprintf(error_buffer,100,"Type %s has no method named pop()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s has no method named pop()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=1)
@@ -1471,7 +1471,7 @@ zobject CLEAR(zobject* args,int32_t argc)
 {
     if(args[0].type!='j' && args[0].type != Z_BYTEARR)
     {
-        snprintf(error_buffer,100,"Error type %s has no method named clear()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Error type %s has no method named clear()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=1)
@@ -1492,7 +1492,7 @@ zobject PUSH(zobject* args,int32_t argc)
 {
     if(args[0].type!='j' && args[0].type!='c')
     {
-        snprintf(error_buffer,100,"Error type %s has no method named push()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Error type %s has no method named push()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=2)
@@ -1519,7 +1519,7 @@ zobject FIND_METHOD(zobject* args,int32_t argc)
 {
     if(args[0].type!='j' && args[0].type!=Z_BYTEARR && args[0].type!=Z_STR)
     {
-        snprintf(error_buffer,100,"Error type %s has no method named find()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Error type %s has no method named find()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=2)
@@ -1647,7 +1647,7 @@ zobject INSERT(zobject* args,int32_t argc)
         return INSERTSTR(args,argc);
     if(args[0].type!='j')
     {
-        snprintf(error_buffer,100,"Error type %s has no method named insert()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Error type %s has no method named insert()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc==3)
@@ -1712,7 +1712,7 @@ zobject ERASE(zobject* args,int32_t argc)
         zobject key = args[1];
         if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
         {
-            snprintf(error_buffer,100,"Error key type %s not allowed",zuko_typename(key.type));
+            snprintf(error_buffer,100,"Error key type %s not allowed",zobject_typename(key.type));
             return z_err(TypeError,error_buffer);
         }
         bool b = zdict_erase(d,key);
@@ -1788,7 +1788,7 @@ zobject ERASE(zobject* args,int32_t argc)
     }
     else
     {
-        snprintf(error_buffer,100,"Error type %s has no method name erase()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Error type %s has no method name erase()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
 }
@@ -1796,7 +1796,7 @@ zobject ASMAP(zobject* args,int32_t argc)
 {
     if(args[0].type!='j')
     {
-        snprintf(error_buffer,100,"Type %s has no memeber named asMap()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s has no memeber named asMap()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=1)
@@ -1821,7 +1821,7 @@ zobject ASLIST(zobject* args,int32_t argc)
 {
     if(args[0].type!='a')
     {
-        snprintf(error_buffer,100,"Type %s no method named asList()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s no method named asList()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=1)
@@ -1850,7 +1850,7 @@ zobject REVERSE_METHOD(zobject* args,int32_t argc)
 {
     if(args[0].type!='j' && args[0].type != Z_STR)
     {
-        snprintf(error_buffer,100,"Type %s no method named reverse()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s no method named reverse()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=1)
@@ -1891,7 +1891,7 @@ zobject EMPLACE(zobject* args,int32_t argc)
 {
     if(args[0].type!='a')
     {
-        snprintf(error_buffer,100,"Type %s has no method named emplace()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s has no method named emplace()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=3)
@@ -1900,7 +1900,7 @@ zobject EMPLACE(zobject* args,int32_t argc)
     zobject key = args[1];
     if(key.type!='i' && key.type!='l' && key.type!='f' && key.type!='s' && key.type!='m' && key.type!='b')
     {
-        snprintf(error_buffer,100,"Key of type %s not allowed",zuko_typename(key.type));
+        snprintf(error_buffer,100,"Key of type %s not allowed",zobject_typename(key.type));
         return z_err(TypeError,error_buffer);
     }
     
@@ -1912,7 +1912,7 @@ zobject HASKEY(zobject* args,int32_t argc)
 {
     if(args[0].type!='a')
     {
-        snprintf(error_buffer,100,"Type %s has no method named hasKey()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s has no method named hasKey()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=2)
@@ -1930,7 +1930,7 @@ zobject SUBSTR_METHOD(zobject* args,int32_t argc)
 {
     if(args[0].type != Z_STR)
     {
-        snprintf(error_buffer,100,"Type %s has no method named substr()",zuko_typename(args[0].type));
+        snprintf(error_buffer,100,"Type %s has no method named substr()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc!=3)
@@ -1963,7 +1963,7 @@ zobject REPLACE_METHOD(zobject* args,int32_t argc)
     if(args[0].type != Z_STR)
     {
         char error_buffer[50];
-        snprintf(error_buffer,50,"Type %s has no method named replace()",zuko_typename(args[0].type));
+        snprintf(error_buffer,50,"Type %s has no method named replace()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc==3)
@@ -1992,7 +1992,7 @@ zobject REPLACE_ONCE_METHOD(zobject* args,int32_t argc)
     if(args[0].type != Z_STR)
     {
         char error_buffer[50];
-        snprintf(error_buffer,50,"Type %s has no method named replace()",zuko_typename(args[0].type));
+        snprintf(error_buffer,50,"Type %s has no method named replace()",zobject_typename(args[0].type));
         return z_err(NameError,error_buffer);
     }
     if(argc==3)
@@ -2102,7 +2102,7 @@ zobject callmethod(const char* name,zobject* args,int32_t argc)
     if(!bmap_get(&methods,name,&fn))
     {
         char buffer[50];
-        snprintf(buffer,50,"Error %s type has no method named %s",zuko_typename(args[0].type),name);
+        snprintf(buffer,50,"Error %s type has no method named %s",zobject_typename(args[0].type),name);
         return z_err(NameError,buffer);
     }
     return fn(args,argc);

@@ -1,15 +1,17 @@
 #include "zlist.h"
+#include "vm.h"
+
+/*#ifdef BUILDING_ZUKO_INTERPRETER
+    void* (*ZUKO_ALLOC)(size_t) = vm_alloc_raw;
+    void* (*ZUKO_REALLOC)(void*,size_t) = vm_realloc_raw;
+#else*/
+    void* (*ZUKO_ALLOC)(size_t) = malloc;
+    void* (*ZUKO_REALLOC)(void*,size_t) = realloc;
+//#endif
 
 void zlist_init(zlist* p)
 {
-    /*#ifdef BUILDING_ZUKO_INTERPRETER
-        #pragma message "Zlist being used in the interpeter"
-    #endif
-
-    #ifndef BUILDING_ZUKO_INTERPRETER
-        #pragma message "zlist being used in zapi"
-    #endif*/
-    p->arr = (zobject*)malloc(sizeof(zobject)*4);  
+    p->arr = (zobject*)ZUKO_ALLOC(sizeof(zobject)*4);
     p->capacity = 4;
     p->size = 0;
 }
@@ -17,7 +19,7 @@ void zlist_push(zlist* p,zobject val)
 {
     if(p -> size >= p->capacity)
     {
-      p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*p->capacity<<1);
+      p->arr = (zobject*)ZUKO_REALLOC(p->arr,sizeof(zobject)*p->capacity<<1);
       p->capacity <<= 1; //p->capacity*=2;
     }
     p->arr[p->size++] = val;
@@ -75,7 +77,7 @@ void zlist_resize(zlist* p,size_t newSize)
   {
     while(p->capacity < newSize)
       p->capacity <<= 1;
-    p->arr = (zobject*)realloc(p->arr,p->capacity* sizeof(zobject));
+    p->arr = (zobject*)ZUKO_REALLOC(p->arr,p->capacity* sizeof(zobject));
     p->size = newSize;
   }
 }
@@ -92,7 +94,7 @@ void zlist_assign(zlist* p,zlist* val)
 {
     if(val->size > 0)
     {
-      p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*val->capacity);
+      p->arr = (zobject*)ZUKO_REALLOC(p->arr,sizeof(zobject)*val->capacity);
       memcpy(p->arr,val->arr,val->size*sizeof(zobject));
       p->capacity = val->capacity;
       p->size = val->size;
@@ -145,7 +147,9 @@ void zlist_insert_list(zlist* p,size_t idx,zlist* sublist)
 }
 void zlist_destroy(zlist* p)
 {
-    free(p->arr);
+    #ifndef BUILDING_ZUKO_INTERPRETER
+        free(p->arr);
+    #endif
 }
 
 void zlist_fastpop(zlist* p,zobject* val)

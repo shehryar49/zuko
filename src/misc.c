@@ -658,3 +658,45 @@ void run_zuko_code(const char* filename,char* code,int argc,const char* argv[])
     zuko_src_destroy(src);
     free(bytecode);
 }
+
+void promote_numeric_type(zobject* a, char t)
+{
+    if (a->type == Z_INT)
+    {
+        if (t == Z_INT64) // promote to int64_t
+        {
+            a->type = Z_INT64;
+            a->l = (int64_t)a->i;
+        }
+        else if (t == Z_FLOAT)
+        {
+            a->type = Z_FLOAT;
+            a->f = (double)a->i;
+        }
+    }
+    else if (a->type == Z_FLOAT)
+    {
+        if (t == Z_INT64) // promote to int64_t
+        {
+            a->type = Z_INT64;
+            a->l = (int64_t)a->f;
+        }
+        else if (t == Z_INT)
+        {
+            a->type = Z_INT;
+            a->f = (int32_t)a->f;
+        }
+        else if (t == Z_FLOAT)
+            return;
+    }
+    else if (a->type == Z_INT64)
+    {
+        if (t == Z_FLOAT) // only this one is needed
+        {
+            a->type = Z_FLOAT;
+            a->f = (double)a->l;
+        }
+    }
+}
+ 
+

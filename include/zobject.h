@@ -99,7 +99,7 @@ bool zobject_equals(zobject,zobject);
 
 
 
-static inline bool isNumeric(char t)
+static inline bool is_numeric(char t)
 {
   return (t == Z_INT || t == Z_FLOAT || t == Z_INT64);
 }
@@ -118,6 +118,8 @@ zobject zobj_from_class(zclass*);
 zobject zobj_from_classobj(zclass_object*);
 zobject zobj_from_bytearr(zbytearr*);
 zobject zobj_from_file(zfile*);
+
+const char* zobject_typename(char);
 
 #ifdef __cplusplus
 }
