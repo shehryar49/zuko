@@ -1,13 +1,13 @@
 #include "zlist.h"
 #include "vm.h"
 
-/*#ifdef BUILDING_ZUKO_INTERPRETER
+#ifdef BUILDING_ZUKO_INTERPRETER
     void* (*ZUKO_ALLOC)(size_t) = vm_alloc_raw;
     void* (*ZUKO_REALLOC)(void*,size_t) = vm_realloc_raw;
-#else*/
+#else
     void* (*ZUKO_ALLOC)(size_t) = malloc;
     void* (*ZUKO_REALLOC)(void*,size_t) = realloc;
-//#endif
+#endif
 
 void zlist_init(zlist* p)
 {

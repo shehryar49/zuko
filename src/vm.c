@@ -1,4 +1,5 @@
 #include "coroutineobj.h"
+#include "klass.h"
 #include "zbytearray.h"
 #include "zlist.h"
 #include <time.h>
@@ -329,6 +330,9 @@ void markV2(zobject obj)
                     zlist_push(&aux,e);
                 }
             }
+            mem_info* p = NULL;
+            if((p = mem_map_getref(&memory,d->arr)) && p->type == Z_RAW)
+                p->ismarked = true;
         }
         else if (curr.type == 'z') // coroutine object
         {
@@ -456,6 +460,10 @@ void mark()
 {
     for (size_t i=0;i<STACK.size;i++)
         markV2(STACK.arr[i]);
+    mem_info* p = mem_map_getref(&memory,STACK.arr);
+    p->ismarked = true;
+    p = mem_map_getref(&memory,aux.arr);
+    p->ismarked = true;
     for(size_t i = 0;i < vm_important.size; i++)
     {
         void* e = vm_important.arr[i];
@@ -800,10 +808,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     zlist* pl_ptr1; // zuko list pointer 1
     zobject alwaysi32;
     zobject alwaysByte;
-    zlist values;
-    zlist names;
-    zlist_init(&values);
-    zlist_init(&names);
+    
     alwaysi32.type = Z_INT;
     alwaysByte.type = Z_BYTE;
     int32_t* alwaysi32ptr = &alwaysi32.i;
@@ -3044,9 +3049,8 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
     }
     CASE_CP BUILD_CLASS:
     {
-        ip += 1;
         int32_t N;
-        memcpy(&N, ip, sizeof(int32_t));
+        memcpy(&N, ++ip, sizeof(int32_t));
         ip += 4;
         int32_t idx;
         memcpy(&idx, ip, sizeof(int32_t));
@@ -3054,28 +3058,16 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zobject zclass_packed;
         zclass_packed.type = Z_CLASS;
         zclass* obj = vm_alloc_zclass(((zstr*)vm_strings.arr[idx])->val);
-        values.size = 0;
-        names.size = 0;
+        zobject* curr_val = STACK.arr + STACK.size - N;
+        zobject* curr_name = curr_val - N;
         for (int32_t i = 1; i <= N; i++)
         {
-            zlist_fastpop(&STACK,&p1);
-            if (p1.type == Z_FUNC)
-            {
-                zfun *ptr = (zfun *)p1.ptr;
-                ptr->_klass = obj;
-            }
-            zlist_push(&values,p1);
+            char* prop_name = AS_STR((*curr_name))->val;
+            zclass_setmember(obj,prop_name,*curr_val);
+            curr_name++;
+            curr_val++;
         }
-        for (int32_t i = 1; i <= N; i++)
-        {
-            zlist_fastpop(&STACK,&p1);
-            zlist_push(&names,p1);
-        }
-        for (int32_t i = 0; i < N; i += 1)
-        {
-            char* propName = ((zstr*)names.arr[i].ptr)->val;
-            strmap_emplace(&(obj->members),propName,values.arr[i]);
-        }
+        STACK.size -= 2*N;
         zclass_packed.ptr = (void *)obj;
         zlist_push(&STACK,zclass_packed);
         ip++; NEXT_INST;
@@ -3095,23 +3087,22 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         zclass_packed.type = Z_CLASS;
         //IMPORTANT
         zclass* d = vm_alloc_zclass(((zstr*)vm_strings.arr[i1])->val);
-        names.size = 0;
-        values.size = 0;
+        zobject* curr_val = STACK.arr + STACK.size - N;
+        zobject* curr_name = curr_val - N;
         for (int32_t i = 1; i <= N; i++)
         {
-            zlist_fastpop(&STACK,&p1);
+            p1 = *curr_val;
+            const char* prop_name = AS_STR((*curr_name))->val;
             if (p1.type == Z_FUNC)
             {
                 zfun *ptr = (zfun *)p1.ptr;
                 ptr->_klass = d;
             }
-            zlist_push(&values,p1);
+            zclass_setmember(d,prop_name,p1);
+            curr_name++;
+            curr_val++;
         }
-        for (int32_t i = 1; i <= N; i++)
-        {
-            zlist_fastpop(&STACK,&p1);
-            zlist_push(&names,p1);
-        }
+        STACK.size-=2*N;
         zobject baseClass;
         zlist_fastpop(&STACK,&baseClass);
         if (baseClass.type != Z_CLASS)
@@ -3120,12 +3111,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             NEXT_INST;
         }
         zclass* Base = (zclass* )baseClass.ptr;
-
-        for (int32_t i = 0; i < N; i += 1)
-        {
-            char* propName = ((zstr*)names.arr[i].ptr) -> val;
-            strmap_emplace(&(d->members),propName,values.arr[i]);
-        }
 
         for (size_t it = 0;it < Base->members.capacity;it++)
         {
@@ -3938,8 +3923,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         printf("STACK.size = %zu\n",STACK.size);
         exit(1);
     }
-    zlist_destroy(&names);
-    zlist_destroy(&values);
 } // end function interpret
 void vm_destroy()
 {
@@ -3961,6 +3944,8 @@ void vm_destroy()
     vm_important.size = 0;
     mark(); // clearing the STACK and marking objects will result in all objects being deleted
     // which is what we want
+    mem_map_getref(&memory,STACK.arr)->ismarked=false;
+    mem_map_getref(&memory,aux.arr)->ismarked=false;
     collectGarbage();
     zlist_destroy(&STACK);
     zlist_destroy(&aux);
@@ -4014,35 +3999,35 @@ zobject z_err(zclass* errKlass,const char* des)
 }
 zlist* vm_alloc_zlist()
 {
-  zlist* p = (zlist*)malloc(sizeof(zlist));
-  if (!p)
-  {
-    fprintf(stderr,"allocList(): error allocating memory!\n");
-    exit(0);
-  }
-  zlist_init(p);
-  allocated += sizeof(zlist);
-  mem_info m;
-  m.type = Z_LIST;
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)p, m);
-  return p;
+    zlist* p = (zlist*)malloc(sizeof(zlist));
+    if (!p)
+    {
+        fprintf(stderr,"allocList(): error allocating memory!\n");
+        exit(0);
+    }
+    zlist_init(p);
+    allocated += sizeof(zlist);
+    mem_info m;
+    m.type = Z_LIST;
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)p, m);
+    return p;
 }
 zbytearr* vm_alloc_zbytearr()
 {
-  zbytearr* p = (zbytearr*)malloc(sizeof(zbytearr));
-  if (!p)
-  {
-    fprintf(stderr,"allocByteArray(): error allocating memory!\n");
-    exit(0);
-  }
-  zbytearr_init(p);
-  allocated += sizeof(zbytearr);
-  mem_info m;
-  m.type = Z_BYTEARR;
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)p, m);
-  return p;
+    zbytearr* p = (zbytearr*)malloc(sizeof(zbytearr));
+    if (!p)
+    {
+        fprintf(stderr,"allocByteArray(): error allocating memory!\n");
+        exit(0);
+    }
+    zbytearr_init(p);
+    allocated += sizeof(zbytearr);
+    mem_info m;
+    m.type = Z_BYTEARR;
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)p, m);
+    return p;
 }
 void* vm_alloc_raw(size_t len)
 {
