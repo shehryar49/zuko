@@ -102,7 +102,7 @@ enum OPCODE
     LOADVAR_ADDINT32=77, // i+1 , j+1 etc etc this is a very common pattern in zuko programs
     LOAD_INT64=78,
     LOAD_DOUBLE=79,
-    CONDITIONAL_RETURN_LOCAL=80
+    CONDITIONAL_RETURN_LOCAL=80,
 };
 
 #endif

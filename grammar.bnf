@@ -31,4 +31,9 @@ binop3 -> XOR | BITWISEAND | BITWISEOR | LSHIFT | RSHIFT
 binop4 -> LT | LTE | GT | GTE | EQUALTO | NOTEQ
 binop5 -> AND | OR | IS
 
-L -> R binop5 R
+A -> B binop5 B | B
+B -> C binop4 C | C
+C -> D binop3 D | D
+D -> E binop2 E | E
+E -> F binop1 F | F
+F -> NUM | FLOAT | BOOL | BYTE | STRING | ID

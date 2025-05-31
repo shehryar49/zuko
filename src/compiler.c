@@ -70,30 +70,29 @@ extern ptr_vector vm_builtin;
 extern ptr_vector vm_important;
 void extractSymRef(str_vector* ref,refgraph* graph)//gives the names of symbols that are referenced and not deadcode
 {
-  str_vector q;
-  str_vector_init(&q);
-  str_vector_push(&q,".main");
-
-  //there is no incoming edge on .main
-  //ref.emplace(".main",true);
-  const char* curr;
-  //printf("--begin DFS--\n");
-  while(q.size != 0)
-  {
-    curr = q.arr[--q.size];
-    str_vector* adj = refgraph_getref(graph,curr);
-    for(size_t i = 0;i<adj->size;i++)
+    str_vector q;
+    str_vector_init(&q);
+    str_vector_push(&q,".main");
+    //there is no incoming edge on .main
+    //ref.emplace(".main",true);
+    const char* curr;
+    //printf("--begin DFS--\n");
+    while(q.size != 0)
     {
-        const char* e = adj->arr[i];
-        if(str_vector_search(ref,e) == -1) //node not already visited or processed
+        curr = q.arr[--q.size];
+        str_vector* adj = refgraph_getref(graph,curr);
+        for(size_t i = 0;i<adj->size;i++)
         {
-            str_vector_push(&q,e);
-            str_vector_push(ref,e);
+            const char* e = adj->arr[i];
+            if(str_vector_search(ref,e) == -1) //node not already visited or processed
+            {
+                str_vector_push(&q,e);
+                str_vector_push(ref,e);
+            }
         }
     }
-  }
-  str_vector_destroy(&q);
-  //printf("--end DFS--\n");
+    str_vector_destroy(&q);
+    //printf("--end DFS--\n");
 }
 /*static inline void addBytes(zbytearr* vec,int32_t x)
 {

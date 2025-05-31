@@ -1623,6 +1623,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             ip = program + where;
         NEXT_INST;
     }
+
     CASE_CP SETUP_LOOP:
     {
         orgk = ip - program;
