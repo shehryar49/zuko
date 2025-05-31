@@ -1,7 +1,7 @@
 #define ZUKO_BUILDING_MODULE
 #include "zapi.h"
 #include "zobject.h"
-
+#include "apiver.h"
 //Error classes
 zclass* Error;
 zclass* TypeError;
@@ -36,41 +36,45 @@ fn10 vm_alloc_zbytearr;
 fn11 vm_call_object;
 fn12 vm_mark_important;
 fn13 vm_unmark_important;
+fn14 vm_increment_allocated;
+fn14 vm_decrement_allocated;
 
 //Api setup
 int api_setup(api_functions* p,int ver)
 {
-  if(ver != ZUKO_API_VERSION)
-    return 0;  
-  vm_alloc_zlist = p->a1;
-  vm_alloc_zdict = p->a2;
-  vm_alloc_zstr = p->a3;
-  vm_allocMutString = p->a4;
-  vm_alloc_zfile = p->a5;
-  vm_alloc_zclass = p->a6;
-  vm_alloc_zclassobj = p->a7;
-  vm_alloc_znativefun = p->a8;
-  vm_alloc_zmodule = p->a9;
-  vm_alloc_zbytearr = p->a10;
-  vm_call_object = p->a11;
-  vm_mark_important = p->a12;
-  vm_unmark_important = p->a13;
-  Error = p->k1;
-  TypeError = p->k2;
-  ValueError = p->k3;
-  MathError = p->k4; 
-  NameError = p->k5;
-  IndexError = p->k6;
-  ArgumentError = p->k7;
-  FileIOError = p->k8;
-  KeyError = p->k9;
-  OverflowError = p->k10;
-  FileOpenError = p->k11;
-  FileSeekError = p->k12; 
-  ImportError = p->k13;
-  ThrowError = p->k14;
-  MaxRecursionError = p->k15;
-  return 1;
+    if(ver != ZUKO_API_VERSION)
+        return 0;  
+    vm_alloc_zlist = p->a1;
+    vm_alloc_zdict = p->a2;
+    vm_alloc_zstr = p->a3;
+    vm_allocMutString = p->a4;
+    vm_alloc_zfile = p->a5;
+    vm_alloc_zclass = p->a6;
+    vm_alloc_zclassobj = p->a7;
+    vm_alloc_znativefun = p->a8;
+    vm_alloc_zmodule = p->a9;
+    vm_alloc_zbytearr = p->a10;
+    vm_call_object = p->a11;
+    vm_mark_important = p->a12;
+    vm_unmark_important = p->a13;
+    vm_increment_allocated = p->a14;
+    vm_decrement_allocated = p->a15;
+    Error = p->k1;
+    TypeError = p->k2;
+    ValueError = p->k3;
+    MathError = p->k4; 
+    NameError = p->k5;
+    IndexError = p->k6;
+    ArgumentError = p->k7;
+    FileIOError = p->k8;
+    KeyError = p->k9;
+    OverflowError = p->k10;
+    FileOpenError = p->k11;
+    FileSeekError = p->k12; 
+    ImportError = p->k13;
+    ThrowError = p->k14;
+    MaxRecursionError = p->k15;
+    return 1;
 }
 
 

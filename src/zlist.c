@@ -1,17 +1,15 @@
 #include "zlist.h"
-#include "vm.h"
 
 #ifdef BUILDING_ZUKO_INTERPRETER
-    void* (*ZUKO_ALLOC)(size_t) = vm_alloc_raw;
-    void* (*ZUKO_REALLOC)(void*,size_t) = vm_realloc_raw;
+    #include "vm.h"
 #else
-    void* (*ZUKO_ALLOC)(size_t) = malloc;
-    void* (*ZUKO_REALLOC)(void*,size_t) = realloc;
+    #include "zapi.h"
 #endif
 
 void zlist_init(zlist* p)
 {
-    p->arr = (zobject*)ZUKO_ALLOC(sizeof(zobject)*4);
+    p->arr = (zobject*)malloc(sizeof(zobject)*4);
+    vm_increment_allocated(sizeof(zobject)*4);
     p->capacity = 4;
     p->size = 0;
 }
@@ -19,8 +17,9 @@ void zlist_push(zlist* p,zobject val)
 {
     if(p -> size >= p->capacity)
     {
-      p->arr = (zobject*)ZUKO_REALLOC(p->arr,sizeof(zobject)*p->capacity<<1);
-      p->capacity <<= 1; //p->capacity*=2;
+        p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*p->capacity<<1);
+        vm_increment_allocated(p->capacity);
+        p->capacity <<= 1; //p->capacity*=2;
     }
     p->arr[p->size++] = val;
  
@@ -64,22 +63,26 @@ void zlist_erase_range(zlist* p,size_t i,size_t j)
 }
 void zlist_resize(zlist* p,size_t newSize)
 {
-  if(newSize <= p->size)
-  {
-    p->size = newSize;
-    return;
-  }
-  if(newSize <= p->capacity)
-  {
-    p->size = newSize;
-  }
-  else
-  {
-    while(p->capacity < newSize)
-      p->capacity <<= 1;
-    p->arr = (zobject*)ZUKO_REALLOC(p->arr,p->capacity* sizeof(zobject));
-    p->size = newSize;
-  }
+    if(newSize <= p->size)
+    {
+        p->size = newSize;
+        return;
+    }
+    if(newSize <= p->capacity)
+    {
+        p->size = newSize;
+    }
+    else
+    {
+        size_t before = p->capacity;
+        while(p->capacity < newSize)
+            p->capacity <<= 1;
+        size_t after = p->capacity;
+        size_t incr = after - before;
+        p->arr = (zobject*)realloc(p->arr,p->capacity* sizeof(zobject));
+        p->size = newSize;
+        vm_increment_allocated(incr);
+    }
 }
 bool zlist_pop(zlist* p,zobject* val)
 {
@@ -94,10 +97,16 @@ void zlist_assign(zlist* p,zlist* val)
 {
     if(val->size > 0)
     {
-      p->arr = (zobject*)ZUKO_REALLOC(p->arr,sizeof(zobject)*val->capacity);
-      memcpy(p->arr,val->arr,val->size*sizeof(zobject));
-      p->capacity = val->capacity;
-      p->size = val->size;
+        bool incr = (val->capacity >= p->capacity);
+        size_t diff = (incr) ? val->capacity - p->capacity : p->capacity - val -> capacity; 
+        p->arr = (zobject*)realloc(p->arr,sizeof(zobject)*val->capacity);
+        memcpy(p->arr,val->arr,val->size*sizeof(zobject));
+        p->capacity = val->capacity;
+        p->size = val->size;
+        if(incr)
+            vm_increment_allocated(diff);
+        else
+            vm_decrement_allocated(diff);
     }
     else
     {
@@ -107,49 +116,47 @@ void zlist_assign(zlist* p,zlist* val)
 }
 void zlist_insert(zlist* p,size_t idx,zobject val)
 {
-  if(idx == p->size) //push
-  {
-    zlist_push(p,val);
-    return;
-  }
-  if(idx < p->size)
-  {
-
-    zlist_push(p,val);
-    size_t i = p->size - 1;
-    while(i > idx)
+    if(idx == p->size) //push
     {
-      p->arr[i] = p->arr[i-1];
-      i--;
-    }  
-    p->arr[idx] = val;
-  }
+        zlist_push(p,val);
+        return;
+    }
+    if(idx < p->size)
+    {
+
+        zlist_push(p,val);
+        size_t i = p->size - 1;
+        while(i > idx)
+        {
+            p->arr[i] = p->arr[i-1];
+            i--;
+        }  
+        p->arr[idx] = val;
+    }
 }
 void zlist_insert_list(zlist* p,size_t idx,zlist* sublist)
 {
-  if(sublist -> size == 0)
-    return;
-  if(idx == p->size)
-  {
-    zlist_resize(p,p->size + sublist->size);
-    memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(zobject));
-    return;
-  }
-  if(idx < p->size)
-  {
-    // 1 2 3 4 0 0
-
-    size_t i = p->size;
-    zlist_resize(p,p->size + sublist->size);
-    memcpy(p->arr + i,p->arr+idx,sizeof(zobject)*sublist->size);
-    memcpy(p->arr+idx,sublist->arr,sizeof(zobject)*sublist->size);
-  }
+    if(sublist -> size == 0)
+        return;
+    if(idx == p->size)
+    {
+        zlist_resize(p,p->size + sublist->size);
+        memcpy(p->arr + idx,sublist->arr,sublist->size * sizeof(zobject));
+        return;
+    }
+    if(idx < p->size)
+    {
+        // 1 2 3 4 0 0
+        size_t i = p->size;
+        zlist_resize(p,p->size + sublist->size);
+        memcpy(p->arr + i,p->arr+idx,sizeof(zobject)*sublist->size);
+        memcpy(p->arr+idx,sublist->arr,sizeof(zobject)*sublist->size);
+    }
 }
 void zlist_destroy(zlist* p)
 {
-    #ifndef BUILDING_ZUKO_INTERPRETER
-        free(p->arr);
-    #endif
+    vm_decrement_allocated(p->capacity);
+    free(p->arr);
 }
 
 void zlist_fastpop(zlist* p,zobject* val)

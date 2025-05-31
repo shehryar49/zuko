@@ -6,13 +6,14 @@
 #include "zobject.h"
 
 #ifdef __cplusplus
-  extern "C"{
+extern "C"{
 #endif
+
 typedef struct zlist
 {
-  zobject* arr;
-  size_t size;
-  size_t capacity;
+    zobject* arr;
+    size_t size;
+    size_t capacity;
 }zlist;
 
 void zlist_init(zlist* p);
@@ -28,6 +29,6 @@ void zlist_destroy(zlist* p);
 void zlist_fastpop(zlist* p,zobject* val);
 
 #ifdef __cplusplus
-  }
+}
 #endif
 #endif

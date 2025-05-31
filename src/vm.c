@@ -144,6 +144,8 @@ void vm_load(uint8_t* bytecode,size_t length,zuko_src* p)
     api.a11 = &vm_call_object;
     api.a12 = &vm_mark_important;
     api.a13 = &vm_unmark_important;
+    api.a14 = &vm_increment_allocated;
+    api.a15 = &vm_decrement_allocated;
     api.k1 = Error;
     api.k2 = TypeError;
     api.k3 = ValueError;
@@ -330,9 +332,6 @@ void markV2(zobject obj)
                     zlist_push(&aux,e);
                 }
             }
-            mem_info* p = NULL;
-            if((p = mem_map_getref(&memory,d->arr)) && p->type == Z_RAW)
-                p->ismarked = true;
         }
         else if (curr.type == 'z') // coroutine object
         {
@@ -460,10 +459,6 @@ void mark()
 {
     for (size_t i=0;i<STACK.size;i++)
         markV2(STACK.arr[i]);
-    mem_info* p = mem_map_getref(&memory,STACK.arr);
-    p->ismarked = true;
-    p = mem_map_getref(&memory,aux.arr);
-    p->ismarked = true;
     for(size_t i = 0;i < vm_important.size; i++)
     {
         void* e = vm_important.arr[i];
@@ -3944,8 +3939,8 @@ void vm_destroy()
     vm_important.size = 0;
     mark(); // clearing the STACK and marking objects will result in all objects being deleted
     // which is what we want
-    mem_map_getref(&memory,STACK.arr)->ismarked=false;
-    mem_map_getref(&memory,aux.arr)->ismarked=false;
+    //mem_map_getref(&memory,STACK.arr)->ismarked=false;
+    //mem_map_getref(&memory,aux.arr)->ismarked=false;
     collectGarbage();
     zlist_destroy(&STACK);
     zlist_destroy(&aux);
@@ -3974,6 +3969,10 @@ void vm_destroy()
     ptr_vector_destroy(&vm_important);
     ptr_vector_destroy(&module_handles);
     mem_map_destroy(&memory);
+    if(allocated != 0)
+    {
+        fprintf(stderr,"Post execution warning: Allocated memory not reset to zero. There might be a memory leak!\n");
+    }
 }
 
 
@@ -4029,73 +4028,34 @@ zbytearr* vm_alloc_zbytearr()
     mem_map_emplace(&memory,(void *)p, m);
     return p;
 }
-void* vm_alloc_raw(size_t len)
-{
-    //len is the number of bytes
-    void* p = malloc(len);
-    if (!p)
-    {
-        fprintf(stderr,"vm_alloc_raw(): error allocating memory!\n");
-        exit(0);
-    }
-    allocated += len;
-    mem_info m;
-    m.type = Z_RAW;
-    m.ismarked = false;
-    //m.size = len;
-    mem_map_emplace(&memory,(void*)p,m);
-    return p;
-}
-void* vm_realloc_raw(void* prev,size_t newsize)
-{
-    //newsize is the number of bytes
-    void* p = (void*)realloc(prev,newsize);
-    if (!p)
-    {
-        fprintf(stderr,"vm_realloc_raw(): error allocating memory!\n");
-        exit(0);
-    }
-    if(p == prev) // previous block expanded
-    {
-        //memory[prev].size = newsize;
-        return p;
-    }
-    else  //new block allocated previous freed
-    {
-        mem_map_erase(&memory,prev);
-        //allocated -= memory[prev].size;
-        //memory.erase(prev);
-        allocated += newsize;
-        mem_info m;
-        m.type = Z_RAW;
-        m.ismarked = false;
-        //m.size = newsize;
-        mem_map_emplace(&memory,p,m);
-        return p;
-    }
-}
+
+void vm_increment_allocated(size_t x)
+{allocated += x;}
+
+void vm_decrement_allocated(size_t x)
+{allocated -= x;}
 
 zstr* vm_alloc_zstr(size_t len)
 {
-  zstr* str = (zstr*)malloc(sizeof(zstr));
-  char* buffer = (char*)malloc(sizeof(char)*(len+1));
-  if (!buffer || !str)
-  {
-    fprintf(stderr,"alloc_zstr(): error allocating memory!\n");
-    exit(0);
-  }
-  //The string owns this buffer
-  //it will get deleted when string gets deleted
-  buffer[len] = 0;
-  str->val = buffer;
-  str->len = len;
+    zstr* str = (zstr*)malloc(sizeof(zstr));
+    char* buffer = (char*)malloc(sizeof(char)*(len+1));
+    if (!buffer || !str)
+    {
+        fprintf(stderr,"alloc_zstr(): error allocating memory!\n");
+        exit(0);
+    }
+    //The string owns this buffer
+    //it will get deleted when string gets deleted
+    buffer[len] = 0;
+    str->val = buffer;
+    str->len = len;
 
-  allocated += len + 1 + sizeof(zstr);
-  mem_info m;
-  m.type = Z_STR;
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)str, m);
-  return str;
+    allocated += len + 1 + sizeof(zstr);
+    mem_info m;
+    m.type = Z_STR;
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)str, m);
+    return str;
 }
 zclass* vm_alloc_zclass(const char* name)
 {
@@ -4133,37 +4093,37 @@ zmodule* vm_alloc_zmodule(const char* name)
 }
 zclass_object* vm_alloc_zclassobj(zclass* k)
 {
-  zclass_object* p = (zclass_object*)malloc(sizeof(zclass_object));
-  if (!p)
-  {
-    fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
-    exit(0);
-  }
-  strmap_init(&(p->members));
-  strmap_assign(&(p->members),&(k->members));
-  p -> _klass = k;
-  allocated += sizeof(zclass_object);
-  mem_info m;
-  m.type = Z_OBJ;
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)p, m);
-  return p;
+    zclass_object* p = (zclass_object*)malloc(sizeof(zclass_object));
+    if (!p)
+    {
+        fprintf(stderr,"allocKlassObject(): error allocating memory!\n");
+        exit(0);
+    }
+    strmap_init(&(p->members));
+    strmap_assign(&(p->members),&(k->members));
+    p -> _klass = k;
+    allocated += sizeof(zclass_object);
+    mem_info m;
+    m.type = Z_OBJ;
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)p, m);
+    return p;
 }
 coroutine* vm_alloc_coro_obj()//allocates coroutine object
 {
-  coroutine* p = (coroutine*)malloc(sizeof(coroutine));
-  if (!p)
-  {
-    fprintf(stderr,"allocCoObj(): error allocating memory!\n");
-    exit(0);
-  }
-  allocated += sizeof(coroutine);
-  mem_info m;
-  m.type = 'z';
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)p, m);
-  zlist_init(&(p->locals));
-  return p;
+    coroutine* p = (coroutine*)malloc(sizeof(coroutine));
+    if (!p)
+    {
+        fprintf(stderr,"allocCoObj(): error allocating memory!\n");
+        exit(0);
+    }
+    allocated += sizeof(coroutine);
+    mem_info m;
+    m.type = 'z';
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)p, m);
+    zlist_init(&(p->locals));
+    return p;
 }
 zfun* vm_alloc_zfun()
 {
@@ -4231,19 +4191,19 @@ zdict* vm_alloc_zdict()
 }
 znativefun* vm_alloc_znativefun()
 {
-  znativefun *p = (znativefun*)malloc(sizeof(znativefun));
-  if (!p)
-  {
-    fprintf(stderr,"allocNativeFun(): error allocating memory!\n");
-    exit(0);
-  }
-  p->signature = NULL;
-  allocated += sizeof(znativefun);
-  mem_info m;
-  m.type = Z_NATIVE_FUNC;
-  m.ismarked = false;
-  mem_map_emplace(&memory,(void *)p, m);
-  return p;
+    znativefun *p = (znativefun*)malloc(sizeof(znativefun));
+    if (!p)
+    {
+        fprintf(stderr,"allocNativeFun(): error allocating memory!\n");
+        exit(0);
+    }
+    p->signature = NULL;
+    allocated += sizeof(znativefun);
+    mem_info m;
+    m.type = Z_NATIVE_FUNC;
+    m.ismarked = false;
+    mem_map_emplace(&memory,(void *)p, m);
+    return p;
 }
 //call_object also behaves as a kind of try/catch since v0.31
 bool vm_call_object(zobject* obj,zobject* args,int N,zobject* rr)
@@ -4327,7 +4287,7 @@ void vm_mark_important(void* mem)
 }
 void vm_unmark_important(void* mem)
 {
-  int idx = -1;
-  if((idx = ptr_vector_search(&vm_important,mem)) != -1)
-    ;//TODO 
+    int idx = -1;
+    if((idx = ptr_vector_search(&vm_important,mem)) != -1)
+        ;//TODO 
 }

@@ -79,7 +79,8 @@ extern fn10 vm_alloc_zbytearr;
 extern fn11 vm_call_object;
 extern fn12 vm_mark_important;
 extern fn13 vm_unmark_important;
-
+extern fn14 vm_increment_allocated;
+extern fn14 vm_decrement_allocated;
 #ifdef _WIN32
 __declspec(dllexport)
 #endif

@@ -50,8 +50,8 @@ znativefun* vm_alloc_znativefun();
 bool vm_call_object(zobject*,zobject*,int,zobject*);
 void vm_mark_important(void* mem);
 void vm_unmark_important(void* mem);
-void* vm_realloc_raw(void*,size_t);
-void* vm_alloc_raw(size_t);
+void vm_increment_allocated(size_t);
+void vm_decrement_allocated(size_t);
 
 extern zclass* Error;
 extern zclass* TypeError;

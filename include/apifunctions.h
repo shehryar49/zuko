@@ -29,6 +29,7 @@ extern "C"{
   typedef bool(*fn11)(zobject*,zobject*,int,zobject*);//call_object
   typedef void(*fn12)(void*);//mark_important
   typedef void(*fn13)(void*);//unmark_impotant
+  typedef void(*fn14)(size_t);//increment_allocated + decrement_allocated
   typedef struct api_functions
   {
     fn1 a1;//api function 1
@@ -44,6 +45,8 @@ extern "C"{
     fn11 a11;
     fn12 a12;
     fn13 a13;
+    fn14 a14;
+    fn14 a15;
     zclass* k1;
     zclass* k2;
     zclass* k3;

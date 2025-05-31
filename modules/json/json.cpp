@@ -7,7 +7,8 @@
 #include <unordered_map>
 #include "json.h"
 #include "zapi.h"
-#include "zobject.h"
+
+
 using namespace std;
 enum TokenType
 {
@@ -41,6 +42,8 @@ const char* StrTokens[] = {
     "NUM",
     "BOOL"
 };
+static_assert(ZUKO_API_VERSION == 4,"API VERSION is not 4");
+
 struct Token
 {
     TokenType type;
@@ -283,139 +286,139 @@ zdict* ObjFromTokens(vector<Token>&,int,int,bool&,string&);
 
 zlist* ListFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
-  err = true;
-  zlist* M = vm_alloc_zlist();
-  if(tokens[l].type != LSB || tokens[h].type!=RSB)
+    err = true;
+    zlist* M = vm_alloc_zlist(); // will be garbage collected by the VM
+    if(tokens[l].type != LSB || tokens[h].type!=RSB)
+        return M;
+    for(int k=l+1;k<h;k+=1)
+    {
+        if(isValTok(tokens[k]))
+        {
+            zlist_push(M,TokToZObj(tokens[k]));
+            k+=1;
+        }
+        else if(tokens[k].type == LCB) //subobject
+        {
+            int r = match_lcb(k,h-1,tokens);
+            if(r == -1)
+            {
+                msg = "Unmatched curly bracket at "+to_string(k);
+                return M;
+            }
+            zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
+            if(err)
+                return M;
+            err = true;
+            k = r+1;
+            zlist_push(M,subobj);
+        }
+        else if(tokens[k].type == LSB) //list
+        {
+            int r = match_lsb(k,h-1,tokens);
+            if(r == -1)
+            {
+                msg = "Unmatched square bracket at "+to_string(k);
+                return M;
+            }
+            zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
+            if(err)
+            {
+                return M;
+            }
+            err = true;
+            k = r+1;
+            zlist_push(M,sublist);
+        }
+        else
+        {
+            msg = "Unknown token type ";
+            return M;
+        }
+        if(k != h && tokens[k].type!=COMMA)
+        {
+            msg = "Expected comma";
+            return M;
+        }
+    }
+    err = false;
     return M;
-  for(int k=l+1;k<h;k+=1)
-  {
-    if(isValTok(tokens[k]))
-    {
-      zlist_push(M,TokToZObj(tokens[k]));
-      k+=1;
-    }
-    else if(tokens[k].type == LCB) //subobject
-    {
-      int r = match_lcb(k,h-1,tokens);
-      if(r == -1)
-      {
-        msg = "Unmatched curly bracket at "+to_string(k);
-        return M;
-      }
-      zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
-      if(err)
-        return M;
-      err = true;
-      k = r+1;
-      zlist_push(M,subobj);
-    }
-    else if(tokens[k].type == LSB) //list
-    {
-      int r = match_lsb(k,h-1,tokens);
-      if(r == -1)
-      {
-        msg = "Unmatched square bracket at "+to_string(k);
-        return M;
-      }
-      zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
-      if(err)
-      {
-        return M;
-      }
-      err = true;
-      k = r+1;
-      zlist_push(M,sublist);
-    }
-    else
-    {
-      msg = "Unknown token type ";
-      return M;
-    }
-    if(k != h && tokens[k].type!=COMMA)
-    {
-      msg = "Expected comma";
-      return M;
-    }
-  }
-  err = false;
-  return M;
 }
 
 zdict* ObjFromTokens(std::vector<Token>& tokens,int l,int h,bool& err,string& msg)
 {
-  err = true;
-  zdict* M = vm_alloc_zdict();
-  if(tokens[l].type != LCB || tokens[h].type!=RCB)
-  {
-    msg = "SyntaxError";
+    err = true;
+    zdict* M = vm_alloc_zdict();
+    if(tokens[l].type != LCB || tokens[h].type!=RCB)
+    {
+        msg = "SyntaxError";
+        return M;
+    }
+    string key;
+    for(int k=l+1;k<h;k+=1)
+    {
+        if(tokens[k].type!=STR)
+        {
+            msg = "Non String keys!";
+            return M;
+        }
+        key = tokens[k].content;
+        k+=1;
+        if(k+1 >= h || tokens[k].type!=COL)
+        {
+            msg = "Expected ':' after key ";
+            return M;
+        }
+        k+=1;
+        //key is at tokens[k-2]
+        //values begins at tokens[k]
+        if(isValTok(tokens[k]))
+        {
+            zdict_emplace(M,zobj_from_str(tokens[k-2].content.c_str()),TokToZObj(tokens[k]));
+            k+=1;
+        }
+        else if(tokens[k].type == LCB) //subobject
+        {
+            int r = match_lcb(k,h-1,tokens);
+            if(r == -1)
+            {
+                msg = "Unmatched at bracket at "+to_string(k);
+                return M;
+            }
+            zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
+            if(err)
+                return M;
+            err = true;
+            k = r+1;    
+            zdict_emplace(M,zobj_from_str(key.c_str()),subobj);
+        }
+        else if(tokens[k].type == LSB) //list
+        {
+            int r = match_lsb(k,h-1,tokens);
+            if(r == -1)
+            {
+                msg = "Unmatched square bracket at "+to_string(k);
+                return M;
+            }
+            zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
+            if(err)
+                return M;
+            err = true;
+            k = r+1;
+            zdict_emplace(M,zobj_from_str(key.c_str()),sublist);
+        }
+        else
+        {
+            msg = "Unknown value against key "+key;
+            return M;
+        }
+        if(k != h && tokens[k].type!=COMMA)
+        {
+            msg = "Expected comma after key/value pair";
+            return M;
+        }
+    }
+    err = false;
     return M;
-  }
-  string key;
-  for(int k=l+1;k<h;k+=1)
-  {
-    if(tokens[k].type!=STR)
-    {
-      msg = "Non String keys!";
-      return M;
-    }
-    key = tokens[k].content;
-    k+=1;
-    if(k+1 >= h || tokens[k].type!=COL)
-    {
-      msg = "Expected ':' after key ";
-      return M;
-    }
-    k+=1;
-    //key is at tokens[k-2]
-    //values begins at tokens[k]
-    if(isValTok(tokens[k]))
-    {
-      zdict_emplace(M,zobj_from_str(tokens[k-2].content.c_str()),TokToZObj(tokens[k]));
-      k+=1;
-    }
-    else if(tokens[k].type == LCB) //subobject
-    {
-      int r = match_lcb(k,h-1,tokens);
-      if(r == -1)
-      {
-        msg = "Unmatched at bracket at "+to_string(k);
-        return M;
-      }
-      zobject subobj = zobj_from_dict(ObjFromTokens(tokens,k,r,err,msg));
-      if(err)
-        return M;
-      err = true;
-      k = r+1;    
-      zdict_emplace(M,zobj_from_str(key.c_str()),subobj);
-    }
-    else if(tokens[k].type == LSB) //list
-    {
-      int r = match_lsb(k,h-1,tokens);
-      if(r == -1)
-      {
-        msg = "Unmatched square bracket at "+to_string(k);
-        return M;
-      }
-      zobject sublist = zobj_from_list(ListFromTokens(tokens,k,r,err,msg));
-      if(err)
-        return M;
-      err = true;
-      k = r+1;
-      zdict_emplace(M,zobj_from_str(key.c_str()),sublist);
-    }
-    else
-    {
-      msg = "Unknown value against key "+key;
-      return M;
-    }
-    if(k != h && tokens[k].type!=COMMA)
-    {
-      msg = "Expected comma after key/value pair";
-      return M;
-    }
-  }
-  err = false;
-  return M;
 }
 bool dumperror;
 std::string dumperrmsg;
@@ -512,26 +515,26 @@ zobject init()
 }
 zobject loads(zobject* args,int32_t n)
 {
-  if(n!=1 || args[0].type!=Z_STR)
-    return z_err(TypeError,"String argument required!");
-  zstr* src = AS_STR(args[0]);
-  bool hadErr;
-  string msg;
-  vector<Token> tokens = tokenize(src,hadErr,msg);
-  if(hadErr)
-  {
-    msg = "Tokenization failed. "+msg; 
-    return z_err(tokenizeError,msg.c_str());
-  }
-  if(tokens.size() == 0)
-    return z_err(parseError,"Empty string!");
-  zdict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
-  if(hadErr)
-  {
-     msg = "Parsing failed. "+msg;
-     return z_err(parseError,msg.c_str());
-  }
-  return zobj_from_dict(m);
+    if(n!=1 || args[0].type!=Z_STR)
+        return z_err(TypeError,"String argument required!");
+    zstr* src = AS_STR(args[0]);
+    bool hadErr;
+    string msg;
+    vector<Token> tokens = tokenize(src,hadErr,msg);
+    if(hadErr)
+    {
+        msg = "Tokenization failed. "+msg; 
+        return z_err(tokenizeError,msg.c_str());
+    }
+    if(tokens.size() == 0)
+        return z_err(parseError,"Empty string!");
+    zdict* m = ObjFromTokens(tokens,0,tokens.size()-1,hadErr,msg);
+    if(hadErr)
+    {
+        msg = "Parsing failed. "+msg;
+        return z_err(parseError,msg.c_str());
+    }
+    return zobj_from_dict(m);
 }
 zobject dumps(zobject* args,int32_t n)
 {
