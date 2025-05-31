@@ -1,0 +1,18 @@
+import libcurl
+
+var curl = libcurl.curl()
+
+curl.setopt(libcurl.OPT_URL,"https://google.com")
+curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
+curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory) # use default write function
+
+# Perform the request
+var res = curl.perform()
+
+if(res != libcurl.CURLE_OK)
+{
+    println(libcurl.strerror(res))
+    exit(1)
+}
+
+fwrite(curl.data,stdout)

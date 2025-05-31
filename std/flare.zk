@@ -31,7 +31,7 @@ namespace flare
     class FlareError extends Error
     {}
 
-    function get(var url)
+    function get(var url,var headers = nil)
     {
         #-
         desc: Performs a http GET request
@@ -42,7 +42,13 @@ namespace flare
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
-    
+        if(headers != nil)
+        {
+            var slist = libcurl.slist()
+            foreach(var h: headers)
+                slist.append(h)
+            curl.setopt(libcurl.OPT_HTTPHEADER,slist)
+        }
         var res = curl.perform()
         if(res != libcurl.CURLE_OK)
             throw FlareError(libcurl.strerror(res))
@@ -50,7 +56,7 @@ namespace flare
         var type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
         return response(curl.data,http_code,type)
     }
-    function post(var url,var data,var content_type = nil)
+    function post(var url,var data,var headers = nil)
     {
         #-
         desc: Performs a http POST request
@@ -60,11 +66,12 @@ namespace flare
         returns: a response object
         -#
         var curl = libcurl.curl()
-        if(content_type != nil)
+        if(headers != nil)
         {
-            var headers = libcurl.slist()
-            headers.append("Content-Type: "+content_type)
-            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+            var slist = libcurl.slist()
+            foreach(var h: headers)
+                slist.append(h)
+            curl.setopt(libcurl.OPT_HTTPHEADER,slist)
         }
         if(typeof(data) == "String")
             data = bytes(data)
@@ -78,10 +85,10 @@ namespace flare
         if(res != libcurl.CURLE_OK)
             throw FlareError(libcurl.strerror(res))
         var http_code = curl.getinfo(libcurl.INFO_HTTP_CODE)
-        content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
+        var content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
         return response(curl.data,http_code,content_type)
     }
-    function put(var url,var data,var content_type = nil)
+    function put(var url,var data,var headers = nil)
     {
         #-
         desc: Performs a http PUT request
@@ -91,12 +98,14 @@ namespace flare
         returns: a response object
         -#
         var curl = libcurl.curl()
-        if(content_type != nil)
+        if(headers != nil)
         {
-            var headers = libcurl.slist()
-            headers.append("Content-Type: "+content_type)
-            curl.setopt(libcurl.OPT_HTTPHEADER,headers)
+            var slist = libcurl.slist()
+            foreach(var h: headers)
+                slist.append(h)
+            curl.setopt(libcurl.OPT_HTTPHEADER,slist)
         }
+ 
         if(typeof(data) == "String")
             data = bytes(data)
 
@@ -113,7 +122,7 @@ namespace flare
         content_type = curl.getinfo(libcurl.INFO_CONTENT_TYPE)
         return response(curl.data,http_code,content_type)
     }
-    function delete(var url)
+    function delete(var url,var headers = nil)
     {
         #-
         desc: Performs a http DELETE request
@@ -121,7 +130,14 @@ namespace flare
         returns: a response object
         -#
         var curl = libcurl.curl()
-
+        if(headers != nil)
+        {
+            var slist = libcurl.slist()
+            foreach(var h: headers)
+                slist.append(h)
+            curl.setopt(libcurl.OPT_HTTPHEADER,slist)
+        }
+ 
         curl.setopt(libcurl.OPT_URL,url)
         curl.setopt(libcurl.OPT_FOLLOWLOCATION,1)
         curl.setopt(libcurl.OPT_WRITEFUNCTION,libcurl.WriteMemory)
