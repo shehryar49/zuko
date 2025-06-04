@@ -260,7 +260,7 @@ size_t spitErr(zclass* e,const char* msg) // used to show a runtime error
         STACK.size = 0;
     return ip - program;
 }
-void DoThreshholdBusiness()
+void do_threshhold_business()
 {
     if (allocated > GC_THRESHHOLD)
     {
@@ -268,7 +268,7 @@ void DoThreshholdBusiness()
         collectGarbage();
     }
 }
-static bool isHeapObj(zobject obj)
+static bool is_heap_obj(zobject obj)
 {
     if (obj.type != Z_INT && obj.type != Z_INT64 && obj.type != Z_FLOAT && obj.type != Z_NIL && obj.type != Z_BYTE && obj.type != Z_BOOL && obj.type != Z_POINTER)
         return true; // all other objects are on heap
@@ -279,7 +279,7 @@ void markV2(zobject obj)
     aux.size = 0;
     int it;
     mem_info* tmp = NULL;
-    if (isHeapObj(obj) && (tmp = mem_map_getref(&memory,obj.ptr)) && !(tmp->ismarked))
+    if (is_heap_obj(obj) && (tmp = mem_map_getref(&memory,obj.ptr)) && !(tmp->ismarked))
     {
         // mark object alive and push it
         tmp->ismarked = true;
@@ -308,12 +308,12 @@ void markV2(zobject obj)
                 // add it to aux
                 zobject key = d->table[i].key;
                 zobject val = d->table[i].val;
-                if (isHeapObj(key) && (tmp = mem_map_getref(&memory,key.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(key) && (tmp = mem_map_getref(&memory,key.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,key);
                 }
-                if (isHeapObj(val) && (tmp = mem_map_getref(&memory,val.ptr))&& !(tmp->ismarked))
+                if (is_heap_obj(val) && (tmp = mem_map_getref(&memory,val.ptr))&& !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,val);
@@ -326,7 +326,7 @@ void markV2(zobject obj)
             for (size_t i = 0;i<d->size;i++)
             {
                 zobject e = d->arr[i];
-                if (isHeapObj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,e);
@@ -339,7 +339,7 @@ void markV2(zobject obj)
             for (size_t i = 0;i<g->locals.size;i++)
             {
                 zobject e = g->locals.arr[i];
-                if (isHeapObj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,e);
@@ -366,7 +366,7 @@ void markV2(zobject obj)
                 const char* key = k->members.table[idx].key;
                 zobject val = k->members.table[idx].val;
                 
-                if (isHeapObj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,val);
@@ -382,7 +382,7 @@ void markV2(zobject obj)
                     continue;
                 const char* key = k->members.table[idx].key;
                 zobject val = k->members.table[idx].val;
-                if (isHeapObj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,val);
@@ -424,7 +424,7 @@ void markV2(zobject obj)
                     continue;
                 const char* key = k->members.table[idx].key;
                 zobject val = k->members.table[idx].val;
-                if (isHeapObj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(val) && (tmp = mem_map_getref(&memory,val.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,val);
@@ -446,7 +446,7 @@ void markV2(zobject obj)
             for (size_t i = 0;i< ((zfun *)curr.ptr)->opt.size;i++ )
             {
                 zobject e = ((zfun*)curr.ptr)->opt.arr[i];
-                if (isHeapObj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
+                if (is_heap_obj(e) && (tmp = mem_map_getref(&memory,e.ptr)) && !(tmp->ismarked))
                 {
                     tmp->ismarked = true;
                     zlist_push(&aux,e);
@@ -917,7 +917,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p1.type = Z_LIST;
             p1.ptr = (void *)pl_ptr1;
             zlist_push(&STACK,p1);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (c1 == Z_DICT)
         {
@@ -946,7 +946,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p1.ptr = (void *)pd_ptr1;
             p1.type = Z_DICT;
             zlist_push(&STACK,p1);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (c1 == 'v')
         {
@@ -1248,7 +1248,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     }
                 }
                 STACK.size -= i2;
-                DoThreshholdBusiness();
+                do_threshhold_business();
             }
             else // that's it modules cannot have zuko code functions (at least not right now)
             {
@@ -2136,7 +2136,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             memcpy(res->arr+a->size,b->arr,b->size*sizeof(zobject));
             p3.ptr = (void *)res;
             zlist_push(&STACK,p3);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (c1 == Z_STR )
         {
@@ -2148,7 +2148,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             memcpy(p->val + a->len, b->val, b->len);
             p3 = zobj_from_str_ptr(p);
             STACK.arr[STACK.size++] = p3;
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (c1 == Z_FLOAT)
         {
@@ -2512,7 +2512,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p->val[0] = c;
             //zlist_push(&STACK,zobj_from_str_ptr(p));
             STACK.arr[STACK.size++] = zobj_from_str_ptr(p);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (p2.type == Z_OBJ)
         {
@@ -2633,7 +2633,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             zstr* p = vm_alloc_zstr(1);
             p->val[0] = c;
             zlist_push(&STACK,zobj_from_str_ptr(p));
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (p2.type == Z_OBJ)
         {
@@ -2863,7 +2863,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p1.type = Z_LIST;
             p1.ptr = (void*)res;
             STACK.arr[STACK.size++] = p1;
-            DoThreshholdBusiness();
+            do_threshhold_business();
             ++ip;
             NEXT_INST;
         }
@@ -2886,7 +2886,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             p1.type = Z_STR;
             p1.ptr = (void*)res;
             STACK.arr[STACK.size++] = p1;
-            DoThreshholdBusiness();
+            do_threshhold_business();
             ++ip;
             NEXT_INST;
         }
@@ -3020,7 +3020,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         memcpy(fn->opt.arr,STACK.arr + STACK.size-i2,sizeof(zobject)*i2);
         zlist_erase_range(&STACK,STACK.size - i2 , STACK.size - 1);
         zlist_push(&STACK,p1);
-        DoThreshholdBusiness();
+        do_threshhold_business();
         ip++; NEXT_INST;
     }
     CASE_CP LOAD_CO:
@@ -3281,7 +3281,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     }
                     
                     ip = program + p->i;
-                    DoThreshholdBusiness();
+                    do_threshhold_business();
                     NEXT_INST;
                 }
             else if (construct.type == Z_NATIVE_FUNC)
@@ -3327,7 +3327,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
                     NEXT_INST;
                 }
                 zlist_push(&STACK,r);
-                DoThreshholdBusiness();
+                do_threshhold_business();
                 ip++;
                 NEXT_INST;
             }
@@ -3350,7 +3350,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             r.type = Z_OBJ;
             r.ptr = (void *)obj;
             zlist_push(&STACK,r);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else if (fn.type == 'g')
         {
@@ -3375,7 +3375,7 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
             T.type = Z_COROUTINE_OBJ;
             T.ptr = g;
             zlist_push(&STACK,T);
-            DoThreshholdBusiness();
+            do_threshhold_business();
         }
         else
         {
