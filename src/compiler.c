@@ -184,9 +184,7 @@ void compileError(compiler_ctx* ctx,const char* type,const char* msg)
     }
     fprintf(stderr,"\n%s\n",msg);
     if(REPL_MODE)
-    {
         repl();
-    }
     exit(1);
 }
 int32_t add_to_vm_strings(const char* n)
@@ -840,8 +838,7 @@ void expr_bytecode(compiler_ctx* ctx,Node* ast)
         zbytearr_push(&ctx->bytecode,YIELD_AND_EXPECTVAL);
         ctx->bytes_done += 1;
         return;
-    }  
-    
+    } 
     compileError(ctx,"SyntaxError", "Invalid syntax in expression");
     return;//to prevent compiler warning
 }
@@ -849,9 +846,9 @@ static char error_buffer[100];
 void scan_class(compiler_ctx* ctx,Node* ast)
 {
     ctx->curr_class_members.size = 0;
-    while(ast->type!=eop_node)
+    while(ast->type != eop_node)
     {
-        if(ast->type==declare_node)
+        if(ast->type == declare_node)
         {
             const char* n = ast->val;
             if(n[0]=='@')
@@ -881,8 +878,7 @@ void scan_class(compiler_ctx* ctx,Node* ast)
         {
             ctx->line_num = atoi(ast->childs.arr[0]->val);
             compileError(ctx,"NameError","Error coroutine inside class not allowed.");
-        }
-        
+        } 
         else if(ast->type==class_node)
         {
             ctx->line_num = atoi(ast->childs.arr[0]->val);
@@ -960,7 +956,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             ctx->STACK_SIZE+=1;
         }
         else if (ast->type == assign_node)
-        {        
+        {
             const char* name = ast->childs.arr[1]->val;
             bool doit = true;
             if (ast->childs.arr[1]->type == id_node)
@@ -1530,7 +1526,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             symtable_destroy(&m);
         }
         else if (ast->type == ifelifelse_node)
-        {  
+        {
             size_t offset1_idx;
             size_t offset2_idx;
             size_t after_else_offset;
@@ -1628,7 +1624,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             sizet_vector_destroy(&the_end);
         }
         else if (ast->type == ifelif_node)
-        {  
+        {
             size_t offset1_idx;
             size_t offset2_idx;
             size_t after_else_offset;
@@ -2001,7 +1997,7 @@ size_t compile(compiler_ctx* ctx,Node* ast)
             }
         }
         else if (ast->type == throw_node)
-        {   
+        {
             expr_bytecode(ctx,ast->childs.arr[1]);
             add_lntable_entry(ctx,ctx->bytes_done);
             zbytearr_push(&ctx->bytecode,THROW);

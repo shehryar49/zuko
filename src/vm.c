@@ -97,6 +97,7 @@ size_t GC_Cycles = 0;
 ptr_vector vm_strings; // string constants used in bytecode
 api_functions api; // to share VM's allocation api with modules
 // just a struct with a bunch of function pointers
+
 zobject nil;
 void mark();
 void collectGarbage();
@@ -1578,8 +1579,6 @@ void interpret(size_t offset , bool panic) //by default panic if stack is not em
         
         if(STACK.arr[lcv_idx].l <= STACK.arr[end_idx].l)
             ip = program + where;
-        //if(--STACK.arr[end_idx].l)
-        //    ip = program + where;
         NEXT_INST;
     }
     CASE_CP DLOOP:
@@ -4159,7 +4158,7 @@ zfun* vm_alloc_coro() //coroutine can be represented by zfun
     mem_map_emplace(&memory,(void *)p, m);
     return p;
 }
-zfile * vm_alloc_zfile()
+zfile* vm_alloc_zfile()
 {
     zfile* p = (zfile*)malloc(sizeof(zfile));
     if (!p)
@@ -4176,7 +4175,7 @@ zfile * vm_alloc_zfile()
 }
 zdict* vm_alloc_zdict()
 {
-    zdict *p = (zdict*)malloc(sizeof(zdict));
+    zdict* p = (zdict*)malloc(sizeof(zdict));
     if (!p)
     {
         fprintf(stderr,"allocDict(): error allocating memory!\n");
@@ -4192,7 +4191,7 @@ zdict* vm_alloc_zdict()
 }
 znativefun* vm_alloc_znativefun()
 {
-    znativefun *p = (znativefun*)malloc(sizeof(znativefun));
+    znativefun* p = (znativefun*)malloc(sizeof(znativefun));
     if (!p)
     {
         fprintf(stderr,"allocNativeFun(): error allocating memory!\n");
@@ -4237,7 +4236,7 @@ bool vm_call_object(zobject* obj,zobject* args,int N,zobject* rr)
     }
     else if (obj->type == Z_NATIVE_FUNC)
     {
-        znativefun *A = (znativefun *)obj->ptr;
+        znativefun* A = (znativefun*)obj->ptr;
         NativeFunPtr f = A->addr;
         zobject p4;
         if(A->signature)
