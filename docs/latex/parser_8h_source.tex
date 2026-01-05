@@ -1,0 +1,90 @@
+\doxysection{parser.\+h}
+\hypertarget{parser_8h_source}{}\label{parser_8h_source}\index{include/parser.h@{include/parser.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#ifndef\ PARSER\_H\_}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ PARSER\_H\_}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}refgraph.h"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}token.h"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{ast_8h}{ast.h}}"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}zuko-\/src.h"{}}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ "{}lexer.h"{}}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}str-\/vec.h"{}}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ "{}ptr-\/vector.h"{}}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00033\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \mbox{\hyperlink{structNode}{Node}}*\ new\_node(\mbox{\hyperlink{ast_8h_acac9cbaeea226ed297804c012dc12b16}{NodeType}}\ type,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{int}\ find\_token(\mbox{\hyperlink{structtoken}{token}}\ t,\textcolor{keywordtype}{int}\ start,\textcolor{keywordtype}{int}\ end,\mbox{\hyperlink{structtoken}{token}}*\ tokens);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{int}\ find\_token\_consecutive(\mbox{\hyperlink{structtoken}{token}}\ t,\textcolor{keywordtype}{int}\ start,\textcolor{keywordtype}{int}\ end,\mbox{\hyperlink{structtoken}{token}}*\ tokens);}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{keywordtype}{int}\ match\_token(\textcolor{keywordtype}{int},\textcolor{keywordtype}{int},token\_type,\mbox{\hyperlink{structtoken}{token}}*);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{int}\ match\_token\_right(\textcolor{keywordtype}{int},\textcolor{keywordtype}{int},token\_type,\mbox{\hyperlink{structtoken}{token}}*);}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{keywordtype}{void}\ delete\_ast(\mbox{\hyperlink{structNode}{Node}}*\ ast);}
+\DoxyCodeLine{00045\ \textcolor{keywordtype}{void}\ copy\_ast(\mbox{\hyperlink{structNode}{Node}}**\ dest,\mbox{\hyperlink{structNode}{Node}}*\ src);}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{comment}{//\ Function\ to\ print\ AST\ in\ tablular\ form}}
+\DoxyCodeLine{00048\ \textcolor{keywordtype}{void}\ print\_ast(\mbox{\hyperlink{structNode}{Node}}*\ n,\textcolor{keywordtype}{int}\ spaces);}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structparser__ctx}{parser\_ctx}}}
+\DoxyCodeLine{00052\ \{}
+\DoxyCodeLine{00053\ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ prefixes;\textcolor{comment}{//for\ namespaces\ }}
+\DoxyCodeLine{00054\ \ \ \mbox{\hyperlink{structrefgraph}{refgraph}}*\ reference\_graph;}
+\DoxyCodeLine{00055\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ curr\_sym;}
+\DoxyCodeLine{00056\ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}*\ files;}
+\DoxyCodeLine{00057\ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}*\ sources;}
+\DoxyCodeLine{00058\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ filename;}
+\DoxyCodeLine{00059\ \ \ \textcolor{keywordtype}{size\_t}\ line\_num;}
+\DoxyCodeLine{00060\ \ \ \textcolor{keywordtype}{bool}\ found\_yield\ ;}
+\DoxyCodeLine{00061\ \ \ \textcolor{comment}{//ptr\_vector\ to\_free;}}
+\DoxyCodeLine{00062\ \ \ \textcolor{comment}{//Context}}
+\DoxyCodeLine{00063\ \ \ \textcolor{keywordtype}{bool}\ infunc;}
+\DoxyCodeLine{00064\ \ \ \textcolor{keywordtype}{bool}\ inclass;}
+\DoxyCodeLine{00065\ \ \ \textcolor{keywordtype}{bool}\ inloop;}
+\DoxyCodeLine{00066\ \ \ \textcolor{keywordtype}{bool}\ inif;}
+\DoxyCodeLine{00067\ \ \ \textcolor{keywordtype}{bool}\ inelif;}
+\DoxyCodeLine{00068\ \ \ \textcolor{keywordtype}{bool}\ inelse;}
+\DoxyCodeLine{00069\ \ \ \textcolor{keywordtype}{bool}\ intry;}
+\DoxyCodeLine{00070\ \ \ \textcolor{keywordtype}{bool}\ incatch;}
+\DoxyCodeLine{00071\ \}\mbox{\hyperlink{structparser__ctx}{parser\_ctx}};}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \textcolor{keywordtype}{char}*\ merge\_str(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \mbox{\hyperlink{structparser__ctx}{parser\_ctx}}*\ create\_parser\_context(\mbox{\hyperlink{structzuko__src}{zuko\_src}}*);}
+\DoxyCodeLine{00076\ \textcolor{keywordtype}{void}\ parser\_init(\mbox{\hyperlink{structparser__ctx}{parser\_ctx}}*);}
+\DoxyCodeLine{00077\ \textcolor{keywordtype}{void}\ parser\_destroy(\mbox{\hyperlink{structparser__ctx}{parser\_ctx}}*);}
+\DoxyCodeLine{00078\ \textcolor{keywordtype}{void}\ parser\_set\_source(\mbox{\hyperlink{structparser__ctx}{parser\_ctx}}*,\mbox{\hyperlink{structzuko__src}{zuko\_src}}*\ p,\textcolor{keywordtype}{size\_t}\ root\_idx);\ \textcolor{comment}{//\ for\ error\ printing\ and\ stuff}}
+\DoxyCodeLine{00079\ \mbox{\hyperlink{structNode}{Node}}*\ parse\_block(\mbox{\hyperlink{structparser__ctx}{parser\_ctx}}*,\mbox{\hyperlink{structtoken}{token}}*\ tokens,\textcolor{keywordtype}{int}\ begin,\textcolor{keywordtype}{int}\ end);}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00082\ \}}
+\DoxyCodeLine{00083\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

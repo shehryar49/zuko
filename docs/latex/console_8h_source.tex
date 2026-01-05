@@ -1,0 +1,21 @@
+\doxysection{console.\+h}
+\hypertarget{console_8h_source}{}\label{console_8h_source}\index{modules/console/console.h@{modules/console/console.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ EXPORT\ ZObject\ init();}
+\DoxyCodeLine{00008\ \ \ \ \ EXPORT\ ZObject\ setTextAttribute(ZObject*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00009\ \ \ \ \ EXPORT\ ZObject\ show(ZObject*,\ \textcolor{keywordtype}{int}\ );}
+\DoxyCodeLine{00010\ \ \ \ \ EXPORT\ ZObject\ hide(ZObject*,\ \textcolor{keywordtype}{int}\ );}
+\DoxyCodeLine{00011\ \ \ \ \ EXPORT\ ZObject\ setPixel(ZObject*,\ \textcolor{keywordtype}{int}\ );}
+\DoxyCodeLine{00012\ \ \ \ \ EXPORT\ ZObject\ gotoxy(ZObject*,\ \textcolor{keywordtype}{int}\ );}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ ZObject\ getDimensions(ZObject*,\ \textcolor{keywordtype}{int}\ );}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,117 @@
+\doxysection{zapi.\+h}
+\hypertarget{zapi_8h_source}{}\label{zapi_8h_source}\index{include/zapi.h@{include/zapi.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{comment}{//This\ header\ should\ only\ be\ included\ by\ a\ zuko\ module!}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_API\_H}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#define\ ZUKO\_API\_H}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}apiver.h"{}}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}zstr.h"{}}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ "{}zbytearray.h"{}}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ "{}strmap.h"{}}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ "{}funobject.h"{}}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ "{}klass.h"{}}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ "{}klassobject.h"{}}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#include\ "{}module.h"{}}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#include\ "{}nativefun.h"{}}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ "{}coroutineobj.h"{}}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#include\ "{}zlist.h"{}}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#include\ "{}zdict.h"{}}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#include\ "{}apifunctions.h"{}}}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00043\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{comment}{//Error\ classes\ (defined\ in\ zapi.c)}}
+\DoxyCodeLine{00047\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ Error;}
+\DoxyCodeLine{00048\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ TypeError;}
+\DoxyCodeLine{00049\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ ValueError;}
+\DoxyCodeLine{00050\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ MathError;\ }
+\DoxyCodeLine{00051\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ NameError;}
+\DoxyCodeLine{00052\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ IndexError;}
+\DoxyCodeLine{00053\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ ArgumentError;}
+\DoxyCodeLine{00054\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ FileIOError;}
+\DoxyCodeLine{00055\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ KeyError;}
+\DoxyCodeLine{00056\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ OverflowError;}
+\DoxyCodeLine{00057\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ FileOpenError;}
+\DoxyCodeLine{00058\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ FileSeekError;\ }
+\DoxyCodeLine{00059\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ ImportError;}
+\DoxyCodeLine{00060\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ ThrowError;}
+\DoxyCodeLine{00061\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ MaxRecursionError;}
+\DoxyCodeLine{00062\ \textcolor{comment}{//these\ classes\ are\ set\ by\ the\ api\_setup()}}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \textcolor{comment}{/**************/}}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \textcolor{comment}{/**************/}}
+\DoxyCodeLine{00068\ \textcolor{comment}{//Allocator\ function\ pointers\ (defined\ in\ zapi.c)}}
+\DoxyCodeLine{00069\ \textcolor{keyword}{extern}\ fn1\ vm\_alloc\_zlist;}
+\DoxyCodeLine{00070\ \textcolor{keyword}{extern}\ fn2\ vm\_alloc\_zdict;}
+\DoxyCodeLine{00071\ \textcolor{keyword}{extern}\ fn3\ vm\_alloc\_zstr;}
+\DoxyCodeLine{00072\ \textcolor{comment}{//extern\ fn4\ vm\_alloc\_raw;}}
+\DoxyCodeLine{00073\ \textcolor{keyword}{extern}\ fn5\ vm\_alloc\_zfile;}
+\DoxyCodeLine{00074\ \textcolor{keyword}{extern}\ fn6\ vm\_alloc\_zclass;}
+\DoxyCodeLine{00075\ \textcolor{keyword}{extern}\ fn7\ vm\_alloc\_zclassobj;}
+\DoxyCodeLine{00076\ \textcolor{keyword}{extern}\ fn8\ vm\_alloc\_znativefun;}
+\DoxyCodeLine{00077\ \textcolor{keyword}{extern}\ fn9\ vm\_alloc\_zmodule;}
+\DoxyCodeLine{00078\ \textcolor{keyword}{extern}\ fn10\ vm\_alloc\_zbytearr;}
+\DoxyCodeLine{00079\ \textcolor{keyword}{extern}\ fn11\ vm\_call\_object;}
+\DoxyCodeLine{00080\ \textcolor{keyword}{extern}\ fn12\ vm\_mark\_important;}
+\DoxyCodeLine{00081\ \textcolor{keyword}{extern}\ fn13\ vm\_unmark\_important;}
+\DoxyCodeLine{00082\ \textcolor{keyword}{extern}\ fn14\ vm\_increment\_allocated;}
+\DoxyCodeLine{00083\ \textcolor{keyword}{extern}\ fn14\ vm\_decrement\_allocated;}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00085\ \_\_declspec(dllexport)}
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00087\ \textcolor{keywordtype}{int}\ api\_setup(\mbox{\hyperlink{structapi__functions}{api\_functions}}*\ p,\textcolor{keywordtype}{int}\ ver);}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \textcolor{comment}{//Some\ more\ helper\ functions\ for\ module\ developers}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \mbox{\hyperlink{structzclass}{zclass}}*\ zclass\_make\_derived(\mbox{\hyperlink{structzclass}{zclass}}*\ base);}
+\DoxyCodeLine{00092\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_str(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);\textcolor{comment}{//\ makes\ deep\ copy\ of\ str}}
+\DoxyCodeLine{00093\ \mbox{\hyperlink{structzobject}{zobject}}\ z\_err(\mbox{\hyperlink{structzclass}{zclass}}*,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00094\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_method(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*,NativeFunPtr,\mbox{\hyperlink{structzclass}{zclass}}*);}
+\DoxyCodeLine{00095\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_function(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*,NativeFunPtr);}
+\DoxyCodeLine{00096\ \textcolor{keyword}{inline}\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_nil()}
+\DoxyCodeLine{00097\ \{}
+\DoxyCodeLine{00098\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ ret;}
+\DoxyCodeLine{00099\ \ \ \ \ ret.type\ =\ Z\_NIL;}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keywordflow}{return}\ ret;}
+\DoxyCodeLine{00101\ \}}
+\DoxyCodeLine{00102\ \textcolor{keywordtype}{void}\ zmodule\_add\_fun(\mbox{\hyperlink{structzmodule}{zmodule}}*\ m,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,NativeFunPtr\ p);}
+\DoxyCodeLine{00103\ \textcolor{keywordtype}{void}\ zmodule\_add\_sig\_fun(\mbox{\hyperlink{structzmodule}{zmodule}}*\ m,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,NativeFunPtr\ p,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ sig);}
+\DoxyCodeLine{00104\ \textcolor{keywordtype}{void}\ zclass\_add\_method(\mbox{\hyperlink{structzclass}{zclass}}*\ k,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,NativeFunPtr\ p);}
+\DoxyCodeLine{00105\ \textcolor{keywordtype}{void}\ zclass\_add\_sig\_method(\mbox{\hyperlink{structzclass}{zclass}}*\ k,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,NativeFunPtr\ p,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ sig);}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00108\ \}}
+\DoxyCodeLine{00109\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

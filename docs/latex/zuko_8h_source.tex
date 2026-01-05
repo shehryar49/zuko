@@ -1,0 +1,61 @@
+\doxysection{zuko.\+h}
+\hypertarget{zuko_8h_source}{}\label{zuko_8h_source}\index{include/zuko.h@{include/zuko.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//This\ header\ should\ only\ be\ included\ by\ the\ zuko\ interpreter}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <time.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <errno.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <math.h>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <stdint.h>}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#if\ defined(\_\_linux\_\_)\ ||\ defined(\_\_APPLE\_\_)}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\ \ \ \ \#include\ <dlfcn.h>}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\ \ \ \ \#include\ <unistd.h>}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{comment}{//For\ REPl}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\ \ \ \ \#include\ <readline/readline.h>}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\ \ \ \ \#include\ <readline/history.h>}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\ \ \ \ \#include\ <windows.h>}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\ \ \ \ \#include\ <io.h>}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\ \ \ \ \#include\ <fcntl.h>}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}apiver.h"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}zstr.h"{}}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ "{}zbytearray.h"{}}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}strmap.h"{}}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ "{}funobject.h"{}}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ "{}klass.h"{}}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ "{}klassobject.h"{}}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ "{}module.h"{}}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ "{}nativefun.h"{}}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#include\ "{}coroutineobj.h"{}}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#include\ "{}zlist.h"{}}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ "{}zdict.h"{}}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#include\ "{}zfileobj.h"{}}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#include\ "{}opcode.h"{}}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#include\ "{}overflow.h"{}}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#include\ "{}convo.h"{}}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#include\ "{}token.h"{}}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#include\ "{}parser.h"{}}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#include\ "{}compiler.h"{}}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#include\ "{}funobject.h"{}}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#include\ "{}builtinfunc.h"{}}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#include\ "{}vm.h"{}}}
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#include\ "{}lexer.h"{}}}
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#include\ "{}misc.h"{}}}
+\DoxyCodeLine{00050\ \textcolor{preprocessor}{\#include\ "{}zuko-\/src.h"{}}}
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#include\ "{}repl.h"{}}}
+\DoxyCodeLine{00052\ \textcolor{preprocessor}{\#include\ "{}dis.h"{}}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

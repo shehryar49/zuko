@@ -1,0 +1,32 @@
+\doxysection{curl.\+h}
+\hypertarget{curl_8h_source}{}\label{curl_8h_source}\index{modules/libcurl/curl.h@{modules/libcurl/curl.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_CURL\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_CURL\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ curl\_class;}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00015\ \{}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{comment}{//\ These\ are\ wrapper\ functions!}}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_construct(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00018\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_setopt(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00019\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_perform(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00020\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_getinfo(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00021\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_escape(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00022\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_unescape(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00023\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ zcurl\_\_del\_\_(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});\ \textcolor{comment}{//\ curl\ object\ deletor,\ this\ also\ eliminates\ the\ need\ for\ curl\_easy\_cleanup()}}
+\DoxyCodeLine{00024\ \}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

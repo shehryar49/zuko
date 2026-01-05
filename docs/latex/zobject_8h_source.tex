@@ -1,0 +1,134 @@
+\doxysection{zobject.\+h}
+\hypertarget{zobject_8h_source}{}\label{zobject_8h_source}\index{include/zobject.h@{include/zobject.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#ifndef\ ZOBJECT\_H\_}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ ZOBJECT\_H\_}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}zbytearray.h"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <stdint.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#define\ Z\_LIST\ 'j'}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#define\ Z\_DICT\ 'a'}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#define\ Z\_INT\ 'i'}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#define\ Z\_INT64\ 'l'}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#define\ Z\_FLOAT\ 'f'}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#define\ Z\_BYTE\ \ 'm'}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#define\ Z\_NATIVE\_FUNC\ 'y'}\textcolor{comment}{//native\ function}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#define\ Z\_MODULE\ 'q'}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#define\ Z\_STR\ 's'}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#define\ Z\_FILESTREAM\ 'u'}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#define\ Z\_NIL\ 'n'}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#define\ Z\_OBJ\ 'o'\ }\textcolor{comment}{//objects\ created\ using\ zuko\ code}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#define\ Z\_CLASS\ 'v'\ }\textcolor{comment}{//Zuko\ code\ class}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#define\ Z\_BOOL\ 'b'}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#define\ Z\_POINTER\ 'p'\ }\textcolor{comment}{//just\ a\ pointer\ that\ means\ something\ only\ to\ c++\ code,the\ interpreter\ just\ stores\ it}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#define\ Z\_FUNC\ 'w'\ }\textcolor{comment}{//zuko\ code\ function}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#define\ Z\_COROUTINE\ 'g'}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#define\ Z\_COROUTINE\_OBJ\ 'z'}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#define\ Z\_ERROBJ\ 'e'\ }\textcolor{comment}{//same\ as\ an\ object,just\ in\ thrown\ state}}
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#define\ Z\_BYTEARR\ 'c'}}
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#define\ Z\_RAW\ 't'\ }\textcolor{comment}{//used\ by\ VM's\ GC}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00052\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00053\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzlist}{zlist}}\ \mbox{\hyperlink{structzlist}{zlist}};}
+\DoxyCodeLine{00056\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structznativefun}{znativefun}}\ \mbox{\hyperlink{structznativefun}{znativefun}};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzdict}{zdict}}\ \mbox{\hyperlink{structzdict}{zdict}};}
+\DoxyCodeLine{00059\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzfile}{zfile}}\ \mbox{\hyperlink{structzfile}{zfile}};}
+\DoxyCodeLine{00060\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzstr}{zstr}}\ \mbox{\hyperlink{structzstr}{zstr}};}
+\DoxyCodeLine{00061\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }StrMap\ StrMap;}
+\DoxyCodeLine{00062\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass}{zclass}}\ \mbox{\hyperlink{structzclass}{zclass}};}
+\DoxyCodeLine{00063\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass__object}{zclass\_object}}\ \mbox{\hyperlink{structzclass__object}{zclass\_object}};}
+\DoxyCodeLine{00064\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzmodule}{zmodule}}\ \mbox{\hyperlink{structzmodule}{zmodule}};}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzobject}{zobject}}}
+\DoxyCodeLine{00069\ \{}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keyword}{union}}
+\DoxyCodeLine{00071\ \ \ \ \ \{}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ f;}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ int64\_t\ l;}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ int32\_t\ i;}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ ptr;}
+\DoxyCodeLine{00076\ \ \ \ \ \};}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keywordtype}{char}\ type;}
+\DoxyCodeLine{00078\ \}\mbox{\hyperlink{structzobject}{zobject}};}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzobject}{zobject}}(*NativeFunPtr)(\mbox{\hyperlink{structzobject}{zobject}}*,int);}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \textcolor{preprocessor}{\#define\ AS\_BOOL(x)\ (bool)x.i}}
+\DoxyCodeLine{00083\ \textcolor{preprocessor}{\#define\ AS\_INT(x)\ x.i}}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#define\ AS\_INT64(x)\ x.l}}
+\DoxyCodeLine{00085\ \textcolor{preprocessor}{\#define\ AS\_DOUBLE(x)\ x.f}}
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#define\ AS\_BYTE(x)\ (uint8\_t)x.i}}
+\DoxyCodeLine{00087\ \textcolor{preprocessor}{\#define\ AS\_STR(x)\ ((zstr*)x.ptr)}}
+\DoxyCodeLine{00088\ \textcolor{preprocessor}{\#define\ AS\_DICT(x)\ (zdict*)x.ptr}}
+\DoxyCodeLine{00089\ \textcolor{preprocessor}{\#define\ AS\_LIST(x)\ (zlist*)x.ptr}}
+\DoxyCodeLine{00090\ \textcolor{preprocessor}{\#define\ AS\_CLASS(x)\ (zclass*)x.ptr}}
+\DoxyCodeLine{00091\ \textcolor{preprocessor}{\#define\ AS\_ClASSOBJ(x)\ (zclass\_object*)x.ptr}}
+\DoxyCodeLine{00092\ \textcolor{preprocessor}{\#define\ AS\_BYTEARRAY(x)\ (zbytearr*)x.ptr}}
+\DoxyCodeLine{00093\ \textcolor{preprocessor}{\#define\ AS\_FILEOBJECT(x)\ (zfile*)x.ptr}}
+\DoxyCodeLine{00094\ \textcolor{preprocessor}{\#define\ AS\_PTR(x)\ x.ptr}}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \textcolor{keywordtype}{bool}\ zobject\_equals(\mbox{\hyperlink{structzobject}{zobject}},\mbox{\hyperlink{structzobject}{zobject}});}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{bool}\ is\_numeric(\textcolor{keywordtype}{char}\ t)}
+\DoxyCodeLine{00103\ \{}
+\DoxyCodeLine{00104\ \ \ \textcolor{keywordflow}{return}\ (t\ ==\ Z\_INT\ ||\ t\ ==\ Z\_FLOAT\ ||\ t\ ==\ Z\_INT64);}
+\DoxyCodeLine{00105\ \}}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_str\_ptr(\mbox{\hyperlink{structzstr}{zstr}}*);}
+\DoxyCodeLine{00108\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_int(int32\_t);}
+\DoxyCodeLine{00109\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_double(\textcolor{keywordtype}{double});}
+\DoxyCodeLine{00110\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_int64(int64\_t);}
+\DoxyCodeLine{00111\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_ptr(\textcolor{keywordtype}{void}*);}
+\DoxyCodeLine{00112\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_byte(uint8\_t);}
+\DoxyCodeLine{00113\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_bool(\textcolor{keywordtype}{bool});}
+\DoxyCodeLine{00114\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_list(\mbox{\hyperlink{structzlist}{zlist}}*);}
+\DoxyCodeLine{00115\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_dict(\mbox{\hyperlink{structzdict}{zdict}}*);}
+\DoxyCodeLine{00116\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_module(\mbox{\hyperlink{structzmodule}{zmodule}}*);}
+\DoxyCodeLine{00117\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_class(\mbox{\hyperlink{structzclass}{zclass}}*);}
+\DoxyCodeLine{00118\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_classobj(\mbox{\hyperlink{structzclass__object}{zclass\_object}}*);}
+\DoxyCodeLine{00119\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_bytearr(zbytearr*);}
+\DoxyCodeLine{00120\ \mbox{\hyperlink{structzobject}{zobject}}\ zobj\_from\_file(\mbox{\hyperlink{structzfile}{zfile}}*);}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ zobject\_typename(\textcolor{keywordtype}{char});}
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00125\ \}}
+\DoxyCodeLine{00126\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

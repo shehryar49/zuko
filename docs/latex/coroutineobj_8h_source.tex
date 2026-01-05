@@ -1,0 +1,32 @@
+\doxysection{coroutineobj.\+h}
+\hypertarget{coroutineobj_8h_source}{}\label{coroutineobj_8h_source}\index{include/coroutineobj.h@{include/coroutineobj.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ COROUTINEOBJ\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ COROUTINEOBJ\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}funobject.h"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ coroutine\_state}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ COROUTINE\_STATE\_SUSPENDED,}
+\DoxyCodeLine{00008\ \ \ COROUTINE\_STATE\_RUNNING,}
+\DoxyCodeLine{00009\ \ \ COROUTINE\_STATE\_STOPPED,}
+\DoxyCodeLine{00010\ \}coroutine\_state;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structcoroutine}{coroutine}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \textcolor{keywordtype}{int}\ curr;\textcolor{comment}{//index\ in\ bytecode\ from\ where\ to\ resume\ the\ coroutine}}
+\DoxyCodeLine{00015\ \ \ \mbox{\hyperlink{structzlist}{zlist}}\ locals;}
+\DoxyCodeLine{00016\ \ \ coroutine\_state\ state;}
+\DoxyCodeLine{00017\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name;}
+\DoxyCodeLine{00018\ \ \ \mbox{\hyperlink{structzfun}{zfun}}*\ fun;\textcolor{comment}{//function\ from\ which\ this\ coroutine\ object\ was\ made}}
+\DoxyCodeLine{00019\ \ \ \textcolor{keywordtype}{bool}\ give\_val\_on\_resume;}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\ \ \#ifdef\ \_\_cpluscplus}}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{structcoroutine}{coroutine}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structcoroutine}{coroutine}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00022\ \ \ \ \ \mbox{\hyperlink{structcoroutine}{coroutine}}\&\ operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{structcoroutine}{coroutine}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\ \ \#endif}}
+\DoxyCodeLine{00024\ \}\mbox{\hyperlink{structcoroutine}{coroutine}};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,30 @@
+\doxysection{repl.\+h}
+\hypertarget{repl_8h_source}{}\label{repl_8h_source}\index{include/repl.h@{include/repl.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_REPL\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_REPL\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#ifndef\ \_WIN32}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\ \ \ \ \#include\ <readline/readline.h>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\ \ \ \ \#include\ <readline/history.h>}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{extern}\ \textcolor{keywordtype}{bool}\ REPL\_MODE;}
+\DoxyCodeLine{00017\ \textcolor{keywordtype}{void}\ repl\_init();}
+\DoxyCodeLine{00018\ \textcolor{keywordtype}{void}\ repl();}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00021\ \}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

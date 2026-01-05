@@ -1,0 +1,35 @@
+\doxysection{klassobject.\+h}
+\hypertarget{klassobject_8h_source}{}\label{klassobject_8h_source}\index{include/klassobject.h@{include/klassobject.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_KLASSOBJ\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_KLASSOBJ\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass}{zclass}}\ \mbox{\hyperlink{structzclass}{zclass}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzobject}{zobject}}\ \mbox{\hyperlink{structzobject}{zobject}};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}strmap.h"{}}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass__object}{zclass\_object}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ \_klass;\ \textcolor{comment}{//class\ of\ the\ object}}
+\DoxyCodeLine{00018\ \ \ \mbox{\hyperlink{structstrmap}{strmap}}\ members;}
+\DoxyCodeLine{00019\ \}\mbox{\hyperlink{structzclass__object}{zclass\_object}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \mbox{\hyperlink{structzobject}{zobject}}\ zclassobj\_get(\mbox{\hyperlink{structzclass__object}{zclass\_object}}*\ ko,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{void}\ zclassobj\_set(\mbox{\hyperlink{structzclass__object}{zclass\_object}}*\ ko,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00025\ \}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

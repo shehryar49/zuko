@@ -1,0 +1,28 @@
+\doxysection{datetime.\+h}
+\hypertarget{datetime_8h_source}{}\label{datetime_8h_source}\index{modules/datetime/datetime.h@{modules/datetime/datetime.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Datetime\ Module\ Zuko}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Written\ by\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{5\ March\ 2023}}
+\DoxyCodeLine{00005\ \textcolor{comment}{The\ code\ is\ completely\ free\ to\ use\ and\ comes\ without\ any\ guarantee/warrantee}}
+\DoxyCodeLine{00006\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#define\ EXPORT\ }}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00013\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00016\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ TIME(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ n);}
+\DoxyCodeLine{00017\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ CTIME(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ n);}
+\DoxyCodeLine{00018\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ LOCALTIME(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ n);}
+\DoxyCodeLine{00019\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ GMTIME(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ n);}
+\DoxyCodeLine{00020\ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ TMKLASS\_\_del\_\_(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ n);}
+\DoxyCodeLine{00021\ \ \ }
+\DoxyCodeLine{00022\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,27 @@
+\doxysection{curl\+\_\+slist.\+h}
+\hypertarget{curl__slist_8h_source}{}\label{curl__slist_8h_source}\index{modules/libcurl/curl\_slist.h@{modules/libcurl/curl\_slist.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_CURL\_SLIST\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_CURL\_SLIST\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ slist\_class;}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ slist\_construct(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00018\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ slist\_append(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00019\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ slist\_\_del\_\_(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00020\ \}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

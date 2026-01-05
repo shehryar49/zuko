@@ -1,0 +1,53 @@
+\doxysection{zdict.\+h}
+\hypertarget{zdict_8h_source}{}\label{zdict_8h_source}\index{include/zdict.h@{include/zdict.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZDICT\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZDICT\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00004\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ slotStatus}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \ \ EMPTY,}
+\DoxyCodeLine{00014\ \ \ OCCUPIED,}
+\DoxyCodeLine{00015\ \ \ DELETED}
+\DoxyCodeLine{00016\ \}slotStatus;}
+\DoxyCodeLine{00017\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structslot}{slot}}}
+\DoxyCodeLine{00018\ \{}
+\DoxyCodeLine{00019\ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ key;}
+\DoxyCodeLine{00020\ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ val;}
+\DoxyCodeLine{00021\ \ \ slotStatus\ stat;}
+\DoxyCodeLine{00022\ \}\mbox{\hyperlink{structslot}{slot}};}
+\DoxyCodeLine{00023\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzdict}{zdict}}}
+\DoxyCodeLine{00024\ \{}
+\DoxyCodeLine{00025\ \ \ \mbox{\hyperlink{structslot}{slot}}*\ table;}
+\DoxyCodeLine{00026\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00027\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00028\ \}\mbox{\hyperlink{structzdict}{zdict}};}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{keywordtype}{size\_t}\ hashDJB2(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ key,\textcolor{keywordtype}{size\_t}\ M);}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keywordtype}{size\_t}\ hashzobject(\mbox{\hyperlink{structzobject}{zobject}}\ a,\textcolor{keywordtype}{size\_t}\ M);}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{keywordtype}{void}\ zdict\_init(\mbox{\hyperlink{structzdict}{zdict}}*\ h);}
+\DoxyCodeLine{00035\ \textcolor{keywordtype}{void}\ zdict\_set(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzobject}{zobject}}\ key,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00036\ \textcolor{keywordtype}{void}\ zdict\_emplace(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzobject}{zobject}}\ key,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00037\ \textcolor{keywordtype}{bool}\ zdict\_get(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzobject}{zobject}}\ key,\mbox{\hyperlink{structzobject}{zobject}}*\ val);}
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{bool}\ zdict\_erase(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzobject}{zobject}}\ key);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{bool}\ zdict\_equal(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzdict}{zdict}}*\ other);}
+\DoxyCodeLine{00040\ \textcolor{keywordtype}{void}\ zdict\_assign(\mbox{\hyperlink{structzdict}{zdict}}*\ h,\mbox{\hyperlink{structzdict}{zdict}}*\ other);\ \textcolor{comment}{//\ makes\ deep\ copy}}
+\DoxyCodeLine{00041\ \textcolor{keywordtype}{void}\ zdict\_clear(\mbox{\hyperlink{structzdict}{zdict}}*\ h);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{void}\ zdict\_destroy(\mbox{\hyperlink{structzdict}{zdict}}*\ h);}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00045\ \}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

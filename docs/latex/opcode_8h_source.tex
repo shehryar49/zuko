@@ -1,0 +1,114 @@
+\doxysection{opcode.\+h}
+\hypertarget{opcode_8h_source}{}\label{opcode_8h_source}\index{include/opcode.h@{include/opcode.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#ifndef\ OPCODE\_S\_H\_}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ OPCODE\_S\_H\_}}
+\DoxyCodeLine{00024\ \textcolor{keyword}{enum}\ OPCODE}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \ \ \ \ LOAD=1,\textcolor{comment}{//LOAD\ <type>\ <value>}}
+\DoxyCodeLine{00027\ \ \ \ \ CALLMETHOD=2,}
+\DoxyCodeLine{00028\ \ \ \ \ ADD=3,\textcolor{comment}{//ADD}}
+\DoxyCodeLine{00029\ \ \ \ \ MUL=4,\textcolor{comment}{//MUL}}
+\DoxyCodeLine{00030\ \ \ \ \ DIV=5,\textcolor{comment}{//DIV}}
+\DoxyCodeLine{00031\ \ \ \ \ SUB=6,\textcolor{comment}{//SUB}}
+\DoxyCodeLine{00032\ \ \ \ \ JMP=7,\textcolor{comment}{//JMP\ <where>}}
+\DoxyCodeLine{00033\ \ \ \ \ CALL=8,\textcolor{comment}{//CALL\ <name>}}
+\DoxyCodeLine{00034\ \ \ \ \ XOR=9,\textcolor{comment}{//XOR}}
+\DoxyCodeLine{00035\ \ \ \ \ ASSIGN\ =\ 10,\textcolor{comment}{//ASSIGN\ <name>}}
+\DoxyCodeLine{00036\ \ \ \ \ CMP\_JMPIFFALSE\ =\ 11,\textcolor{comment}{//JMPIf\ <where>}}
+\DoxyCodeLine{00037\ \ \ \ \ EQ=12,\textcolor{comment}{//EQ}}
+\DoxyCodeLine{00038\ \ \ \ \ NOTEQ=13,\textcolor{comment}{//NOTEQ}}
+\DoxyCodeLine{00039\ \ \ \ \ SMALLERTHAN=14,}
+\DoxyCodeLine{00040\ \ \ \ \ GREATERTHAN=15,}
+\DoxyCodeLine{00041\ \ \ \ \ CALLUDF=16,\textcolor{comment}{//}}
+\DoxyCodeLine{00042\ \ \ \ \ INPLACE\_INC=17,\ \textcolor{comment}{//increments\ a\ local\ variable\ }}
+\DoxyCodeLine{00043\ \ \ \ \ LOAD\_STR=18,}
+\DoxyCodeLine{00044\ \ \ \ \ GOTOIFFALSE=19,}
+\DoxyCodeLine{00045\ \ \ \ \ NPOP\_STACK\ =\ 20,}
+\DoxyCodeLine{00046\ \ \ \ \ MOD\ =\ 21,}
+\DoxyCodeLine{00047\ \ \ \ \ LOAD\_NIL\ =\ 22,}
+\DoxyCodeLine{00048\ \ \ \ \ LOAD\_INT32\ \ =\ 23,}
+\DoxyCodeLine{00049\ \ \ \ \ OP\_RETURN\ =\ 24,}
+\DoxyCodeLine{00050\ \ \ \ \ JMPNPOPSTACK=25,\textcolor{comment}{//\ jump\ to\ a\ certain\ number\ of\ bytes\ and\ pop\ n\ values\ from\ stack}}
+\DoxyCodeLine{00051\ \ \ \ \ GOTONPSTACK=26,\textcolor{comment}{//goto\ a\ certain\ bytecode\ index\ and\ pop\ n\ values\ from\ stack}}
+\DoxyCodeLine{00052\ \ \ \ \ GOTO=27,\textcolor{comment}{//goto\ a\ certain\ bytecode\ index}}
+\DoxyCodeLine{00053\ \ \ \ \ POP\_STACK\ =\ 28,\textcolor{comment}{//pop\ stack}}
+\DoxyCodeLine{00054\ \ \ \ \ CONDITIONAL\_RETURN\_I32\ =\ 29,\textcolor{comment}{//\ }}
+\DoxyCodeLine{00055\ \ \ \ \ CO\_STOP\ =\ 30,\ \textcolor{comment}{//stops\ a\ co\ routine,marks\ it\ as\ dead\ and\ returns\ nil}}
+\DoxyCodeLine{00056\ \ \ \ \ SMOREQ\ =\ 31,\textcolor{comment}{//smaller\ than\ or\ equal\ to}}
+\DoxyCodeLine{00057\ \ \ \ \ GROREQ\ =\ 32,\textcolor{comment}{//greater\ than\ or\ equal\ to}}
+\DoxyCodeLine{00058\ \ \ \ \ NEG\ =\ 33,\textcolor{comment}{//unary\ operator}}
+\DoxyCodeLine{00059\ \ \ \ \ NOT\ =\ 34,\textcolor{comment}{//}}
+\DoxyCodeLine{00060\ \ \ \ \ INDEX\ =\ 35,\textcolor{comment}{//to\ index\ a\ list\ or\ dictionary}}
+\DoxyCodeLine{00061\ \ \ \ \ ASSIGNINDEX\ =\ 36,}
+\DoxyCodeLine{00062\ \ \ \ \ IMPORT\ =\ 37,\textcolor{comment}{//imports\ a\ native\ module\ (a\ shared\ library)}}
+\DoxyCodeLine{00063\ \ \ \ \ LOOP\ =\ 38,}
+\DoxyCodeLine{00064\ \ \ \ \ CALLFORVAL\ =\ 39,\textcolor{comment}{//calls\ a\ builtin\ function\ and\ keeps\ it's\ return\ value\ on\ the\ stack}}
+\DoxyCodeLine{00065\ \ \ \ \ INC\_GLOBAL\ =\ 40,\textcolor{comment}{//increments\ a\ global\ variable}}
+\DoxyCodeLine{00066\ \ \ \ \ DLOOP\ =\ 41,}
+\DoxyCodeLine{00067\ \ \ \ \ LOAD\_GLOBAL\ =\ 42,\textcolor{comment}{//loads\ a\ global\ variable}}
+\DoxyCodeLine{00068\ \ \ \ \ MEMB\ =\ 43,\textcolor{comment}{//member\ operator\ '.'}}
+\DoxyCodeLine{00069\ \ \ \ \ JMPIFFALSENOPOP\ =\ 44,\textcolor{comment}{//}}
+\DoxyCodeLine{00070\ \ \ \ \ ASSIGNMEMB\ =\ 45,\textcolor{comment}{//}}
+\DoxyCodeLine{00071\ \ \ \ \ BUILD\_CLASS\ =\ 46,\textcolor{comment}{//builds\ a\ class}}
+\DoxyCodeLine{00072\ \ \ \ \ ASSIGN\_GLOBAL\ =\ 47,\textcolor{comment}{//assigns\ a\ global\ variable}}
+\DoxyCodeLine{00073\ \ \ \ \ LOAD\_FUNC\ =\ 48,\textcolor{comment}{//builds\ a\ user\ defined\ function\ and\ loads\ it\ onto\ the\ stack}}
+\DoxyCodeLine{00074\ \ \ \ \ OP\_EXIT\ =\ 49,}
+\DoxyCodeLine{00075\ \ \ \ \ LSHIFT\ =\ 50,}
+\DoxyCodeLine{00076\ \ \ \ \ RSHIFT\ =\ 51,}
+\DoxyCodeLine{00077\ \ \ \ \ BITWISE\_AND\ =\ 52,}
+\DoxyCodeLine{00078\ \ \ \ \ BITWISE\_OR\ =\ 53,}
+\DoxyCodeLine{00079\ \ \ \ \ COMPLEMENT\ =\ 54,}
+\DoxyCodeLine{00080\ \ \ \ \ BUILD\_DERIVED\_CLASS\ =\ 55,\textcolor{comment}{//builds\ a\ derived\ class}}
+\DoxyCodeLine{00081\ \ \ \ \ LOAD\_TRUE\ =\ 56,\textcolor{comment}{//simply\ goes\ to\ callstack.back()\ also\ pops\ the\ callstack}}
+\DoxyCodeLine{00082\ \ \ \ \ IS\ =\ 57,\textcolor{comment}{//is\ operator}}
+\DoxyCodeLine{00083\ \ \ \ \ ONERR\_GOTO\ =\ 58,\textcolor{comment}{//begins\ error\ handling}}
+\DoxyCodeLine{00084\ \ \ \ \ POP\_EXCEP\_TARG\ =\ 59,}
+\DoxyCodeLine{00085\ \ \ \ \ THROW\ =\ 60,}
+\DoxyCodeLine{00086\ \ \ \ \ LOAD\_CO\ =\ 61,\textcolor{comment}{//builds\ a\ coroutine(not\ object!)}}
+\DoxyCodeLine{00087\ \ \ \ \ YIELD\ =\ 62,\textcolor{comment}{//yields\ a\ value\ from\ coroutine}}
+\DoxyCodeLine{00088\ \ \ \ \ YIELD\_AND\_EXPECTVAL\ =\ 63,\textcolor{comment}{//yields\ but\ also\ expects\ a\ value\ when\ coroutine\ is\ resumed}}
+\DoxyCodeLine{00089\ \ \ \ \ LOAD\_LOCAL\ =\ 64,}
+\DoxyCodeLine{00090\ \ \ \ \ GC=65,}
+\DoxyCodeLine{00091\ \ \ \ \ NOPOPJMPIF=66,}
+\DoxyCodeLine{00092\ \ \ \ \ SELFMEMB=67,}
+\DoxyCodeLine{00093\ \ \ \ \ ASSIGNSELFMEMB=68,}
+\DoxyCodeLine{00094\ \ \ \ \ LOAD\_FALSE=69,}
+\DoxyCodeLine{00095\ \ \ \ \ LOAD\_BYTE=70,}
+\DoxyCodeLine{00096\ \ \ \ \ SETUP\_LOOP=71,}
+\DoxyCodeLine{00097\ \ \ \ \ SETUP\_DLOOP=72,}
+\DoxyCodeLine{00098\ \ \ \ \ RETURN\_INT32=73,}
+\DoxyCodeLine{00099\ \ \ \ \ LOADVAR\_SUBINT32=74,}
+\DoxyCodeLine{00100\ \ \ \ \ CALL\_DIRECT=75,}
+\DoxyCodeLine{00101\ \ \ \ \ INDEX\_FAST=76,}
+\DoxyCodeLine{00102\ \ \ \ \ LOADVAR\_ADDINT32=77,\ \textcolor{comment}{//\ i+1\ ,\ j+1\ etc\ etc\ this\ is\ a\ very\ common\ pattern\ in\ zuko\ programs}}
+\DoxyCodeLine{00103\ \ \ \ \ LOAD\_INT64=78,}
+\DoxyCodeLine{00104\ \ \ \ \ LOAD\_DOUBLE=79,}
+\DoxyCodeLine{00105\ \ \ \ \ CONDITIONAL\_RETURN\_LOCAL=80,}
+\DoxyCodeLine{00106\ \};}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

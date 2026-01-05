@@ -1,0 +1,41 @@
+\doxysection{sizet\+\_\+vector.\+h}
+\hypertarget{sizet__vector_8h_source}{}\label{sizet__vector_8h_source}\index{include/sizet\_vector.h@{include/sizet\_vector.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_SIZET\_VECTOR}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_SIZET\_VECTOR}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00004\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \textcolor{keywordtype}{size\_t}*\ arr;}
+\DoxyCodeLine{00012\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00013\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00014\ \}\mbox{\hyperlink{structsizet__vector}{sizet\_vector}};}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keywordtype}{void}\ sizet\_vector\_init(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p);}
+\DoxyCodeLine{00017\ \textcolor{keywordtype}{void}\ sizet\_vector\_push(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ val);}
+\DoxyCodeLine{00018\ \textcolor{keywordtype}{void}\ sizet\_vector\_erase(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx);}
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{void}\ sizet\_vector\_erase\_range(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ i,\textcolor{keywordtype}{size\_t}\ j);}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ sizet\_vector\_resize(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ newSize);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{bool}\ sizet\_vector\_pop(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}*\ val);}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ sizet\_vector\_fastpop(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}*\ val)}
+\DoxyCodeLine{00024\ \{}
+\DoxyCodeLine{00025\ \ \ *val\ =\ p-\/>arr[-\/-\/p-\/>size];}
+\DoxyCodeLine{00026\ \}}
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{void}\ sizet\_vector\_assign(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ val);}
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{void}\ sizet\_vector\_insert(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\textcolor{keywordtype}{size\_t}\ val);}
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{void}\ sizet\_vector\_insert\_list(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ sublist);}
+\DoxyCodeLine{00030\ \textcolor{keywordtype}{void}\ sizet\_vector\_destroy(\mbox{\hyperlink{structsizet__vector}{sizet\_vector}}*\ p);}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00033\ \}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

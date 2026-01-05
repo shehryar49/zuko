@@ -1,0 +1,40 @@
+\doxysection{zlist.\+h}
+\hypertarget{zlist_8h_source}{}\label{zlist_8h_source}\index{include/zlist.h@{include/zlist.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZLIST\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZLIST\_H}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00009\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzlist}{zlist}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}*\ arr;}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00017\ \}\mbox{\hyperlink{structzlist}{zlist}};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{void}\ zlist\_init(\mbox{\hyperlink{structzlist}{zlist}}*\ p);}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ zlist\_push(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ zlist\_erase(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\textcolor{keywordtype}{size\_t}\ idx);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{void}\ zlist\_erase\_range(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\textcolor{keywordtype}{size\_t}\ i,\textcolor{keywordtype}{size\_t}\ j);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ zlist\_resize(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\textcolor{keywordtype}{size\_t}\ newSize);}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{bool}\ zlist\_pop(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\mbox{\hyperlink{structzobject}{zobject}}*\ val);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ zlist\_assign(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\mbox{\hyperlink{structzlist}{zlist}}*\ val);}
+\DoxyCodeLine{00026\ \textcolor{keywordtype}{void}\ zlist\_insert(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{void}\ zlist\_insert\_list(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\mbox{\hyperlink{structzlist}{zlist}}*\ sublist);}
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{void}\ zlist\_destroy(\mbox{\hyperlink{structzlist}{zlist}}*\ p);}
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{void}\ zlist\_fastpop(\mbox{\hyperlink{structzlist}{zlist}}*\ p,\mbox{\hyperlink{structzobject}{zobject}}*\ val);}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

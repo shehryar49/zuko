@@ -1,0 +1,23 @@
+\doxysection{json.\+h}
+\hypertarget{json_8h_source}{}\label{json_8h_source}\index{modules/json/json.h@{modules/json/json.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_JSON\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_JSON\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\ \ \ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\ \ \ \ \#define\ EXPORT}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00010\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ loads(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);\ \ }
+\DoxyCodeLine{00014\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ dumps(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \textcolor{keywordtype}{void}\ unload();\ \ \ \ \ \ }
+\DoxyCodeLine{00016\ \}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

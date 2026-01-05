@@ -1,0 +1,63 @@
+\doxysection{mem\+\_\+map.\+h}
+\hypertarget{mem__map_8h_source}{}\label{mem__map_8h_source}\index{include/mem\_map.h@{include/mem\_map.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_MEM\_MAP\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_MEM\_MAP\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ memmap\_slot\_status}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ MM\_EMPTY,}
+\DoxyCodeLine{00016\ \ \ \ \ MM\_OCCUPIED,}
+\DoxyCodeLine{00017\ \ \ \ \ MM\_DELETED}
+\DoxyCodeLine{00018\ \}memmap\_slot\_status;}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structmem__info}{mem\_info}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{char}\ type;}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{bool}\ ismarked;}
+\DoxyCodeLine{00024\ \}\mbox{\hyperlink{structmem__info}{mem\_info}};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structmemmap__slot}{memmap\_slot}}}
+\DoxyCodeLine{00027\ \{}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{void}*\ key;}
+\DoxyCodeLine{00029\ \ \ \ \ \mbox{\hyperlink{structmem__info}{mem\_info}}\ val;}
+\DoxyCodeLine{00030\ \ \ \ \ memmap\_slot\_status\ stat;}
+\DoxyCodeLine{00031\ \}\mbox{\hyperlink{structmemmap__slot}{memmap\_slot}};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structmem__map}{mem\_map}}}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \mbox{\hyperlink{structmemmap__slot}{memmap\_slot}}*\ table;}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00038\ \}\mbox{\hyperlink{structmem__map}{mem\_map}};}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{keywordtype}{void}\ mem\_map\_init(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{void}\ mem\_map\_set(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h,\textcolor{keywordtype}{void}*\ key,\mbox{\hyperlink{structmem__info}{mem\_info}}\ val);}
+\DoxyCodeLine{00043\ \textcolor{keywordtype}{void}\ mem\_map\_emplace(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h,\textcolor{keywordtype}{void}*\ key,\mbox{\hyperlink{structmem__info}{mem\_info}}\ val);}
+\DoxyCodeLine{00044\ \textcolor{keywordtype}{bool}\ mem\_map\_get(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h,\textcolor{keywordtype}{void}*\ key,\mbox{\hyperlink{structmem__info}{mem\_info}}*\ val);}
+\DoxyCodeLine{00045\ \mbox{\hyperlink{structmem__info}{mem\_info}}*\ mem\_map\_getref(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h,\textcolor{keywordtype}{void}*\ key);}
+\DoxyCodeLine{00046\ \textcolor{keywordtype}{bool}\ mem\_map\_erase(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h,\textcolor{keywordtype}{void}*\ key);}
+\DoxyCodeLine{00047\ \textcolor{keywordtype}{void}\ mem\_map\_clear(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h);}
+\DoxyCodeLine{00048\ \textcolor{keywordtype}{void}\ mem\_map\_destroy(\mbox{\hyperlink{structmem__map}{mem\_map}}*\ h);}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00054\ \}}
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

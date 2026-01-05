@@ -1,0 +1,50 @@
+\doxysection{symtable.\+h}
+\hypertarget{symtable_8h_source}{}\label{symtable_8h_source}\index{include/symtable.h@{include/symtable.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_SYMTABLE\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_SYMTABLE\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00004\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\ \{}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ symtable\_slot\_status\ \{\ SYMT\_EMPTY,\ SYMT\_OCCUPIED,\ SYMT\_DELETED\ \}\ symtable\_slot\_status;}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structsymtable__slot}{symtable\_slot}}}
+\DoxyCodeLine{00015\ \{}
+\DoxyCodeLine{00016\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key;}
+\DoxyCodeLine{00017\ \ \ \textcolor{keywordtype}{size\_t}\ val;}
+\DoxyCodeLine{00018\ \ \ symtable\_slot\_status\ stat;}
+\DoxyCodeLine{00019\ \}\mbox{\hyperlink{structsymtable__slot}{symtable\_slot}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structsymtable}{symtable}}}
+\DoxyCodeLine{00023\ \{}
+\DoxyCodeLine{00024\ \ \ \mbox{\hyperlink{structsymtable__slot}{symtable\_slot}}*\ table;}
+\DoxyCodeLine{00025\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00026\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00027\ \}\ \mbox{\hyperlink{structsymtable}{symtable}};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{size\_t}\ hashDJB2(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *,\ \textcolor{keywordtype}{size\_t});}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keywordtype}{void}\ symtable\_init(\mbox{\hyperlink{structsymtable}{symtable}}\ *h);}
+\DoxyCodeLine{00032\ \textcolor{keywordtype}{void}\ symtable\_set(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \textcolor{keywordtype}{size\_t}\ val);}
+\DoxyCodeLine{00033\ \textcolor{keywordtype}{void}\ symtable\_emplace(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \textcolor{keywordtype}{size\_t}\ val);}
+\DoxyCodeLine{00034\ \textcolor{keywordtype}{bool}\ symtable\_get(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \textcolor{keywordtype}{size\_t}*\ val);}
+\DoxyCodeLine{00035\ \textcolor{keywordtype}{size\_t}*\ symtable\_getref(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key);}
+\DoxyCodeLine{00036\ \textcolor{keywordtype}{bool}\ symtable\_erase(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key);}
+\DoxyCodeLine{00037\ \textcolor{keywordtype}{void}\ symtable\_assign(\mbox{\hyperlink{structsymtable}{symtable}}\ *h,\ \mbox{\hyperlink{structsymtable}{symtable}}\ *other);\ \textcolor{comment}{//\ makes\ deep\ copy}}
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{void}\ symtable\_clear(\mbox{\hyperlink{structsymtable}{symtable}}*\ h);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{void}\ symtable\_destroy(\mbox{\hyperlink{structsymtable}{symtable}}\ *h);}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00042\ \}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

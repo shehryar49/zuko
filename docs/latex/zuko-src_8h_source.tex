@@ -1,0 +1,36 @@
+\doxysection{zuko-\/src.h}
+\hypertarget{zuko-src_8h_source}{}\label{zuko-src_8h_source}\index{include/zuko-\/src.h@{include/zuko-\/src.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_SRC\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_SRC\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00004\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}byte\_src.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}str-\/vec.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}lntable.h"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}refgraph.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzuko__src}{zuko\_src}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ files;}
+\DoxyCodeLine{00016\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ sources;}
+\DoxyCodeLine{00017\ \ \ \ \ \mbox{\hyperlink{structlntable}{lntable}}\ line\_num\_table;}
+\DoxyCodeLine{00018\ \ \ \ \ \mbox{\hyperlink{structrefgraph}{refgraph}}\ ref\_graph;\ \textcolor{comment}{//\ generated\ by\ the\ parser\ and\ used\ by\ the\ compiler\ to\ eliminate\ dead\ functions\ and\ classes}}
+\DoxyCodeLine{00019\ \}\mbox{\hyperlink{structzuko__src}{zuko\_src}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \mbox{\hyperlink{structzuko__src}{zuko\_src}}*\ create\_source(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ filename,\ \textcolor{keywordtype}{char}*\ src);}
+\DoxyCodeLine{00022\ \mbox{\hyperlink{structzuko__src}{zuko\_src}}*\ create\_empty\_source();}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ zuko\_src\_add\_file(\mbox{\hyperlink{structzuko__src}{zuko\_src}}*,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*,\textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{void}\ zuko\_src\_reset(\mbox{\hyperlink{structzuko__src}{zuko\_src}}*);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ zuko\_src\_destroy(\mbox{\hyperlink{structzuko__src}{zuko\_src}}*\ src);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00028\ \}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

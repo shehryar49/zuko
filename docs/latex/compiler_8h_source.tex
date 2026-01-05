@@ -1,0 +1,111 @@
+\doxysection{compiler.\+h}
+\hypertarget{compiler_8h_source}{}\label{compiler_8h_source}\index{include/compiler.h@{include/compiler.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#ifndef\ COMPILER\_H\_}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ COMPILER\_H\_}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{ast_8h}{ast.h}}"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}builtinfunc.h"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}lntable.h"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}pair-\/vector.h"{}}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ "{}zuko-\/src.h"{}}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}vm.h"{}}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ "{}parser.h"{}}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ "{}opcode.h"{}}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ "{}zfileobj.h"{}}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ "{}zbytearray.h"{}}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ "{}sizet\_vector.h"{}}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#include\ "{}symtable.h"{}}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#include\ "{}ptr-\/vector.h"{}}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ "{}pair-\/vector.h"{}}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00040\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#define\ JUMPOFFSET\_SIZE\ 4}}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structcompiled__fn}{compiled\_fn}}}
+\DoxyCodeLine{00046\ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \mbox{\hyperlink{structNode}{Node}}*\ fn\_node;}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ offset;}
+\DoxyCodeLine{00049\ \}\mbox{\hyperlink{structcompiled__fn}{compiled\_fn}};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}}
+\DoxyCodeLine{00052\ \{}
+\DoxyCodeLine{00053\ \ \ \ \ int32\_t\ STACK\_SIZE;\textcolor{comment}{//simulating\ STACK's\ size}}
+\DoxyCodeLine{00054\ \ \ \ \ int32\_t\ localsBegin;}
+\DoxyCodeLine{00055\ \ \ \ \ int32\_t\ foo;}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ line\_num;}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ bytes\_done;}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{short}\ fileTOP;}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ filename;}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ classname;}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ symRef;}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{structlntable}{lntable}}*\ line\_num\_table;}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//this\ allows\ code\ generation\ for\ direct\ function\ call}}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{structptr__vector}{ptr\_vector}}\ compiled\_functions;\ }
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{structsymtable}{symtable}}\ globals;}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{structptr__vector}{ptr\_vector}}\ locals;}
+\DoxyCodeLine{00067\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ prefixes;}
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}*\ files;}
+\DoxyCodeLine{00069\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}*\ sources;}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{comment}{//For\ optimizing\ short\ circuit\ jumps\ after\ code\ generation}}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{structsizet__vector}{sizet\_vector}}\ and\_jumps;}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{structsizet__vector}{sizet\_vector}}\ or\_jumps;\ \ }
+\DoxyCodeLine{00073\ \ \ \ \ \mbox{\hyperlink{structsizet__vector}{sizet\_vector}}\ break\_stmt\_idx;\ \textcolor{comment}{//\ a\ break\ statement\ sets\ this\ after\ adding\ GOTO\ to\ allow}}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{comment}{//\ the\ enclosing\ loop\ to\ backpatch\ the\ offset}}
+\DoxyCodeLine{00075\ \ \ \ \ \mbox{\hyperlink{structsizet__vector}{sizet\_vector}}\ continue\_stmt\_idx;}
+\DoxyCodeLine{00076\ \ \ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ curr\_class\_members;}
+\DoxyCodeLine{00077\ \ \ \ \ zbytearr\ bytecode;\ \textcolor{comment}{//\ bytecode\ generated\ so\ far}}
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{structpair__vector}{pair\_vector}}\ backpatches;}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{comment}{//Context\ and\ other\ options}}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordtype}{bool}\ in\_constructor;}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keywordtype}{bool}\ in\_coroutine;}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordtype}{bool}\ inclass;}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{keywordtype}{bool}\ infunc;}
+\DoxyCodeLine{00085\ \ \ \ \ \textcolor{keywordtype}{bool}\ infor;\ \textcolor{comment}{//used\ by\ break\ and\ continue\ statements}}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{keywordtype}{bool}\ compile\_deadcode;\ \textcolor{comment}{//\ whether\ to\ compile\ unused\ classes\ and\ functions\ or\ not}}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{ast_8h_acac9cbaeea226ed297804c012dc12b16}{NodeType}}\ last\_stmt\_type;\ \textcolor{comment}{//\ type\ of\ last\ statement\ compiled}}
+\DoxyCodeLine{00088\ \}\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}};}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}*\ create\_compiler\_context(\mbox{\hyperlink{structzuko__src}{zuko\_src}}*);}
+\DoxyCodeLine{00091\ \textcolor{keywordtype}{void}\ compile\_error(\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}*\ ctx,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ type,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ msg);}
+\DoxyCodeLine{00092\ \textcolor{keywordtype}{void}\ compiler\_add\_builtin(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,BuiltinFunc\ fn);\ \ }
+\DoxyCodeLine{00093\ \textcolor{keywordtype}{void}\ compiler\_reduce\_stack\_size(\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}*\ ctx,\textcolor{keywordtype}{int}\ size);\textcolor{comment}{//for\ REPL}}
+\DoxyCodeLine{00094\ \textcolor{comment}{//Compile\ options}}
+\DoxyCodeLine{00095\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ int32\_t\ OPT\_COMPILE\_DEADCODE\ =\ 1;\ \textcolor{comment}{//\ does\ exactly\ what\ it\ says}}
+\DoxyCodeLine{00096\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ int32\_t\ OPT\_NOPOP\_GLOBALS\ =\ 1\ <<\ 1;\ \textcolor{comment}{//\ to\ not\ add\ bytecode\ instructions\ for\ popping\ globals\ from\ VM\ STACK}}
+\DoxyCodeLine{00097\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ int32\_t\ OPT\_NOEXIT\ =\ 1\ <<\ 2;\ \textcolor{comment}{//\ does\ not\ add\ OP\_EXIT\ at\ the\ end\ of\ generated\ bytecode}}
+\DoxyCodeLine{00098\ uint8\_t*\ compile\_program(\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}*\ ctx,\mbox{\hyperlink{structNode}{Node}}*\ ast,int32\_t\ argc,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ argv[],int32\_t\ options);\textcolor{comment}{//compiles\ as\ a\ complete\ program\ adds\ NPOP\_STACK\ and\ OP\_EXIT}}
+\DoxyCodeLine{00099\ \textcolor{keywordtype}{void}\ compiler\_destroy(\mbox{\hyperlink{structcompiler__ctx}{compiler\_ctx}}*);}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00102\ \}}
+\DoxyCodeLine{00103\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

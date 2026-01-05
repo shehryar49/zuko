@@ -1,0 +1,38 @@
+\doxysection{math.\+h}
+\hypertarget{math_8h_source}{}\label{math_8h_source}\index{modules/math/math.h@{modules/math/math.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#define\ EXPORT}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{comment}{//Functions}}
+\DoxyCodeLine{00011\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ FLOOR(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00012\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ CEIL(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ROUND(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00014\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ SIN(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ COS(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00016\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ TAN(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ASIN(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00018\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ACOS(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00019\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ATAN(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00020\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ SINH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00021\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ COSH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00022\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ TANH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00023\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ASINH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00024\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ACOSH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00025\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ ATANH(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00026\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ LOG(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00027\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ LOG10(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00028\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ SQRT(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00029\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ TRUNC(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00030\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ RADIANS(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \}}
+
+\end{DoxyCode}

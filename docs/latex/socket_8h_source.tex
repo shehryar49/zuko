@@ -1,0 +1,34 @@
+\doxysection{socket.\+h}
+\hypertarget{socket_8h_source}{}\label{socket_8h_source}\index{modules/socket/socket.h@{modules/socket/socket.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ SOCKET\_ZUKO\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ SOCKET\_ZUKO\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\ \ \#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\ \ \#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00010\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{comment}{//Functions}}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{comment}{//Methods}}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_construct(\mbox{\hyperlink{structzobject}{zobject}}*,\ \textcolor{keywordtype}{int});}
+\DoxyCodeLine{00016\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_setopt(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_bind(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00018\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_connect(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00019\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_send(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00020\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_recv(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00021\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_listen(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00022\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_accept(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00023\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_close(\ \mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00024\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_sendto(\ \mbox{\hyperlink{structzobject}{zobject}}*,\ \textcolor{keywordtype}{int});}
+\DoxyCodeLine{00025\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_recvfrom(\ \mbox{\hyperlink{structzobject}{zobject}}*,\ \textcolor{keywordtype}{int});}
+\DoxyCodeLine{00026\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ socket\_del(\ \mbox{\hyperlink{structzobject}{zobject}}*,\ \textcolor{keywordtype}{int});}
+\DoxyCodeLine{00027\ \}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

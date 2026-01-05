@@ -1,0 +1,37 @@
+\doxysection{convo.\+h}
+\hypertarget{convo_8h_source}{}\label{convo_8h_source}\index{include/convo.h@{include/convo.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ \_CONVO\_SIMPLE\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ \_CONVO\_SIMPLE\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//This\ file\ contains\ functions\ for\ performing\ various\ conversions}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <inttypes.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}misc.h"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keywordtype}{char}*\ int32\_to\_str(int32\_t\ x);}
+\DoxyCodeLine{00015\ \textcolor{keywordtype}{char}*\ int64\_to\_str(int64\_t\ l);}
+\DoxyCodeLine{00016\ \textcolor{keywordtype}{char}*\ double\_to\_str(\textcolor{keywordtype}{double});}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{keywordtype}{double}\ str\_to\_double(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00019\ int32\_t\ str\_to\_int32(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00020\ int64\_t\ str\_to\_int64(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{bool}\ is\_int64(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{bool}\ is\_int32(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{bool}\ isdouble(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ s);}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00027\ \}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

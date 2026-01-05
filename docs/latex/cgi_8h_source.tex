@@ -1,0 +1,28 @@
+\doxysection{cgi.\+h}
+\hypertarget{cgi_8h_source}{}\label{cgi_8h_source}\index{modules/cgi/cgi.h@{modules/cgi/cgi.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ CGI\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ CGI\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#define\ EXPORT}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{comment}{//Functions}}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ formdata(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});\textcolor{comment}{//returns\ a\ dictionary\ representing\ submitted\ form,\ handles\ GET,\ POST\ and\ POST\ multipart}}
+\DoxyCodeLine{00018\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ cookies(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});\ \textcolor{comment}{//\ returns\ a\ dictionary\ representing\ cookies\ sent\ by\ the\ client}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ unload();}
+\DoxyCodeLine{00021\ \}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,33 @@
+\doxysection{dyn-\/str.h}
+\hypertarget{dyn-str_8h_source}{}\label{dyn-str_8h_source}\index{include/dyn-\/str.h@{include/dyn-\/str.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_DYNAMIC\_STR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_DYNAMIC\_STR\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00007\ \ \ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structdyn__str}{dyn\_str}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{char}*\ arr;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ length;\ \textcolor{comment}{//length+1\ bytes\ are\ being\ used\ always}}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00015\ \}\mbox{\hyperlink{structdyn__str}{dyn\_str}};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{keywordtype}{void}\ dyn\_str\_init(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*\ p);}
+\DoxyCodeLine{00018\ \textcolor{keywordtype}{void}\ dyn\_str\_push(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*\ p,\textcolor{keywordtype}{char}\ val);}
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{bool}\ dyn\_str\_pop(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*\ p,\textcolor{keywordtype}{char}*\ ptr);}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ dyn\_str\_prepend(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ dyn\_str\_append(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{void}\ dyn\_str\_destroy(\mbox{\hyperlink{structdyn__str}{dyn\_str}}*\ p);}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00025\ \}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,56 @@
+\doxysection{strmap.\+h}
+\hypertarget{strmap_8h_source}{}\label{strmap_8h_source}\index{include/strmap.h@{include/strmap.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_STRMAP\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_STRMAP\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//\ Members\ of\ Zuko\ Classes,\ Objects\ and\ Modules}}
+\DoxyCodeLine{00004\ \textcolor{comment}{//\ are\ represented\ using\ this\ data\ structure.}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00007\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\ \{}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00014\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzobject}{zobject}};}
+\DoxyCodeLine{00015\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzobject}{zobject}}\ \mbox{\hyperlink{structzobject}{zobject}};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ SM\_SlotStatus\ \{\ SM\_EMPTY,\ SM\_OCCUPIED,\ SM\_DELETED\ \}\ SM\_SlotStatus;}
+\DoxyCodeLine{00018\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structSM__Slot}{SM\_Slot}}\ \{}
+\DoxyCodeLine{00019\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key;}
+\DoxyCodeLine{00020\ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ val;}
+\DoxyCodeLine{00021\ \ \ SM\_SlotStatus\ stat;}
+\DoxyCodeLine{00022\ \}\ \mbox{\hyperlink{structSM__Slot}{SM\_Slot}};}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structstrmap}{strmap}}\ \{}
+\DoxyCodeLine{00026\ \ \ \mbox{\hyperlink{structSM__Slot}{SM\_Slot}}\ *table;}
+\DoxyCodeLine{00027\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00028\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#ifdef\ \_\_cpluscplus}}
+\DoxyCodeLine{00030\ \ \ \mbox{\hyperlink{structstrmap}{strmap}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{structstrmap}{strmap}}\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00031\ \ \ \mbox{\hyperlink{structstrmap}{strmap}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structstrmap}{strmap}}\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00033\ \}\mbox{\hyperlink{structstrmap}{strmap}};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{keywordtype}{size\_t}\ hashDJB2(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *,\ \textcolor{keywordtype}{size\_t});}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{keywordtype}{void}\ strmap\_init(\mbox{\hyperlink{structstrmap}{strmap}}\ *h);}
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{void}\ strmap\_set(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{void}\ strmap\_emplace(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00040\ \textcolor{keywordtype}{bool}\ strmap\_get(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key,\ \mbox{\hyperlink{structzobject}{zobject}}\ *val);}
+\DoxyCodeLine{00041\ \mbox{\hyperlink{structzobject}{zobject}}\ *strmap\_getRef(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{bool}\ strmap\_erase(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *key);}
+\DoxyCodeLine{00043\ \textcolor{keywordtype}{void}\ strmap\_assign(\mbox{\hyperlink{structstrmap}{strmap}}\ *h,\ \mbox{\hyperlink{structstrmap}{strmap}}\ *other);\ \textcolor{comment}{//\ makes\ deep\ copy}}
+\DoxyCodeLine{00044\ \textcolor{keywordtype}{void}\ strmap\_destroy(\mbox{\hyperlink{structstrmap}{strmap}}\ *h);}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00047\ \}}
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

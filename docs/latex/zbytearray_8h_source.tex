@@ -1,0 +1,41 @@
+\doxysection{zbytearray.\+h}
+\hypertarget{zbytearray_8h_source}{}\label{zbytearray_8h_source}\index{include/zbytearray.h@{include/zbytearray.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZBYTEARRAY\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZBYTEARRAY\_H}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdint.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00009\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzbyteArr}{zbyteArr}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ uint8\_t*\ arr;}
+\DoxyCodeLine{00015\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00016\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00017\ \}zbytearr;}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{void}\ zbytearr\_init(zbytearr*\ p);}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ zbytearr\_push(zbytearr*\ p,uint8\_t\ val);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ zbytearr\_erase(zbytearr*\ p,\textcolor{keywordtype}{size\_t}\ idx);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{void}\ zbytearr\_erase\_range(zbytearr*\ p,\textcolor{keywordtype}{size\_t}\ i,\textcolor{keywordtype}{size\_t}\ j);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ zbytearr\_resize(zbytearr*\ p,\textcolor{keywordtype}{size\_t}\ newSize);}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{bool}\ zbytearr\_pop(zbytearr*\ p,uint8\_t*\ val);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ zbytearr\_fastpop(zbytearr*\ p,uint8\_t*\ val);}
+\DoxyCodeLine{00026\ \textcolor{keywordtype}{void}\ zbytearr\_assign(zbytearr*\ p,zbytearr*\ val);}
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{void}\ zbytearr\_insert(zbytearr*\ p,\textcolor{keywordtype}{size\_t}\ idx,uint8\_t\ val);}
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{void}\ zbytearr\_insert\_arr(zbytearr*\ p,\textcolor{keywordtype}{size\_t}\ idx,zbytearr*\ sublist);}
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{bool}\ zbytearr\_equal(zbytearr*\ a,zbytearr*\ b);}
+\DoxyCodeLine{00030\ \textcolor{keywordtype}{void}\ zbytearr\_destroy(zbytearr*\ p);}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

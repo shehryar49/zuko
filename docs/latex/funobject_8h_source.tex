@@ -1,0 +1,27 @@
+\doxysection{funobject.\+h}
+\hypertarget{funobject_8h_source}{}\label{funobject_8h_source}\index{include/funobject.h@{include/funobject.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_FUNOBJ\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_FUNOBJ\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}klass.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}zlist.h"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{comment}{//\ struct\ to\ represent\ zuko\ code\ functions}}
+\DoxyCodeLine{00008\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzfun}{zfun}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00011\ \textcolor{comment}{\ \ \ \ \ *\ functions\ can\ be\ binded\ to\ classes\ as\ methods}}
+\DoxyCodeLine{00012\ \textcolor{comment}{\ \ \ \ \ */}}
+\DoxyCodeLine{00013\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ \_klass;}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name;}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ i;}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ args;}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{comment}{/*\ list\ of\ default/optional\ parameters\ */}}
+\DoxyCodeLine{00018\ \ \ \ \ \mbox{\hyperlink{structzlist}{zlist}}\ opt;}
+\DoxyCodeLine{00019\ \}\mbox{\hyperlink{structzfun}{zfun}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,54 @@
+\doxysection{refgraph.\+h}
+\hypertarget{refgraph_8h_source}{}\label{refgraph_8h_source}\index{include/refgraph.h@{include/refgraph.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_REFGRAPH\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_REFGRAPH\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}str-\/vec.h"{}}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ refgraph\_slot\_status}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ REFGRAPH\_SLOT\_EMPTY,}
+\DoxyCodeLine{00015\ \ \ REFGRAPH\_SLOT\_OCCUPIED,}
+\DoxyCodeLine{00016\ \ \ REFGRAPH\_SLOT\_DELETED}
+\DoxyCodeLine{00017\ \}refgraph\_slot\_status;}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structrefgraph__slot}{refgraph\_slot}}}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00021\ \ \ \textcolor{keywordtype}{char}*\ key;}
+\DoxyCodeLine{00022\ \ \ \mbox{\hyperlink{structstr__vector}{str\_vector}}\ val;}
+\DoxyCodeLine{00023\ \ \ refgraph\_slot\_status\ stat;}
+\DoxyCodeLine{00024\ \}\mbox{\hyperlink{structrefgraph__slot}{refgraph\_slot}};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structrefgraph}{refgraph}}}
+\DoxyCodeLine{00027\ \{}
+\DoxyCodeLine{00028\ \ \ \mbox{\hyperlink{structrefgraph__slot}{refgraph\_slot}}*\ table;}
+\DoxyCodeLine{00029\ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00030\ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00031\ \}\mbox{\hyperlink{structrefgraph}{refgraph}};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keywordtype}{size\_t}\ hashDJB2(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ key,\textcolor{keywordtype}{size\_t}\ M);}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \textcolor{keywordtype}{void}\ refgraph\_init(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h);}
+\DoxyCodeLine{00037\ \textcolor{keywordtype}{void}\ refgraph\_set(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h,\textcolor{keywordtype}{char}*\ key,\mbox{\hyperlink{structstr__vector}{str\_vector}}\ val);}
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{void}\ refgraph\_emplace(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h,\textcolor{keywordtype}{char}*\ key,\mbox{\hyperlink{structstr__vector}{str\_vector}}\ val);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{bool}\ refgraph\_get(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h,\textcolor{keywordtype}{char}*\ key,\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ val);}
+\DoxyCodeLine{00040\ \mbox{\hyperlink{structstr__vector}{str\_vector}}*\ refgraph\_getref(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ key);}
+\DoxyCodeLine{00041\ \textcolor{keywordtype}{void}\ refgraph\_clear(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{void}\ refgraph\_destroy(\mbox{\hyperlink{structrefgraph}{refgraph}}*\ h);}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00045\ \}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

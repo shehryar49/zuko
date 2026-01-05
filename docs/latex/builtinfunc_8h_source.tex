@@ -1,0 +1,136 @@
+\doxysection{builtinfunc.\+h}
+\hypertarget{builtinfunc_8h_source}{}\label{builtinfunc_8h_source}\index{include/builtinfunc.h@{include/builtinfunc.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{comment}{//This\ header\ contains\ some\ builtin\ functions\ which\ are\ embed\ into\ the\ interpreter}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#ifndef\ BUILTIN\_FUNC\_H\_}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#define\ BUILTIN\_FUNC\_H\_}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}builtin-\/map.h"{}}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ "{}ptr-\/vector.h"{}}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00033\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzobject}{zobject}}(*BuiltinFunc)(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{comment}{//Regular\ functions}}
+\DoxyCodeLine{00039\ \textcolor{comment}{//All\ their\ names\ are\ in\ uppercase,\ picked\ this\ naming\ convention\ for\ no\ particular\ reason}}
+\DoxyCodeLine{00040\ \mbox{\hyperlink{structzobject}{zobject}}\ Z\_ISALPHA(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00041\ \mbox{\hyperlink{structzobject}{zobject}}\ ASCII(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00042\ \mbox{\hyperlink{structzobject}{zobject}}\ TOCHAR(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00043\ \mbox{\hyperlink{structzobject}{zobject}}\ PRINT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00044\ \mbox{\hyperlink{structzobject}{zobject}}\ PRINTF(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00045\ \mbox{\hyperlink{structzobject}{zobject}}\ FORMAT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00046\ \mbox{\hyperlink{structzobject}{zobject}}\ PRINTLN(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00047\ \mbox{\hyperlink{structzobject}{zobject}}\ ZUKO\_INPUT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);\ \textcolor{comment}{//\ fuck\ Visual\ Studio\ for\ not\ letting\ me\ use\ "{}INPUT"{}}}
+\DoxyCodeLine{00048\ \mbox{\hyperlink{structzobject}{zobject}}\ TYPEOF(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00049\ \mbox{\hyperlink{structzobject}{zobject}}\ ISINSTANCEOF(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00050\ \mbox{\hyperlink{structzobject}{zobject}}\ LEN(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00051\ \mbox{\hyperlink{structzobject}{zobject}}\ OPEN(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00052\ \mbox{\hyperlink{structzobject}{zobject}}\ READ(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00053\ \mbox{\hyperlink{structzobject}{zobject}}\ CLOSE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00054\ \mbox{\hyperlink{structzobject}{zobject}}\ RAND(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00055\ \mbox{\hyperlink{structzobject}{zobject}}\ BYTEARRAY(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00056\ \mbox{\hyperlink{structzobject}{zobject}}\ WRITE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00057\ \mbox{\hyperlink{structzobject}{zobject}}\ EXIT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00058\ \mbox{\hyperlink{structzobject}{zobject}}\ REVERSE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00059\ \mbox{\hyperlink{structzobject}{zobject}}\ BYTES(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00060\ \mbox{\hyperlink{structzobject}{zobject}}\ OBJINFO(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00061\ \mbox{\hyperlink{structzobject}{zobject}}\ MODULEINFO(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00062\ \mbox{\hyperlink{structzobject}{zobject}}\ SUBSTR(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00063\ \mbox{\hyperlink{structzobject}{zobject}}\ GETFILESIZE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00064\ \mbox{\hyperlink{structzobject}{zobject}}\ FTELL(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00065\ \mbox{\hyperlink{structzobject}{zobject}}\ REWIND(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00066\ \mbox{\hyperlink{structzobject}{zobject}}\ SYSTEM(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00067\ \mbox{\hyperlink{structzobject}{zobject}}\ SPLIT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00068\ \mbox{\hyperlink{structzobject}{zobject}}\ GETENV(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00069\ \mbox{\hyperlink{structzobject}{zobject}}\ STR(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00070\ \mbox{\hyperlink{structzobject}{zobject}}\ FIND(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00071\ \mbox{\hyperlink{structzobject}{zobject}}\ TOINT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00072\ \mbox{\hyperlink{structzobject}{zobject}}\ TOINT32(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00073\ \mbox{\hyperlink{structzobject}{zobject}}\ TOINT64(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00074\ \mbox{\hyperlink{structzobject}{zobject}}\ TOFLOAT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00075\ \mbox{\hyperlink{structzobject}{zobject}}\ tonumeric(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00076\ \mbox{\hyperlink{structzobject}{zobject}}\ isnumeric(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00077\ \mbox{\hyperlink{structzobject}{zobject}}\ REPLACE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00078\ \mbox{\hyperlink{structzobject}{zobject}}\ REPLACE\_ONCE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00079\ \mbox{\hyperlink{structzobject}{zobject}}\ ZUKO\_SLEEP(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00080\ \mbox{\hyperlink{structzobject}{zobject}}\ TOBYTE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);\ \textcolor{comment}{//the\ byte()\ type\ conversion\ function,\ couldn't\ use\ that\ name\ here}}
+\DoxyCodeLine{00081\ \mbox{\hyperlink{structzobject}{zobject}}\ WRITELINES(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00082\ \mbox{\hyperlink{structzobject}{zobject}}\ READLINES(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00083\ \textcolor{keywordtype}{void}\ clean\_stdin(\textcolor{keywordtype}{void});}
+\DoxyCodeLine{00084\ \mbox{\hyperlink{structzobject}{zobject}}\ FREAD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00085\ \mbox{\hyperlink{structzobject}{zobject}}\ FWRITE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00086\ \mbox{\hyperlink{structzobject}{zobject}}\ FSEEK(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00087\ \mbox{\hyperlink{structzobject}{zobject}}\ FFLUSH(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00088\ \textcolor{comment}{//}}
+\DoxyCodeLine{00089\ \mbox{\hyperlink{structzlist}{zlist}}*\ makeListCopy(\mbox{\hyperlink{structzlist}{zlist}});}
+\DoxyCodeLine{00090\ \mbox{\hyperlink{structzdict}{zdict}}*\ makeDictCopy(\mbox{\hyperlink{structzdict}{zdict}});}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \mbox{\hyperlink{structzobject}{zobject}}\ COPY(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00093\ \mbox{\hyperlink{structzobject}{zobject}}\ CLOCK(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00095\ \textcolor{comment}{//Builtin\ Methods}}
+\DoxyCodeLine{00096\ \textcolor{comment}{//Methods\ work\ exactly\ like\ functions\ but\ their\ first\ argument\ should\ always}}
+\DoxyCodeLine{00097\ \textcolor{comment}{//be\ an\ object}}
+\DoxyCodeLine{00098\ \textcolor{comment}{//these\ are\ just\ functions\ that\ work\ on\ multiple\ supported\ types}}
+\DoxyCodeLine{00099\ \textcolor{comment}{//for\ example\ POP\ function\ works\ on\ both\ lists\ and\ bytearrays}}
+\DoxyCodeLine{00100\ \mbox{\hyperlink{structzobject}{zobject}}\ POP(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00101\ \mbox{\hyperlink{structzobject}{zobject}}\ CLEAR(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00102\ \mbox{\hyperlink{structzobject}{zobject}}\ PUSH(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00103\ \mbox{\hyperlink{structzobject}{zobject}}\ FIND\_METHOD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00104\ \mbox{\hyperlink{structzobject}{zobject}}\ INSERTBYTEARRAY(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00105\ \mbox{\hyperlink{structzobject}{zobject}}\ INSERTSTR(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00106\ \mbox{\hyperlink{structzobject}{zobject}}\ INSERT(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00107\ \mbox{\hyperlink{structzobject}{zobject}}\ ERASE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00108\ \mbox{\hyperlink{structzobject}{zobject}}\ ASMAP(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00109\ \mbox{\hyperlink{structzobject}{zobject}}\ ASLIST(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00110\ \mbox{\hyperlink{structzobject}{zobject}}\ REVERSE\_METHOD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00111\ \mbox{\hyperlink{structzobject}{zobject}}\ EMPLACE(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00112\ \mbox{\hyperlink{structzobject}{zobject}}\ HASKEY(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00113\ \mbox{\hyperlink{structzobject}{zobject}}\ UNPACK(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00114\ \textcolor{comment}{//Only\ for\ string\ methods}}
+\DoxyCodeLine{00115\ \mbox{\hyperlink{structzobject}{zobject}}\ SUBSTR\_METHOD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00116\ \mbox{\hyperlink{structzobject}{zobject}}\ REPLACE\_METHOD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00117\ \mbox{\hyperlink{structzobject}{zobject}}\ REPLACE\_ONCE\_METHOD(\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structbmap}{bmap}}\ funcs;}
+\DoxyCodeLine{00121\ \textcolor{comment}{//Following\ 2\ functions\ populate\ hashmaps\ with\ the\ addresses\ of\ all\ the\ above\ functions}}
+\DoxyCodeLine{00122\ \textcolor{keywordtype}{void}\ init\_builtin\_functions();}
+\DoxyCodeLine{00123\ \textcolor{keywordtype}{void}\ init\_builtin\_methods();}
+\DoxyCodeLine{00124\ \textcolor{comment}{//Calls\ a\ method\ after\ a\ hashtable\ lookup}}
+\DoxyCodeLine{00125\ \mbox{\hyperlink{structzobject}{zobject}}\ callmethod(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,\mbox{\hyperlink{structzobject}{zobject}}*\ args,int32\_t\ argc);}
+\DoxyCodeLine{00126\ \textcolor{keywordtype}{bool}\ function\_exists(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name);}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00129\ \}}
+\DoxyCodeLine{00130\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00132\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

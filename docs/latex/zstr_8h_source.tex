@@ -1,0 +1,27 @@
+\doxysection{zstr.\+h}
+\hypertarget{zstr_8h_source}{}\label{zstr_8h_source}\index{include/zstr.h@{include/zstr.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_STR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_STR\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifdef\ \_\_cpluscplus}}
+\DoxyCodeLine{00006\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{comment}{//\ Immutable\ zuko\ string\ implementation}}
+\DoxyCodeLine{00010\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzstr}{zstr}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \textcolor{keywordtype}{char}*\ val;\ \textcolor{comment}{//actually\ const\ char*}}
+\DoxyCodeLine{00013\ \ \ \textcolor{comment}{//but\ we\ need\ to\ write\ some\ value\ into\ it\ after\ malloc()\ \ so\ ...}}
+\DoxyCodeLine{00014\ \ \ \textcolor{keywordtype}{size\_t}\ len;\ \textcolor{comment}{//for\ quick\ len\ check}}
+\DoxyCodeLine{00015\ \}\mbox{\hyperlink{structzstr}{zstr}};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#ifdef\ \_\_cpluscplus}}
+\DoxyCodeLine{00018\ \}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

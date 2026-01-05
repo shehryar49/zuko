@@ -1,0 +1,33 @@
+\doxysection{mariadb.\+h}
+\hypertarget{mariadb_8h_source}{}\label{mariadb_8h_source}\index{modules/mariadb/mariadb.h@{modules/mariadb/mariadb.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#define\ EXPORT}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ EXPORT\ ZObject\ init();}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00011\ \ \ \ \ EXPORT\ ZObject\ REAL\_CONNECT(ZObject*,int32\_t);\textcolor{comment}{//returns\ a\ connection\ object}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{comment}{//Connection\ object\ methods}}
+\DoxyCodeLine{00014\ \ \ \ \ EXPORT\ ZObject\ CONN\_\_STORE\_RESULT(ZObject*,int32\_t);\textcolor{comment}{//takes\ a\ conn.object\ and\ returns\ result\ object}}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ ZObject\ CONN\_\_QUERY(ZObject*,int32\_t);\textcolor{comment}{//takes\ a\ conn.obj,query\ and\ executes\ the\ query}}
+\DoxyCodeLine{00016\ \ \ \ \ EXPORT\ ZObject\ CONN\_\_CLOSE(ZObject*,int32\_t);\textcolor{comment}{//close\ connection}}
+\DoxyCodeLine{00017\ \ \ \ \ EXPORT\ ZObject\ CONN\_\_DEL\_\_(ZObject*,int32\_t);}
+\DoxyCodeLine{00018\ \ \ \ \ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//Result\ object\ methods}}
+\DoxyCodeLine{00020\ \ \ \ \ EXPORT\ ZObject\ RES\_\_FETCH\_ROW(ZObject*,int32\_t);\textcolor{comment}{//fetch\ a\ row\ from\ result\ object\ and\ return\ it}}
+\DoxyCodeLine{00021\ \ \ \ \ EXPORT\ ZObject\ RES\_\_NUM\_ROWS(ZObject*,int32\_t);}
+\DoxyCodeLine{00022\ \ \ \ \ EXPORT\ ZObject\ RES\_\_NUM\_FIELDS(ZObject*,int32\_t);}
+\DoxyCodeLine{00023\ \ \ \ \ EXPORT\ ZObject\ RES\_\_DEL\_\_(ZObject*,int32\_t);}
+\DoxyCodeLine{00024\ \ \ \ \ }
+\DoxyCodeLine{00025\ \ \ \ \ EXPORT\ \textcolor{keywordtype}{void}\ unload();\textcolor{comment}{//called\ when\ module\ is\ unloaded}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00027\ \}}
+
+\end{DoxyCode}

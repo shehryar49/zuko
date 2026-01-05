@@ -1,0 +1,30 @@
+\doxysection{klass.\+h}
+\hypertarget{klass_8h_source}{}\label{klass_8h_source}\index{include/klass.h@{include/klass.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_KLASS\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_KLASS\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}strmap.h"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass}{zclass}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name;}
+\DoxyCodeLine{00013\ \ \ \mbox{\hyperlink{structstrmap}{strmap}}\ members;}
+\DoxyCodeLine{00014\ \}\mbox{\hyperlink{structzclass}{zclass}};}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{keywordtype}{void}\ zclass\_addmember(\mbox{\hyperlink{structzclass}{zclass}}*\ k,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00018\ \textcolor{keywordtype}{void}\ zclass\_setmember(\mbox{\hyperlink{structzclass}{zclass}}*\ k,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name,\mbox{\hyperlink{structzobject}{zobject}}\ val);}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00021\ \}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

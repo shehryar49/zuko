@@ -1,0 +1,23 @@
+\doxysection{base64.\+h}
+\hypertarget{base64_8h_source}{}\label{base64_8h_source}\index{modules/base64/base64.h@{modules/base64/base64.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_BASE64\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_BASE64\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00013\ \ \ \ \ }
+\DoxyCodeLine{00014\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ ENCODE(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ DECODE(\mbox{\hyperlink{structzobject}{zobject}}*,int32\_t);}
+\DoxyCodeLine{00016\ \}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,22 @@
+\doxysection{regex.\+h}
+\hypertarget{regex_8h_source}{}\label{regex_8h_source}\index{modules/regex/regex.h@{modules/regex/regex.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#define\ EXPORT}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{comment}{//Functions}}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ match(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00014\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ search(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ replace(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00016\ \}}
+
+\end{DoxyCode}

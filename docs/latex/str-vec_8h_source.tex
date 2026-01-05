@@ -1,0 +1,41 @@
+\doxysection{str-\/vec.h}
+\hypertarget{str-vec_8h_source}{}\label{str-vec_8h_source}\index{include/str-\/vec.h@{include/str-\/vec.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_STR\_VECTOR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_STR\_VECTOR\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structstr__vector}{str\_vector}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{char}**\ arr;}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00017\ \}\mbox{\hyperlink{structstr__vector}{str\_vector}};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{void}\ str\_vector\_init\ (\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p);}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ str\_vector\_push(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ val);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ str\_vector\_erase(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{void}\ str\_vector\_erase\_range(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ i,\textcolor{keywordtype}{size\_t}\ j);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ str\_vector\_resize(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ newSize);}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{bool}\ str\_vector\_pop(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{char}**\ val);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ str\_vector\_assign(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ val);}
+\DoxyCodeLine{00026\ \textcolor{keywordtype}{void}\ str\_vector\_insert(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ val);}
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{void}\ str\_vector\_insert\_vector(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keywordtype}{size\_t}\ idx,\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ sublist);}
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{int}\ str\_vector\_search(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p,\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ val);}
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{void}\ str\_vector\_destroy(\mbox{\hyperlink{structstr__vector}{str\_vector}}*\ p);}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

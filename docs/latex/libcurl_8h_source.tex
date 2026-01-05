@@ -1,0 +1,20 @@
+\doxysection{libcurl.\+h}
+\hypertarget{libcurl_8h_source}{}\label{libcurl_8h_source}\index{modules/libcurl/libcurl.h@{modules/libcurl/libcurl.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ init();\ \textcolor{comment}{//initialize\ the\ module}}
+\DoxyCodeLine{00012\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ wrapped\_strerror(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00013\ \ \ \ \ EXPORT\ \textcolor{keywordtype}{void}\ unload();\ \textcolor{comment}{//\ module\ cleanup\ \ \ }}
+\DoxyCodeLine{00014\ \}}
+
+\end{DoxyCode}

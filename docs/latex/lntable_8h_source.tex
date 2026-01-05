@@ -1,0 +1,54 @@
+\doxysection{lntable.\+h}
+\hypertarget{lntable_8h_source}{}\label{lntable_8h_source}\index{include/lntable.h@{include/lntable.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_LNTABLE\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_LNTABLE\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}byte\_src.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ lntable\_slot\_status}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ LN\_EMPTY,}
+\DoxyCodeLine{00016\ \ \ \ \ LN\_OCCUPIED,}
+\DoxyCodeLine{00017\ \ \ \ \ LN\_DELETED}
+\DoxyCodeLine{00018\ \}lntable\_slot\_status;}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structlntable__slot}{lntable\_slot}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ key;}
+\DoxyCodeLine{00023\ \ \ \ \ \mbox{\hyperlink{structbyte__src}{byte\_src}}\ val;}
+\DoxyCodeLine{00024\ \ \ \ \ lntable\_slot\_status\ stat;}
+\DoxyCodeLine{00025\ \}\mbox{\hyperlink{structlntable__slot}{lntable\_slot}};}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structlntable}{lntable}}}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \mbox{\hyperlink{structlntable__slot}{lntable\_slot}}*\ table;}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00032\ \}\mbox{\hyperlink{structlntable}{lntable}};}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{keywordtype}{void}\ lntable\_init(\mbox{\hyperlink{structlntable}{lntable}}*\ h);}
+\DoxyCodeLine{00036\ \textcolor{keywordtype}{void}\ lntable\_set(\mbox{\hyperlink{structlntable}{lntable}}*\ h,\textcolor{keywordtype}{size\_t}\ key,\mbox{\hyperlink{structbyte__src}{byte\_src}}\ val);}
+\DoxyCodeLine{00037\ \textcolor{keywordtype}{void}\ lntable\_emplace(\mbox{\hyperlink{structlntable}{lntable}}*\ h,\textcolor{keywordtype}{size\_t}\ key,\mbox{\hyperlink{structbyte__src}{byte\_src}}\ val);}
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{bool}\ lntable\_get(\mbox{\hyperlink{structlntable}{lntable}}*\ h,\textcolor{keywordtype}{size\_t}\ key,\mbox{\hyperlink{structbyte__src}{byte\_src}}*\ val);}
+\DoxyCodeLine{00039\ \textcolor{keywordtype}{bool}\ lntable\_erase(\mbox{\hyperlink{structlntable}{lntable}}*\ h,\textcolor{keywordtype}{size\_t}\ key);}
+\DoxyCodeLine{00040\ \textcolor{keywordtype}{void}\ lntable\_assign(\mbox{\hyperlink{structlntable}{lntable}}*\ h,\mbox{\hyperlink{structlntable}{lntable}}*\ other);\ \textcolor{comment}{//\ makes\ deep\ copy}}
+\DoxyCodeLine{00041\ \textcolor{keywordtype}{void}\ lntable\_clear(\mbox{\hyperlink{structlntable}{lntable}}*\ h);}
+\DoxyCodeLine{00042\ \textcolor{keywordtype}{void}\ lntable\_destroy(\mbox{\hyperlink{structlntable}{lntable}}*\ h);}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00045\ \}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

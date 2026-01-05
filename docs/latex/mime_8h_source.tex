@@ -1,0 +1,24 @@
+\doxysection{mime.\+h}
+\hypertarget{mime_8h_source}{}\label{mime_8h_source}\index{modules/libcurl/mime.h@{modules/libcurl/mime.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_CURL\_MIME\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_CURL\_MIME\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#ifdef\ \_WIN32}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\ \ \#define\ EXPORT\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\ \ \#define\ EXPORT}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{structzclass}{zclass}}*\ mime\_class;}
+\DoxyCodeLine{00012\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ mime\_construct(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00015\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ mime\_addpart(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00016\ \ \ \ \ EXPORT\ \mbox{\hyperlink{structzobject}{zobject}}\ mime\_\_del\_\_(\mbox{\hyperlink{structzobject}{zobject}}*,\textcolor{keywordtype}{int});}
+\DoxyCodeLine{00017\ \}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

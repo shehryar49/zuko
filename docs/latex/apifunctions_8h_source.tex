@@ -1,0 +1,76 @@
+\doxysection{apifunctions.\+h}
+\hypertarget{apifunctions_8h_source}{}\label{apifunctions_8h_source}\index{include/apifunctions.h@{include/apifunctions.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ APIFUNCTIONS\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ APIFUNCTIONS\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}zobject.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}zstr.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}zbytearray.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}strmap.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}klass.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}klassobject.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}module.h"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}nativefun.h"{}}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}coroutineobj.h"{}}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}zlist.h"{}}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#include\ "{}zdict.h"{}}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00017\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00019\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzlist}{zlist}}*(*fn1)();\textcolor{comment}{//alloc\_zlist}}
+\DoxyCodeLine{00020\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzdict}{zdict}}*(*fn2)();\textcolor{comment}{//alloc\_zdict}}
+\DoxyCodeLine{00021\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzstr}{zstr}}*(*fn3)(size\_t);\textcolor{comment}{//alloc\_zstr}}
+\DoxyCodeLine{00022\ \ \ \textcolor{keyword}{typedef}\ uint8\_t*(*fn4)(size\_t);\textcolor{comment}{//alloc\_zbytearr}}
+\DoxyCodeLine{00023\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzfile}{zfile}}*(*fn5)();\textcolor{comment}{//alloc\_zfile}}
+\DoxyCodeLine{00024\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzclass}{zclass}}*(*fn6)(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);\textcolor{comment}{//alloc\_zclass}}
+\DoxyCodeLine{00025\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzclass__object}{zclass\_object}}*(*fn7)(\mbox{\hyperlink{structzclass}{zclass}}*);\textcolor{comment}{//alloc\_zclassobj}}
+\DoxyCodeLine{00026\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structznativefun}{znativefun}}*(*fn8)();\textcolor{comment}{//alloc\_znativefun}}
+\DoxyCodeLine{00027\ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzmodule}{zmodule}}*(*fn9)(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*);\textcolor{comment}{//alloc\_zmodule}}
+\DoxyCodeLine{00028\ \ \ \textcolor{keyword}{typedef}\ zbytearr*(*fn10)();\textcolor{comment}{//alloc\_zbytearr}}
+\DoxyCodeLine{00029\ \ \ \textcolor{keyword}{typedef}\ bool(*fn11)(\mbox{\hyperlink{structzobject}{zobject}}*,\mbox{\hyperlink{structzobject}{zobject}}*,int,\mbox{\hyperlink{structzobject}{zobject}}*);\textcolor{comment}{//call\_object}}
+\DoxyCodeLine{00030\ \ \ \textcolor{keyword}{typedef}\ void(*fn12)(\textcolor{keywordtype}{void}*);\textcolor{comment}{//mark\_important}}
+\DoxyCodeLine{00031\ \ \ \textcolor{keyword}{typedef}\ void(*fn13)(\textcolor{keywordtype}{void}*);\textcolor{comment}{//unmark\_impotant}}
+\DoxyCodeLine{00032\ \ \ \textcolor{keyword}{typedef}\ void(*fn14)(size\_t);\textcolor{comment}{//increment\_allocated\ +\ decrement\_allocated}}
+\DoxyCodeLine{00033\ \ \ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structapi__functions}{api\_functions}}}
+\DoxyCodeLine{00034\ \ \ \{}
+\DoxyCodeLine{00035\ \ \ \ \ fn1\ a1;\textcolor{comment}{//api\ function\ 1}}
+\DoxyCodeLine{00036\ \ \ \ \ fn2\ a2;\textcolor{comment}{//and\ so\ on}}
+\DoxyCodeLine{00037\ \ \ \ \ fn3\ a3;}
+\DoxyCodeLine{00038\ \ \ \ \ fn4\ a4;}
+\DoxyCodeLine{00039\ \ \ \ \ fn5\ a5;}
+\DoxyCodeLine{00040\ \ \ \ \ fn6\ a6;}
+\DoxyCodeLine{00041\ \ \ \ \ fn7\ a7;}
+\DoxyCodeLine{00042\ \ \ \ \ fn8\ a8;}
+\DoxyCodeLine{00043\ \ \ \ \ fn9\ a9;}
+\DoxyCodeLine{00044\ \ \ \ \ fn10\ a10;}
+\DoxyCodeLine{00045\ \ \ \ \ fn11\ a11;}
+\DoxyCodeLine{00046\ \ \ \ \ fn12\ a12;}
+\DoxyCodeLine{00047\ \ \ \ \ fn13\ a13;}
+\DoxyCodeLine{00048\ \ \ \ \ fn14\ a14;}
+\DoxyCodeLine{00049\ \ \ \ \ fn14\ a15;}
+\DoxyCodeLine{00050\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k1;}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k2;}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k3;}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k4;}
+\DoxyCodeLine{00054\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k5;}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k6;}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k7;}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k8;}
+\DoxyCodeLine{00058\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k9;}
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k10;}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k11;}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k12;}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k13;}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k14;}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ k15;}
+\DoxyCodeLine{00065\ \ \ \}\mbox{\hyperlink{structapi__functions}{api\_functions}};}
+\DoxyCodeLine{00066\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00067\ \}}
+\DoxyCodeLine{00068\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

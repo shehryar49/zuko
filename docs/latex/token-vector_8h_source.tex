@@ -1,0 +1,37 @@
+\doxysection{token-\/vector.h}
+\hypertarget{token-vector_8h_source}{}\label{token-vector_8h_source}\index{include/token-\/vector.h@{include/token-\/vector.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_TOKEN\_VECTOR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_TOKEN\_VECTOR\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}token.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structtoken__vector}{token\_vector}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{structtoken}{token}}*\ arr;}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00018\ \}\mbox{\hyperlink{structtoken__vector}{token\_vector}};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ token\_vector\_init\ (\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ token\_vector\_push(\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p,\mbox{\hyperlink{structtoken}{token}}\ val);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{bool}\ token\_vector\_pop(\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p,\mbox{\hyperlink{structtoken}{token}}*\ val);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ token\_vector\_assign(\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p,\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ val);\ \textcolor{comment}{//makes\ deep\ copy}}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{int}\ token\_vector\_search(\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p,\mbox{\hyperlink{structtoken}{token}}\ val);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ token\_vector\_destroy(\mbox{\hyperlink{structtoken__vector}{token\_vector}}*\ p);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00028\ \}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

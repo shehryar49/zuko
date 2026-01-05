@@ -1,0 +1,128 @@
+\doxysection{ast.\+h}
+\hypertarget{ast_8h_source}{}\label{ast_8h_source}\index{include/ast.h@{include/ast.h}}
+\mbox{\hyperlink{ast_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*MIT\ License}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2022\ Shahryar\ Ahmad\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00006\ \textcolor{comment}{of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to\ deal}}
+\DoxyCodeLine{00007\ \textcolor{comment}{in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the\ rights}}
+\DoxyCodeLine{00008\ \textcolor{comment}{to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or\ sell}}
+\DoxyCodeLine{00009\ \textcolor{comment}{copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00010\ \textcolor{comment}{furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in\ all}}
+\DoxyCodeLine{00013\ \textcolor{comment}{copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00016\ \textcolor{comment}{IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00018\ \textcolor{comment}{AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00019\ \textcolor{comment}{LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING\ FROM,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS\ IN\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{SOFTWARE.*/}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_AST\_H\_}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#define\ ZUKO\_AST\_H\_}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00034\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ "{}nodeptr\_vec.h"{}}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00043\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ \mbox{\hyperlink{ast_8h_acac9cbaeea226ed297804c012dc12b16}{NodeType}}}
+\DoxyCodeLine{00044\ \{}
+\DoxyCodeLine{00045\ \ \ declare\_node,}
+\DoxyCodeLine{00046\ \ \ import\_node,}
+\DoxyCodeLine{00047\ \ \ importas\_node,}
+\DoxyCodeLine{00048\ \ \ assign\_node,}
+\DoxyCodeLine{00049\ \ \ memb\_node,}
+\DoxyCodeLine{00050\ \ \ while\_node,}
+\DoxyCodeLine{00051\ \ \ dowhile\_node,}
+\DoxyCodeLine{00052\ \ \ for\_node,}
+\DoxyCodeLine{00053\ \ \ dfor\_node,\textcolor{comment}{//down\ to\ for\ loop}}
+\DoxyCodeLine{00054\ \ \ decl\_node,\textcolor{comment}{//used\ with\ FOR\ loop\ to\ tell\ if\ loop\ control\ variable\ should\ be}}
+\DoxyCodeLine{00055\ \ \ \textcolor{comment}{//declared\ or\ not}}
+\DoxyCodeLine{00056\ \ \ \textcolor{comment}{//i.e\ for(var\ i=0\ to\ 10\ step\ 1)}}
+\DoxyCodeLine{00057\ \ \ nodecl\_node,}
+\DoxyCodeLine{00058\ \ \ foreach\_node,}
+\DoxyCodeLine{00059\ \ \ namespace\_node,}
+\DoxyCodeLine{00060\ \ \ if\_node,}
+\DoxyCodeLine{00061\ \ \ ifelse\_node,}
+\DoxyCodeLine{00062\ \ \ ifelif\_node,}
+\DoxyCodeLine{00063\ \ \ ifelifelse\_node,}
+\DoxyCodeLine{00064\ \ \ throw\_node,}
+\DoxyCodeLine{00065\ \ \ trycatch\_node,}
+\DoxyCodeLine{00066\ \ \ func\_node,}
+\DoxyCodeLine{00067\ \ \ coro\_node,}
+\DoxyCodeLine{00068\ \ \ class\_node,}
+\DoxyCodeLine{00069\ \ \ extclass\_node,}
+\DoxyCodeLine{00070\ \ \ return\_node,\textcolor{comment}{//RETURN\ name\ collides\ with\ some\ name\ in\ libreadline}}
+\DoxyCodeLine{00071\ \ \ eop\_node,\ \textcolor{comment}{//end\ of\ program,\ also\ marks\ the\ end\ of\ tree}}
+\DoxyCodeLine{00072\ \ \ yield\_node,}
+\DoxyCodeLine{00073\ \ \ break\_node,}
+\DoxyCodeLine{00074\ \ \ continue\_node,}
+\DoxyCodeLine{00075\ \ \ call\_node,}
+\DoxyCodeLine{00076\ \ \ args\_node,}
+\DoxyCodeLine{00077\ \ \ line\_node,}
+\DoxyCodeLine{00078\ \ \ gc\_node,}
+\DoxyCodeLine{00079\ \ \ file\_node,}
+\DoxyCodeLine{00080\ \ \ end\_node,}
+\DoxyCodeLine{00081\ \ \ add\_node,}
+\DoxyCodeLine{00082\ \ \ sub\_node,}
+\DoxyCodeLine{00083\ \ \ mul\_node,}
+\DoxyCodeLine{00084\ \ \ div\_node,}
+\DoxyCodeLine{00085\ \ \ mod\_node,}
+\DoxyCodeLine{00086\ \ \ xor\_node,}
+\DoxyCodeLine{00087\ \ \ lshift\_node,}
+\DoxyCodeLine{00088\ \ \ rshift\_node,}
+\DoxyCodeLine{00089\ \ \ bitwiseand\_node,}
+\DoxyCodeLine{00090\ \ \ bitwiseor\_node,}
+\DoxyCodeLine{00091\ \ \ and\_node,}
+\DoxyCodeLine{00092\ \ \ or\_node,}
+\DoxyCodeLine{00093\ \ \ is\_node,}
+\DoxyCodeLine{00094\ \ \ lt\_node,}
+\DoxyCodeLine{00095\ \ \ gt\_node,}
+\DoxyCodeLine{00096\ \ \ lte\_node,}
+\DoxyCodeLine{00097\ \ \ gte\_node,}
+\DoxyCodeLine{00098\ \ \ equal\_node,}
+\DoxyCodeLine{00099\ \ \ noteq\_node,}
+\DoxyCodeLine{00100\ \ \ neg\_node,}
+\DoxyCodeLine{00101\ \ \ complement\_node,}
+\DoxyCodeLine{00102\ \ \ not\_node,}
+\DoxyCodeLine{00103\ \ \ index\_node,}
+\DoxyCodeLine{00104\ \ \ dict\_node,}
+\DoxyCodeLine{00105\ \ \ list\_node,}
+\DoxyCodeLine{00106\ \ \ num\_node,}
+\DoxyCodeLine{00107\ \ \ float\_node,}
+\DoxyCodeLine{00108\ \ \ nil\_node,}
+\DoxyCodeLine{00109\ \ \ str\_node,}
+\DoxyCodeLine{00110\ \ \ bool\_node,}
+\DoxyCodeLine{00111\ \ \ byte\_node,}
+\DoxyCodeLine{00112\ \ \ id\_node,}
+\DoxyCodeLine{00113\ \ \ conditions\_node,}
+\DoxyCodeLine{00114\ \}\mbox{\hyperlink{ast_8h_acac9cbaeea226ed297804c012dc12b16}{NodeType}};}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00120\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structNode}{Node}}}
+\DoxyCodeLine{00121\ \{}
+\DoxyCodeLine{00122\ \ \ \textcolor{keywordtype}{char}*\ val;\ \textcolor{comment}{//\ the\ value\ stored\ in\ the\ node}}
+\DoxyCodeLine{00123\ \ \ \mbox{\hyperlink{ast_8h_acac9cbaeea226ed297804c012dc12b16}{NodeType}}\ type;\ \textcolor{comment}{//\ type\ of\ the\ node}}
+\DoxyCodeLine{00124\ \ \ \mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}\ childs;\ \textcolor{comment}{//\ list\ of\ children\ }}
+\DoxyCodeLine{00125\ \}\mbox{\hyperlink{structNode}{Node}};}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{keyword}{extern}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ NodeTypeNames[68];}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00131\ \}}
+\DoxyCodeLine{00132\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

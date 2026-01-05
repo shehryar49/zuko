@@ -1,0 +1,39 @@
+\doxysection{nodeptr\+\_\+vec.\+h}
+\hypertarget{nodeptr__vec_8h_source}{}\label{nodeptr__vec_8h_source}\index{include/nodeptr\_vec.h@{include/nodeptr\_vec.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ NODEPTR\_VECTOR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ NODEPTR\_VECTOR\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00006\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00008\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structNode}{Node}}\ \mbox{\hyperlink{structNode}{Node}};}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{structNode}{Node}}**\ arr;}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00018\ \}\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{void}\ nodeptr\_vector\_init\ (\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p);}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{void}\ nodeptr\_vector\_push(\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p,\mbox{\hyperlink{structNode}{Node}}*\ val);}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{bool}\ nodeptr\_vector\_pop(\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p,\mbox{\hyperlink{structNode}{Node}}**\ val);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ nodeptr\_vector\_assign(\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p,\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ val);\ \textcolor{comment}{//makes\ deep\ copy}}
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{int}\ nodeptr\_vector\_search(\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p,\mbox{\hyperlink{structNode}{Node}}*\ val);}
+\DoxyCodeLine{00025\ \textcolor{keywordtype}{void}\ nodeptr\_vector\_destroy(\mbox{\hyperlink{structnodeptr__vector}{nodeptr\_vector}}*\ p);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00028\ \}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

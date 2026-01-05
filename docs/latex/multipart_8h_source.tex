@@ -1,0 +1,50 @@
+\doxysection{multipart.\+h}
+\hypertarget{multipart_8h_source}{}\label{multipart_8h_source}\index{modules/cgi/multipart.h@{modules/cgi/multipart.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_MULTIPART\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_MULTIPART\_H\_}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <exception>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}zapi.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ std::vector<std::string>\ split\_ign\_quotes(\textcolor{keyword}{const}\ std::string\&,\textcolor{keywordtype}{char});}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classparse__error}{parse\_error}}\ :\ \textcolor{keyword}{public}\ std::exception}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ what()\ \{\ \textcolor{keywordflow}{return}\ \textcolor{stringliteral}{"{}Bad\ or\ unsupported\ format\ of\ multipart\ form."{}};\}}
+\DoxyCodeLine{00014\ \};}
+\DoxyCodeLine{00015\ \textcolor{keyword}{class\ }multipart\_parser}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00018\ \ \ \ \ std::string\ B;}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ k\ =\ 0;}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{char}*\ data;}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ len;}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00023\ \ \ \ \ std::string\ part\_name;}
+\DoxyCodeLine{00024\ \ \ \ \ std::string\ part\_filename;}
+\DoxyCodeLine{00025\ \ \ \ \ std::string\ part\_content\_type;}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ content\_begin;}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ content\_length;}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{bool}\ had\_error\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00029\ \ \ \ \ std::string\ err\_msg;}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ die(\textcolor{keyword}{const}\ std::string\&\ msg);}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{void}\ consume(\textcolor{keywordtype}{char}\ ch);}
+\DoxyCodeLine{00033\ \ \ \ \ std::string\ header();}
+\DoxyCodeLine{00034\ \ \ \ \ std::vector<std::string>\ header\_value();}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{void}\ space();}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ part();}
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{structzobject}{zobject}}\ build\_part();}
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{structzdict}{zdict}}*\ mp();}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{void}\ boundary();}
+\DoxyCodeLine{00040\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00041\ \ \ \ \ multipart\_parser(\textcolor{keywordtype}{char}*\ data,\textcolor{keywordtype}{size\_t}\ len,\textcolor{keyword}{const}\ std::string\&\ boundary);}
+\DoxyCodeLine{00042\ \ \ \ \ \mbox{\hyperlink{structzdict}{zdict}}*\ parse();}
+\DoxyCodeLine{00043\ \};}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

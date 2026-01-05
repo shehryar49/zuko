@@ -1,0 +1,41 @@
+\doxysection{pair-\/vector.h}
+\hypertarget{pair-vector_8h_source}{}\label{pair-vector_8h_source}\index{include/pair-\/vector.h@{include/pair-\/vector.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ ZUKO\_PAIR\_VECTOR\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ ZUKO\_PAIR\_VECTOR\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <stdint.h>}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzpair}{zpair}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ int32\_t\ x;}
+\DoxyCodeLine{00016\ \ \ \ \ int32\_t\ y;}
+\DoxyCodeLine{00017\ \}\mbox{\hyperlink{structzpair}{zpair}};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structpair__vector}{pair\_vector}}}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{structzpair}{zpair}}*\ arr;}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size;}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ capacity;}
+\DoxyCodeLine{00024\ \}\mbox{\hyperlink{structpair__vector}{pair\_vector}};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{keywordtype}{void}\ pair\_vector\_init\ (\mbox{\hyperlink{structpair__vector}{pair\_vector}}*\ p);}
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{void}\ pair\_vector\_push(\mbox{\hyperlink{structpair__vector}{pair\_vector}}*\ p,int32\_t\ x,int32\_t\ y);}
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{void}\ pair\_vector\_destroy(\mbox{\hyperlink{structpair__vector}{pair\_vector}}*\ p);}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

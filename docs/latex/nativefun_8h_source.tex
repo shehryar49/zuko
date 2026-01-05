@@ -1,0 +1,31 @@
+\doxysection{nativefun.\+h}
+\hypertarget{nativefun_8h_source}{}\label{nativefun_8h_source}\index{include/nativefun.h@{include/nativefun.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ NATIVEFUN\_H\_}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ NATIVEFUN\_H\_}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\{}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzobject}{zobject}}\ \mbox{\hyperlink{structzobject}{zobject}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structzclass}{zclass}}\ \mbox{\hyperlink{structzclass}{zclass}};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structzobject}{zobject}}(*NativeFunPtr)(\mbox{\hyperlink{structzobject}{zobject}}*,int);}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structznativefun}{znativefun}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{structzclass}{zclass}}*\ \_klass;\textcolor{comment}{//address\ of\ class\ the\ function\ is\ member\ of\ (if\ any\ NULL\ otherwise)}}
+\DoxyCodeLine{00016\ \ \ \ \ NativeFunPtr\ addr;}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ name;\textcolor{comment}{//name\ of\ function\ (used\ when\ printing\ errors)}}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ signature;\ \textcolor{comment}{//type\ string\ if\ any\ NULL\ otherwise}}
+\DoxyCodeLine{00019\ \}\mbox{\hyperlink{structznativefun}{znativefun}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00022\ \}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

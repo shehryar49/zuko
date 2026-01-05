@@ -1,0 +1,20 @@
+\chapter{Official Repository of Zuko Programming Langauge }
+\hypertarget{md_README}{}\label{md_README}\index{Official Repository of Zuko Programming Langauge@{Official Repository of Zuko Programming Langauge}}
+\label{md_README_autotoc_md0}%
+\Hypertarget{md_README_autotoc_md0}%
+
+
+Zuko is a dynamically typed and lightweight programming language written in C. Zuko is compiled to bytecode and then interpreted by a virtual machine. It aims to be minimalistic and as fast as possible without a JIT.\hypertarget{md_README_autotoc_md1}{}\doxysection{\texorpdfstring{HOW TO COMPILE\+:}{HOW TO COMPILE\+:}}\label{md_README_autotoc_md1}
+Download source code of the latest release. \hypertarget{md_README_autotoc_md2}{}\doxysubsection{\texorpdfstring{Visual Studio\+:}{Visual Studio\+:}}\label{md_README_autotoc_md2}
+
+\begin{DoxyItemize}
+\item Install CMake
+\item Run {\ttfamily cmake . -\/DCMAKE\+\_\+\+BUILD\+\_\+\+TYPE=Release}
+\item It will generate zuko.\+sln file which you can open and build
+\end{DoxyItemize}
+
+To install your build create C\+:\textbackslash{}zuko and copy zuko.\+exe to it. {\bfseries{Note that binaries for Windows are already available. See releases. So you don\textquotesingle{}t really have to build zuko from source on Windows unless you want to contribute.}}\hypertarget{md_README_autotoc_md3}{}\doxysubsection{\texorpdfstring{Linux/\+Unix\+:}{Linux/\+Unix\+:}}\label{md_README_autotoc_md3}
+Just run the shell script install.\+sh it will build,test and install zuko. It uses CMake for the build process. Also make sure you have libreadline-\/dev installed on your system. This is used by the Zuko REPL on Unix like systems. The installation path is /opt/zuko. The install.\+sh script also creates a symbolic link of /opt/zuko/zuko in /usr/local/bin\hypertarget{md_README_autotoc_md4}{}\doxysubsection{\texorpdfstring{Testing your build}{Testing your build}}\label{md_README_autotoc_md4}
+You can test your build using test\+\_\+all tool (src in tests/). You will have to build it from source. The CMake script does that for you. On Linux/\+Unix, install.\+sh script runs the tests automatically using this tool. To use it manually or on Windows just run it from command line and pass the zuko interpreter\textquotesingle{}s path.\hypertarget{md_README_autotoc_md5}{}\doxysection{\texorpdfstring{Documentation}{Documentation}}\label{md_README_autotoc_md5}
+The website\+: \href{https://zuko-lang.github.io}{\texttt{https\+://zuko-\/lang.\+github.\+io}}\hypertarget{md_README_autotoc_md6}{}\doxysection{\texorpdfstring{Discord}{Discord}}\label{md_README_autotoc_md6}
+Discord Server\+: \href{https://discord.gg/cD4cDAszQh}{\texttt{https\+://discord.\+gg/c\+D4c\+DAsz\+Qh}} 
