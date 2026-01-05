@@ -1,3 +1,8 @@
+/*
+ * @file zuko.c
+ * @brief Main file for the Interpreter
+ */
+
 #include "include/repl.h"
 #include "include/misc.h"
 
